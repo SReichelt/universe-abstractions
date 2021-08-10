@@ -33,13 +33,13 @@ namespace HasLinearFunOp
 
   def defSwapFunFun {α β γ : U} (F : α ⟶ β ⟶ γ) : β ⟶[λ b => swapFun F b] (α ⟶ γ) :=
   compFunFun F γ ⊙ appFunFun β γ
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [swapFun, defSwapFun]
 
   @[reducible] def swapFunFun {α β γ : U} (F : α ⟶ β ⟶ γ) : β ⟶ α ⟶ γ := defSwapFunFun F
 
   def defSwapFunFunFun (α β γ : U) : (α ⟶ β ⟶ γ) ⟶[λ F => swapFunFun F] (β ⟶ α ⟶ γ) :=
   compFunFun (appFunFun β γ) (α ⟶ γ) ⊙ compFunFunFun α (β ⟶ γ) γ
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [swapFunFun, defSwapFunFun]
 
   @[reducible] def swapFunFunFun (α β γ : U) : (α ⟶ β ⟶ γ) ⟶ (β ⟶ α ⟶ γ) := defSwapFunFunFun α β γ
 
@@ -55,7 +55,7 @@ namespace HasLinearFunOp
 
   def defRevSwapFunFunFun (α β γ : U) : β ⟶[λ b => revSwapFunFun α b γ] ((α ⟶ β ⟶ γ) ⟶ (α ⟶ γ)) :=
   swapFunFun (swapFunFunFun α β γ)
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [revSwapFunFun, defRevSwapFunFun]
 
   @[reducible] def revSwapFunFunFun (α β γ : U) : β ⟶ (α ⟶ β ⟶ γ) ⟶ (α ⟶ γ) := defRevSwapFunFunFun α β γ
 
@@ -69,7 +69,7 @@ namespace HasLinearFunOp
 
   def defRevCompFunFunFun (α β γ : U) : (β ⟶ γ) ⟶[λ G => revCompFunFun α G] ((α ⟶ β) ⟶ (α ⟶ γ)) :=
   swapFunFun (compFunFunFun α β γ)
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [revCompFunFun, defRevCompFunFun]
 
   @[reducible] def revCompFunFunFun (α β γ : U) : (β ⟶ γ) ⟶ (α ⟶ β) ⟶ (α ⟶ γ) := defRevCompFunFunFun α β γ
 
@@ -94,7 +94,7 @@ namespace HasFullFunOp
 
   def defSubstFunFun {α β : U} (F : α ⟶ β) (γ : U) : (α ⟶ β ⟶ γ) ⟶[λ G => substFun F G] (α ⟶ γ) :=
   HasNonLinearFunOp.dupFunFun α γ ⊙ HasLinearFunOp.compFunFun F (α ⟶ γ) ⊙ HasLinearFunOp.swapFunFunFun α β γ
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [substFun, defSubstFun]
 
   @[reducible] def substFunFun {α β : U} (F : α ⟶ β) (γ : U) : (α ⟶ β ⟶ γ) ⟶ (α ⟶ γ) := defSubstFunFun F γ
 
@@ -102,7 +102,7 @@ namespace HasFullFunOp
   HasLinearFunOp.revCompFunFun (α ⟶ β ⟶ γ) (HasNonLinearFunOp.dupFunFun α γ) ⊙
   HasLinearFunOp.compFunFun (HasLinearFunOp.swapFunFunFun α β γ) (α ⟶ α ⟶ γ) ⊙
   HasLinearFunOp.compFunFunFun α β (α ⟶ γ)
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [substFunFun, defSubstFunFun]
 
   @[reducible] def substFunFunFun (α β γ : U) : (α ⟶ β) ⟶ (α ⟶ β ⟶ γ) ⟶ (α ⟶ γ) :=
   defSubstFunFunFun α β γ
@@ -119,7 +119,7 @@ namespace HasFullFunOp
 
   def defRevSubstFunFunFun (α β γ : U) : (α ⟶ β ⟶ γ) ⟶[λ G => revSubstFunFun G] ((α ⟶ β) ⟶ (α ⟶ γ)) :=
   HasLinearFunOp.swapFunFun (substFunFunFun α β γ)
-  ◄ λ _ => by simp; rfl
+  ◄ λ _ => by simp [revSubstFunFun, defRevSubstFunFun]
 
   @[reducible] def revSubstFunFunFun (α β γ : U) : (α ⟶ β ⟶ γ) ⟶ (α ⟶ β) ⟶ (α ⟶ γ) :=
   defRevSubstFunFunFun α β γ

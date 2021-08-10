@@ -24,84 +24,107 @@ universe u v w
 --   definitional equality so that e.g. applying the identity functor is a trivial operation. This
 --   implies that the mapping must be part of the type of the axiom.
 --
--- In order to meet all requirements, we currently define four kinds of functors, with conversions
+-- In order to meet all requirements, we currently define three kinds of functors, with conversions
 -- between them:
 --
--- `α β : Sort _` | `F : α ⟶'[f] β` | `F a` defined as `f a`.
---                | `F : α ⟶' β`    | Bundled version of the above; therefore e.g. `(idFun' α) a`
---                |                 | (see below) is definitionally equal to `a`.
--- `α β : U`      | `F : α ⟶[f] β`  | `F a` defined as `f a`.
---                | `F : α ⟶ β`     | An instance of `U`; therefore `F a` cannot be definitionally
---                |                 | equal to anything if `U` is arbitrary. In particular, e.g.
---                |                 | `(idFun α) a = a` not definitionally, but `by simp` (more
---                |                 | specifically, `fromDefFun.eff`).
+-- `α : U`, `β : V` | `F : α ⟶[f] β` | `F a` defined as `f a`.
+--                  | `F : α ⟶' β`   | Bundled version of the above; therefore e.g. `(idFun α) a`
+--                  |                | (see below) is definitionally equal to `a`.
+-- `α β : U`        | `F : α ⟶ β`    | An instance of `U`; therefore `F a` cannot be definitionally
+--                  |                | equal to anything if `U` is arbitrary. In particular, e.g.
+--                  |                | `(idFun α) a = a` not definitionally, but `by simp` (more
+--                  |                | specifically, `fromDefFun.eff`).
 
 
 
-class HasFunctoriality (α : Sort u) (β : Sort v) where
+class HasFunctoriality {U : Universe.{u}} {V : Universe.{v}} (α : U) (β : V) : Sort (max u v (w + 1)) where
 (IsFun : (α → β) → Sort w)
 
 namespace HasFunctoriality
 
-  def DefFun (α : Sort u) (β : Sort v) [h : HasFunctoriality.{u, v, w} α β] (f : α → β) := h.IsFun f
-  notation:20 α:21 " ⟶'[" f:0 "] " β:21 => HasFunctoriality.DefFun α β f
+  def DefFun {U : Universe.{u}} {V : Universe.{v}} (α : U) (β : V) [h : HasFunctoriality.{u, v, w} α β] (f : α → β) := h.IsFun f
+  notation:20 α:21 " ⟶[" f:0 "] " β:21 => HasFunctoriality.DefFun α β f
 
-  structure BundledFunctor (α : Sort u) (β : Sort v) [HasFunctoriality.{u, v, w} α β] : Sort (max 1 u v w) where
+  structure BundledFunctor {U : Universe.{u}} {V : Universe.{v}} (α : U) (β : V) [HasFunctoriality.{u, v, w} α β] :
+    Sort (max 1 u v w) where
   (f : α → β)
-  (F : α ⟶'[f] β)
+  (F : α ⟶[f] β)
 
   infixr:20 " ⟶' " => HasFunctoriality.BundledFunctor
 
-  variable {α : Sort u} {β : Sort v} [HasFunctoriality.{u, v, w} α β]
+  variable {U : Universe.{u}} {V : Universe.{v}} {α : U} {β : V} [HasFunctoriality.{u, v, w} α β]
 
-  instance coeDefFun (f : α → β) : CoeFun (α ⟶'[f] β) (λ _ => α → β) := ⟨λ _ => f⟩
-  instance coeFun                : CoeFun (α ⟶' β)    (λ _ => α → β) := ⟨BundledFunctor.f⟩
+  instance coeDefFun (f : α → β) : CoeFun (α ⟶[f] β) (λ _ => α → β) := ⟨λ _ => f⟩
+  instance coeFun                : CoeFun (α ⟶' β)   (λ _ => α → β) := ⟨BundledFunctor.f⟩
 
-  def toDefFun               (F : α ⟶' β)    : α ⟶'[F.f] β := F.F
-  def fromDefFun {f : α → β} (F : α ⟶'[f] β) : α ⟶'      β := ⟨f, F⟩
+  def toDefFun               (F : α ⟶' β)   : α ⟶[F.f] β := F.F
+  def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶'     β := ⟨f, F⟩
 
-  instance (F : α ⟶' β) : CoeDep ⌈α ⟶' β⌉    F (α ⟶'[F.F] β) := ⟨toDefFun F⟩
-  instance (f : α →  β) : Coe    (α ⟶'[f] β)   ⌈α ⟶' β⌉      := ⟨fromDefFun⟩
+  def castDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) : α ⟶[f'] β :=
+  have h₁ : f = f' := funext h;
+  h₁ ▸ F
 
-  @[simp] theorem fromToDefFun             (F : α ⟶' β)    : fromDefFun (toDefFun F) = F :=
+  @[simp] theorem fromCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
+    fromDefFun (castDefFun F h) = fromDefFun F :=
+  have h₁ : f = f' := funext h;
+  by subst h₁; rfl
+
+  def toDefFun' (F : α ⟶' β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β :=
+  castDefFun (toDefFun F) h
+
+  instance (F : α ⟶' β) : CoeDep ⌈α ⟶' β⌉   F (α ⟶[F.F] β) := ⟨toDefFun F⟩
+  instance (f : α →  β) : Coe    (α ⟶[f] β)   ⌈α ⟶' β⌉     := ⟨fromDefFun⟩
+
+  @[simp] theorem toDefFun.eff               (F : α ⟶' β)   (a : α) : (toDefFun   F) a = F a := rfl
+  @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefFun F) a = F a := rfl
+
+  -- Marking this `@[simp]` causes a huge performance hit. I don't understand why.
+  theorem toDefFun'.eff (F : α ⟶' β) {f : α → β} (h : ∀ a, F a = f a) (a : α) : (toDefFun' F h) a = F a :=
+  Eq.symm (h a)
+
+  @[simp] theorem fromToDefFun             (F : α ⟶' β)   : fromDefFun (toDefFun F) = F :=
   match F with | ⟨_, _⟩ => rfl
-  @[simp] theorem toFromDefFun {f : α → β} (F : α ⟶'[f] β) : toDefFun (fromDefFun F) = F := rfl
+  @[simp] theorem toFromDefFun {f : α → β} (F : α ⟶[f] β) : toDefFun (fromDefFun F) = F := rfl
 
-  @[simp] theorem toDefFun.eff               (F : α ⟶' β)    (a : α) : (toDefFun   F) a = F a := rfl
-  @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶'[f] β) (a : α) : (fromDefFun F) a = F a := rfl
+  @[simp] theorem fromToDefFun' (F : α ⟶' β) {f : α → β} (h : ∀ a, F a = f a) : fromDefFun (toDefFun' F h) = F :=
+  Eq.trans (fromCastDefFun (toDefFun F) h) (fromToDefFun F)
+
+  @[simp] theorem toFromDefFun' {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
+    toDefFun' (fromDefFun F) h = castDefFun F h :=
+  rfl
 
 end HasFunctoriality
 
 
 
-class HasIdFun (α : Sort u) [HasFunctoriality α α] where
-(defIdFun : α ⟶'[id] α)
+class HasIdFun {U : Universe} (α : U) [HasFunctoriality α α] where
+(defIdFun : α ⟶[id] α)
 
 namespace HasIdFun
 
-  variable (α : Sort u) [HasFunctoriality α α] [HasIdFun α]
+  variable {U : Universe} (α : U) [HasFunctoriality α α] [HasIdFun α]
 
   def idFun : α ⟶' α := HasFunctoriality.fromDefFun defIdFun
 
 end HasIdFun
 
-class HasConstFun (α : Sort u) (β : Sort v) [HasFunctoriality α β] where
-(defConstFun (c : β) : α ⟶'[Function.const ⌈α⌉ c] β)
+class HasConstFun {U V : Universe} (α : U) (β : V) [HasFunctoriality α β] where
+(defConstFun (c : β) : α ⟶[Function.const ⌈α⌉ c] β)
 
 namespace HasConstFun
 
-  variable (α : Sort u) {β : Sort v} [HasFunctoriality α β] [HasConstFun α β]
+  variable {U V : Universe} (α : U) {β : V} [HasFunctoriality α β] [HasConstFun α β]
 
   def constFun (c : β) : α ⟶' β := HasFunctoriality.fromDefFun (defConstFun c)
 
 end HasConstFun
 
-class HasCompFun (α : Sort u) (β : Sort v) (γ : Sort w) [HasFunctoriality α β] [HasFunctoriality β γ] [HasFunctoriality α γ] where
-(defCompFun (F : α ⟶' β) (G : β ⟶' γ) : α ⟶'[λ a => G (F a)] γ)
+class HasCompFun {U V W : Universe} (α : U) (β : V) (γ : W) [HasFunctoriality α β] [HasFunctoriality β γ] [HasFunctoriality α γ] where
+(defCompFun (F : α ⟶' β) (G : β ⟶' γ) : α ⟶[λ a => G (F a)] γ)
 
 namespace HasCompFun
 
-  variable {α : Sort u} {β : Sort v} {γ : Sort w} [HasFunctoriality α β] [HasFunctoriality β γ] [HasFunctoriality α γ] [HasCompFun α β γ]
+  variable {U V W : Universe} {α : U} {β : V} {γ : W} [HasFunctoriality α β] [HasFunctoriality β γ] [HasFunctoriality α γ] [HasCompFun α β γ]
 
   def compFun (F : α ⟶' β) (G : β ⟶' γ) : α ⟶' γ := HasFunctoriality.fromDefFun (defCompFun F G)
 
@@ -112,61 +135,75 @@ end HasCompFun
 
 
 
-class HasEmbeddedFunctors (U : Universe.{u}) where
-(Fun              : U → U → U)
-(funCoe {α β : U} : Fun α β → (α → β))
+class HasEmbeddedFunctor {U : Universe.{u}} (α β : U) : Type (max u w) where
+[hFun  : HasFunctoriality.{u, u, w} α β]
+[hType : HasEmbeddedType.{u, max 1 u w} U (α ⟶' β)]
+
+class HasEmbeddedFunctors (U : Universe.{u}) : Type (max u w) where
+[hasFun (α β : U) : HasEmbeddedFunctor.{u, w} α β]
 
 namespace HasEmbeddedFunctors
 
   variable {U : Universe} [h : HasEmbeddedFunctors U]
 
+  instance hasFunctoriality (α β : U) : HasFunctoriality α β       := (h.hasFun α β).hFun
+  instance hasEmbeddedType  (α β : U) : HasEmbeddedType U (α ⟶' β) := (h.hasFun α β).hType
+
+  def Fun (α β : U) : U := (h.hasFun α β).hType.α
   infixr:20 " ⟶ " => HasEmbeddedFunctors.Fun
 
-  instance (α β : U) : CoeFun ⌈α ⟶ β⌉ (λ _ => α → β) := ⟨h.funCoe⟩
+  def toExternal   {α β : U} (F : α ⟶  β) : α ⟶' β := HasEmbeddedType.toExternal   U F
+  def fromExternal {α β : U} (F : α ⟶' β) : α ⟶  β := HasEmbeddedType.fromExternal U F
 
-  structure DefFun (α β : U) (f : α → β) where
-  (F           : α ⟶ β)
-  (eff (a : α) : F a = f a)
+  def funCoe {α β : U} (F : α ⟶ β) : α → β := toExternal F
+  instance coeFun (α β : U) : CoeFun ⌈α ⟶ β⌉ (λ _ => α → β) := ⟨funCoe⟩
 
-  notation:20 α:21 " ⟶[" f:0 "] " β:21 => HasEmbeddedFunctors.DefFun α β f
+  @[simp] theorem fromToExternal {α β : U} (F : α ⟶ β)  : fromExternal (toExternal F) = F := HasEmbeddedType.fromToExternal U F
+  @[simp] theorem toFromExternal {α β : U} (F : α ⟶' β) : toExternal (fromExternal F) = F := HasEmbeddedType.toFromExternal U F
+
+  @[simp] theorem toExternal.eff   {α β : U} (F : α ⟶ β)  (a : α) : (toExternal   F) a = F a := rfl
+  @[simp] theorem fromExternal.eff {α β : U} (F : α ⟶' β) (a : α) : (fromExternal F) a = F a :=
+  congrFun (congrArg HasFunctoriality.BundledFunctor.f (toFromExternal F)) a
+
+  @[reducible] def DefFun (α β : U) (f : α → β) := HasFunctoriality.DefFun α β f
 
   variable {α β : U}
 
   instance coeDefFun (f : α → β) : CoeFun (α ⟶[f] β) (λ _ => α → β) := ⟨λ _ => f⟩
 
-  def toDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β := ⟨F, h⟩
-  def toDefFun               (F : α ⟶ β)    : α ⟶[h.funCoe F] β := toDefFun' F (λ _ => rfl)
-  def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶ β             := F.F
+  def toDefFun               (F : α ⟶ β)    : α ⟶[funCoe F] β := HasFunctoriality.toDefFun (toExternal F)
+  def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶ β           := fromExternal (HasFunctoriality.fromDefFun F)
 
+  def toDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β :=
+  HasFunctoriality.toDefFun' (toExternal F) h
   infix:60 " ◄ " => HasEmbeddedFunctors.toDefFun'
 
-  instance (F : α ⟶ β) : CoeDep ⌈α ⟶ β⌉    F (α ⟶[h.funCoe F] β) := ⟨toDefFun F⟩
-  instance (f : α → β) : Coe    (α ⟶[f] β)   ⌈α ⟶ β⌉             := ⟨fromDefFun⟩
+  instance (F : α ⟶ β) : CoeDep ⌈α ⟶ β⌉    F (α ⟶[funCoe F] β) := ⟨toDefFun F⟩
+  instance (f : α → β) : Coe    (α ⟶[f] β)   ⌈α ⟶ β⌉           := ⟨fromDefFun⟩
 
   def castDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) : α ⟶[f'] β :=
-  ⟨F.F, λ a => Eq.trans (F.eff a) (h a)⟩
+  HasFunctoriality.castDefFun F h
 
   @[simp] theorem fromCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
     fromDefFun (castDefFun F h) = fromDefFun F :=
-  rfl
+  congrArg fromExternal (HasFunctoriality.fromCastDefFun F h)
 
-  @[simp] theorem fromToDefFun             (F : α ⟶ β)    : fromDefFun (toDefFun F) = F := rfl
-  @[simp] theorem toFromDefFun {f : α → β} (F : α ⟶[f] β) : toDefFun' (fromDefFun F) F.eff = F :=
-  match F with | ⟨_, _⟩ => rfl
+  -- Marking this `@[simp]` causes a huge performance hit. I don't understand why.
+  theorem toDefFun'.eff (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) (a : α) : (toDefFun' F h) a = F a :=
+  Eq.symm (h a)
 
   @[simp] theorem toDefFun.eff               (F : α ⟶ β)    (a : α) : (toDefFun   F) a = F a := rfl
-  @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefFun F) a = F a := F.eff a
+  @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefFun F) a = F a :=
+  fromExternal.eff (HasFunctoriality.fromDefFun F) a
 
-  instance hasFunctoriality : HasFunctoriality ⌈α⌉ ⌈β⌉ := ⟨DefFun α β⟩
+  @[simp] theorem fromToDefFun (F : α ⟶ β) : fromDefFun (toDefFun F) = F :=
+  Eq.trans (congrArg fromExternal (HasFunctoriality.fromToDefFun (toExternal F))) (fromToExternal F)
 
-  def toExternal   (F : α ⟶ β)      : ⌈α⌉ ⟶' ⌈β⌉ := HasFunctoriality.fromDefFun (toDefFun F)
-  def fromExternal (F : ⌈α⌉ ⟶' ⌈β⌉) : α ⟶ β      := fromDefFun (HasFunctoriality.toDefFun F)
+  @[simp] theorem fromToDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : fromDefFun (toDefFun' F h) = F :=
+  Eq.trans (congrArg fromExternal (HasFunctoriality.fromToDefFun' (toExternal F) h)) (fromToExternal F)
 
-  @[simp] theorem toExternal.eff   (F : α ⟶ β)      (a : α) : (toExternal   F) a = F a := toDefFun.eff F a
-  @[simp] theorem fromExternal.eff (F : ⌈α⌉ ⟶' ⌈β⌉) (a : α) : (fromExternal F) a = F a := fromDefFun.eff F.F a
-
-  @[simp] theorem fromToExternal (F : α ⟶ β)      : fromExternal (toExternal F) = F := rfl
-  @[simp] theorem toFromExternal (F : ⌈α⌉ ⟶' ⌈β⌉) : toExternal (fromExternal F) = F := sorry -- by "no confusion"
+  -- This is annoying to prove, and we don't need it at the moment.
+  --@[simp] theorem toFromDefFun' {f : α → β} (F : α ⟶[f] β) : toDefFun' (fromDefFun F) (fromDefFun.eff F) = F := sorry
 
 end HasEmbeddedFunctors
 
@@ -205,14 +242,14 @@ namespace HasLinearFunOp
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U]
 
-  instance (α : U) : HasIdFun ⌈α⌉ := ⟨defIdFun α⟩
+  instance (α : U) : HasIdFun α := ⟨defIdFun α⟩
 
   @[reducible] def idFun (α : U) : α ⟶ α := defIdFun α
 
   @[reducible] def appFun {α : U} (a : α) (β : U) : (α ⟶ β) ⟶ β := defAppFun a β
   @[reducible] def appFunFun (α β : U) : α ⟶ (α ⟶ β) ⟶ β := defAppFunFun α β
 
-  instance (α β γ : U) : HasCompFun ⌈α⌉ ⌈β⌉ ⌈γ⌉ :=
+  instance (α β γ : U) : HasCompFun α β γ :=
   ⟨λ F G => HasEmbeddedFunctors.castDefFun (defCompFun (HasEmbeddedFunctors.fromExternal F)
                                                        (HasEmbeddedFunctors.fromExternal G))
                                            (λ _ => by simp)⟩
@@ -236,7 +273,7 @@ namespace HasSubLinearFunOp
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasSubLinearFunOp U]
 
-  instance (α β : U) : HasConstFun ⌈α⌉ ⌈β⌉ := ⟨λ c => defConstFun α c⟩
+  instance (α β : U) : HasConstFun α β := ⟨λ c => defConstFun α c⟩
 
   @[reducible] def constFun (α : U) {β : U} (c : β) : α ⟶ β := defConstFun α c
   @[reducible] def constFunFun (α β : U) : β ⟶ (α ⟶ β) := defConstFunFun α β

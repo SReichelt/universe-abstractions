@@ -1,3 +1,7 @@
+import mathlib4_experiments.Data.Equiv.Basic
+
+
+
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
@@ -75,3 +79,28 @@ namespace Universe
   instance : HasInstances ⌈U⌉ := instInst U
 
 end Universe
+
+
+
+-- A type class on a universe that says that we can find a specific type in it.
+--
+-- We use `Equiv` from mathlib to give the universe implementation a bit of flexibility, but note
+-- that if `v > 1`, the equivalence may contain an equality of types nonetheless, which we avoid in
+-- the rest of the formalization. This equality is not necessarily a problem because in most
+-- implementations, `⌈α⌉` and `α'` will in fact be exactly the same.
+
+class HasEmbeddedType (U : Universe.{u}) (α' : Sort v) : Sort (max (u + 1) v) where
+(α : U)
+(h : ⌈α⌉ ≃ α')
+
+namespace HasEmbeddedType
+
+  variable (U : Universe.{u}) {α' : Sort v} [h : HasEmbeddedType U α']
+
+  def toExternal   (a : h.α) : α'  := h.h.toFun  a
+  def fromExternal (a : α')  : h.α := h.h.invFun a
+
+  @[simp] theorem fromToExternal (a : h.α) : fromExternal U (toExternal   U a) = a := h.h.leftInv a
+  @[simp] theorem toFromExternal (a : α')  : toExternal   U (fromExternal U a) = a := h.h.rightInv a
+
+end HasEmbeddedType
