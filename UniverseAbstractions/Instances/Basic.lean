@@ -1,5 +1,6 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Equivalences
 
 import mathlib4_experiments.CoreExt
 import mathlib4_experiments.Data.Equiv.Basic
@@ -19,14 +20,20 @@ def unit : Universe.{0} := ⟨Unit⟩
 
 namespace unit
 
-  instance hasFunctoriality {U : Universe.{u}} (α : U) (β : unit) : HasFunctoriality.{u, 0, 0} α β :=
+  instance hasExternalFunctor {U : Universe.{u}} (α : U) (β : unit) : HasExternalFunctor.{u, 0, 0} α β :=
   ⟨λ _ => True⟩
 
+  def unitFunctor {U : Universe.{u}} {α : U} {β : unit} : α ⟶' β := ⟨λ _ => trivial, trivial⟩
+
+  @[simp] theorem unitFunctor.unique {U : Universe.{u}} {α : U} {β : unit} (F : α ⟶' β) :
+    F = unitFunctor := match F with
+  | ⟨_, _⟩ => rfl
+
   def funEquiv (α β : unit) : True ≃ (α ⟶' β) :=
-  { toFun    := λ _ => ⟨λ _ => trivial, trivial⟩,
+  { toFun    := λ _ => unitFunctor,
     invFun   := λ _ => trivial,
     leftInv  := λ _ => proofIrrel _ _,
-    rightInv := λ ⟨_, _⟩ => rfl }
+    rightInv := λ _ => by simp }
 
   instance hasEmbeddedFunctorType (α β : unit) : HasEmbeddedType unit (α ⟶' β) :=
   { α := (),
@@ -53,44 +60,41 @@ namespace unit
 
   instance hasFunOp : HasFunOp unit := ⟨⟩
 
---  instance hasExternalEquivalences : HasExternalEquivalences.{0, 0, 0, 0} unit unit := ⟨λ _ _ => True⟩
---
---  @[reducible] def unitEquivalence (α : unit) (β : unit) : α ⟷'' β :=
---  ⟨unitFunctor α β, unitFunctor β α, trivial⟩
---
---  @[simp] theorem unitEquivalenceIsUnique {α : unit} {β : unit} (E : α ⟷'' β) :
---    E = unitEquivalence α β := match E with
---  | ⟨_, _, _⟩ => by simp; exact ⟨rfl, rfl, HEq.rfl⟩
---
---  instance hasIdEquiv   : HasIdEquiv   unit           := ⟨λ _   => trivial⟩
---  instance hasCompEquiv : HasCompEquiv unit unit unit := ⟨λ _ _ => trivial⟩
---  instance hasInvEquiv  : HasInvEquiv  unit unit      := ⟨λ _   => trivial⟩
---
---  def equivEquiv (α β : unit) : True ≃ (α ⟷'' β) :=
---  { toFun    := λ _ => unitEquivalence α β,
---    invFun   := λ _ => trivial,
---    leftInv  := λ _ => proofIrrel _ _,
---    rightInv := λ _ => by simp }
---
---  def equivEmbed (φ : HasExternalEquivalences.equivalenceUniverse unit unit) : TypeEmbedding unit φ :=
---  { α     := UnitType,
---    equiv := equivEquiv φ.α φ.β }
---
---  instance : HasEmbeddedUniverse unit (HasExternalEquivalences.equivalenceUniverse unit unit) :=
---  { embed := equivEmbed }
---
---  instance hasFunctorialExternalEquivalences : HasFunctorialExternalEquivalences unit unit :=
---  { toFunIsFun  := λ _ _ => trivial,
---    invFunIsFun := λ _ _ => trivial }
---
---  instance hasInternalEquivalences : HasInternalEquivalences unit := ⟨⟩
---
---  instance hasEquivOp : HasEquivOp unit :=
---  { compEquivIsFun    := λ _ _   => trivial,
---    compEquivFunIsFun := λ _ _ _ => trivial,
---    invEquivIsFun     := λ _ _   => trivial,
---    invEquivIsEquiv   := λ _ _   => trivial }
---
+  instance hasExternalEquivalence (α β : unit) : HasExternalEquivalence.{0, 0, 0, 0} α β := ⟨λ _ _ => True⟩
+
+  @[reducible] def unitEquivalence {α β : unit} : α ⟷' β :=
+  ⟨unitFunctor, unitFunctor, trivial⟩
+
+  @[simp] theorem unitEquivalence.unique {α β : unit} {E : α ⟷' β} :
+    E = unitEquivalence := match E with
+  | ⟨_, _, _⟩ => by simp; exact HEq.rfl
+
+  def equivEquiv (α β : unit) : True ≃ (α ⟷' β) :=
+  { toFun    := λ _ => unitEquivalence,
+    invFun   := λ _ => trivial,
+    leftInv  := λ _ => proofIrrel _ _,
+    rightInv := λ _ => by simp }
+
+  instance hasEmbeddedEquivType (α β : unit) : HasEmbeddedType unit (α ⟷' β) :=
+  { α := (),
+    h := equivEquiv α β }
+
+  instance hasEmbeddedEquivalence (α β : unit) : HasEmbeddedEquivalence α β := ⟨⟩
+  instance hasEmbeddedEquivalences : HasEmbeddedEquivalences unit := ⟨⟩
+
+  instance hasFunctorialEquivalences : HasFunctorialEquivalences unit :=
+  { defToFunFun  := λ _ _ => trivial,
+    defInvFunFun := λ _ _ => trivial }
+
+  instance hasEquivOp : HasEquivOp unit :=
+  { defIdEquiv         := λ _     => trivial,
+    defCompEquiv       := λ _ _   => trivial,
+    defCompEquivFun    := λ _ _   => trivial,
+    defCompEquivFunFun := λ _ _ _ => trivial,
+    defInvEquiv        := λ _     => trivial,
+    defInvEquivFun     := λ _ _   => trivial,
+    defInvEquivEquiv   := λ _ _   => trivial }
+
 --  @[reducible] def unitProduct (α : unit) (β : unit) : α ⊓'' β :=
 --  ⟨trivial, trivial⟩
 --
@@ -183,7 +187,7 @@ namespace unit
 --
 --    variable {α : Sort u} {V : Universe.{v}} {W : Universe.{w}}
 --             [HasEmbeddedFunctors V] [HasInternalEquivalences V] [HasEmbeddedFunctors W] [HasInternalEquivalences W]
---             [HasUnitEquivalences W] [HasExternalFunctors V W]
+--             [HasUnitEquivalences W] [HasExternalFunctor V W]
 --             (R : GeneralizedRelation α V) (S : GeneralizedRelation α W)
 --             [IsEquivalence R] [IsEquivalence S]
 --             (F : BaseFunctor R S)
@@ -207,14 +211,25 @@ def sort : Universe.{u} := ⟨Sort u⟩
 
 namespace sort
 
-  instance hasFunctoriality {U : Universe.{u}} (α : U) (β : sort.{v}) : HasFunctoriality.{u, v, 0} α β :=
+  instance hasExternalFunctor {U : Universe.{u}} (α : U) (β : sort.{v}) : HasExternalFunctor.{u, v, 0} α β :=
   ⟨λ _ => True⟩
 
+  def toExtFun   {U : Universe.{u}} {α : U} {β : sort.{v}} (f : α →  β) : α ⟶' β := ⟨f, trivial⟩
+  def fromExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (F : α ⟶' β) : α →  β := F.f
+
+  @[simp] theorem fromToExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (f : α → β) :
+    fromExtFun (toExtFun f) = f :=
+  rfl
+
+  @[simp] theorem toFromExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (F : α ⟶' β) :
+    toExtFun (fromExtFun F) = F := match F with
+  | ⟨_, _⟩ => rfl
+
   def funEquiv (α β : sort.{u}) : (α → β) ≃ (α ⟶' β) :=
-  { toFun    := λ f => ⟨f, trivial⟩,
-    invFun   := λ F => F.f,
-    leftInv  := λ f => rfl,
-    rightInv := λ ⟨_, _⟩ => rfl }
+  { toFun    := toExtFun     (U := sort.{u}),
+    invFun   := fromExtFun   (U := sort.{u}),
+    leftInv  := fromToExtFun (U := sort.{u}),
+    rightInv := toFromExtFun (U := sort.{u}) }
 
   instance hasEmbeddedFunctorType (α β : sort.{u}) : HasEmbeddedType sort.{u} (α ⟶' β) :=
   { α := α → β,
@@ -243,53 +258,50 @@ namespace sort
 
 end sort
 
---namespace prop
---
---  instance hasExternalEquivalences : HasExternalEquivalences prop prop := ⟨λ _ _ => True⟩
---
---  @[reducible] def toBundledEquivalence {p q : prop} (h : p ↔ q) : p ⟷'' q :=
---  ⟨sort.toBundledFunctor h.mp, sort.toBundledFunctor h.mpr, trivial⟩
---
---  @[reducible] def fromBundledEquivalence {p q : prop} (E : p ⟷'' q) : p ↔ q :=
---  ⟨E.toFun.f, E.invFun.f⟩
---
---  theorem fromToBundledEquivalence {p q : prop} (h : p ↔ q) :
---    fromBundledEquivalence (toBundledEquivalence h) = h :=
---  rfl
---
---  theorem toFromBundledEquivalence {p q : prop} (E : p ⟷'' q) :
---    toBundledEquivalence (fromBundledEquivalence E) = E := match E with
---  | ⟨toFun, invFun, _⟩ => by simp; exact ⟨sort.toFromBundledFunctor toFun, sort.toFromBundledFunctor invFun, HEq.rfl⟩
---
---  instance hasIdEquiv   : HasIdEquiv   prop           := ⟨λ _   => trivial⟩
---  instance hasCompEquiv : HasCompEquiv prop prop prop := ⟨λ _ _ => trivial⟩
---  instance hasInvEquiv  : HasInvEquiv  prop prop      := ⟨λ _   => trivial⟩
---
---  def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷'' q) :=
---  { toFun    := toBundledEquivalence,
---    invFun   := fromBundledEquivalence,
---    leftInv  := fromToBundledEquivalence,
---    rightInv := toFromBundledEquivalence }
---
---  def equivEmbed (φ : HasExternalEquivalences.equivalenceUniverse prop prop) : TypeEmbedding prop φ :=
---  { α     := φ.α ↔ φ.β,
---    equiv := equivEquiv φ.α φ.β }
---
---  instance : HasEmbeddedUniverse prop (HasExternalEquivalences.equivalenceUniverse prop prop) :=
---  { embed := equivEmbed }
---
---  instance hasFunctorialExternalEquivalences : HasFunctorialExternalEquivalences prop prop :=
---  { toFunIsFun  := λ _ _ => trivial,
---    invFunIsFun := λ _ _ => trivial }
---
---  instance hasInternalEquivalences : HasInternalEquivalences prop := ⟨⟩
---
---  instance hasEquivOp : HasEquivOp prop :=
---  { compEquivIsFun    := λ _ _   => trivial,
---    compEquivFunIsFun := λ _ _ _ => trivial,
---    invEquivIsFun     := λ _ _   => trivial,
---    invEquivIsEquiv   := λ _ _   => trivial }
---
+namespace prop
+
+  instance hasExternalEquivalence (p q : prop) : HasExternalEquivalence p q := ⟨λ _ _ => True⟩
+
+  @[reducible] def toExtEquiv {p q : prop} (h : p ↔ q) : p ⟷' q :=
+  ⟨sort.toExtFun h.mp, sort.toExtFun h.mpr, trivial⟩
+
+  @[reducible] def fromExtEquiv {p q : prop} (E : p ⟷' q) : p ↔ q :=
+  ⟨E.toFun.f, E.invFun.f⟩
+
+  @[simp] theorem fromToExtEquiv {p q : prop} (h : p ↔ q) :
+    fromExtEquiv (toExtEquiv h) = h :=
+  rfl
+
+  @[simp] theorem toFromExtEquiv {p q : prop} (E : p ⟷' q) :
+    toExtEquiv (fromExtEquiv E) = E := match E with
+  | ⟨toFun, invFun, _⟩ => by simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun, HEq.rfl⟩
+
+  def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
+  { toFun    := toExtEquiv,
+    invFun   := fromExtEquiv,
+    leftInv  := fromToExtEquiv,
+    rightInv := toFromExtEquiv }
+
+  instance hasEmbeddedEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
+  { α := p ↔ q,
+    h := equivEquiv p q }
+
+  instance hasEmbeddedEquivalence (p q : prop) : HasEmbeddedEquivalence p q := ⟨⟩
+  instance hasEmbeddedEquivalences : HasEmbeddedEquivalences prop := ⟨⟩
+
+  instance hasFunctorialEquivalences : HasFunctorialEquivalences prop :=
+  { defToFunFun  := λ _ _ => trivial,
+    defInvFunFun := λ _ _ => trivial }
+
+  instance hasEquivOp : HasEquivOp prop :=
+  { defIdEquiv         := λ _     => trivial,
+    defCompEquiv       := λ _ _   => trivial,
+    defCompEquivFun    := λ _ _   => trivial,
+    defCompEquivFunFun := λ _ _ _ => trivial,
+    defInvEquiv        := λ _     => trivial,
+    defInvEquivFun     := λ _ _   => trivial,
+    defInvEquivEquiv   := λ _ _   => trivial }
+
 --  def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓'' q) :=
 --  { toFun    := λ h => ⟨h.left, h.right⟩,
 --    invFun   := λ P => ⟨P.fst, P.snd⟩,
@@ -366,7 +378,7 @@ end sort
 --  section NaturalTransformations
 --
 --    variable {α : Sort u} {β : Sort v} {V : Universe.{v}}
---             [HasEmbeddedFunctors V] [HasExternalFunctors V prop]
+--             [HasEmbeddedFunctors V] [HasExternalFunctor V prop]
 --             (R : GeneralizedRelation α V) (S : GeneralizedRelation β prop) [HasTrans S]
 --             {mF mG : α → β} (F : MappedBaseFunctor R S mF) (G : MappedBaseFunctor R S mG)
 --
@@ -384,79 +396,81 @@ end sort
 --
 --  end NaturalTransformations
 --
---  --instance hasNat {U₁ U₂ V : Universe} [HasExternalFunctors U₁ U₂] [HasExternalFunctors V prop] :
+--  --instance hasNat {U₁ U₂ V : Universe} [HasExternalFunctor U₁ U₂] [HasExternalFunctor V prop] :
 --  --  HasNaturalQuantification U₁ U₂ V prop :=
 --  --{ hasNat := λ {α β} R S {h mF mG} F G => hasIntNat R S F G }
 --
 --  instance hasInstanceIsomorphisms : HasInstanceIsomorphisms prop :=
 --  { equivIsIso := λ p => unit.isIsomorphismRelation (unit.Rel p) }
---
---end prop
---
---namespace type
---
---  class IsEquiv {α β : type} (toFun : α ⟶'' β) (invFun : β ⟶'' α) where
---  (leftInv  : ∀ a, invFun (toFun a) = a)
---  (rightInv : ∀ b, toFun (invFun b) = b)
---
---  instance hasExternalEquivalences : HasExternalEquivalences type type := ⟨IsEquiv⟩
---
---  @[reducible] def isEquivalence {α β : type} (e : Equiv α β) :
---    IsEquiv (sort.toBundledFunctor e.toFun) (sort.toBundledFunctor e.invFun) :=
---  ⟨e.leftInv, e.rightInv⟩
---
---  theorem isEquivalenceIsUnique {α β : type} {e : Equiv α β} (h : IsEquiv (sort.toBundledFunctor e.toFun) (sort.toBundledFunctor e.invFun)) :
---    h = isEquivalence e := match h with
---  | ⟨_, _⟩ => sorry -- by proof irrelevance
---
---  @[reducible] def invIsEquivalence {α β : type} {toFun : α ⟶'' β} {invFun : β ⟶'' α} (h : IsEquiv toFun invFun) :
---    IsEquiv invFun toFun :=
---  ⟨h.rightInv, h.leftInv⟩
---
---  @[reducible] def toBundledEquivalence {α β : type} (e : Equiv α β) : α ⟷'' β :=
---  ⟨sort.toBundledFunctor e.toFun, sort.toBundledFunctor e.invFun, isEquivalence e⟩
---
---  @[reducible] def fromBundledEquivalence {α β : type} (E : α ⟷'' β) : Equiv α β :=
---  ⟨E.toFun.f, E.invFun.f, E.isEquiv.leftInv, E.isEquiv.rightInv⟩
---
---  theorem fromToBundledEquivalence {α β : type} (e : Equiv α β) :
---    fromBundledEquivalence (toBundledEquivalence e) = e := match e with
---  | ⟨_, _, _, _⟩ => rfl
---
---  theorem toFromBundledEquivalence {α β : type} (E : α ⟷'' β) :
---    toBundledEquivalence (fromBundledEquivalence E) = E := match E with
---  | ⟨toFun, invFun, _⟩ => by simp; exact ⟨sort.toFromBundledFunctor toFun, sort.toFromBundledFunctor invFun,
---                                          sorry⟩ -- by `isEquivalenceIsUnique`
---
---  instance hasIdEquiv   : HasIdEquiv   type           := ⟨λ α   => isEquivalence (Equiv.refl α)⟩
---  instance hasCompEquiv : HasCompEquiv type type type := ⟨λ E F => isEquivalence (Equiv.trans (fromBundledEquivalence E) (fromBundledEquivalence F))⟩
---  instance hasInvEquiv  : HasInvEquiv  type type      := ⟨λ E   => invIsEquivalence E.isEquiv⟩
---
---  def equivEquiv (α β : type) : Equiv α β ≃ (α ⟷'' β) :=
---  { toFun    := toBundledEquivalence,
---    invFun   := fromBundledEquivalence,
---    leftInv  := fromToBundledEquivalence,
---    rightInv := toFromBundledEquivalence }
---
---  def equivEmbed (φ : HasExternalEquivalences.equivalenceUniverse type type) : TypeEmbedding type φ :=
---  { α     := Equiv φ.α φ.β,
---    equiv := equivEquiv φ.α φ.β }
---
---  instance : HasEmbeddedUniverse type (HasExternalEquivalences.equivalenceUniverse type type) :=
---  { embed := equivEmbed }
---
---  instance hasFunctorialExternalEquivalences : HasFunctorialExternalEquivalences type type :=
---  { toFunIsFun  := λ _ _ => trivial,
---    invFunIsFun := λ _ _ => trivial }
---
---  instance hasInternalEquivalences : HasInternalEquivalences type := ⟨⟩
---
---  instance hasEquivOp : HasEquivOp type :=
---  { compEquivIsFun    := λ _ _   => ⟨⟩,
---    compEquivFunIsFun := λ _ _ _ => ⟨⟩,
---    invEquivIsFun     := λ _ _   => ⟨⟩,
---    invEquivIsEquiv   := λ α β   => ⟨@Equiv.symm_symm α β, @Equiv.symm_symm β α⟩ }
---
+
+end prop
+
+namespace type
+
+  class DefEquiv {α β : type} (toFun : α ⟶' β) (invFun : β ⟶' α) : Prop where
+  (leftInv  : ∀ a, invFun (toFun a) = a)
+  (rightInv : ∀ b, toFun (invFun b) = b)
+
+  instance hasExternalEquivalence (α β : type) : HasExternalEquivalence α β := ⟨DefEquiv⟩
+
+  @[reducible] def toDefEquiv {α β : type} (e : ⌈α⌉ ≃ ⌈β⌉) : α ⟷'[sort.toExtFun e.toFun, sort.toExtFun e.invFun] β :=
+  ⟨e.leftInv, e.rightInv⟩
+
+  theorem defEquiv.unique {α β : type} {toFun : α ⟶' β} {invFun : β ⟶' α} (h₁ h₂ : α ⟷'[toFun,invFun] β) :
+    h₁ = h₂ :=
+  proofIrrel _ _
+
+  theorem defEquiv.unique' {α β : type} {toFun₁ toFun₂ : α ⟶' β} {invFun₁ invFun₂ : β ⟶' α}
+                           (hToFun : toFun₁ = toFun₂) (hInvFun : invFun₁ = invFun₂)
+                           (h₁ : α ⟷'[toFun₁,invFun₁] β) (h₂ : α ⟷'[toFun₂,invFun₂] β) :
+    h₁ ≅ h₂ :=
+  heq_of_eqRec_eq (hToFun ▸ hInvFun ▸ rfl) (proofIrrel _ _)
+
+  @[reducible] def invDefEquiv {α β : type} {toFun : α ⟶' β} {invFun : β ⟶' α} (h : α ⟷'[toFun,invFun] β) :
+    β ⟷'[invFun,toFun] α :=
+  ⟨h.rightInv, h.leftInv⟩
+
+  @[reducible] def toExtEquiv {α β : type} (e : Equiv α β) : α ⟷' β :=
+  ⟨sort.toExtFun e.toFun, sort.toExtFun e.invFun, toDefEquiv e⟩
+
+  @[reducible] def fromExtEquiv {α β : type} (E : α ⟷' β) : Equiv α β :=
+  ⟨E.toFun.f, E.invFun.f, E.E.leftInv, E.E.rightInv⟩
+
+  @[simp] theorem fromToExtEquiv {α β : type} (e : Equiv α β) :
+    fromExtEquiv (toExtEquiv e) = e := match e with
+  | ⟨_, _, _, _⟩ => rfl
+
+  @[simp] theorem toFromExtEquiv {α β : type} (E : α ⟷' β) :
+    toExtEquiv (fromExtEquiv E) = E := match E with
+  | ⟨toFun, invFun, _⟩ => by simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun,
+                                          defEquiv.unique' (sort.toFromExtFun toFun) (sort.toFromExtFun invFun) _ _⟩
+
+  def equivEquiv (α β : type) : Equiv α β ≃ (α ⟷' β) :=
+  { toFun    := toExtEquiv,
+    invFun   := fromExtEquiv,
+    leftInv  := fromToExtEquiv,
+    rightInv := toFromExtEquiv }
+
+  instance hasEmbeddedEquivType (α β : type) : HasEmbeddedType type (α ⟷' β) :=
+  { α := Equiv α β,
+    h := equivEquiv α β }
+
+  instance hasEmbeddedEquivalence (α β : type) : HasEmbeddedEquivalence α β := ⟨⟩
+  instance hasEmbeddedEquivalences : HasEmbeddedEquivalences type := ⟨⟩
+
+  instance hasFunctorialEquivalences : HasFunctorialEquivalences type :=
+  { defToFunFun  := λ _ _ => trivial,
+    defInvFunFun := λ _ _ => trivial }
+
+  instance hasEquivOp : HasEquivOp type :=
+  { defIdEquiv         := λ α     => toDefEquiv (Equiv.refl α),
+    defCompEquiv       := λ E F   => toDefEquiv (Equiv.trans E F),
+    defCompEquivFun    := λ _ _   => trivial,
+    defCompEquivFunFun := λ _ _ _ => trivial,
+    defInvEquiv        := λ E     => toDefEquiv (Equiv.symm E),
+    defInvEquivFun     := λ _ _   => trivial,
+    defInvEquivEquiv   := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
+
 --  def prodEquiv (α β : type) : Prod α β ≃ (α ⊓'' β) :=
 --  { toFun    := λ p => ⟨p.fst, p.snd⟩,
 --    invFun   := λ P => ⟨P.fst, P.snd⟩,
@@ -552,5 +566,5 @@ end sort
 --
 --  instance hasInstanceIsomorphisms : HasInstanceIsomorphisms type :=
 --  { equivIsIso := λ α => unit.isIsomorphismRelation (V := prop) (@Eq α) }
---
---end type
+
+end type

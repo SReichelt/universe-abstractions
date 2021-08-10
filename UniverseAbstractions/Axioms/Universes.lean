@@ -95,6 +95,8 @@ class HasEmbeddedType (U : Universe.{u}) (α' : Sort v) : Sort (max (u + 1) v) w
 
 namespace HasEmbeddedType
 
+  def EmbeddedType (U : Universe.{u}) (α' : Sort v) [h : HasEmbeddedType U α'] := h.α
+
   variable (U : Universe.{u}) {α' : Sort v} [h : HasEmbeddedType U α']
 
   def toExternal   (a : h.α) : α'  := h.h.toFun  a
