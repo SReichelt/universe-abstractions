@@ -1,5 +1,7 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Singletons
+import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 
 import mathlib4_experiments.CoreExt
@@ -59,6 +61,12 @@ namespace unit
     defDupFunFun := λ _ _ => trivial }
 
   instance hasFunOp : HasFunOp unit := ⟨⟩
+
+  instance hasEmbeddedTopType : HasEmbeddedType unit True :=
+  { α := (),
+    h := Equiv.refl True }
+
+  instance hasEmbeddedTop : HasEmbeddedTop unit := ⟨⟩
 
   @[reducible] def unitProduct {α β : unit} : α ⊓' β :=
   ⟨trivial, trivial⟩
@@ -139,16 +147,6 @@ namespace unit
   instance hasFullFunProdEquiv : HasFullFunProdEquiv unit :=
   { defProdDistrEquiv := λ _ _ _ => trivial }
 
---  instance hasExternalUnitType : HasExternalUnitType unit :=
---  { unitIntroIsFun := λ _ => trivial }
---
---  def unitEmbed (φ : unit) : TypeEmbedding unit φ :=
---  { α     := UnitType,
---    equiv := Equiv.refl True }
---
---  instance hasInternalUnitType : HasInternalUnitType unit :=
---  { embed := unitEmbed }
---
 --  def Rel (α : Sort u) : GeneralizedRelation α unit := λ _ _ => UnitType
 --
 --  instance Rel.isEquivalence (α : Sort u) : IsEquivalence (Rel α) :=
@@ -274,6 +272,24 @@ end sort
 
 namespace prop
 
+  instance hasEmbeddedTopType : HasEmbeddedType prop True :=
+  { α := True,
+    h := Equiv.refl True }
+
+  instance hasEmbeddedTop : HasEmbeddedTop prop := ⟨⟩
+
+  instance hasEmbeddedBotType : HasEmbeddedType prop False :=
+  { α := False,
+    h := Equiv.refl False }
+
+  instance hasEmbeddedBot : HasEmbeddedBot prop := ⟨⟩
+
+  instance hasFunctorialBot : HasFunctorialBot prop :=
+  { defElimFun := λ _ => trivial }
+
+  instance hasClassicalLogic : HasClassicalLogic prop :=
+  { byContradiction := @Classical.byContradiction }
+
   def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
   { toFun    := λ h => ⟨h.left, h.right⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
@@ -354,33 +370,6 @@ namespace prop
   instance hasFullFunProdEquiv : HasFullFunProdEquiv prop :=
   { defProdDistrEquiv := λ _ _ _ => trivial }
 
---  instance hasExternalEmptyType : HasExternalEmptyType prop :=
---  { emptyElimIsFun := λ _ => trivial }
---
---  def emptyEmbed (φ : emptyTypeUniverse) : TypeEmbedding prop φ :=
---  { α     := False,
---    equiv := Equiv.refl False }
---
---  instance : HasEmbeddedUniverse prop emptyTypeUniverse :=
---  { embed := emptyEmbed }
---
---  instance hasInternalEmptyType : HasInternalEmptyType prop := ⟨⟩
---
---  instance hasClassicalLogic : HasClassicalLogic prop :=
---  { byContradiction := @Classical.byContradiction }
---
---  instance hasExternalUnitType : HasExternalUnitType prop :=
---  { unitIntroIsFun := λ _ => trivial }
---
---  def unitEmbed (φ : unit) : TypeEmbedding prop φ :=
---  { α     := True,
---    equiv := Equiv.refl True }
---
---  instance : HasEmbeddedUniverse prop unit :=
---  { embed := unitEmbed }
---
---  instance hasInternalUnitType : HasInternalUnitType prop := ⟨⟩
---
 --  -- Every equivalence relation can trivially be converted to an instance of `IsEquivalence`.
 --  instance relEquiv {α : Sort u} {R : GeneralizedRelation α prop} (e : Equivalence R) : IsEquivalence R :=
 --  { refl  := e.refl,
@@ -444,10 +433,37 @@ by simp
 
 namespace type
 
+  def topEquiv : Unit ≃ True :=
+  { toFun    := λ _  => trivial,
+    invFun   := λ _  => (),
+    leftInv  := λ () => rfl,
+    rightInv := λ _  => proofIrrel _ _ }
+
+  instance hasEmbeddedTopType : HasEmbeddedType type True :=
+  { α := Unit,
+    h := topEquiv }
+
+  def botEquiv : Empty ≃ False :=
+  { toFun    := λ e => (by induction e),
+    invFun   := False.elim,
+    leftInv  := λ e => (by induction e),
+    rightInv := λ _ => proofIrrel _ _ }
+
+  instance hasEmbeddedTop : HasEmbeddedTop type := ⟨⟩
+
+  instance hasEmbeddedBotType : HasEmbeddedType type False :=
+  { α := Empty,
+    h := botEquiv }
+
+  instance hasEmbeddedBot : HasEmbeddedBot type := ⟨⟩
+
+  instance hasFunctorialBot : HasFunctorialBot type :=
+  { defElimFun := λ _ => trivial }
+
   def prodEquiv (α β : type) : Prod α β ≃ (α ⊓' β) :=
   { toFun    := λ p => ⟨p.fst, p.snd⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ ⟨_, _⟩ => rfl,
+    leftInv  := λ (_, _) => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
   instance hasEmbeddedProductType (α β : type) : HasEmbeddedType type (α ⊓' β) :=
@@ -540,17 +556,15 @@ namespace type
     defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
                                           λ _ => funext (λ _ => funext (λ _ => rfl))⟩,
     defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
-                                          λ _ => funext (λ ⟨_, _⟩ => rfl)⟩,
+                                          λ _ => funext (λ (_, _) => rfl)⟩,
     defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
                                           λ p => prodExt (e.rightInv p.fst) rfl⟩,
     defProdFstEquivFun     := λ _ _ _ => trivial,
     defProdSndEquiv        := λ e _   => ⟨λ p => prodExt rfl (e.leftInv  p.snd),
                                           λ p => prodExt rfl (e.rightInv p.snd)⟩,
     defProdSndEquivFun     := λ _ _ _ => trivial,
-    defProdCommEquiv       := λ _ _   => ⟨λ _ => prodExt rfl rfl,
-                                          λ _ => prodExt rfl rfl⟩,
-    defProdAssocEquiv      := λ _ _ _ => ⟨λ _ => prodExt (prodExt rfl rfl) rfl,
-                                          λ _ => prodExt rfl (prodExt rfl rfl)⟩,
+    defProdCommEquiv       := λ _ _   => ⟨λ (_, _) => rfl, λ (_, _) => rfl⟩,
+    defProdAssocEquiv      := λ _ _ _ => ⟨λ ((_, _), _) => rfl, λ (_, (_, _)) => rfl⟩,
     defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
     defCompEquivEquivFun   := λ _ _ _ => trivial,
     defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
@@ -559,42 +573,6 @@ namespace type
   { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext (λ _ => prodExt rfl rfl),
                                      λ _ => prodExt (funext (λ _ => rfl)) (funext (λ _ => rfl))⟩, }
 
---  instance hasExternalEmptyType : HasExternalEmptyType type :=
---  { emptyElimIsFun := λ _ => trivial }
---
---  def emptyEquiv : Empty ≃ False :=
---  { toFun    := λ e => (by induction e),
---    invFun   := False.elim,
---    leftInv  := λ e => (by induction e),
---    rightInv := λ _ => proofIrrel _ _ }
---
---  def emptyEmbed (φ : emptyTypeUniverse) : TypeEmbedding type φ :=
---  { α     := Empty,
---    equiv := emptyEquiv }
---
---  instance : HasEmbeddedUniverse type emptyTypeUniverse :=
---  { embed := emptyEmbed }
---
---  instance hasInternalEmptyType : HasInternalEmptyType type := ⟨⟩
---
---  instance hasExternalUnitType : HasExternalUnitType type :=
---  { unitIntroIsFun := λ _ => trivial }
---
---  def unitEquiv : Unit ≃ True :=
---  { toFun    := λ _  => trivial,
---    invFun   := λ _  => Unit.unit,
---    leftInv  := λ ⟨⟩ => rfl,
---    rightInv := λ _  => proofIrrel _ _ }
---
---  def unitEmbed (φ : unit) : TypeEmbedding type φ :=
---  { α     := Unit,
---    equiv := unitEquiv }
---
---  instance : HasEmbeddedUniverse type unit :=
---  { embed := unitEmbed }
---
---  instance hasInternalUnitType : HasInternalUnitType type := ⟨⟩
---
 --  instance hasGeneralizedProperties : HasGeneralizedProperties.{u, 0, 0} sort.{u} prop :=
 --  { IsProp      := λ _   => True,
 --    constIsProp := λ _ _ => trivial }
