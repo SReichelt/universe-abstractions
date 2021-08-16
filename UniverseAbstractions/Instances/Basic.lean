@@ -26,8 +26,8 @@ namespace unit
   def unitFunctor {U : Universe.{u}} {α : U} {β : unit} : α ⟶' β := ⟨λ _ => trivial, trivial⟩
 
   @[simp] theorem unitFunctor.unique {U : Universe.{u}} {α : U} {β : unit} (F : α ⟶' β) :
-    F = unitFunctor := match F with
-  | ⟨_, _⟩ => rfl
+    F = unitFunctor :=
+  by induction F; rfl
 
   def funEquiv (α β : unit) : True ≃ (α ⟶' β) :=
   { toFun    := λ _ => unitFunctor,
@@ -60,14 +60,40 @@ namespace unit
 
   instance hasFunOp : HasFunOp unit := ⟨⟩
 
+  @[reducible] def unitProduct {α β : unit} : α ⊓' β :=
+  ⟨trivial, trivial⟩
+
+  @[simp] theorem unitProductIsUnique {α β : unit} (P : α ⊓' β) :
+    P = unitProduct :=
+  by induction P; rfl
+
+  def prodEquiv (α β : unit) : True ≃ (α ⊓' β) :=
+  { toFun    := λ _ => unitProduct,
+    invFun   := λ _ => trivial,
+    leftInv  := λ _ => proofIrrel _ _,
+    rightInv := λ _ => by simp }
+
+  instance hasEmbeddedProductType (α β : unit) : HasEmbeddedType unit (α ⊓' β) :=
+  { α := (),
+    h := prodEquiv α β }
+
+  instance hasEmbeddedProduct (α β : unit) : HasEmbeddedProduct α β := ⟨⟩
+  instance hasEmbeddedProducts : HasEmbeddedProducts unit := ⟨⟩
+
+  instance hasFunctorialProducts : HasFunctorialProducts unit :=
+  { defIntroFun    := λ _ _   => trivial,
+    defIntroFunFun := λ _ _   => trivial,
+    defElimFun     := λ _     => trivial,
+    defElimFunFun  := λ _ _ _ => trivial }
+
   instance hasExternalEquivalence (α β : unit) : HasExternalEquivalence.{0, 0, 0, 0} α β := ⟨λ _ _ => True⟩
 
   @[reducible] def unitEquivalence {α β : unit} : α ⟷' β :=
   ⟨unitFunctor, unitFunctor, trivial⟩
 
   @[simp] theorem unitEquivalence.unique {α β : unit} {E : α ⟷' β} :
-    E = unitEquivalence := match E with
-  | ⟨_, _, _⟩ => by simp; exact HEq.rfl
+    E = unitEquivalence :=
+  by induction E; simp; exact HEq.rfl
 
   def equivEquiv (α β : unit) : True ≃ (α ⟷' β) :=
   { toFun    := λ _ => unitEquivalence,
@@ -83,8 +109,7 @@ namespace unit
   instance hasEmbeddedEquivalences : HasEmbeddedEquivalences unit := ⟨⟩
 
   instance hasFunctorialEquivalences : HasFunctorialEquivalences unit :=
-  { defToFunFun  := λ _ _ => trivial,
-    defInvFunFun := λ _ _ => trivial }
+  { defElimFun  := λ _ _ => trivial }
 
   instance hasEquivOp : HasEquivOp unit :=
   { defIdEquiv         := λ _     => trivial,
@@ -92,39 +117,28 @@ namespace unit
     defCompEquivFun    := λ _ _   => trivial,
     defCompEquivFunFun := λ _ _ _ => trivial,
     defInvEquiv        := λ _     => trivial,
-    defInvEquivFun     := λ _ _   => trivial,
-    defInvEquivEquiv   := λ _ _   => trivial }
+    defInvEquivFun     := λ _ _   => trivial }
 
---  @[reducible] def unitProduct (α : unit) (β : unit) : α ⊓'' β :=
---  ⟨trivial, trivial⟩
---
---  @[simp] theorem unitProductIsUnique {α : unit} {β : unit} (P : α ⊓'' β) :
---    P = unitProduct α β := match P with
---  | ⟨_, _⟩ => rfl
---
---  def prodEquiv (α β : unit) : True ≃ (α ⊓'' β) :=
---  { toFun    := λ _ => unitProduct α β,
---    invFun   := λ _ => trivial,
---    leftInv  := λ _ => proofIrrel _ _,
---    rightInv := λ _ => by simp }
---
---  def prodEmbed (φ : HasExternalProducts.productUniverse unit unit) : TypeEmbedding unit φ :=
---  { α     := UnitType,
---    equiv := prodEquiv φ.α φ.β }
---
---  instance : HasEmbeddedUniverse unit (HasExternalProducts.productUniverse unit unit) :=
---  { embed := prodEmbed }
---
---  instance hasFunctorialExternalProducts : HasFunctorialExternalProducts unit unit :=
---  { fstIsFun         := λ _ _     => trivial,
---    sndIsFun         := λ _ _     => trivial,
---    introFstIsFun    := λ _ {_} _ => trivial,
---    introSndIsFun    := λ {_} _ _ => trivial }
---
---  instance hasInternalProducts : HasInternalProducts unit :=
---  { introFstFunIsFun := λ _ _ => trivial,
---    introSndFunIsFun := λ _ _ => trivial }
---
+  instance hasLinearFunProdEquiv : HasLinearFunProdEquiv unit :=
+  { defFunDomainEquiv      := λ _ _   => trivial,
+    defFunDomainEquivFun   := λ _ _ _ => trivial,
+    defFunCodomainEquiv    := λ _ _   => trivial,
+    defFunCodomainEquivFun := λ _ _ _ => trivial,
+    defSwapFunFunEquiv     := λ _ _ _ => trivial,
+    defProdElimFunEquiv    := λ _ _ _ => trivial,
+    defProdFstEquiv        := λ _ _   => trivial,
+    defProdFstEquivFun     := λ _ _ _ => trivial,
+    defProdSndEquiv        := λ _ _   => trivial,
+    defProdSndEquivFun     := λ _ _ _ => trivial,
+    defProdCommEquiv       := λ _ _   => trivial,
+    defProdAssocEquiv      := λ _ _ _ => trivial,
+    defCompEquivEquiv      := λ _ _   => trivial,
+    defCompEquivEquivFun   := λ _ _ _ => trivial,
+    defInvEquivEquiv       := λ _ _   => trivial }
+
+  instance hasFullFunProdEquiv : HasFullFunProdEquiv unit :=
+  { defProdDistrEquiv := λ _ _ _ => trivial }
+
 --  instance hasExternalUnitType : HasExternalUnitType unit :=
 --  { unitIntroIsFun := λ _ => trivial }
 --
@@ -222,8 +236,8 @@ namespace sort
   rfl
 
   @[simp] theorem toFromExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (F : α ⟶' β) :
-    toExtFun (fromExtFun F) = F := match F with
-  | ⟨_, _⟩ => rfl
+    toExtFun (fromExtFun F) = F :=
+  by induction F; rfl
 
   def funEquiv (α β : sort.{u}) : (α → β) ≃ (α ⟶' β) :=
   { toFun    := toExtFun     (U := sort.{u}),
@@ -260,6 +274,25 @@ end sort
 
 namespace prop
 
+  def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
+  { toFun    := λ h => ⟨h.left, h.right⟩,
+    invFun   := λ P => ⟨P.fst, P.snd⟩,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
+  { α := p ∧ q,
+    h := prodEquiv p q }
+
+  instance hasEmbeddedProduct (p q : prop) : HasEmbeddedProduct p q := ⟨⟩
+  instance hasEmbeddedProducts : HasEmbeddedProducts prop := ⟨⟩
+
+  instance hasFunctorialProducts : HasFunctorialProducts prop :=
+  { defIntroFun    := λ _ _   => trivial,
+    defIntroFunFun := λ _ _   => trivial,
+    defElimFun     := λ _     => trivial,
+    defElimFunFun  := λ _ _ _ => trivial }
+
   instance hasExternalEquivalence (p q : prop) : HasExternalEquivalence p q := ⟨λ _ _ => True⟩
 
   @[reducible] def toExtEquiv {p q : prop} (h : p ↔ q) : p ⟷' q :=
@@ -273,8 +306,9 @@ namespace prop
   rfl
 
   @[simp] theorem toFromExtEquiv {p q : prop} (E : p ⟷' q) :
-    toExtEquiv (fromExtEquiv E) = E := match E with
-  | ⟨toFun, invFun, _⟩ => by simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun, HEq.rfl⟩
+    toExtEquiv (fromExtEquiv E) = E :=
+  by match E with
+     | ⟨toFun, invFun, _⟩ => simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun, HEq.rfl⟩
 
   def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
   { toFun    := toExtEquiv,
@@ -290,8 +324,7 @@ namespace prop
   instance hasEmbeddedEquivalences : HasEmbeddedEquivalences prop := ⟨⟩
 
   instance hasFunctorialEquivalences : HasFunctorialEquivalences prop :=
-  { defToFunFun  := λ _ _ => trivial,
-    defInvFunFun := λ _ _ => trivial }
+  { defElimFun := λ _ _ => trivial }
 
   instance hasEquivOp : HasEquivOp prop :=
   { defIdEquiv         := λ _     => trivial,
@@ -299,32 +332,28 @@ namespace prop
     defCompEquivFun    := λ _ _   => trivial,
     defCompEquivFunFun := λ _ _ _ => trivial,
     defInvEquiv        := λ _     => trivial,
-    defInvEquivFun     := λ _ _   => trivial,
-    defInvEquivEquiv   := λ _ _   => trivial }
+    defInvEquivFun     := λ _ _   => trivial }
 
---  def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓'' q) :=
---  { toFun    := λ h => ⟨h.left, h.right⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  def prodEmbed (PU : HasExternalProducts.productUniverse prop prop) : TypeEmbedding prop PU :=
---  { α     := PU.α ∧ PU.β,
---    equiv := prodEquiv PU.α PU.β }
---
---  instance : HasEmbeddedUniverse prop (HasExternalProducts.productUniverse prop prop) :=
---  { embed := prodEmbed }
---
---  instance hasFunctorialExternalProducts : HasFunctorialExternalProducts prop prop :=
---  { fstIsFun         := λ _ _     => trivial,
---    sndIsFun         := λ _ _     => trivial,
---    introFstIsFun    := λ _ {_} _ => trivial,
---    introSndIsFun    := λ {_} _ _ => trivial }
---
---  instance hasInternalProducts : HasInternalProducts prop :=
---  { introFstFunIsFun := λ _ _ => trivial,
---    introSndFunIsFun := λ _ _ => trivial }
---
+  instance hasLinearFunProdEquiv : HasLinearFunProdEquiv prop :=
+  { defFunDomainEquiv      := λ _ _   => trivial,
+    defFunDomainEquivFun   := λ _ _ _ => trivial,
+    defFunCodomainEquiv    := λ _ _   => trivial,
+    defFunCodomainEquivFun := λ _ _ _ => trivial,
+    defSwapFunFunEquiv     := λ _ _ _ => trivial,
+    defProdElimFunEquiv    := λ _ _ _ => trivial,
+    defProdFstEquiv        := λ _ _   => trivial,
+    defProdFstEquivFun     := λ _ _ _ => trivial,
+    defProdSndEquiv        := λ _ _   => trivial,
+    defProdSndEquivFun     := λ _ _ _ => trivial,
+    defProdCommEquiv       := λ _ _   => trivial,
+    defProdAssocEquiv      := λ _ _ _ => trivial,
+    defCompEquivEquiv      := λ _ _   => trivial,
+    defCompEquivEquivFun   := λ _ _ _ => trivial,
+    defInvEquivEquiv       := λ _ _   => trivial }
+
+  instance hasFullFunProdEquiv : HasFullFunProdEquiv prop :=
+  { defProdDistrEquiv := λ _ _ _ => trivial }
+
 --  instance hasExternalEmptyType : HasExternalEmptyType prop :=
 --  { emptyElimIsFun := λ _ => trivial }
 --
@@ -405,7 +434,38 @@ namespace prop
 
 end prop
 
+theorem Equiv.trans_symm_trans {α : Sort u} {β : Sort v} {γ : Sort w} (e : α ≃ β) (f : α ≃ γ) :
+  trans (trans e (symm e)) f = f :=
+by simp
+
+theorem Equiv.symm_trans_trans {α : Sort u} {β : Sort v} {γ : Sort w} (e : α ≃ β) (f : β ≃ γ) :
+  trans (trans (symm e) e) f = f :=
+by simp
+
 namespace type
+
+  def prodEquiv (α β : type) : Prod α β ≃ (α ⊓' β) :=
+  { toFun    := λ p => ⟨p.fst, p.snd⟩,
+    invFun   := λ P => ⟨P.fst, P.snd⟩,
+    leftInv  := λ ⟨_, _⟩ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedProductType (α β : type) : HasEmbeddedType type (α ⊓' β) :=
+  { α := Prod α β,
+    h := prodEquiv α β }
+
+  instance hasEmbeddedProduct (α β : type) : HasEmbeddedProduct α β := ⟨⟩
+  instance hasEmbeddedProducts : HasEmbeddedProducts type := ⟨⟩
+
+  instance hasFunctorialProducts : HasFunctorialProducts type :=
+  { defIntroFun    := λ _ _   => trivial,
+    defIntroFunFun := λ _ _   => trivial,
+    defElimFun     := λ _     => trivial,
+    defElimFunFun  := λ _ _ _ => trivial }
+
+  theorem prodExt {α β : type} {p q : Prod α β} (hFst : p.fst = q.fst) (hSnd : p.snd = q.snd) :
+    p = q :=
+  by induction p; induction q; simp [hFst, hSnd]
 
   class DefEquiv {α β : type} (toFun : α ⟶' β) (invFun : β ⟶' α) : Prop where
   (leftInv  : ∀ a, invFun (toFun a) = a)
@@ -437,12 +497,13 @@ namespace type
   ⟨E.toFun.f, E.invFun.f, E.E.leftInv, E.E.rightInv⟩
 
   @[simp] theorem fromToExtEquiv {α β : type} (e : Equiv α β) :
-    fromExtEquiv (toExtEquiv e) = e := match e with
-  | ⟨_, _, _, _⟩ => rfl
+    fromExtEquiv (toExtEquiv e) = e :=
+  by induction e; rfl
 
   @[simp] theorem toFromExtEquiv {α β : type} (E : α ⟷' β) :
-    toExtEquiv (fromExtEquiv E) = E := match E with
-  | ⟨toFun, invFun, _⟩ => by simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun,
+    toExtEquiv (fromExtEquiv E) = E :=
+  by match E with
+     | ⟨toFun, invFun, _⟩ => simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun,
                                           defEquiv.unique' (sort.toFromExtFun toFun) (sort.toFromExtFun invFun) _ _⟩
 
   def equivEquiv (α β : type) : Equiv α β ≃ (α ⟷' β) :=
@@ -459,41 +520,45 @@ namespace type
   instance hasEmbeddedEquivalences : HasEmbeddedEquivalences type := ⟨⟩
 
   instance hasFunctorialEquivalences : HasFunctorialEquivalences type :=
-  { defToFunFun  := λ _ _ => trivial,
-    defInvFunFun := λ _ _ => trivial }
+  { defElimFun := λ _ _ => trivial }
 
   instance hasEquivOp : HasEquivOp type :=
   { defIdEquiv         := λ α     => toDefEquiv (Equiv.refl α),
-    defCompEquiv       := λ E F   => toDefEquiv (Equiv.trans E F),
+    defCompEquiv       := λ e f   => toDefEquiv (Equiv.trans e f),
     defCompEquivFun    := λ _ _   => trivial,
     defCompEquivFunFun := λ _ _ _ => trivial,
-    defInvEquiv        := λ E     => toDefEquiv (Equiv.symm E),
-    defInvEquivFun     := λ _ _   => trivial,
-    defInvEquivEquiv   := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
+    defInvEquiv        := λ e     => toDefEquiv (Equiv.symm e),
+    defInvEquivFun     := λ _ _   => trivial }
 
---  def prodEquiv (α β : type) : Prod α β ≃ (α ⊓'' β) :=
---  { toFun    := λ p => ⟨p.fst, p.snd⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ ⟨_, _⟩ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  def prodEmbed (φ : HasExternalProducts.productUniverse type type) : TypeEmbedding type φ :=
---  { α     := Prod φ.α φ.β,
---    equiv := prodEquiv φ.α φ.β }
---
---  instance : HasEmbeddedUniverse type (HasExternalProducts.productUniverse type type) :=
---  { embed := prodEmbed }
---
---  instance hasFunctorialExternalProducts : HasFunctorialExternalProducts type type :=
---  { fstIsFun         := λ _ _     => trivial,
---    sndIsFun         := λ _ _     => trivial,
---    introFstIsFun    := λ _ {_} _ => trivial,
---    introSndIsFun    := λ {_} _ _ => trivial }
---
---  instance hasInternalProducts : HasInternalProducts type :=
---  { introFstFunIsFun := λ _ _ => trivial,
---    introSndFunIsFun := λ _ _ => trivial }
---
+  instance hasLinearFunProdEquiv : HasLinearFunProdEquiv type :=
+  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext (λ b => congrArg f (e.rightInv b)),
+                                          λ f => funext (λ a => congrArg f (e.leftInv  a))⟩,
+    defFunDomainEquivFun   := λ _ _ _ => trivial,
+    defFunCodomainEquiv    := λ e _   => ⟨λ f => funext (λ c => e.leftInv  (f c)),
+                                          λ f => funext (λ c => e.rightInv (f c))⟩,
+    defFunCodomainEquivFun := λ _ _ _ => trivial,
+    defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
+                                          λ _ => funext (λ _ => funext (λ _ => rfl))⟩,
+    defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
+                                          λ _ => funext (λ ⟨_, _⟩ => rfl)⟩,
+    defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
+                                          λ p => prodExt (e.rightInv p.fst) rfl⟩,
+    defProdFstEquivFun     := λ _ _ _ => trivial,
+    defProdSndEquiv        := λ e _   => ⟨λ p => prodExt rfl (e.leftInv  p.snd),
+                                          λ p => prodExt rfl (e.rightInv p.snd)⟩,
+    defProdSndEquivFun     := λ _ _ _ => trivial,
+    defProdCommEquiv       := λ _ _   => ⟨λ _ => prodExt rfl rfl,
+                                          λ _ => prodExt rfl rfl⟩,
+    defProdAssocEquiv      := λ _ _ _ => ⟨λ _ => prodExt (prodExt rfl rfl) rfl,
+                                          λ _ => prodExt rfl (prodExt rfl rfl)⟩,
+    defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
+    defCompEquivEquivFun   := λ _ _ _ => trivial,
+    defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
+
+  instance hasFullFunProdEquiv : HasFullFunProdEquiv type :=
+  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext (λ _ => prodExt rfl rfl),
+                                     λ _ => prodExt (funext (λ _ => rfl)) (funext (λ _ => rfl))⟩, }
+
 --  instance hasExternalEmptyType : HasExternalEmptyType type :=
 --  { emptyElimIsFun := λ _ => trivial }
 --

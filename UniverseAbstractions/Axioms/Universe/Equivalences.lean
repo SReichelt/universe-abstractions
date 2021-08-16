@@ -1,5 +1,8 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Products
+import UniverseAbstractions.Lemmas.DerivedFunctors
+import UniverseAbstractions.Lemmas.DerivedProductFunctors
 
 
 
@@ -61,6 +64,10 @@ namespace HasIdEquiv
 
 end HasIdEquiv
 
+class HasInvEquiv {U V : Universe} (α : U) (β : V) [HasExternalFunctor α β] [HasExternalFunctor β α]
+                  [HasExternalEquivalence α β] [HasExternalEquivalence β α] where
+(defInvEquiv (E : α ⟷' β) : β ⟷'[E.invFun, E.toFun] α)
+
 class HasCompEquiv {U V W : Universe} (α : U) (β : V) (γ : W) 
                    [HasExternalFunctor α β] [HasExternalFunctor β γ] [HasExternalFunctor α γ]
                    [HasExternalFunctor β α] [HasExternalFunctor γ β] [HasExternalFunctor γ α]
@@ -81,10 +88,6 @@ namespace HasCompEquiv
 
 end HasCompEquiv
 
-class HasInvEquiv {U V : Universe} (α : U) (β : V) [HasExternalFunctor α β] [HasExternalFunctor β α]
-                  [HasExternalEquivalence α β] [HasExternalEquivalence β α] where
-(defInvEquiv (E : α ⟷' β) : β ⟷'[E.invFun, E.toFun] α)
-
 namespace HasInvEquiv
 
   variable {U V : Universe} {α : U} {β : V} [HasExternalFunctor α β] [HasExternalFunctor β α]
@@ -101,7 +104,7 @@ class HasEmbeddedEquivalence {U : Universe.{u}} [HasEmbeddedFunctors.{u, w} U] (
 [hType  : HasEmbeddedType.{u, max 1 u w w'} U (α ⟷' β)]
 
 class HasEmbeddedEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] where
-[hasEquiv (α β : U) : HasEmbeddedEquivalence α β]
+[hasEquiv (α β : U) : HasEmbeddedEquivalence.{u, w, w'} α β]
 
 namespace HasEmbeddedEquivalences
 
@@ -168,33 +171,32 @@ end HasEmbeddedEquivalences
 
 
 
-class HasFunctorialEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] extends HasEmbeddedEquivalences.{u, w, w'} U where
-(defToFunFun  (α β : U) : (α ⟷ β) ⟶[λ E => HasEmbeddedEquivalences.toFun  E] (α ⟶ β))
-(defInvFunFun (α β : U) : (α ⟷ β) ⟶[λ E => HasEmbeddedEquivalences.invFun E] (β ⟶ α))
+class HasFunctorialEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedProducts.{u} U]
+  extends HasEmbeddedEquivalences.{u, w, w'} U where
+(defElimFun (α β : U) : (α ⟷ β) ⟶[λ E => HasEmbeddedProducts.intro (HasEmbeddedEquivalences.toFun E) (HasEmbeddedEquivalences.invFun E)] (α ⟶ β) ⊓ (β ⟶ α))
 
 namespace HasFunctorialEquivalences
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasFunctorialEquivalences U]
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedProducts U] [HasFunctorialEquivalences U]
 
-  @[reducible] def toFunFun  (α β : U) : (α ⟷ β) ⟶ (α ⟶ β) := defToFunFun  α β
-  @[reducible] def invFunFun (α β : U) : (α ⟷ β) ⟶ (β ⟶ α) := defInvFunFun α β
+  @[reducible] def elimFun (α β : U) : (α ⟷ β) ⟶ (α ⟶ β) ⊓ (β ⟶ α) := defElimFun α β
 
 end HasFunctorialEquivalences
 
 
 
-class HasEquivOp (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasLinearFunOp U] extends HasFunctorialEquivalences.{u, w, w'} U where
+class HasEquivOp (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedProducts.{u} U] [HasLinearFunOp U]
+  extends HasFunctorialEquivalences.{u, w, w'} U where
 (defIdEquiv         (α : U)                             : α ⟷[HasLinearFunOp.idFun α, HasLinearFunOp.idFun α] α)
 (defCompEquiv       {α β γ : U} (E : α ⟷ β) (F : β ⟷ γ) : α ⟷[HasEmbeddedEquivalences.toFun F ⊙ HasEmbeddedEquivalences.toFun E, HasEmbeddedEquivalences.invFun E ⊙ HasEmbeddedEquivalences.invFun F] γ)
 (defCompEquivFun    {α β : U} (E : α ⟷ β) (γ : U)       : (β ⟷ γ) ⟶[λ F => defCompEquiv E F] (α ⟷ γ))
 (defCompEquivFunFun (α β γ : U)                         : (α ⟷ β) ⟶[λ E => defCompEquivFun E γ] ((β ⟷ γ) ⟶ (α ⟷ γ)))
 (defInvEquiv        {α β : U} (E : α ⟷ β)               : β ⟷[HasEmbeddedEquivalences.invFun E, HasEmbeddedEquivalences.toFun E] α)
 (defInvEquivFun     (α β : U)                           : (α ⟷ β) ⟶[λ E => defInvEquiv E] (β ⟷ α))
-(defInvEquivEquiv   (α β : U)                           : (α ⟷ β) ⟷[defInvEquivFun α β, defInvEquivFun β α] (β ⟷ α))
 
 namespace HasEquivOp
 
-  variable {U : Universe.{u}} [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasEquivOp U]
+  variable {U : Universe.{u}} [HasEmbeddedFunctors U] [HasEmbeddedProducts U] [HasLinearFunOp U] [HasEquivOp U]
 
   instance (α : U) : HasIdEquiv α := ⟨HasEmbeddedFunctors.toFromExternal (HasIdFun.idFun α) ▸ defIdEquiv α⟩
 
@@ -220,6 +222,83 @@ namespace HasEquivOp
 
   @[reducible] def invEquiv {α β : U} (E : α ⟷ β) : β ⟷ α := defInvEquiv E
   @[reducible] def invEquivFun (α β : U) : (α ⟷ β) ⟶ (β ⟷ α) := defInvEquivFun α β
-  @[reducible] def invEquivEquiv (α β : U) : (α ⟷ β) ⟷ (β ⟷ α) := defInvEquivEquiv α β
 
 end HasEquivOp
+
+
+
+class HasLinearFunProdEquiv (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasFunctorialProducts.{u} U] [HasLinearFunOp U]
+  extends HasEquivOp.{u, w, w'} U where
+(defFunDomainEquiv      {α β : U} (E : α ⟷ β) (γ : U) :
+   (β ⟶ γ) ⟷[HasLinearFunOp.compFunFun (HasEmbeddedEquivalences.toFun  E) γ,
+             HasLinearFunOp.compFunFun (HasEmbeddedEquivalences.invFun E) γ] (α ⟶ γ))
+(defFunDomainEquivFun   (α β γ : U)                   :
+   (α ⟷ β) ⟶[λ E => defFunDomainEquiv E γ] ((β ⟶ γ) ⟷ (α ⟶ γ)))
+(defFunCodomainEquiv    {α β : U} (E : α ⟷ β) (γ : U) :
+   (γ ⟶ α) ⟷[HasLinearFunOp.revCompFunFun γ (HasEmbeddedEquivalences.toFun  E),
+             HasLinearFunOp.revCompFunFun γ (HasEmbeddedEquivalences.invFun E)] (γ ⟶ β))
+(defFunCodomainEquivFun (α β γ : U)                   :
+   (α ⟷ β) ⟶[λ E => defFunCodomainEquiv E γ] ((γ ⟶ α) ⟷ (γ ⟶ β)))
+(defSwapFunFunEquiv     (α β γ : U)                   :
+   (α ⟶ β ⟶ γ) ⟷[HasLinearFunOp.swapFunFunFun α β γ, HasLinearFunOp.swapFunFunFun β α γ] (β ⟶ α ⟶ γ))
+(defProdElimFunEquiv    (α β γ : U)                   :
+   (α ⟶ β ⟶ γ) ⟷[HasFunctorialProducts.elimFunFun α β γ,
+                 HasFunctorialProducts.invElimFunFunFun α β γ] (α ⊓ β ⟶ γ))
+(defProdFstEquiv        {α β : U} (E : α ⟷ β) (γ : U) :
+   α ⊓ γ ⟷[HasFunctorialProducts.replaceFstFun (HasEmbeddedEquivalences.toFun  E) γ,
+           HasFunctorialProducts.replaceFstFun (HasEmbeddedEquivalences.invFun E) γ] β ⊓ γ)
+(defProdFstEquivFun     (α β γ : U)                   :
+   (α ⟷ β) ⟶[λ E => defProdFstEquiv E γ] (α ⊓ γ ⟷ β ⊓ γ))
+(defProdSndEquiv        {α β : U} (E : α ⟷ β) (γ : U) :
+   γ ⊓ α ⟷[HasFunctorialProducts.replaceSndFun (HasEmbeddedEquivalences.toFun  E) γ,
+           HasFunctorialProducts.replaceSndFun (HasEmbeddedEquivalences.invFun E) γ] γ ⊓ β)
+(defProdSndEquivFun     (α β γ : U)                   :
+   (α ⟷ β) ⟶[λ E => defProdSndEquiv E γ] (γ ⊓ α ⟷ γ ⊓ β))
+(defProdCommEquiv       (α β : U)                     :
+   α ⊓ β ⟷[HasFunctorialProducts.commFun α β, HasFunctorialProducts.commFun β α] β ⊓ α)
+(defProdAssocEquiv      (α β γ : U)                   :
+   (α ⊓ β) ⊓ γ ⟷[HasFunctorialProducts.assocLRFun α β γ, HasFunctorialProducts.assocRLFun α β γ] α ⊓ (β ⊓ γ))
+(defCompEquivEquiv      {α β : U} (E : α ⟷ β) (γ : U) :
+   (β ⟷ γ) ⟷[HasEquivOp.compEquivFun E γ, HasEquivOp.compEquivFun (HasEquivOp.invEquiv E) γ] (α ⟷ γ))
+(defCompEquivEquivFun   (α β γ : U)                   :
+   (α ⟷ β) ⟶[λ E => defCompEquivEquiv E γ] ((β ⟷ γ) ⟷ (α ⟷ γ)))
+(defInvEquivEquiv       (α β : U)                     :
+   (α ⟷ β) ⟷[HasEquivOp.invEquivFun α β, HasEquivOp.invEquivFun β α] (β ⟷ α))
+
+namespace HasLinearFunProdEquiv
+
+  variable {U : Universe.{u}} [HasEmbeddedFunctors U] [HasFunctorialProducts U] [HasLinearFunOp U] [HasLinearFunProdEquiv U]
+
+  @[reducible] def funDomainEquiv {α β : U} (E : α ⟷ β) (γ : U) : (β ⟶ γ) ⟷ (α ⟶ γ) := defFunDomainEquiv E γ
+  @[reducible] def funDomainEquivFun (α β γ : U) : (α ⟷ β) ⟶ ((β ⟶ γ) ⟷ (α ⟶ γ)) := defFunDomainEquivFun α β γ
+  @[reducible] def funCodomainEquiv {α β : U} (E : α ⟷ β) (γ : U) : (γ ⟶ α) ⟷ (γ ⟶ β) := defFunCodomainEquiv E γ
+  @[reducible] def funCodomainEquivFun (α β γ : U) : (α ⟷ β) ⟶ ((γ ⟶ α) ⟷ (γ ⟶ β)) := defFunCodomainEquivFun α β γ
+  @[reducible] def swapFunFunEquiv (α β γ : U) : (α ⟶ β ⟶ γ) ⟷ (β ⟶ α ⟶ γ) := defSwapFunFunEquiv α β γ
+
+  @[reducible] def prodElimFunEquiv (α β γ : U) : (α ⟶ β ⟶ γ) ⟷ (α ⊓ β ⟶ γ) := defProdElimFunEquiv α β γ
+  @[reducible] def prodFstEquiv {α β : U} (E : α ⟷ β) (γ : U) : α ⊓ γ ⟷ β ⊓ γ := defProdFstEquiv E γ
+  @[reducible] def prodFstEquivFun (α β γ : U) : (α ⟷ β) ⟶ (α ⊓ γ ⟷ β ⊓ γ) := defProdFstEquivFun α β γ
+  @[reducible] def prodSndEquiv {α β : U} (E : α ⟷ β) (γ : U) : γ ⊓ α ⟷ γ ⊓ β := defProdSndEquiv E γ
+  @[reducible] def prodSndEquivFun (α β γ : U) : (α ⟷ β) ⟶ (γ ⊓ α ⟷ γ ⊓ β) := defProdSndEquivFun α β γ
+  @[reducible] def prodCommEquiv (α β : U) : α ⊓ β ⟷ β ⊓ α := defProdCommEquiv α β
+  @[reducible] def prodAssocEquiv (α β γ : U) : (α ⊓ β) ⊓ γ ⟷ α ⊓ (β ⊓ γ) := defProdAssocEquiv α β γ
+
+  @[reducible] def compEquivEquiv {α β : U} (E : α ⟷ β) (γ : U) : (β ⟷ γ) ⟷ (α ⟷ γ) := defCompEquivEquiv E γ
+  @[reducible] def compEquivEquivFun (α β γ : U) : (α ⟷ β) ⟶ ((β ⟷ γ) ⟷ (α ⟷ γ)) := defCompEquivEquivFun α β γ
+  @[reducible] def invEquivEquiv (α β : U) : (α ⟷ β) ⟷ (β ⟷ α) := defInvEquivEquiv α β
+
+end HasLinearFunProdEquiv
+
+class HasFullFunProdEquiv (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasFunctorialProducts.{u} U] [HasFullFunOp U]
+  extends HasLinearFunProdEquiv.{u, w, w'} U where
+(defProdDistrEquiv (α β γ : U) :
+   (α ⟶ β ⊓ γ) ⟷[HasFunctorialProducts.distrFun α β γ,
+                 HasFunctorialProducts.invDistrFunFun α β γ] (α ⟶ β) ⊓ (α ⟶ γ))
+
+namespace HasFullFunProdEquiv
+
+  variable {U : Universe.{u}} [HasEmbeddedFunctors U] [HasFunctorialProducts U] [HasFullFunOp U] [HasFullFunProdEquiv U]
+
+  @[reducible] def prodDistrEquiv (α β γ : U) : (α ⟶ β ⊓ γ) ⟷ (α ⟶ β) ⊓ (α ⟶ γ):= defProdDistrEquiv α β γ
+
+end HasFullFunProdEquiv
