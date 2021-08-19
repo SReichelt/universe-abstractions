@@ -1,7 +1,5 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
-import UniverseAbstractions.Axioms.Universe.Products
-import UniverseAbstractions.Axioms.Universe.Equivalences
 
 
 
@@ -25,8 +23,23 @@ namespace HasEmbeddedTop
 
 end HasEmbeddedTop
 
--- TODO: α ⟶ Top (via constFun)
--- TODO: (Top ⟶ α) ⟶ α (via appFun)
+-- Eliminating from `Top` should not require `SubLinearFunOp`, as conceptually, an instance of
+-- `Top` does not hold any data. Therefore, we define a specialized version of `constFun`.
+
+class HasFunctorialTop (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U]
+  extends HasEmbeddedTop U where
+(defElimFun {α : U} (a : α) : HasEmbeddedTop.Top U ⟶[λ _ => a] α)
+(defElimFunFun (α : U) : α ⟶[λ a => defElimFun a] (HasEmbeddedTop.Top U ⟶ α))
+
+namespace HasFunctorialTop
+
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasFunctorialTop U]
+
+  @[reducible] def elimFun {α : U} (a : α) : HasEmbeddedTop.Top U ⟶ α := HasFunctorialTop.defElimFun a
+  @[reducible] def elimFunFun (α : U) : α ⟶ HasEmbeddedTop.Top U ⟶ α := defElimFunFun α
+
+end HasFunctorialTop
+
 
 
 
@@ -58,11 +71,5 @@ namespace HasFunctorialBot
 
 end HasFunctorialBot
 
--- TODO: Prove `α ⟶ Not α ⟶ β` via `α ⟶ Not α ⟶ Bot`.
-
 class HasClassicalLogic (U : Universe.{u}) [HasEmbeddedFunctors U] [HasFunctorialBot U] where
-(byContradiction (α : U) : HasFunctorialBot.Not (HasFunctorialBot.Not α) ⟶ α)
-
--- TODO: byContradiction is equivalence
--- TODO: Bot equivalent Not Unit
--- TODO: Product/singleton equivalences
+(byContradictionFun (α : U) : HasFunctorialBot.Not (HasFunctorialBot.Not α) ⟶ α)

@@ -1,5 +1,6 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Lemmas.DerivedFunctors
 
@@ -179,5 +180,21 @@ namespace HasFunctorialProducts
 
   @[reducible] def invDistrFunFun [HasFullFunOp U] (α β γ : U) : (α ⟶ β) ⊓ (α ⟶ γ) ⟶ (α ⟶ β ⊓ γ) :=
   defInvDistrFunFun α β γ
+
+  def defProdTopIntroFun [HasEmbeddedTop U] (α : U) :
+    α ⟶[λ a => HasEmbeddedProducts.intro (HasEmbeddedTop.top U) a] HasEmbeddedTop.Top U ⊓ α :=
+  defIntroFun (HasEmbeddedTop.top U) α
+
+  @[reducible] def prodTopIntroFun [HasEmbeddedTop U] (α : U) : α ⟶ HasEmbeddedTop.Top U ⊓ α :=
+  defProdTopIntroFun α
+
+  def defProdTopElimFun [HasLinearFunOp U] [HasFunctorialTop U] (α : U) :
+    HasEmbeddedTop.Top U ⊓ α ⟶[λ P => HasEmbeddedProducts.snd P] α :=
+  elimFun (HasFunctorialTop.elimFun (HasLinearFunOp.idFun α))
+  ◄ λ _ => by simp [HasFunctorialTop.elimFun]
+
+  @[reducible] def prodTopElimFun [HasLinearFunOp U] [HasFunctorialTop U] (α : U) :
+    HasEmbeddedTop.Top U ⊓ α ⟶ α :=
+  defProdTopElimFun α
 
 end HasFunctorialProducts

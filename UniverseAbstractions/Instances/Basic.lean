@@ -68,6 +68,10 @@ namespace unit
 
   instance hasEmbeddedTop : HasEmbeddedTop unit := ⟨⟩
 
+  instance hasFunctorialTop : HasFunctorialTop unit :=
+  { defElimFun    := λ _ => trivial,
+    defElimFunFun := λ _ => trivial }
+
   @[reducible] def unitProduct {α β : unit} : α ⊓' β :=
   ⟨trivial, trivial⟩
 
@@ -127,12 +131,13 @@ namespace unit
     defInvEquiv        := λ _     => trivial,
     defInvEquivFun     := λ _ _   => trivial }
 
-  instance hasLinearFunProdEquiv : HasLinearFunProdEquiv unit :=
+  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences unit :=
   { defFunDomainEquiv      := λ _ _   => trivial,
     defFunDomainEquivFun   := λ _ _ _ => trivial,
     defFunCodomainEquiv    := λ _ _   => trivial,
     defFunCodomainEquivFun := λ _ _ _ => trivial,
     defSwapFunFunEquiv     := λ _ _ _ => trivial,
+    defTopElimEquiv        := λ _     => trivial,
     defProdElimFunEquiv    := λ _ _ _ => trivial,
     defProdFstEquiv        := λ _ _   => trivial,
     defProdFstEquivFun     := λ _ _ _ => trivial,
@@ -140,11 +145,12 @@ namespace unit
     defProdSndEquivFun     := λ _ _ _ => trivial,
     defProdCommEquiv       := λ _ _   => trivial,
     defProdAssocEquiv      := λ _ _ _ => trivial,
+    defProdTopEquiv        := λ _     => trivial,
     defCompEquivEquiv      := λ _ _   => trivial,
     defCompEquivEquivFun   := λ _ _ _ => trivial,
     defInvEquivEquiv       := λ _ _   => trivial }
 
-  instance hasFullFunProdEquiv : HasFullFunProdEquiv unit :=
+  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences unit :=
   { defProdDistrEquiv := λ _ _ _ => trivial }
 
 --  def Rel (α : Sort u) : GeneralizedRelation α unit := λ _ _ => UnitType
@@ -278,6 +284,10 @@ namespace prop
 
   instance hasEmbeddedTop : HasEmbeddedTop prop := ⟨⟩
 
+  instance hasFunctorialTop : HasFunctorialTop prop :=
+  { defElimFun    := λ _ => trivial,
+    defElimFunFun := λ _ => trivial }
+
   instance hasEmbeddedBotType : HasEmbeddedType prop False :=
   { α := False,
     h := Equiv.refl False }
@@ -288,7 +298,7 @@ namespace prop
   { defElimFun := λ _ => trivial }
 
   instance hasClassicalLogic : HasClassicalLogic prop :=
-  { byContradiction := @Classical.byContradiction }
+  { byContradictionFun := @Classical.byContradiction }
 
   def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
   { toFun    := λ h => ⟨h.left, h.right⟩,
@@ -350,12 +360,13 @@ namespace prop
     defInvEquiv        := λ _     => trivial,
     defInvEquivFun     := λ _ _   => trivial }
 
-  instance hasLinearFunProdEquiv : HasLinearFunProdEquiv prop :=
+  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences prop :=
   { defFunDomainEquiv      := λ _ _   => trivial,
     defFunDomainEquivFun   := λ _ _ _ => trivial,
     defFunCodomainEquiv    := λ _ _   => trivial,
     defFunCodomainEquivFun := λ _ _ _ => trivial,
     defSwapFunFunEquiv     := λ _ _ _ => trivial,
+    defTopElimEquiv        := λ _     => trivial,
     defProdElimFunEquiv    := λ _ _ _ => trivial,
     defProdFstEquiv        := λ _ _   => trivial,
     defProdFstEquivFun     := λ _ _ _ => trivial,
@@ -363,12 +374,21 @@ namespace prop
     defProdSndEquivFun     := λ _ _ _ => trivial,
     defProdCommEquiv       := λ _ _   => trivial,
     defProdAssocEquiv      := λ _ _ _ => trivial,
+    defProdTopEquiv        := λ _     => trivial,
     defCompEquivEquiv      := λ _ _   => trivial,
     defCompEquivEquivFun   := λ _ _ _ => trivial,
     defInvEquivEquiv       := λ _ _   => trivial }
 
-  instance hasFullFunProdEquiv : HasFullFunProdEquiv prop :=
+  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences prop :=
   { defProdDistrEquiv := λ _ _ _ => trivial }
+
+  instance hasBotEquivalences : HasBotEquivalences prop :=
+  { defBotNotTopEquiv := trivial,
+    defProdBotEquiv   := λ _ => trivial,
+    defBotContraEquiv := λ _ => trivial }
+
+  instance hasClassicalEquivalences : HasClassicalEquivalences prop :=
+  { defByContradictionEquiv := λ _ => trivial }
 
 --  -- Every equivalence relation can trivially be converted to an instance of `IsEquivalence`.
 --  instance relEquiv {α : Sort u} {R : GeneralizedRelation α prop} (e : Equivalence R) : IsEquivalence R :=
@@ -431,6 +451,8 @@ theorem Equiv.symm_trans_trans {α : Sort u} {β : Sort v} {γ : Sort w} (e : α
   trans (trans (symm e) e) f = f :=
 by simp
 
+theorem Empty.elim {C : Sort u} (e : Empty) : C := by induction e
+
 namespace type
 
   def topEquiv : Unit ≃ True :=
@@ -444,12 +466,16 @@ namespace type
     h := topEquiv }
 
   def botEquiv : Empty ≃ False :=
-  { toFun    := λ e => (by induction e),
+  { toFun    := Empty.elim,
     invFun   := False.elim,
-    leftInv  := λ e => (by induction e),
+    leftInv  := λ e => Empty.elim e,
     rightInv := λ _ => proofIrrel _ _ }
 
   instance hasEmbeddedTop : HasEmbeddedTop type := ⟨⟩
+
+  instance hasFunctorialTop : HasFunctorialTop type :=
+  { defElimFun    := λ _ => trivial,
+    defElimFunFun := λ _ => trivial }
 
   instance hasEmbeddedBotType : HasEmbeddedType type False :=
   { α := Empty,
@@ -546,7 +572,7 @@ namespace type
     defInvEquiv        := λ e     => toDefEquiv (Equiv.symm e),
     defInvEquivFun     := λ _ _   => trivial }
 
-  instance hasLinearFunProdEquiv : HasLinearFunProdEquiv type :=
+  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type :=
   { defFunDomainEquiv      := λ e _   => ⟨λ f => funext (λ b => congrArg f (e.rightInv b)),
                                           λ f => funext (λ a => congrArg f (e.leftInv  a))⟩,
     defFunDomainEquivFun   := λ _ _ _ => trivial,
@@ -555,6 +581,7 @@ namespace type
     defFunCodomainEquivFun := λ _ _ _ => trivial,
     defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
                                           λ _ => funext (λ _ => funext (λ _ => rfl))⟩,
+    defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext (λ () => rfl)⟩,
     defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
                                           λ _ => funext (λ (_, _) => rfl)⟩,
     defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
@@ -565,13 +592,19 @@ namespace type
     defProdSndEquivFun     := λ _ _ _ => trivial,
     defProdCommEquiv       := λ _ _   => ⟨λ (_, _) => rfl, λ (_, _) => rfl⟩,
     defProdAssocEquiv      := λ _ _ _ => ⟨λ ((_, _), _) => rfl, λ (_, (_, _)) => rfl⟩,
+    defProdTopEquiv        := λ _     => ⟨λ _ => rfl, λ ((), _) => rfl⟩,
     defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
     defCompEquivEquivFun   := λ _ _ _ => trivial,
     defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
 
-  instance hasFullFunProdEquiv : HasFullFunProdEquiv type :=
+  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type :=
   { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext (λ _ => prodExt rfl rfl),
                                      λ _ => prodExt (funext (λ _ => rfl)) (funext (λ _ => rfl))⟩, }
+
+  instance hasBotEquivalences : HasBotEquivalences type :=
+  { defBotNotTopEquiv := ⟨λ e => Empty.elim e, λ f => Empty.elim (f ())⟩,
+    defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
+    defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
 
 --  instance hasGeneralizedProperties : HasGeneralizedProperties.{u, 0, 0} sort.{u} prop :=
 --  { IsProp      := λ _   => True,

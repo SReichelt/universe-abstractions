@@ -147,32 +147,33 @@ namespace Lean
     -- to it. (Note that we do not optimize the case where both parts are constant, since that
     -- should have been handled already.)
 
-    partial def constructLambdaAppFunctor (φ : FunUniv) (f : LambdaAbstr) (β_b G b : Expr) : MetaM Expr := do
-      let β_G := φ.mkFunType β_b f.β
-      let f_G : LambdaAbstr := ⟨f.α, β_G, f.a, G⟩
-      let f_b : LambdaAbstr := ⟨f.α, β_b, f.a, b⟩
-      let hHasLinearFunOp ← synthInstance (φ.getDecl ``HasLinearFunOp)
-      match ← f_G.asConstant with
-      | some G => do
-        if ← f_b.isId then
-          return G
-        let F_b ← constructLambdaFunctor φ f_b
-        return mkApp6 (φ.getDecl ``HasLinearFunOp.revCompFun) hHasLinearFunOp f.α β_b f.β G F_b
-      | none => do
-        match ← f_b.asConstant with
-        | some b => do
-          if ← f_G.isId then
-            return mkApp4 (φ.getDecl ``HasLinearFunOp.appFun) hHasLinearFunOp β_b b f.β
-          let F_G ← constructLambdaFunctor φ f_G
-          return mkApp6 (φ.getDecl ``HasLinearFunOp.swapFun) hHasLinearFunOp f.α β_b f.β F_G b
-        | none => do
-          let F_G ← constructLambdaFunctor φ f_G
+    partial def constructLambdaAppFunctor (φ : FunUniv) (f : LambdaAbstr) (β_b G b : Expr) : MetaM Expr :=
+      withDefault do
+        let β_G := φ.mkFunType β_b f.β
+        let f_G : LambdaAbstr := ⟨f.α, β_G, f.a, G⟩
+        let f_b : LambdaAbstr := ⟨f.α, β_b, f.a, b⟩
+        let hHasLinearFunOp ← synthInstance (φ.getDecl ``HasLinearFunOp)
+        match ← f_G.asConstant with
+        | some G => do
           if ← f_b.isId then
-            let hHasNonLinearFunOp ← synthInstance (φ.getDecl ``HasNonLinearFunOp)
-            return mkApp4 (φ.getDecl ``HasNonLinearFunOp.dupFun) hHasNonLinearFunOp f.α f.β F_G
+            return G
           let F_b ← constructLambdaFunctor φ f_b
-          let hHasFullFunOp ← synthInstance (φ.getDecl ``HasFullFunOp)
-          return mkApp6 (φ.getDecl ``HasFullFunOp.substFun) hHasFullFunOp f.α β_b f.β F_b F_G
+          return mkApp6 (φ.getDecl ``HasLinearFunOp.revCompFun) hHasLinearFunOp f.α β_b f.β G F_b
+        | none => do
+          match ← f_b.asConstant with
+          | some b => do
+            if ← f_G.isId then
+              return mkApp4 (φ.getDecl ``HasLinearFunOp.appFun) hHasLinearFunOp β_b b f.β
+            let F_G ← constructLambdaFunctor φ f_G
+            return mkApp6 (φ.getDecl ``HasLinearFunOp.swapFun) hHasLinearFunOp f.α β_b f.β F_G b
+          | none => do
+            let F_G ← constructLambdaFunctor φ f_G
+            if ← f_b.isId then
+              let hHasNonLinearFunOp ← synthInstance (φ.getDecl ``HasNonLinearFunOp)
+              return mkApp4 (φ.getDecl ``HasNonLinearFunOp.dupFun) hHasNonLinearFunOp f.α f.β F_G
+            let F_b ← constructLambdaFunctor φ f_b
+            let hHasFullFunOp ← synthInstance (φ.getDecl ``HasFullFunOp)
+            return mkApp6 (φ.getDecl ``HasFullFunOp.substFun) hHasFullFunOp f.α β_b f.β F_b F_G
 
     -- This function performs the simple but tedious task of converting applications of `def...Fun`
     -- to a functor application of the corresponding `...FunFun`, which is then handled by
