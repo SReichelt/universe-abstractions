@@ -25,10 +25,10 @@ set_option autoBoundImplicitLocal false
 
 variable {U : Universe} [HasFunOp U]
 
-def testRaw (α β : U) (F : α ⟶ β) : α ⟶ β := by makeFunctor (HasEmbeddedFunctors.funCoe F)
+def testRaw (α β : U) (F : α ⟶ β) : α ⟶ β := by makeFunctor (HasFunctors.funCoe F)
 #print testRaw
 
-def testRawFunct (α β : U) (F : α ⟶ β) : α ⟶[HasEmbeddedFunctors.funCoe F] β :=
+def testRawFunct (α β : U) (F : α ⟶ β) : α ⟶[HasFunctors.funCoe F] β :=
 by functoriality
 
 def testConst (α β : U) (b : β) : α ⟶ β := Λ a => b
@@ -60,7 +60,7 @@ def testIndirFun (α β : U) (F : α ⟶ β) : α ⟶ β := Λ a => apply F a
 #print testIndirFun
 
 def testFromToDefFun (α β : U) : (α ⟶ β) ⟶ (α ⟶ β) :=
-Λ F => HasEmbeddedFunctors.fromDefFun (HasEmbeddedFunctors.toDefFun F)
+Λ F => HasFunctors.fromDefFun (HasFunctors.toDefFun F)
 #print testFromToDefFun
 theorem testFromToDefFunEff (α β : U) (F : α ⟶ β) :
   testFromToDefFun α β F = F :=

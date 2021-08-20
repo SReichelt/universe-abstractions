@@ -401,7 +401,7 @@ namespace Lean
       let F ← constructFunctor φ α β α' β' f
       let hDefTypeBody := mkApp3 (mkConst ``Eq [u]) β' (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.funCoe) α β F (mkBVar 0)) (mkApp f (mkBVar 0))
       let hDefType := mkForall `a BinderInfo.default α' hDefTypeBody
-      let hDef ← elabTerm (← `(λ _ => by simp)) hDefType
+      let hDef ← elabTerm (← `(λ _ => by simp [HasEmbeddedFunctors.funCoe])) hDefType
       return mkApp5 (φ'.getDecl ``HasEmbeddedFunctors.toDefFun') α β F f hDef
     throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasEmbeddedFunctors.DefFun'"
 

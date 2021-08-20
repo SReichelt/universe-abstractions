@@ -9,11 +9,11 @@ set_option autoBoundImplicitLocal false
 
 
 
-namespace HasFunctorialTop
+namespace HasEmbeddedTop
 
-  open HasEmbeddedTop
+  open HasTop
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasFunctorialTop U]
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedTop U]
 
   def defIntroFun [HasSubLinearFunOp U] (α : U) : α ⟶[λ _ => top U] Top U :=
   HasSubLinearFunOp.defConstFun α (top U)
@@ -25,22 +25,22 @@ namespace HasFunctorialTop
 
   @[reducible] def invElimFun [HasLinearFunOp U] (α : U) : (Top U ⟶ α) ⟶ α := defInvElimFun α
 
-end HasFunctorialTop
+end HasEmbeddedTop
 
 
 
-namespace HasFunctorialBot
+namespace HasEmbeddedBot
 
-  open HasEmbeddedBot
+  open HasBot
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasFunctorialBot U]
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedBot U]
 
   def contraIntroFun [HasLinearFunOp U] (α : U) : α ⟶ Not α ⟶ Bot U :=
   HasLinearFunOp.appFunFun α (Bot U)
 
   def notNotFun [HasLinearFunOp U] (α : U) : α ⟶ Not (Not α) := contraIntroFun α
 
-  def notTopIntroFun [HasLinearFunOp U] [HasFunctorialTop U] : Not (HasEmbeddedTop.Top U) ⟶ Bot U :=
-  HasFunctorialTop.invElimFun (Bot U)
+  def notTopIntroFun [HasLinearFunOp U] [HasEmbeddedTop U] : Not (HasTop.Top U) ⟶ Bot U :=
+  HasEmbeddedTop.invElimFun (Bot U)
 
-end HasFunctorialBot
+end HasEmbeddedBot

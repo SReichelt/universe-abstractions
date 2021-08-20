@@ -71,7 +71,7 @@ def Universe : Type (u + 1) := Bundled HasInstances.{u, u + 1}
 
 namespace Universe
 
-  instance hasInstances : HasInstances Universe.{u} := Bundled.hasInstances HasInstances
+  instance hasInstances : HasInstances.{u + 1, u + 2} Universe.{u} := Bundled.hasInstances HasInstances
 
   variable (U : Universe)
 
@@ -79,6 +79,10 @@ namespace Universe
   instance : HasInstances ⌈U⌉ := instInst U
 
 end Universe
+
+def univ : Universe.{u + 1} := ⟨Universe.{u}⟩
+
+instance (U : univ) : HasInstances ⌈U⌉ := Universe.instInst U
 
 
 

@@ -11,11 +11,11 @@ set_option autoBoundImplicitLocal false
 
 
 
-namespace HasFunctorialProducts
+namespace HasEmbeddedProducts
 
-  open HasEmbeddedProducts
+  open HasProducts HasTop
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasFunctorialProducts U]
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedProducts U]
 
   def defFstFun [HasSubLinearFunOp U] (α β : U) : α ⊓ β ⟶[λ P => fst P] α :=
   elimFun (HasSubLinearFunOp.constFunFun β α)
@@ -181,20 +181,17 @@ namespace HasFunctorialProducts
   @[reducible] def invDistrFunFun [HasFullFunOp U] (α β γ : U) : (α ⟶ β) ⊓ (α ⟶ γ) ⟶ (α ⟶ β ⊓ γ) :=
   defInvDistrFunFun α β γ
 
-  def defProdTopIntroFun [HasEmbeddedTop U] (α : U) :
-    α ⟶[λ a => HasEmbeddedProducts.intro (HasEmbeddedTop.top U) a] HasEmbeddedTop.Top U ⊓ α :=
-  defIntroFun (HasEmbeddedTop.top U) α
+  def defProdTopIntroFun [HasEmbeddedTop U] (α : U) : α ⟶[λ a => intro (top U) a] Top U ⊓ α :=
+  defIntroFun (top U) α
 
-  @[reducible] def prodTopIntroFun [HasEmbeddedTop U] (α : U) : α ⟶ HasEmbeddedTop.Top U ⊓ α :=
+  @[reducible] def prodTopIntroFun [HasEmbeddedTop U] (α : U) : α ⟶ Top U ⊓ α :=
   defProdTopIntroFun α
 
-  def defProdTopElimFun [HasLinearFunOp U] [HasFunctorialTop U] (α : U) :
-    HasEmbeddedTop.Top U ⊓ α ⟶[λ P => HasEmbeddedProducts.snd P] α :=
-  elimFun (HasFunctorialTop.elimFun (HasLinearFunOp.idFun α))
-  ◄ λ _ => by simp [HasFunctorialTop.elimFun]
+  def defProdTopElimFun [HasLinearFunOp U] [HasEmbeddedTop U] (α : U) : Top U ⊓ α ⟶[λ P => snd P] α :=
+  elimFun (HasEmbeddedTop.elimFun (HasLinearFunOp.idFun α))
+  ◄ λ _ => by simp [HasEmbeddedTop.elimFun]
 
-  @[reducible] def prodTopElimFun [HasLinearFunOp U] [HasFunctorialTop U] (α : U) :
-    HasEmbeddedTop.Top U ⊓ α ⟶ α :=
+  @[reducible] def prodTopElimFun [HasLinearFunOp U] [HasEmbeddedTop U] (α : U) : Top U ⊓ α ⟶ α :=
   defProdTopElimFun α
 
-end HasFunctorialProducts
+end HasEmbeddedProducts
