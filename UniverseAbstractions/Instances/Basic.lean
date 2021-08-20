@@ -73,24 +73,17 @@ namespace unit
   { defElimFun    := λ _ => trivial,
     defElimFunFun := λ _ => trivial }
 
-  @[reducible] def unitProduct {α β : unit} : α ⊓' β :=
-  ⟨trivial, trivial⟩
+  def prodEquiv {U : Universe.{u}} (α : U) (β : unit) : ⌈α⌉ ≃ (α ⊓' β) :=
+  { toFun    := λ a => ⟨a, trivial⟩,
+    invFun   := λ P => P.fst,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
 
-  @[simp] theorem unitProductIsUnique {α β : unit} (P : α ⊓' β) :
-    P = unitProduct :=
-  by induction P; rfl
-
-  def prodEquiv (α β : unit) : True ≃ (α ⊓' β) :=
-  { toFun    := λ _ => unitProduct,
-    invFun   := λ _ => trivial,
-    leftInv  := λ _ => proofIrrel _ _,
-    rightInv := λ _ => by simp }
-
-  instance hasEmbeddedProductType (α β : unit) : HasEmbeddedType unit (α ⊓' β) :=
-  { α := (),
+  instance hasEmbeddedProductType {U : Universe.{u}} (α : U) (β : unit) : HasEmbeddedType U (α ⊓' β) :=
+  { α := α,
     h := prodEquiv α β }
 
-  instance hasProducts : HasProducts unit unit unit := ⟨⟩
+  instance hasProducts (U : Universe.{u}) : HasProducts U unit U := ⟨⟩
 
   instance hasEmbeddedProducts : HasEmbeddedProducts unit :=
   { defIntroFun    := λ _ _   => trivial,
@@ -303,7 +296,7 @@ namespace prop
   def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
   { toFun    := λ h => ⟨h.left, h.right⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ _ => rfl,
+    leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ ⟨_, _⟩ => rfl }
 
   instance hasEmbeddedProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
