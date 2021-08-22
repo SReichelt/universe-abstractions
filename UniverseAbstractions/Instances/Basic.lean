@@ -3,6 +3,8 @@ import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
+import UniverseAbstractions.Axioms.Universe.Properties
+import UniverseAbstractions.Axioms.Universe.Quantifiers
 
 import mathlib4_experiments.CoreExt
 import mathlib4_experiments.Data.Equiv.Basic
@@ -54,8 +56,8 @@ namespace unit
     defCompFunFunFun := λ _ _ _ => trivial }
 
   instance hasAffineFunOp : HasAffineFunOp unit :=
-  { defConstFun    := λ _ _ _ => trivial,
-    defConstFunFun := λ _ _   => trivial }
+  { defConstFun    := λ _ {_} _ => trivial,
+    defConstFunFun := λ _ _     => trivial }
 
   instance hasFullFunOp : HasFullFunOp unit :=
   { defDupFun    := λ _   => trivial,
@@ -93,12 +95,10 @@ namespace unit
 
   instance hasEquivalenceCondition : HasEquivalenceCondition.{0, 0, 0, 0} unit unit := ⟨λ _ _ => True⟩
 
-  @[reducible] def unitEquivalence {α β : unit} : α ⟷' β :=
-  ⟨unitFunctor, unitFunctor, trivial⟩
+  @[reducible] def unitEquivalence {α β : unit} : α ⟷' β := ⟨trivial, trivial, trivial⟩
 
-  @[simp] theorem unitEquivalence.unique {α β : unit} {E : α ⟷' β} :
-    E = unitEquivalence :=
-  by induction E; simp; exact HEq.rfl
+  @[simp] theorem unitEquivalence.unique {α β : unit} {E : α ⟷' β} : E = unitEquivalence :=
+  by induction E; simp; exact ⟨proofIrrel _ _, proofIrrel _ _, HEq.rfl⟩
 
   def equivEquiv (α β : unit) : True ≃ (α ⟷' β) :=
   { toFun    := λ _ => unitEquivalence,
@@ -117,11 +117,11 @@ namespace unit
 
   instance hasEquivOp : HasEquivOp unit :=
   { defIdEquiv         := λ _     => trivial,
+    defInvEquiv        := λ _     => trivial,
+    defInvEquivFun     := λ _ _   => trivial,
     defCompEquiv       := λ _ _   => trivial,
     defCompEquivFun    := λ _ _   => trivial,
-    defCompEquivFunFun := λ _ _ _ => trivial,
-    defInvEquiv        := λ _     => trivial,
-    defInvEquivFun     := λ _ _   => trivial }
+    defCompEquivFunFun := λ _ _ _ => trivial }
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences unit :=
   { defFunDomainEquiv      := λ _ _   => trivial,
@@ -144,6 +144,11 @@ namespace unit
 
   instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences unit :=
   { defProdDistrEquiv := λ _ _ _ => trivial }
+
+  instance hasUnivFunctoriality : HasFunctoriality.{0, v + 1, 0} unit univ.{v} := ⟨λ _ => True⟩
+  instance hasUnivConstFun : HasConstFun unit univ.{v} := ⟨λ _ {_} _ => trivial⟩
+
+  instance hasGeneralizedProperties : HasGeneralizedProperties unit := ⟨⟩
 
 --  def Rel (α : Sort u) : GeneralizedRelation α unit := λ _ _ => UnitType
 --
@@ -224,28 +229,20 @@ namespace sort
   instance hasFunctoriality (U : Universe.{u}) : HasFunctoriality.{u, v, 0} U sort.{v} :=
   ⟨λ _ => True⟩
 
-  def toExtFun   {U : Universe.{u}} {α : U} {β : sort.{v}} (f : α →  β) : α ⟶' β := ⟨f, trivial⟩
-  def fromExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (F : α ⟶' β) : α →  β := F.f
-
-  @[simp] theorem fromToExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (f : α → β) :
-    fromExtFun (toExtFun f) = f :=
-  rfl
-
-  @[simp] theorem toFromExtFun {U : Universe.{u}} {α : U} {β : sort.{v}} (F : α ⟶' β) :
-    toExtFun (fromExtFun F) = F :=
-  by induction F; rfl
-
   def funEquiv {U : Universe.{u}} (α : U) (β : sort.{v}) : (α → β) ≃ (α ⟶' β) :=
-  { toFun    := toExtFun,
-    invFun   := fromExtFun,
-    leftInv  := fromToExtFun,
-    rightInv := toFromExtFun }
+  { toFun    := λ f => ⟨f, trivial⟩,
+    invFun   := λ F => F.f,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedFunctorType {U : Universe.{u}} {α : U} (β : sort.{v}) : HasEmbeddedType sort.{imax u v} (α ⟶' β) :=
+  instance hasEmbeddedFunctorType {U : Universe.{u}} (α : U) (β : sort.{v}) : HasEmbeddedType sort.{imax u v} (α ⟶' β) :=
   { α := α → β,
     h := funEquiv α β }
 
   instance hasFunctors (U : Universe.{u}) : HasFunctors U sort.{v} sort.{imax u v} := ⟨⟩
+
+  -- This shouldn't be necessary, but sometimes we have to help Lean a bit.
+  @[reducible] def toFunctor {U : Universe.{u}} {α : U} {β : sort.{v}} (f : α → β) : ⌈α ⟶ β⌉ := f
 
   instance hasEmbeddedFunctors : HasEmbeddedFunctors sort.{u} := ⟨⟩
 
@@ -258,8 +255,8 @@ namespace sort
     defCompFunFunFun := λ _ _ _ => trivial }
 
   instance hasAffineFunOp : HasAffineFunOp sort.{u} :=
-  { defConstFun    := λ _ _ _ => trivial,
-    defConstFunFun := λ _ _   => trivial }
+  { defConstFun    := λ _ {_} _ => trivial,
+    defConstFunFun := λ _ _     => trivial }
 
   instance hasFullFunOp : HasFullFunOp sort.{u} :=
   { defDupFun    := λ _   => trivial,
@@ -267,9 +264,34 @@ namespace sort
 
   instance hasFunOp : HasFunOp sort.{u} := ⟨⟩
 
+  instance hasUnivFunctoriality : HasFunctoriality.{u, v + 1, 0} sort.{u} univ.{v} := ⟨λ _ => True⟩
+  instance hasUnivConstFun : HasConstFun sort.{u} univ.{v} := ⟨λ _ {_} _ => trivial⟩
+
+  instance hasGeneralizedProperties : HasGeneralizedProperties sort.{u} := ⟨⟩
+
+  instance hasUniversality : HasUniversality.{u, v, 0} sort.{u} sort.{v} := ⟨λ _ => True⟩
+
+  def piEquiv {α : sort.{u}} (P : HasGeneralizedProperties.Property sort.{v} α) :
+    HasGeneralizedProperties.Pi P ≃ HasUniversality.Pi P :=
+  { toFun    := λ f => ⟨f, trivial⟩,
+    invFun   := λ F => F.f,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedPiType {α : sort.{u}} (P : HasGeneralizedProperties.Property sort.{v} α) :
+    HasEmbeddedType sort.{imax u v} (HasUniversality.Pi P) :=
+  { α := HasGeneralizedProperties.Pi P,
+    h := piEquiv P }
+
+  instance hasPiTypes : HasPiTypes sort.{u} sort.{u} sort.{u} := ⟨⟩
+  instance hasEmbeddedPiTypes : HasEmbeddedPiTypes sort.{u} sort.{u} := ⟨⟩
+
 end sort
 
 namespace prop
+
+  instance hasPiTypes : HasPiTypes sort.{u} prop prop := ⟨⟩
+  instance hasEmbeddedPiTypes : HasEmbeddedPiTypes sort.{u} prop := ⟨⟩
 
   instance hasEmbeddedTopType : HasEmbeddedType prop True :=
   { α := True,
@@ -313,26 +335,11 @@ namespace prop
 
   instance hasEquivalenceCondition : HasEquivalenceCondition prop prop := ⟨λ _ _ => True⟩
 
-  @[reducible] def toExtEquiv {p q : prop} (h : p ↔ q) : p ⟷' q :=
-  ⟨sort.toExtFun h.mp, sort.toExtFun h.mpr, trivial⟩
-
-  @[reducible] def fromExtEquiv {p q : prop} (E : p ⟷' q) : p ↔ q :=
-  ⟨E.toFun.f, E.invFun.f⟩
-
-  @[simp] theorem fromToExtEquiv {p q : prop} (h : p ↔ q) :
-    fromExtEquiv (toExtEquiv h) = h :=
-  rfl
-
-  @[simp] theorem toFromExtEquiv {p q : prop} (E : p ⟷' q) :
-    toExtEquiv (fromExtEquiv E) = E :=
-  by match E with
-     | ⟨toFun, invFun, _⟩ => simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun, HEq.rfl⟩
-
   def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
-  { toFun    := toExtEquiv,
-    invFun   := fromExtEquiv,
-    leftInv  := fromToExtEquiv,
-    rightInv := toFromExtEquiv }
+  { toFun    := λ h => ⟨h.mp, h.mpr, trivial⟩,
+    invFun   := λ E => ⟨E.toFun, E.invFun⟩,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _, _⟩ => by simp; exact HEq.rfl }
 
   instance hasEmbeddedEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
   { α := p ↔ q,
@@ -345,11 +352,11 @@ namespace prop
 
   instance hasEquivOp : HasEquivOp prop :=
   { defIdEquiv         := λ _     => trivial,
+    defInvEquiv        := λ _     => trivial,
+    defInvEquivFun     := λ _ _   => trivial,
     defCompEquiv       := λ _ _   => trivial,
     defCompEquivFun    := λ _ _   => trivial,
-    defCompEquivFunFun := λ _ _ _ => trivial,
-    defInvEquiv        := λ _     => trivial,
-    defInvEquivFun     := λ _ _   => trivial }
+    defCompEquivFunFun := λ _ _ _ => trivial }
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences prop :=
   { defFunDomainEquiv      := λ _ _   => trivial,
@@ -499,50 +506,25 @@ namespace type
     p = q :=
   by induction p; induction q; simp [hFst, hSnd]
 
-  class DefEquiv {α β : type} (toFun : α ⟶' β) (invFun : β ⟶' α) : Prop where
+  class DefEquiv {α β : type} (toFun : α → β) (invFun : β → α) : Prop where
   (leftInv  : ∀ a, invFun (toFun a) = a)
   (rightInv : ∀ b, toFun (invFun b) = b)
 
   instance hasEquivalenceCondition : HasEquivalenceCondition type type := ⟨DefEquiv⟩
 
-  @[reducible] def toDefEquiv {α β : type} (e : ⌈α⌉ ≃ ⌈β⌉) : α ⟷'[sort.toExtFun e.toFun, sort.toExtFun e.invFun] β :=
+  @[reducible] def DefEquiv.fromEquiv {α β : type} (e : ⌈α⌉ ≃ ⌈β⌉) : α ⟷[sort.toFunctor e.toFun, sort.toFunctor e.invFun] β :=
   ⟨e.leftInv, e.rightInv⟩
 
-  theorem defEquiv.unique {α β : type} {toFun : α ⟶' β} {invFun : β ⟶' α} (h₁ h₂ : α ⟷'[toFun,invFun] β) :
-    h₁ = h₂ :=
-  proofIrrel _ _
-
-  theorem defEquiv.unique' {α β : type} {toFun₁ toFun₂ : α ⟶' β} {invFun₁ invFun₂ : β ⟶' α}
-                           (hToFun : toFun₁ = toFun₂) (hInvFun : invFun₁ = invFun₂)
-                           (h₁ : α ⟷'[toFun₁,invFun₁] β) (h₂ : α ⟷'[toFun₂,invFun₂] β) :
-    h₁ ≅ h₂ :=
-  heq_of_eqRec_eq (hToFun ▸ hInvFun ▸ rfl) (proofIrrel _ _)
-
-  @[reducible] def invDefEquiv {α β : type} {toFun : α ⟶' β} {invFun : β ⟶' α} (h : α ⟷'[toFun,invFun] β) :
-    β ⟷'[invFun,toFun] α :=
+  @[reducible] def DefEquiv.inv {α β : type} {toFun : α → β} {invFun : β → α}
+                                (h : α ⟷[sort.toFunctor toFun, sort.toFunctor invFun] β) :
+    β ⟷[sort.toFunctor invFun, sort.toFunctor toFun] α :=
   ⟨h.rightInv, h.leftInv⟩
 
-  @[reducible] def toExtEquiv {α β : type} (e : Equiv α β) : α ⟷' β :=
-  ⟨sort.toExtFun e.toFun, sort.toExtFun e.invFun, toDefEquiv e⟩
-
-  @[reducible] def fromExtEquiv {α β : type} (E : α ⟷' β) : Equiv α β :=
-  ⟨E.toFun.f, E.invFun.f, E.E.leftInv, E.E.rightInv⟩
-
-  @[simp] theorem fromToExtEquiv {α β : type} (e : Equiv α β) :
-    fromExtEquiv (toExtEquiv e) = e :=
-  by induction e; rfl
-
-  @[simp] theorem toFromExtEquiv {α β : type} (E : α ⟷' β) :
-    toExtEquiv (fromExtEquiv E) = E :=
-  by match E with
-     | ⟨toFun, invFun, _⟩ => simp; exact ⟨sort.toFromExtFun toFun, sort.toFromExtFun invFun,
-                                          defEquiv.unique' (sort.toFromExtFun toFun) (sort.toFromExtFun invFun) _ _⟩
-
   def equivEquiv (α β : type) : Equiv α β ≃ (α ⟷' β) :=
-  { toFun    := toExtEquiv,
-    invFun   := fromExtEquiv,
-    leftInv  := fromToExtEquiv,
-    rightInv := toFromExtEquiv }
+  { toFun    := λ e => ⟨e.toFun, e.invFun, DefEquiv.fromEquiv e⟩,
+    invFun   := λ E => ⟨E.toFun, E.invFun, E.E.leftInv, E.E.rightInv⟩,
+    leftInv  := λ ⟨_, _, _, _⟩ => rfl,
+    rightInv := λ ⟨_, _, _⟩ => rfl }
 
   instance hasEmbeddedEquivType (α β : type) : HasEmbeddedType type (α ⟷' β) :=
   { α := Equiv α β,
@@ -554,11 +536,11 @@ namespace type
   { defElimFun := λ _ _ => trivial }
 
   instance hasEquivOp : HasEquivOp type :=
-  { defIdEquiv         := λ α     => toDefEquiv (Equiv.refl α),
-    defCompEquiv       := λ e f   => toDefEquiv (Equiv.trans e f),
+  { defIdEquiv         := λ α     => DefEquiv.fromEquiv (Equiv.refl α),
+    defCompEquiv       := λ e f   => DefEquiv.fromEquiv (Equiv.trans e f),
     defCompEquivFun    := λ _ _   => trivial,
     defCompEquivFunFun := λ _ _ _ => trivial,
-    defInvEquiv        := λ e     => toDefEquiv (Equiv.symm e),
+    defInvEquiv        := λ e     => DefEquiv.fromEquiv (Equiv.symm e),
     defInvEquivFun     := λ _ _   => trivial }
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type :=

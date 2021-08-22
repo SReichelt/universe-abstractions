@@ -120,26 +120,16 @@ namespace HasFunctors
   @[simp] theorem fromExternal.eff (F : α ⟶' β) (a : α) : (fromExternal F) a = F a :=
   congrFun (congrArg HasFunctoriality.Fun.f (toFromExternal F)) a
 
-  instance coeDefFun (f : α → β) : CoeFun (α ⟶[f] β) (λ _ => α → β) := ⟨λ _ => f⟩
-
   def toDefFun               (F : α ⟶ β)    : α ⟶[funCoe F] β := HasFunctoriality.toDefFun (toExternal F)
   def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶ β           := fromExternal (HasFunctoriality.fromDefFun F)
-
   instance {f : α → β} : Coe (α ⟶[f] β) ⌈α ⟶ β⌉ := ⟨fromDefFun⟩
 
-  def castDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) : α ⟶[f'] β :=
-  HasFunctoriality.castDefFun F h
-
   @[simp] theorem fromCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
-    fromDefFun (castDefFun F h) = fromDefFun F :=
+    fromDefFun (HasFunctoriality.castDefFun F h) = fromDefFun F :=
   congrArg fromExternal (HasFunctoriality.fromCastDefFun F h)
 
-  @[simp] theorem castCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
-    castDefFun (castDefFun F h) (λ a => Eq.symm (h a)) = F :=
-  HasFunctoriality.castCastDefFun F h
-
   def toDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β :=
-  castDefFun (toDefFun F) h
+  HasFunctoriality.castDefFun (toDefFun F) h
   infix:60 " ◄ " => HasFunctors.toDefFun'
 
   -- Marking this `@[simp]` causes a huge performance hit. I don't understand why.
@@ -181,8 +171,6 @@ class HasConstFun (U V : Universe) [HasFunctoriality U V] where
 
 namespace HasConstFun
 
-  variable {U V : Universe} [HasFunctoriality U V] [HasConstFun U V]
-
   @[reducible] def constFun' {U V : Universe} [HasFunctoriality U V] [HasConstFun U V] (α : U) {β : V} (c : β) :
     α ⟶' β :=
   HasFunctoriality.fromDefFun (defConstFun α c)
@@ -193,25 +181,39 @@ namespace HasConstFun
 
 end HasConstFun
 
-class HasCompFun (U V W : Universe) [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W] where
+class HasCompFun' (U V W : Universe) [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W] where
 (defCompFun {α : U} {β : V} {γ : W} (F : α ⟶' β) (G : β ⟶' γ) : α ⟶[λ a => G (F a)] γ)
+
+namespace HasCompFun'
+
+  variable {U V W : Universe} [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W]
+           [HasCompFun' U V W]
+
+  @[reducible] def compFun' {α : U} {β : V} {γ : W} (F : α ⟶' β) (G : β ⟶' γ) : α ⟶' γ :=
+  HasFunctoriality.fromDefFun (defCompFun F G)
+
+  @[reducible] def revCompFun' {α : U} {β : V} {γ : W} (G : β ⟶' γ) (F : α ⟶' β) := compFun' F G
+  infixr:90 " ⊙' " => HasCompFun'.revCompFun'
+
+end HasCompFun'
+
+class HasCompFun (U V W X Y : Universe) [HasFunctors U V X] [HasFunctors V W Y] [HasFunctoriality U W] where
+(defCompFun {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶[λ a => G (F a)] γ)
 
 namespace HasCompFun
 
-  @[reducible] def compFun' {U V W : Universe} [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W]
-                            [HasCompFun U V W] {α : U} {β : V} {γ : W} (F : α ⟶' β) (G : β ⟶' γ) : α ⟶' γ :=
-  HasFunctoriality.fromDefFun (defCompFun F G)
+  variable {U V W X Y Z : Universe} [HasFunctors U V X] [HasFunctors V W Y] [HasFunctors U W Z]
+           [HasCompFun U V W X Y]
 
-  @[reducible] def revCompFun' {U V W : Universe} [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W]
-                               [HasCompFun U V W] {α : U} {β : V} {γ : W} (G : β ⟶' γ) (F : α ⟶' β) := compFun' F G
-  infixr:90 " ⊙' " => HasCompFun.revCompFun'
+  @[reducible] def compFun {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ :=
+  HasFunctors.fromDefFun (defCompFun F G)
 
-  @[reducible] def compFun {U V W X Y Z : Universe} [HasFunctors U V X] [HasFunctors V W Y] [HasFunctors U W Z]
-                           [HasCompFun U V W] {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ :=
-  HasFunctors.fromExternal (compFun' (HasFunctors.toExternal F) (HasFunctors.toExternal G))
+  @[reducible] def revCompFun {α : U} {β : V} {γ : W} (G : β ⟶ γ) (F : α ⟶ β) := compFun F G
 
-  @[reducible] def revCompFun {U V W X Y Z : Universe} [HasFunctors U V X] [HasFunctors V W Y] [HasFunctors U W Z]
-                              [HasCompFun U V W] {α : U} {β : V} {γ : W} (G : β ⟶ γ) (F : α ⟶ β) := compFun F G
+  instance hasCompFun' {U V W X Y : Universe} [HasFunctors U V X] [HasFunctors V W Y] [HasFunctoriality U W]
+                       [HasCompFun U V W X Y] : HasCompFun' U V W :=
+  ⟨λ F G => HasFunctoriality.castDefFun (defCompFun (HasFunctors.fromExternal F) (HasFunctors.fromExternal G))
+                                        (λ _ => by simp)⟩
 
 end HasCompFun
 
@@ -282,9 +284,7 @@ namespace HasLinearFunOp
   @[reducible] def appFun {α : U} (a : α) (β : U) : (α ⟶ β) ⟶ β := defAppFun a β
   @[reducible] def appFunFun (α β : U) : α ⟶ (α ⟶ β) ⟶ β := defAppFunFun α β
 
-  instance hasCompFun : HasCompFun U U U :=
-  ⟨λ F G => HasFunctors.castDefFun (defCompFun (HasFunctors.fromExternal F) (HasFunctors.fromExternal G))
-                                   (λ _ => by simp)⟩
+  instance hasCompFun : HasCompFun U U U U U := ⟨defCompFun⟩
 
   @[reducible] def compFun {α β γ : U} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ := defCompFun F G
   @[reducible] def compFunFun {α β : U} (F : α ⟶ β) (γ : U) : (β ⟶ γ) ⟶ (α ⟶ γ) := defCompFunFun F γ
