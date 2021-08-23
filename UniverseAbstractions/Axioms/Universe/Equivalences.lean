@@ -166,7 +166,7 @@ end HasCompEquiv
 
 
 
-class HasEmbeddedEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedProducts.{u} U]
+class HasEmbeddedEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedProducts.{u, w} U]
   extends HasEquivalences.{u, u, u, w, w'} U U U where
 (defElimFun (α β : U) : (α ⟷ β) ⟶[λ E => HasProducts.intro (HasEquivalences.toFun E) (HasEquivalences.invFun E)] (α ⟶ β) ⊓ (β ⟶ α))
 

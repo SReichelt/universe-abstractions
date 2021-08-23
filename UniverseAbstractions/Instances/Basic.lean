@@ -1,10 +1,9 @@
 import UniverseAbstractions.Axioms.Universes
+import UniverseAbstractions.Axioms.Universe.Properties
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
-import UniverseAbstractions.Axioms.Universe.Properties
-import UniverseAbstractions.Axioms.Universe.Quantifiers
 
 import mathlib4_experiments.CoreExt
 import mathlib4_experiments.Data.Equiv.Basic
@@ -24,24 +23,31 @@ def unit : Universe.{0} := ⟨Unit⟩
 
 namespace unit
 
+  instance hasProperties (U : Universe.{u}) : HasProperties.{u, 0, 0} U unit :=
+  { IsProp      := λ _   => True,
+    constIsProp := λ _ _ => trivial }
+
   instance hasFunctoriality (U : Universe.{u}) : HasFunctoriality.{u, 0, 0} U unit :=
   ⟨λ _ => True⟩
 
-  def unitFunctor {U : Universe.{u}} {α : U} {β : unit} : α ⟶' β := ⟨λ _ => trivial, trivial⟩
+  def unitFunctor {U : Universe.{u}} {P : HasProperties.Property U unit} : HasFunctoriality.Pi P :=
+  ⟨λ _ => trivial, trivial⟩
 
-  @[simp] theorem unitFunctor.unique {U : Universe.{u}} {α : U} {β : unit} (F : α ⟶' β) :
+  @[simp] theorem unitFunctor.unique {U : Universe.{u}} {P : HasProperties.Property U unit}
+                                     (F : HasFunctoriality.Pi P) :
     F = unitFunctor :=
   by induction F; rfl
 
-  def funEquiv {U : Universe.{u}} (α : U) (β : unit) : True ≃ (α ⟶' β) :=
+  def funEquiv {U : Universe.{u}} (P : HasProperties.Property U unit) : True ≃ HasFunctoriality.Pi P :=
   { toFun    := λ _ => unitFunctor,
     invFun   := λ _ => trivial,
     leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ _ => by simp }
 
-  instance hasEmbeddedFunctorType {U : Universe.{u}} (α : U) (β : unit) : HasEmbeddedType unit (α ⟶' β) :=
+  instance hasEmbeddedFunctorType {U : Universe.{u}} (P : HasProperties.Property U unit) :
+    HasEmbeddedType unit (HasFunctoriality.Pi P) :=
   { α := (),
-    h := funEquiv α β }
+    h := funEquiv P }
 
   instance hasFunctors (U : Universe.{u}) : HasFunctors U unit unit := ⟨⟩
 
@@ -145,11 +151,6 @@ namespace unit
   instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences unit :=
   { defProdDistrEquiv := λ _ _ _ => trivial }
 
-  instance hasUnivFunctoriality : HasFunctoriality.{0, v + 1, 0} unit univ.{v} := ⟨λ _ => True⟩
-  instance hasUnivConstFun : HasConstFun unit univ.{v} := ⟨λ _ {_} _ => trivial⟩
-
-  instance hasGeneralizedProperties : HasGeneralizedProperties unit := ⟨⟩
-
 --  def Rel (α : Sort u) : GeneralizedRelation α unit := λ _ _ => UnitType
 --
 --  instance Rel.isEquivalence (α : Sort u) : IsEquivalence (Rel α) :=
@@ -226,23 +227,33 @@ def sort : Universe.{u} := ⟨Sort u⟩
 
 namespace sort
 
-  instance hasFunctoriality (U : Universe.{u}) : HasFunctoriality.{u, v, 0} U sort.{v} :=
+  -- One special property of the `sort` universe is that we can map out of a type in `sort` into
+  -- any universe, even dependently. We assume that such functors are always well-defined,
+  -- therefore we define functoriality of all functions out of `sort` to be trivial.
+
+  instance hasProperties (V : Universe.{v}) : HasProperties.{u, v, 0} sort.{u} V :=
+  { IsProp      := λ _   => True,
+    constIsProp := λ _ _ => trivial }
+
+  instance hasFunctoriality (V : Universe.{v}) : HasFunctoriality.{u, v, 0} sort.{u} V :=
   ⟨λ _ => True⟩
 
-  def funEquiv {U : Universe.{u}} (α : U) (β : sort.{v}) : (α → β) ≃ (α ⟶' β) :=
+  def funEquiv {V : Universe.{v}} (P : HasProperties.Property sort.{u} V) :
+    HasProperties.Pi P ≃ HasFunctoriality.Pi P :=
   { toFun    := λ f => ⟨f, trivial⟩,
     invFun   := λ F => F.f,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedFunctorType {U : Universe.{u}} (α : U) (β : sort.{v}) : HasEmbeddedType sort.{imax u v} (α ⟶' β) :=
-  { α := α → β,
-    h := funEquiv α β }
+  instance hasEmbeddedFunctorType {V : Universe.{v}} (P : HasProperties.Property sort.{u} V) :
+    HasEmbeddedType sort.{imax u v} (HasFunctoriality.Pi P) :=
+  { α := HasProperties.Pi P,
+    h := funEquiv P }
 
-  instance hasFunctors (U : Universe.{u}) : HasFunctors U sort.{v} sort.{imax u v} := ⟨⟩
+  instance hasFunctors (V : Universe.{v}) : HasFunctors sort.{u} V sort.{imax u v} := ⟨⟩
 
   -- This shouldn't be necessary, but sometimes we have to help Lean a bit.
-  @[reducible] def toFunctor {U : Universe.{u}} {α : U} {β : sort.{v}} (f : α → β) : ⌈α ⟶ β⌉ := f
+  @[reducible] def toFunctor {α β : sort.{u}} (f : α → β) : ⌈α ⟶ β⌉ := f
 
   instance hasEmbeddedFunctors : HasEmbeddedFunctors sort.{u} := ⟨⟩
 
@@ -264,34 +275,9 @@ namespace sort
 
   instance hasFunOp : HasFunOp sort.{u} := ⟨⟩
 
-  instance hasUnivFunctoriality : HasFunctoriality.{u, v + 1, 0} sort.{u} univ.{v} := ⟨λ _ => True⟩
-  instance hasUnivConstFun : HasConstFun sort.{u} univ.{v} := ⟨λ _ {_} _ => trivial⟩
-
-  instance hasGeneralizedProperties : HasGeneralizedProperties sort.{u} := ⟨⟩
-
-  instance hasUniversality : HasUniversality.{u, v, 0} sort.{u} sort.{v} := ⟨λ _ => True⟩
-
-  def piEquiv {α : sort.{u}} (P : HasGeneralizedProperties.Property sort.{v} α) :
-    HasGeneralizedProperties.Pi P ≃ HasUniversality.Pi P :=
-  { toFun    := λ f => ⟨f, trivial⟩,
-    invFun   := λ F => F.f,
-    leftInv  := λ _ => rfl,
-    rightInv := λ ⟨_, _⟩ => rfl }
-
-  instance hasEmbeddedPiType {α : sort.{u}} (P : HasGeneralizedProperties.Property sort.{v} α) :
-    HasEmbeddedType sort.{imax u v} (HasUniversality.Pi P) :=
-  { α := HasGeneralizedProperties.Pi P,
-    h := piEquiv P }
-
-  instance hasPiTypes : HasPiTypes sort.{u} sort.{u} sort.{u} := ⟨⟩
-  instance hasEmbeddedPiTypes : HasEmbeddedPiTypes sort.{u} sort.{u} := ⟨⟩
-
 end sort
 
 namespace prop
-
-  instance hasPiTypes : HasPiTypes sort.{u} prop prop := ⟨⟩
-  instance hasEmbeddedPiTypes : HasEmbeddedPiTypes sort.{u} prop := ⟨⟩
 
   instance hasEmbeddedTopType : HasEmbeddedType prop True :=
   { α := True,
@@ -577,7 +563,7 @@ namespace type
     defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
     defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
 
---  instance hasGeneralizedProperties : HasGeneralizedProperties.{u, 0, 0} sort.{u} prop :=
+--  instance hasProperties : HasProperties.{u, 0, 0} sort.{u} prop :=
 --  { IsProp      := λ _   => True,
 --    constIsProp := λ _ _ => trivial }
 --

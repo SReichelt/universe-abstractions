@@ -1,5 +1,4 @@
 import UniverseAbstractions.Axioms.Universes
-import UniverseAbstractions.Axioms.Universe.Functors
 
 import mathlib4_experiments.Data.Equiv.Basic
 
@@ -12,25 +11,29 @@ universe u v w
 
 
 
--- We define a "`V`-valued property" on a type `α` to be a functor targetting a universe `V`. If
--- `V` is the universe `prop`, this is just a regular property, or equivalently `Set α` in Lean.
+-- We define a "`V`-valued property" on a type `α` to be a function yielding a type in `V` with an
+-- additional condition. If `V` is the universe `prop`, this is just a regular property, or
+-- equivalently `Set α` in Lean.
 
-class HasGeneralizedProperties (U : Universe.{u})
-  extends HasFunctoriality.{u, v + 1, w} U univ.{v}, HasConstFun U univ.{v}
+class HasProperties (U : Universe.{u}) (V : Universe.{v}) : Type (max u v w) where
+(IsProp      {α : U}         : (α → V) → Sort w)
+(constIsProp (α : U) (β : V) : IsProp (Function.const ⌈α⌉ β))
 
-namespace HasGeneralizedProperties
+namespace HasProperties
 
-  variable {U : Universe.{u}} [HasGeneralizedProperties.{u, v, w} U]
+  structure Property (U : Universe.{u}) (V : Universe.{v}) [h : HasProperties.{u, v, w} U V] :
+    Sort (max (u + 1) (v + 1) w) where
+  {α : U}
+  {p : α → V}
+  (P : h.IsProp p)
 
-  def Property (V : univ.{v}) (α : U) : Sort (max u (v + 1) w) := α ⟶' V
+  variable {U : Universe.{u}} {V : Universe.{v}} [h : HasProperties U V]
 
-  variable {V : univ.{v}}
-
-  instance coeFun {α : U} : CoeFun (Property V α) (λ _ => α → V) := HasFunctoriality.coeFun
+  instance coeFun : CoeFun (Property U V) (λ P => P.α → V) := ⟨Property.p⟩
 
   section Properties
 
-    variable {α : U} (P : Property V α)
+    variable (P : Property U V)
 
     -- Universality and existence with respect to generalized properties are given by `∀` and `Σ'`.
 
@@ -49,7 +52,7 @@ namespace HasGeneralizedProperties
   -- applied to this property is just the type of functions from `α` to `β`, and `Sigma` applied to
   -- this property is just the product of `α` and `β`.
 
-  def constProp (α : U) (β : V) : Property V α := HasConstFun.constFun' α β
+  def constProp (α : U) (β : V) : Property U V := ⟨h.constIsProp α β⟩
 
   namespace constProp
 
@@ -65,24 +68,4 @@ namespace HasGeneralizedProperties
 
   end constProp
 
-end HasGeneralizedProperties
-
-
-
--- We can define a "`V`-valued set" with base universe `U` as a bundled version of `Property V`
--- when treated as a type class on `U`. In other words, a set is a type `α : U` together with a
--- `V`-valued property `P` on `α`.
---
--- This gives us a universe of all `V`-valued sets with base universe `U`, where we can define
--- functors etc.
---
--- (TODO: How does this relate to embedded sigma types, i.e. subtypes?)
-
-def HasGeneralizedProperties.asTypeClass (U : Universe.{u}) [HasGeneralizedProperties.{u, v, w} U]
-                                         (V : Universe.{v}) :
-  GeneralizedTypeClass ⌈U⌉ :=
-HasGeneralizedProperties.Property V
-
-def GeneralizedSet (U : Universe.{u}) [HasGeneralizedProperties.{u, v, w} U] (V : Universe.{v}) :
-  Type (max u (v + 1) w) :=
-Bundled (HasGeneralizedProperties.asTypeClass U V)
+end HasProperties

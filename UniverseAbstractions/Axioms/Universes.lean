@@ -80,9 +80,13 @@ namespace Universe
 
 end Universe
 
-def univ : Universe.{u + 1} := ⟨Universe.{u}⟩
 
-instance (U : univ) : HasInstances ⌈U⌉ := Universe.instInst U
+
+def UniverseClass := GeneralizedTypeClass.{u + 1, u + 1} Universe.{u}
+
+def univ (C : UniverseClass.{u}) : Universe.{u + 1} := ⟨Bundled C⟩
+
+instance {C : UniverseClass.{u}} (U : univ C) : HasInstances ⌈U⌉ := Universe.instInst U.α
 
 
 
