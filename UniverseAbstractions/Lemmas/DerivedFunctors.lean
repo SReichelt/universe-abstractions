@@ -125,3 +125,31 @@ namespace HasFullFunOp
   defRevSubstFunFunFun α β γ
 
 end HasFullFunOp
+
+
+
+-- TODO: Replace equality with instance equivalence
+-- TODO: `swapApp` is provable from `swapFunFun` being self-inverse (`swapConst` also?)
+-- TODO: Recover more readable variants
+
+def DependentOperation {α : Sort _} {U : Universe} [HasEmbeddedFunctors U] (P : α → α → U) :=
+∀ a b c, P a b ⟶ P b c ⟶ P a c
+
+def DependentOperation.Associative {α : Sort _} {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U]
+                                   (P : α → α → U) (R : DependentOperation P) (a b c d : α) :=
+HasLinearFunOp.swapFunFun (HasLinearFunOp.compFunFunFun (P c d) (P b d) (P a d) ⊙ R b c d) ⊙ R a b d =
+HasLinearFunOp.revCompFunFun (P b c) (R a c d) ⊙ R a b c
+
+class HasLinearFunOpEquiv (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U] where
+(rightId   (α β     : U) : HasLinearFunOp.compFunFun (HasLinearFunOp.idFun α) β = HasLinearFunOp.idFun (α ⟶ β))
+(leftId    (α β     : U) : HasLinearFunOp.revCompFunFun α (HasLinearFunOp.idFun β) = HasLinearFunOp.idFun (α ⟶ β))
+(swapApp   (α β γ   : U) : HasLinearFunOp.swapFunFun (HasLinearFunOp.appFunFun α β) = HasLinearFunOp.idFun (α ⟶ β))
+(compAssoc (α β γ δ : U) : DependentOperation.Associative HasFunctors.Fun HasLinearFunOp.compFunFunFun α β γ δ)
+
+class HasAffineFunOpEquiv (U : Universe) [HasEmbeddedFunctors U] [HasAffineFunOp U] extends HasLinearFunOpEquiv U where
+(swapConst  (α β   : U) : HasLinearFunOp.swapFunFun (HasSubLinearFunOp.constFunFun α β) = HasSubLinearFunOp.constFun α (HasLinearFunOp.idFun β))
+(leftConst  (α β γ : U) : HasLinearFunOp.revCompFunFunFun α β γ ⊙ HasSubLinearFunOp.constFunFun β γ = HasSubLinearFunOp.constFunFun (α ⟶ β) (α ⟶ γ) ⊙ HasSubLinearFunOp.constFunFun α γ)
+(rightConst (α β γ : U) : HasLinearFunOp.compFunFunFun α β γ ⊙ HasSubLinearFunOp.constFunFun α β = HasLinearFunOp.revCompFunFun (β ⟶ γ) (HasSubLinearFunOp.constFunFun α γ) ⊙ HasLinearFunOp.appFunFun β γ)
+
+class HasFullFunOpEquiv (U : Universe) [HasEmbeddedFunctors U] [HasFullFunOp U] extends HasAffineFunOpEquiv U where
+(dupConst (α β : U) : HasNonLinearFunOp.dupFunFun α β ⊙ HasSubLinearFunOp.constFunFun α (α ⟶ β) = HasLinearFunOp.idFun (α ⟶ β))

@@ -59,12 +59,12 @@ def apply {α β : U} (F : α ⟶ β) (a : α) := F a
 def testIndirFun (α β : U) (F : α ⟶ β) : α ⟶ β := Λ a => apply F a
 #print testIndirFun
 
-def testFromToDefFun (α β : U) : (α ⟶ β) ⟶ (α ⟶ β) :=
-Λ F => HasFunctors.fromDefFun (HasFunctors.toDefFun F)
-#print testFromToDefFun
-theorem testFromToDefFunEff (α β : U) (F : α ⟶ β) :
-  testFromToDefFun α β F = F :=
-by simp [testFromToDefFun]
+def testFromToDefPi (α β : U) : (α ⟶ β) ⟶ (α ⟶ β) :=
+Λ F => HasFunctors.fromDefPi (HasFunctors.toDefPi F)
+#print testFromToDefPi
+theorem testFromToDefPiEff (α β : U) (F : α ⟶ β) :
+  testFromToDefPi α β F = F :=
+by simp [testFromToDefPi]
 
 def testApp (α β : U) (a : α) : (α ⟶ β) ⟶ β := Λ F => F a
 #print testApp

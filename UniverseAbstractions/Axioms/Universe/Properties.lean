@@ -7,7 +7,7 @@ import mathlib4_experiments.Data.Equiv.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w
+universe u v w w'
 
 
 
@@ -21,19 +21,18 @@ class HasProperties (U : Universe.{u}) (V : Universe.{v}) : Type (max u v w) whe
 
 namespace HasProperties
 
-  structure Property (U : Universe.{u}) (V : Universe.{v}) [h : HasProperties.{u, v, w} U V] :
+  structure Property {U : Universe.{u}} (α : U) (V : Universe.{v}) [h : HasProperties.{u, v, w} U V] :
     Sort (max (u + 1) (v + 1) w) where
-  {α : U}
   {p : α → V}
   (P : h.IsProp p)
 
   variable {U : Universe.{u}} {V : Universe.{v}} [h : HasProperties U V]
 
-  instance coeFun : CoeFun (Property U V) (λ P => P.α → V) := ⟨Property.p⟩
+  instance coeFun {α : U} : CoeFun (Property α V) (λ _ => α → V) := ⟨Property.p⟩
 
   section Properties
 
-    variable (P : Property U V)
+    variable {α : U} (P : Property α V)
 
     -- Universality and existence with respect to generalized properties are given by `∀` and `Σ'`.
 
@@ -52,7 +51,7 @@ namespace HasProperties
   -- applied to this property is just the type of functions from `α` to `β`, and `Sigma` applied to
   -- this property is just the product of `α` and `β`.
 
-  def constProp (α : U) (β : V) : Property U V := ⟨h.constIsProp α β⟩
+  def constProp (α : U) (β : V) : Property α V := ⟨h.constIsProp α β⟩
 
   namespace constProp
 

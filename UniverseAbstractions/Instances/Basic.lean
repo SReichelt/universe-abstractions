@@ -30,26 +30,30 @@ namespace unit
   instance hasFunctoriality (U : Universe.{u}) : HasFunctoriality.{u, 0, 0} U unit :=
   ⟨λ _ => True⟩
 
-  def unitFunctor {U : Universe.{u}} {P : HasProperties.Property U unit} : HasFunctoriality.Pi P :=
+  def unitFunctor {U : Universe.{u}} {α : U} {P : HasProperties.Property α unit} : HasFunctoriality.Pi P :=
   ⟨λ _ => trivial, trivial⟩
 
-  @[simp] theorem unitFunctor.unique {U : Universe.{u}} {P : HasProperties.Property U unit}
+  @[simp] theorem unitFunctor.unique {U : Universe.{u}} {α : U} {P : HasProperties.Property α unit}
                                      (F : HasFunctoriality.Pi P) :
     F = unitFunctor :=
   by induction F; rfl
 
-  def funEquiv {U : Universe.{u}} (P : HasProperties.Property U unit) : True ≃ HasFunctoriality.Pi P :=
+  def funEquiv {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) : True ≃ HasFunctoriality.Pi P :=
   { toFun    := λ _ => unitFunctor,
     invFun   := λ _ => trivial,
     leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ _ => by simp }
 
-  instance hasEmbeddedFunctorType {U : Universe.{u}} (P : HasProperties.Property U unit) :
+  instance hasEmbeddedFunctorType {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) :
     HasEmbeddedType unit (HasFunctoriality.Pi P) :=
   { α := (),
     h := funEquiv P }
 
   instance hasFunctors (U : Universe.{u}) : HasFunctors U unit unit := ⟨⟩
+
+  instance hasIdFun : HasIdFun unit := ⟨λ _ => trivial⟩
+  instance hasConstFun (U : Universe) : HasConstFun U unit := ⟨λ _ {_} _ => trivial⟩
+  instance hasCompFun (U V X : Universe) [HasFunctors U V X] : HasCompFun U V unit X unit := ⟨λ _ _ => trivial⟩
 
   instance hasEmbeddedFunctors : HasEmbeddedFunctors unit := ⟨⟩
 
@@ -61,15 +65,40 @@ namespace unit
     defCompFunFun    := λ _ _   => trivial,
     defCompFunFunFun := λ _ _ _ => trivial }
 
+  instance hasLinearFunOpEq : HasLinearFunOpEq unit :=
+  { defIdFunEq   := λ _   => proofIrrel _ _,
+    defCompFunEq := λ _ _ => proofIrrel _ _ }
+
   instance hasAffineFunOp : HasAffineFunOp unit :=
   { defConstFun    := λ _ {_} _ => trivial,
     defConstFunFun := λ _ _     => trivial }
+
+  instance hasSubLinearFunOpEq : HasSubLinearFunOpEq unit :=
+  { defConstFunEq := λ _ {_} _ => proofIrrel _ _ }
 
   instance hasFullFunOp : HasFullFunOp unit :=
   { defDupFun    := λ _   => trivial,
     defDupFunFun := λ _ _ => trivial }
 
   instance hasFunOp : HasFunOp unit := ⟨⟩
+
+  instance hasCompFunProp (U V : Universe) [HasProperties U V] [HasFunctoriality U V] : HasCompFunProp U V unit :=
+  { compIsProp  := λ _ _ => trivial,
+    compConstEq := λ _ _ => proofIrrel _ _ }
+
+  instance hasCompPi (U V X : Universe) [HasFunctors U V X] : HasCompPi U V unit X unit :=
+  { defCompPi      := λ _ _ => trivial,
+    defCompPiFunEq := λ _ _ => proofIrrel _ _ }
+
+  instance hasAppPi : HasAppPi unit :=
+  { defAppPi      := λ _ _ => trivial,
+    defAppPiFunEq := λ _ _ => proofIrrel _ _ }
+
+  instance hasDupPi : HasDupPi unit :=
+  { defDupPi         := λ _   => trivial,
+    defDupPiFun      := λ _   => trivial,
+    defDupPiFunEq    := λ _   => proofIrrel _ _,
+    defDupPiFunFunEq := λ _ _ => proofIrrel _ _ }
 
   instance hasEmbeddedTopType : HasEmbeddedType unit True :=
   { α := (),
@@ -128,6 +157,12 @@ namespace unit
     defCompEquiv       := λ _ _   => trivial,
     defCompEquivFun    := λ _ _   => trivial,
     defCompEquivFunFun := λ _ _ _ => trivial }
+
+  instance hasIdEquiv : HasIdEquiv unit unit := HasEquivOp.hasIdEquiv
+  instance hasInvEquiv : HasInvEquiv unit unit unit := HasEquivOp.hasInvEquiv
+  instance hasCompEquiv : HasCompEquiv unit unit unit := HasEquivOp.hasCompEquiv
+
+  instance hasEquivOpEq : HasEquivOpEq unit := HasEquivOpEq.std unit
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences unit :=
   { defFunDomainEquiv      := λ _ _   => trivial,
@@ -238,14 +273,14 @@ namespace sort
   instance hasFunctoriality (V : Universe.{v}) : HasFunctoriality.{u, v, 0} sort.{u} V :=
   ⟨λ _ => True⟩
 
-  def funEquiv {V : Universe.{v}} (P : HasProperties.Property sort.{u} V) :
+  def funEquiv {α : sort.{u}} {V : Universe.{v}} (P : HasProperties.Property α V) :
     HasProperties.Pi P ≃ HasFunctoriality.Pi P :=
   { toFun    := λ f => ⟨f, trivial⟩,
     invFun   := λ F => F.f,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedFunctorType {V : Universe.{v}} (P : HasProperties.Property sort.{u} V) :
+  instance hasEmbeddedFunctorType {α : sort.{u}} {V : Universe.{v}} (P : HasProperties.Property α V) :
     HasEmbeddedType sort.{imax u v} (HasFunctoriality.Pi P) :=
   { α := HasProperties.Pi P,
     h := funEquiv P }
@@ -254,6 +289,10 @@ namespace sort
 
   -- This shouldn't be necessary, but sometimes we have to help Lean a bit.
   @[reducible] def toFunctor {α β : sort.{u}} (f : α → β) : ⌈α ⟶ β⌉ := f
+
+  instance hasIdFun : HasIdFun sort := ⟨λ _ => trivial⟩
+  instance hasConstFun (V : Universe) : HasConstFun sort V := ⟨λ _ {_} _ => trivial⟩
+  instance hasCompFun (V W Y : Universe) [HasFunctors V W Y] : HasCompFun sort V W sort Y := ⟨λ _ _ => trivial⟩
 
   instance hasEmbeddedFunctors : HasEmbeddedFunctors sort.{u} := ⟨⟩
 
@@ -265,15 +304,40 @@ namespace sort
     defCompFunFun    := λ _ _   => trivial,
     defCompFunFunFun := λ _ _ _ => trivial }
 
+  instance hasLinearFunOpEq : HasLinearFunOpEq sort.{u} :=
+  { defIdFunEq   := λ _   => proofIrrel _ _,
+    defCompFunEq := λ _ _ => proofIrrel _ _ }
+
   instance hasAffineFunOp : HasAffineFunOp sort.{u} :=
   { defConstFun    := λ _ {_} _ => trivial,
     defConstFunFun := λ _ _     => trivial }
+
+  instance hasSubLinearFunOpEq : HasSubLinearFunOpEq sort.{u} :=
+  { defConstFunEq := λ _ {_} _ => proofIrrel _ _ }
 
   instance hasFullFunOp : HasFullFunOp sort.{u} :=
   { defDupFun    := λ _   => trivial,
     defDupFunFun := λ _ _ => trivial }
 
   instance hasFunOp : HasFunOp sort.{u} := ⟨⟩
+
+  instance hasCompFunProp (V W : Universe) [HasProperties V W] [HasFunctoriality V W] : HasCompFunProp sort V W :=
+  { compIsProp  := λ _ _ => trivial,
+    compConstEq := λ _ _ => proofIrrel _ _ }
+
+  instance hasCompPi (V W Y : Universe) [HasFunctors V W Y] : HasCompPi sort V W sort Y :=
+  { defCompPi      := λ _ _ => trivial,
+    defCompPiFunEq := λ _ _ => proofIrrel _ _ }
+
+  instance hasAppPi : HasAppPi sort :=
+  { defAppPi      := λ _ _ => trivial,
+    defAppPiFunEq := λ _ _ => proofIrrel _ _ }
+
+  instance hasDupPi : HasDupPi sort :=
+  { defDupPi         := λ _   => trivial,
+    defDupPiFun      := λ _   => trivial,
+    defDupPiFunEq    := λ _   => proofIrrel _ _,
+    defDupPiFunFunEq := λ _ _ => proofIrrel _ _ }
 
 end sort
 
@@ -343,6 +407,12 @@ namespace prop
     defCompEquiv       := λ _ _   => trivial,
     defCompEquivFun    := λ _ _   => trivial,
     defCompEquivFunFun := λ _ _ _ => trivial }
+
+  instance hasIdEquiv : HasIdEquiv prop prop := HasEquivOp.hasIdEquiv
+  instance hasInvEquiv : HasInvEquiv prop prop prop := HasEquivOp.hasInvEquiv
+  instance hasCompEquiv : HasCompEquiv prop prop prop := HasEquivOp.hasCompEquiv
+
+  instance hasEquivOpEq : HasEquivOpEq prop := HasEquivOpEq.std prop
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences prop :=
   { defFunDomainEquiv      := λ _ _   => trivial,
@@ -528,6 +598,12 @@ namespace type
     defCompEquivFunFun := λ _ _ _ => trivial,
     defInvEquiv        := λ e     => DefEquiv.fromEquiv (Equiv.symm e),
     defInvEquivFun     := λ _ _   => trivial }
+
+  instance hasIdEquiv : HasIdEquiv type type := HasEquivOp.hasIdEquiv
+  instance hasInvEquiv : HasInvEquiv type type type := HasEquivOp.hasInvEquiv
+  instance hasCompEquiv : HasCompEquiv type type type := HasEquivOp.hasCompEquiv
+
+  instance hasEquivOpEq : HasEquivOpEq type := HasEquivOpEq.std type
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type :=
   { defFunDomainEquiv      := λ e _   => ⟨λ f => funext (λ b => congrArg f (e.rightInv b)),

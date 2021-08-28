@@ -1,6 +1,8 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Properties
 
+import UniverseAbstractions.Lemmas.LeanEq
+
 
 
 set_option autoBoundImplicitLocal false
@@ -40,71 +42,64 @@ universe u v w w' w''
 
 class HasFunctoriality (U : Universe.{u}) (V : Universe.{v}) [HasProperties.{u, v, w} U V] :
   Type (max u v w w') where
-(IsFun {P : HasProperties.Property U V} : HasProperties.Pi P → Sort w')
+(IsFun {α : U} {P : HasProperties.Property α V} : HasProperties.Pi P → Sort w')
 
 namespace HasFunctoriality
 
   variable {U : Universe.{u}} {V : Universe.{v}} [HasProperties.{u, v, w} U V]
            [h : HasFunctoriality.{u, v, w, w'} U V]
 
-  section Dependent
+  def DefPi {α : U} (P : HasProperties.Property α V) (f : HasProperties.Pi P) := h.IsFun f
+  notation:20 "Π[" f:0 "] " P:21 => HasFunctoriality.DefPi P f
 
-    variable (P : HasProperties.Property U V)
+  structure Pi {α : U} (P : HasProperties.Property α V) : Sort (max 1 u v w') where
+  (f : HasProperties.Pi P)
+  (F : Π[f] P)
+  notation:20 "Π' " P:21 => HasFunctoriality.Pi P
 
-    structure Pi : Sort (max 1 u v w') where
-    (f : HasProperties.Pi P)
-    (F : h.IsFun f)
-
-    instance coePi : CoeFun (Pi P) (λ _ => HasProperties.Pi P) :=
-    ⟨Pi.f⟩
-
-  end Dependent
-
-  def DefFun (α : U) (β : V) (f : α → β) := h.IsFun (P := HasProperties.constProp α β) f
+  @[reducible] def DefFun (α : U) (β : V) (f : α → β) := Π[f] HasProperties.constProp α β
   notation:20 α:21 " ⟶[" f:0 "] " β:21 => HasFunctoriality.DefFun α β f
 
-  def Fun (α : U) (β : V) := Pi (HasProperties.constProp α β)
+  @[reducible] def Fun (α : U) (β : V) := Π' HasProperties.constProp α β
   infixr:20 " ⟶' " => HasFunctoriality.Fun
 
-  variable {α : U} {β : V}
+  variable {α : U} {P : HasProperties.Property α V}
 
-  instance coeDefFun (f : α → β) : CoeFun (α ⟶[f] β) (λ _ => α → β) := ⟨λ _ => f⟩
-  instance coeFun                : CoeFun (α ⟶' β)   (λ _ => α → β) := ⟨Pi.f⟩
+  instance coeDefPi (f : HasProperties.Pi P) : CoeFun (Π[f] P) (λ _ => HasProperties.Pi P) := ⟨λ _ => f⟩
+  instance coePi                             : CoeFun (Π'   P) (λ _ => HasProperties.Pi P) := ⟨Pi.f⟩
 
-  def toDefFun               (F : α ⟶' β)   : α ⟶[F.f] β := F.F
-  def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶'     β := ⟨f, F⟩
+  def toDefPi                            (F : Π'   P) : Π[F.f] P := F.F
+  def fromDefPi {f : HasProperties.Pi P} (F : Π[f] P) : Π'     P := ⟨f, F⟩
 
-  instance (F : α ⟶' β) : CoeDep (α ⟶' β)   F (α ⟶[F.f] β) := ⟨toDefFun F⟩
-  instance {f : α →  β} : Coe    (α ⟶[f] β)   (α ⟶' β)     := ⟨fromDefFun⟩
+  instance (F : Π' P)               : CoeDep (Π'   P) F (Π[F.f] P) := ⟨toDefPi F⟩
+  instance {f : HasProperties.Pi P} : Coe    (Π[f] P)   (Π'     P) := ⟨fromDefPi⟩
 
-  def castDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) : α ⟶[f'] β :=
+  def castDefPi {f f' : HasProperties.Pi P} (F : Π[f] P) (h : ∀ a, f a = f' a) : Π[f'] P :=
   have h₁ : f = f' := funext h;
   h₁ ▸ F
 
-  @[simp] theorem fromCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
-    fromDefFun (castDefFun F h) = fromDefFun F :=
-  have h₁ : f = f' := funext h;
-  by subst h₁; rfl
+  @[simp] theorem fromCastDefPi {f f' : HasProperties.Pi P} (F : Π[f] P) (h : ∀ a, f a = f' a) :
+    fromDefPi (castDefPi F h) = fromDefPi F :=
+  Eq.simp_rec
 
-  @[simp] theorem castCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
-    castDefFun (castDefFun F h) (λ a => Eq.symm (h a)) = F :=
-  have h₁ : f = f' := funext h;
-  by subst h₁; rfl
+  @[simp] theorem castCastDefPi {f f' : HasProperties.Pi P} (F : Π[f] P) (h : ∀ a, f a = f' a) :
+    castDefPi (castDefPi F h) (λ a => Eq.symm (h a)) = F :=
+  Eq.simp_rec_rec (ha := funext h)
 
-  @[simp] theorem toDefFun.eff               (F : α ⟶' β)   (a : α) : (toDefFun   F) a = F a := rfl
-  @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefFun F) a = F a := rfl
+  @[simp] theorem toDefPi.eff                            (F : Π'   P) (a : α) : (toDefPi   F) a = F a := rfl
+  @[simp] theorem fromDefPi.eff {f : HasProperties.Pi P} (F : Π[f] P) (a : α) : (fromDefPi F) a = F a := rfl
 
-  @[simp] theorem fromToDefFun             (F : α ⟶' β)   : fromDefFun (toDefFun F) = F :=
+  @[simp] theorem fromToDefPi                          (F : Π'   P) : fromDefPi (toDefPi F) = F :=
   match F with | ⟨_, _⟩ => rfl
-  @[simp] theorem toFromDefFun {f : α → β} (F : α ⟶[f] β) : toDefFun (fromDefFun F) = F := rfl
+  @[simp] theorem toFromDefPi {f : HasProperties.Pi P} (F : Π[f] P) : toDefPi (fromDefPi F) = F := rfl
 
 end HasFunctoriality
 
 
 
-class HasFunctors (U : Universe.{u}) (V : Universe.{v}) (W : outParam Universe.{w})
-  extends HasProperties.{u, v, w'} U V, HasFunctoriality.{u, v, w', w''} U V : Type (max u v w w' w'') where
-[embed (P : HasProperties.Property U V) : HasEmbeddedType.{w, max 1 u v w''} W (HasFunctoriality.Pi P)]
+class HasFunctors (U : Universe.{u}) (V : Universe.{v}) (W : outParam Universe.{w}) extends
+  HasProperties.{u, v, w'} U V, HasFunctoriality.{u, v, w', w''} U V : Type (max u v w w' w'') where
+[embed {α : U} (P : HasProperties.Property α V) : HasEmbeddedType.{w, max 1 u v w''} W (Π' P)]
 
 namespace HasFunctors
 
@@ -112,69 +107,93 @@ namespace HasFunctors
 
   section Dependent
 
-    instance hasEmbeddedType (P : HasProperties.Property U V) : HasEmbeddedType W (HasFunctoriality.Pi P) :=
+    instance hasEmbeddedType {α : U} (P : HasProperties.Property α V) : HasEmbeddedType W (Π' P) :=
     h.embed P
 
-    def Pi (P : HasProperties.Property U V) : W := HasEmbeddedType.EmbeddedType W (HasFunctoriality.Pi P)
+    def Pi {α : U} (P : HasProperties.Property α V) : W := HasEmbeddedType.EmbeddedType W (Π' P)
+    notation:20 "Π " P:21 => HasFunctors.Pi P
 
-    variable {P : HasProperties.Property U V}
+    variable {α : U} {P : HasProperties.Property α V}
 
-    def toExternal   (F : Pi P) : HasFunctoriality.Pi P := HasEmbeddedType.toExternal   W F
-    def fromExternal (F : HasFunctoriality.Pi P) : Pi P := HasEmbeddedType.fromExternal W F
+    def toExternal   (F : Π  P) : Π' P := HasEmbeddedType.toExternal   W F
+    def fromExternal (F : Π' P) : Π  P := HasEmbeddedType.fromExternal W F
 
-    def piCoe (F : Pi P) : HasProperties.Pi P := (toExternal F).f
-    instance coePi : CoeFun ⌈Pi P⌉ (λ _ => HasProperties.Pi P) := ⟨piCoe⟩
+    def piCoe (F : Π P) : HasProperties.Pi P := (toExternal F).f
+    instance coePi : CoeFun ⌈Π P⌉ (λ _ => HasProperties.Pi P) := ⟨piCoe⟩
 
-    @[simp] theorem fromToExternal (F : Pi P)                  : fromExternal (toExternal F) = F := HasEmbeddedType.fromToExternal W F
-    @[simp] theorem toFromExternal (F : HasFunctoriality.Pi P) : toExternal (fromExternal F) = F := HasEmbeddedType.toFromExternal W F
+    @[simp] theorem fromToExternal (F : Π  P) : fromExternal (toExternal F) = F := HasEmbeddedType.fromToExternal W F
+    @[simp] theorem toFromExternal (F : Π' P) : toExternal (fromExternal F) = F := HasEmbeddedType.toFromExternal W F
 
-    @[simp] theorem toExternal.eff   (F : Pi P)                  (a : P.α) : (toExternal   F) a = F a := rfl
-    @[simp] theorem fromExternal.eff (F : HasFunctoriality.Pi P) (a : P.α) : (fromExternal F) a = F a :=
+    @[simp] theorem toExternal.eff   (F : Π  P) (a : α) : (toExternal   F) a = F a := rfl
+    @[simp] theorem fromExternal.eff (F : Π' P) (a : α) : (fromExternal F) a = F a :=
     congrFun (congrArg HasFunctoriality.Pi.f (toFromExternal F)) a
+
+    def toDefPi                            (F : Π    P) : Π[piCoe F] P := HasFunctoriality.toDefPi (toExternal F)
+    def fromDefPi {f : HasProperties.Pi P} (F : Π[f] P) : Π P          := fromExternal (HasFunctoriality.fromDefPi F)
+    instance {f : HasProperties.Pi P} : Coe (Π[f] P) ⌈Π P⌉ := ⟨fromDefPi⟩
+
+    @[simp] theorem fromCastDefPi {f f' : HasProperties.Pi P} (F : Π[f] P) (h : ∀ a, f a = f' a) :
+      fromDefPi (HasFunctoriality.castDefPi F h) = fromDefPi F :=
+    congrArg fromExternal (HasFunctoriality.fromCastDefPi F h)
+
+    def toDefPi' (F : Π P) {f : HasProperties.Pi P} (h : ∀ a, F a = f a) : Π[f] P :=
+    HasFunctoriality.castDefPi (toDefPi F) h
+
+    theorem toDefPi'.eff (F : Π P) {f : HasProperties.Pi P} (h : ∀ a, F a = f a) (a : α) : (toDefPi' F h) a = F a :=
+    Eq.symm (h a)
+
+    @[simp] theorem toDefPi.eff                            (F : Π    P) (a : α) : (toDefPi   F) a = F a := rfl
+    @[simp] theorem fromDefPi.eff {f : HasProperties.Pi P} (F : Π[f] P) (a : α) : (fromDefPi F) a = F a :=
+    fromExternal.eff (HasFunctoriality.fromDefPi F) a
+
+    @[simp] theorem fromToDefPi (F : Π P) : fromDefPi (toDefPi F) = F :=
+    Eq.trans (congrArg fromExternal (HasFunctoriality.fromToDefPi (toExternal F))) (fromToExternal F)
+
+    @[simp] theorem fromToDefPi' (F : Π P) {f : HasProperties.Pi P} (h : ∀ a, F a = f a) : fromDefPi (toDefPi' F h) = F :=
+    Eq.trans (fromCastDefPi (toDefPi F) h) (fromToDefPi F)
+
+    -- This is annoying to prove, and we don't need it at the moment.
+    --@[simp] theorem toFromDefPi' {f : HasProperties.Pi P} (F : Π[f] P) : toDefPi' (fromDefPi F) (fromDefPi.eff F) = F :=
+    --sorry
 
   end Dependent
 
-  @[reducible] def DefFun (α : U) (β : V) (f : α → β) := HasFunctoriality.DefFun α β f
+  section Independent
 
-  @[reducible] def Fun (α : U) (β : V) : W := Pi (HasProperties.constProp α β)
-  infixr:20 " ⟶ " => HasFunctors.Fun
+    @[reducible] def DefFun (α : U) (β : V) (f : α → β) := HasFunctoriality.DefFun α β f
 
-  variable {α : U} {β : V}
+    @[reducible] def Fun (α : U) (β : V) : W := Pi (HasProperties.constProp α β)
+    infixr:20 " ⟶ " => HasFunctors.Fun
 
-  @[reducible] def funCoe (F : α ⟶ β) : α → β := piCoe F
-  instance coeFun : CoeFun ⌈α ⟶ β⌉ (λ _ => α → β) := ⟨funCoe⟩
+    -- It would be nice if we could omit the rest of the `Independent` section, but unfortunately
+    -- the `Dependent` definitions seem to be too generic for `simp`.
 
-  @[simp] theorem toExternal.fun.eff   (F : α ⟶  β) (a : α) : (toExternal   F) a = F a := toExternal.eff   F a
-  @[simp] theorem fromExternal.fun.eff (F : α ⟶' β) (a : α) : (fromExternal F) a = F a := fromExternal.eff F a
+    variable {α : U} {β : V}
 
-  def toDefFun               (F : α ⟶ β)    : α ⟶[funCoe F] β := HasFunctoriality.toDefFun (toExternal F)
-  def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶ β           := fromExternal (HasFunctoriality.fromDefFun F)
-  instance {f : α → β} : Coe (α ⟶[f] β) ⌈α ⟶ β⌉ := ⟨fromDefFun⟩
+    @[reducible] def funCoe (F : α ⟶ β) : α → β := piCoe F
+    instance coeFun : CoeFun ⌈α ⟶ β⌉ (λ _ => α → β) := ⟨funCoe⟩
 
-  @[simp] theorem fromCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
-    fromDefFun (HasFunctoriality.castDefFun F h) = fromDefFun F :=
-  congrArg fromExternal (HasFunctoriality.fromCastDefFun F h)
+    @[simp] theorem toExternal.Fun.eff   (F : α ⟶  β) (a : α) : (toExternal   F) a = F a := toExternal.eff   F a
+    @[simp] theorem fromExternal.Fun.eff (F : α ⟶' β) (a : α) : (fromExternal F) a = F a := fromExternal.eff F a
 
-  def toDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β :=
-  HasFunctoriality.castDefFun (toDefFun F) h
-  infix:60 " ◄ " => HasFunctors.toDefFun'
+    @[simp] theorem toDefFun.eff               (F : α ⟶ β)    (a : α) : (toDefPi   F) a = F a := toDefPi.eff   F a
+    @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefPi F) a = F a := fromDefPi.eff F a
 
-  -- Marking this `@[simp]` causes a huge performance hit. I don't understand why.
-  theorem toDefFun'.eff (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) (a : α) : (toDefFun' F h) a = F a :=
-  Eq.symm (h a)
+    def toDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β := toDefPi' F h
+    infix:60 " ◄ " => HasFunctors.toDefFun'
 
-  @[simp] theorem toDefFun.eff               (F : α ⟶ β)    (a : α) : (toDefFun   F) a = F a := rfl
-  @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefFun F) a = F a :=
-  fromExternal.eff (HasFunctoriality.fromDefFun F) a
+    -- Marking this `@[simp]` causes a huge performance hit. I don't understand why.
+    theorem toDefFun'.eff (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) (a : α) : (toDefFun' F h) a = F a :=
+    toDefPi'.eff F h a
 
-  @[simp] theorem fromToDefFun (F : α ⟶ β) : fromDefFun (toDefFun F) = F :=
-  Eq.trans (congrArg fromExternal (HasFunctoriality.fromToDefFun (toExternal F))) (fromToExternal F)
+    @[simp] theorem fromToDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : fromDefPi (toDefFun' F h) = F :=
+    fromToDefPi' F h
 
-  @[simp] theorem fromToDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : fromDefFun (toDefFun' F h) = F :=
-  Eq.trans (fromCastDefFun (toDefFun F) h) (fromToDefFun F)
+    -- This is annoying to prove, and we don't need it at the moment.
+    --@[simp] theorem toFromDefFun' {f : α → β} (F : α ⟶[f] β) : toDefFun' (fromDefPi F) (fromDefPi.eff F) = F :=
+    --toFromDefPi' F
 
-  -- This is annoying to prove, and we don't need it at the moment.
-  --@[simp] theorem toFromDefFun' {f : α → β} (F : α ⟶[f] β) : toDefFun' (fromDefFun F) (fromDefFun.eff F) = F := sorry
+  end Independent
 
 end HasFunctors
 
@@ -186,7 +205,7 @@ class HasIdFun (U : Universe) [HasProperties U U] [HasFunctoriality U U] where
 namespace HasIdFun
 
   @[reducible] def idFun' {U : Universe} [HasProperties U U] [HasFunctoriality U U] [HasIdFun U] (α : U) : α ⟶' α :=
-  HasFunctoriality.fromDefFun (defIdFun α)
+  defIdFun α
 
   @[reducible] def idFun {U V : Universe} [HasFunctors U U V] [HasIdFun U] (α : U) : α ⟶ α :=
   HasFunctors.fromExternal (idFun' α)
@@ -200,7 +219,7 @@ namespace HasConstFun
 
   @[reducible] def constFun' {U V : Universe} [HasProperties U V] [HasFunctoriality U V] [HasConstFun U V] (α : U) {β : V} (c : β) :
     α ⟶' β :=
-  HasFunctoriality.fromDefFun (defConstFun α c)
+  defConstFun α c
 
   @[reducible] def constFun {U V W : Universe} [HasFunctors U V W] [HasConstFun U V] (α : U) {β : V} (c : β) :
     α ⟶ β :=
@@ -217,7 +236,7 @@ namespace HasCompFun'
            [HasCompFun' U V W]
 
   @[reducible] def compFun' {α : U} {β : V} {γ : W} (F : α ⟶' β) (G : β ⟶' γ) : α ⟶' γ :=
-  HasFunctoriality.fromDefFun (defCompFun F G)
+  defCompFun F G
 
   @[reducible] def revCompFun' {α : U} {β : V} {γ : W} (G : β ⟶' γ) (F : α ⟶' β) := compFun' F G
   infixr:90 " ⊙' " => HasCompFun'.revCompFun'
@@ -233,14 +252,13 @@ namespace HasCompFun
            [HasCompFun U V W X Y]
 
   @[reducible] def compFun {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ :=
-  HasFunctors.fromDefFun (defCompFun F G)
+  defCompFun F G
 
   @[reducible] def revCompFun {α : U} {β : V} {γ : W} (G : β ⟶ γ) (F : α ⟶ β) := compFun F G
 
-  instance hasCompFun' {U V W X Y : Universe} [HasFunctors U V X] [HasFunctors V W Y] [HasProperties U W] [HasFunctoriality U W]
-                       [HasCompFun U V W X Y] : HasCompFun' U V W :=
-  ⟨λ F G => HasFunctoriality.castDefFun (defCompFun (HasFunctors.fromExternal F) (HasFunctors.fromExternal G))
-                                        (λ _ => by simp)⟩
+  instance hasCompFun' : HasCompFun' U V W :=
+  ⟨λ F G => HasFunctoriality.castDefPi (defCompFun (HasFunctors.fromExternal F) (HasFunctors.fromExternal G))
+                                       (λ _ => by simp)⟩
 
 end HasCompFun
 
@@ -262,8 +280,8 @@ namespace HasEmbeddedFunctors
 
   @[reducible] def funCoe (F : α ⟶ β) : α → β := HasFunctors.funCoe F
 
-  @[reducible] def toDefFun               (F : α ⟶ β)    : α ⟶[funCoe F] β := HasFunctors.toDefFun F
-  @[reducible] def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶ β           := HasFunctors.fromDefFun F
+  @[reducible] def toDefFun               (F : α ⟶ β)    : α ⟶[funCoe F] β := HasFunctors.toDefPi F
+  @[reducible] def fromDefFun {f : α → β} (F : α ⟶[f] β) : α ⟶ β           := HasFunctors.fromDefPi F
 
   @[reducible] def toDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : α ⟶[f] β := HasFunctors.toDefFun' F h
 
@@ -304,14 +322,14 @@ namespace HasLinearFunOp
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U]
 
-  instance hasIdFun : HasIdFun U := ⟨defIdFun⟩
+  def hasIdFun : HasIdFun U := ⟨defIdFun⟩
 
   @[reducible] def idFun (α : U) : α ⟶ α := defIdFun α
 
   @[reducible] def appFun {α : U} (a : α) (β : U) : (α ⟶ β) ⟶ β := defAppFun a β
   @[reducible] def appFunFun (α β : U) : α ⟶ (α ⟶ β) ⟶ β := defAppFunFun α β
 
-  instance hasCompFun : HasCompFun U U U U U := ⟨defCompFun⟩
+  def hasCompFun : HasCompFun U U U U U := ⟨defCompFun⟩
 
   @[reducible] def compFun {α β γ : U} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ := defCompFun F G
   @[reducible] def compFunFun {α β : U} (F : α ⟶ β) (γ : U) : (β ⟶ γ) ⟶ (α ⟶ γ) := defCompFunFun F γ
@@ -321,6 +339,29 @@ namespace HasLinearFunOp
   infixr:90 " ⊙ " => HasLinearFunOp.revCompFun
 
 end HasLinearFunOp
+
+class HasLinearFunOpEq (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U]
+                       [hasIdFun : HasIdFun U] [hasCompFun : HasCompFun U U U U U] where
+(defIdFunEq (α : U) : HasLinearFunOp.defIdFun α = HasIdFun.defIdFun α)
+(defCompFunEq {α β γ : U} (F : α ⟶ β) (G : β ⟶ γ) : HasLinearFunOp.defCompFun F G = HasCompFun.defCompFun F G)
+
+namespace HasLinearFunOpEq
+
+  def std (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U] :=
+  HasLinearFunOpEq.mk (U := U)
+                      (hasIdFun := HasLinearFunOp.hasIdFun) (hasCompFun := HasLinearFunOp.hasCompFun)
+                      (λ _ => rfl) (λ _ _ => rfl)
+
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasIdFun U] [HasCompFun U U U U U]
+           [HasLinearFunOpEq U]
+
+  theorem idFunEq (α : U) : HasLinearFunOp.idFun α = HasIdFun.idFun α :=
+  congrArg HasFunctors.fromDefPi (defIdFunEq α)
+
+  theorem compFunEq {α β γ : U} (F : α ⟶ β) (G : β ⟶ γ) : HasLinearFunOp.compFun F G = HasCompFun.compFun F G :=
+  congrArg HasFunctors.fromDefPi (defCompFunEq F G)
+
+end HasLinearFunOpEq
 
 
 
@@ -332,12 +373,31 @@ namespace HasSubLinearFunOp
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasSubLinearFunOp U]
 
-  instance hasConstFun : HasConstFun U U := ⟨defConstFun⟩
+  def hasConstFun : HasConstFun U U := ⟨defConstFun⟩
 
   @[reducible] def constFun (α : U) {β : U} (c : β) : α ⟶ β := defConstFun α c
   @[reducible] def constFunFun (α β : U) : β ⟶ (α ⟶ β) := defConstFunFun α β
 
 end HasSubLinearFunOp
+
+class HasSubLinearFunOpEq (U : Universe) [HasEmbeddedFunctors U] [HasSubLinearFunOp U]
+                          [hasConstFun : HasConstFun U U] where
+(defConstFunEq (α : U) {β : U} (c : β) : HasSubLinearFunOp.defConstFun α c = HasConstFun.defConstFun α c)
+
+namespace HasSubLinearFunOpEq
+
+  def std (U : Universe) [HasEmbeddedFunctors U] [HasSubLinearFunOp U] :
+    HasSubLinearFunOpEq U (hasConstFun := HasSubLinearFunOp.hasConstFun) :=
+  HasSubLinearFunOpEq.mk (hasConstFun := HasSubLinearFunOp.hasConstFun)
+                         (λ _ {_} _ => rfl)
+
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasSubLinearFunOp U] [HasConstFun U U]
+           [HasSubLinearFunOpEq U]
+
+  theorem constFunEq (α : U) {β : U} (c : β) : HasSubLinearFunOp.constFun α c = HasConstFun.constFun α c :=
+  congrArg HasFunctors.fromDefPi (defConstFunEq α c)
+
+end HasSubLinearFunOpEq
 
 class HasAffineFunOp (U : Universe) [HasEmbeddedFunctors U] extends HasLinearFunOp U, HasSubLinearFunOp U
 
@@ -361,3 +421,122 @@ class HasFullFunOp (U : Universe) [HasEmbeddedFunctors U] extends HasAffineFunOp
 
 
 class HasFunOp (U : Universe.{u}) extends HasEmbeddedFunctors U, HasFullFunOp U
+
+
+
+class HasCompFunProp (U V W : Universe) [HasProperties U V] [HasProperties V W] [h : HasProperties U W]
+                     [HasFunctoriality U V] where
+(compIsProp {α : U} {β : V} (F : α ⟶' β) (P : HasProperties.Property β W) : h.IsProp (λ a => P (F a)))
+(compConstEq {α : U} {β : V} (F : α ⟶' β) (γ : W) : compIsProp F (HasProperties.constProp β γ) = h.constIsProp α γ)
+
+namespace HasCompFunProp
+
+  variable {U V W : Universe} [HasProperties U V] [HasProperties V W] [HasProperties U W]
+           [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W]
+           [h : HasCompFunProp U V W]
+
+  theorem compConstEq' {α : U} {β : V} {γ : W} (F : α ⟶' β) (G : β ⟶' γ) :
+    (Π[λ a => G (F a)] ⟨h.compIsProp F (HasProperties.constProp β γ)⟩) = (α ⟶[λ a => G (F a)] γ) :=
+  h.compConstEq F γ ▸ rfl
+
+end HasCompFunProp
+
+class HasCompPi' (U V W : Universe) [HasProperties U V] [HasProperties V W] [HasProperties U W]
+                 [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W]
+                 [HasCompFunProp U V W] [HasCompFun' U V W] where
+(defCompPi {α : U} {β : V} {P : HasProperties.Property β W} (F : α ⟶' β) (G : Π' P) :
+   Π[λ a => G (F a)] ⟨HasCompFunProp.compIsProp F P⟩)
+(defCompPiFunEq {α : U} {β : V} {γ : W} (F : α ⟶' β) (G : β ⟶' γ) :
+   HasCompFunProp.compConstEq' F G ▸ defCompPi F G = HasCompFun'.defCompFun F G)
+
+namespace HasCompPi'
+
+  variable {U V W : Universe} [HasProperties U V] [HasProperties V W] [HasProperties U W]
+           [HasFunctoriality U V] [HasFunctoriality V W] [HasFunctoriality U W]
+           [HasCompFunProp U V W] [HasCompFun' U V W] [HasCompPi' U V W]
+
+  @[reducible] def compPi' {α : U} {β : V} {P : HasProperties.Property β W} (F : α ⟶' β) (G : Π' P) :
+    Π' ⟨HasCompFunProp.compIsProp F P⟩ :=
+  defCompPi F G
+
+end HasCompPi'
+
+class HasCompPi (U V W X Y : Universe) [HasFunctors U V X] [HasFunctors V W Y]
+                [HasProperties U W] [HasFunctoriality U W] [HasCompFunProp U V W]
+                [HasCompFun U V W X Y] where
+(defCompPi {α : U} {β : V} {P : HasProperties.Property β W} (F : α ⟶ β) (G : Π P) :
+   Π[λ a => G (F a)] ⟨HasCompFunProp.compIsProp (HasFunctors.toExternal F) P⟩)
+(defCompPiFunEq {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) :
+   HasCompFunProp.compConstEq' (HasFunctors.toExternal F) (HasFunctors.toExternal G) ▸ defCompPi F G = HasCompFun.defCompFun F G)
+
+namespace HasCompPi
+
+  variable {U V W X Y Z : Universe} [HasFunctors U V X] [HasFunctors V W Y] [HasFunctors U W Z]
+           [HasCompFunProp U V W] [HasCompFun U V W X Y] [HasCompPi U V W X Y]
+
+  @[reducible] def compPi {α : U} {β : V} {P : HasProperties.Property β W} (F : α ⟶ β) (G : Π P) :
+    Π ⟨HasCompFunProp.compIsProp (HasFunctors.toExternal F) P⟩ :=
+  defCompPi F G
+
+  def defCompPiFun {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶[λ a => G (F a)] γ  :=
+  HasCompFunProp.compConstEq' (HasFunctors.toExternal F) (HasFunctors.toExternal G) ▸ defCompPi F G
+
+  @[reducible] def compPiFun {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ  :=
+  defCompPiFun F G
+
+  theorem compPiFunEq {α : U} {β : V} {γ : W} (F : α ⟶ β) (G : β ⟶ γ) : compPiFun F G = HasCompFun.compFun F G :=
+  congrArg HasFunctors.fromDefPi (defCompPiFunEq F G)
+
+  -- TODO
+  --instance hasCompPi' : HasCompPi' U V W :=
+  --⟨λ F G => HasFunctors.toFromExternal F ▸
+  --          HasFunctoriality.castDefPi (defCompPi (HasFunctors.fromExternal F) (HasFunctors.fromExternal G))
+  --                                     (λ _ => by simp; rfl),
+  -- λ F G => HasFunctors.toFromExternal F ▸
+  --          HasFunctors.toFromExternal G ▸
+  --          defCompPiFunEq (HasFunctors.fromExternal F) (HasFunctors.fromExternal G)⟩
+
+end HasCompPi
+
+
+
+class HasAppPi (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U] where
+(defAppPi {α : U} (a : α) (P : HasProperties.Property α U) : (Π P) ⟶[λ F => F a] (P a))
+(defAppPiFunEq {α : U} (a : α) (β : U) : defAppPi a (HasProperties.constProp α β) = HasLinearFunOp.defAppFun a β)
+
+namespace HasAppPi
+
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasAppPi U]
+
+  @[reducible] def appPi {α : U} (a : α) (P : HasProperties.Property α U) : (Π P) ⟶ P a := defAppPi a P
+
+  theorem appPiFunEq {α : U} (a : α) (β : U) : appPi a (HasProperties.constProp α β) = HasLinearFunOp.appFun a β :=
+  congrArg HasFunctors.fromDefPi (defAppPiFunEq a β)
+
+end HasAppPi
+
+
+
+class HasDupPi (U : Universe) [HasEmbeddedFunctors U] [HasNonLinearFunOp U] where
+(defDupPi    {α : U} {P : HasProperties.Property α U} (F : α ⟶ Π P) : Π[λ a => F a a] P)
+(defDupPiFun {α : U} (P : HasProperties.Property α U)               : (α ⟶ Π P) ⟶[λ F => defDupPi F] (Π P))
+(defDupPiFunEq {α β : U} (F : α ⟶ α ⟶ β) : defDupPi F = HasNonLinearFunOp.defDupFun F)
+(defDupPiFunFunEq (α β : U) :
+   funext (λ F => congrArg HasFunctors.fromDefPi (defDupPiFunEq F)) ▸ defDupPiFun (HasProperties.constProp α β) =
+   HasNonLinearFunOp.defDupFunFun α β)
+
+namespace HasDupPi
+
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasNonLinearFunOp U] [HasDupPi U]
+
+  def dupPi {α : U} {P : HasProperties.Property α U} (F : α ⟶ Π P) : Π P := defDupPi F
+  def dupPiFun {α : U} (P : HasProperties.Property α U) : (α ⟶ Π P) ⟶ (Π P) := defDupPiFun P
+
+  theorem dupPiFunEq {α β : U} (F : α ⟶ α ⟶ β) : dupPi F = HasNonLinearFunOp.dupFun F :=
+  congrArg HasFunctors.fromDefPi (defDupPiFunEq F)
+
+  -- TODO: Can this be made to work?
+  --theorem dupPiFunFunEq (α β : U) : dupPiFun (HasProperties.constProp α β) = HasNonLinearFunOp.dupFunFun α β :=
+  --Eq.simp_rec_prop (congrArg HasFunctors.fromDefPi (defDupPiFunFunEq α β))
+
+end HasDupPi
