@@ -13,25 +13,26 @@ universe u v w
 def HasProducts.Prod {U : Universe.{u}} {V : Universe.{v}} (α : U) (β : V) := PProd ⌈α⌉ ⌈β⌉
 infix:35 " ⊓' " => HasProducts.Prod
 
-class HasProducts (U : Universe.{u}) (V : Universe.{v}) (W : outParam Universe.{w}) where
-[embed (α : U) (β : V) : HasEmbeddedType.{w, max 1 u v} W (α ⊓' β)]
+class HasProducts (U : Universe.{u}) (V : Universe.{v}) (X : outParam Universe.{w}) :
+  Type (max u v w) where
+[embed (α : U) (β : V) : HasEmbeddedType.{w, max 1 u v} X (α ⊓' β)]
 
 namespace HasProducts
 
-  variable {U V W : Universe} [h : HasProducts U V W]
+  variable {U V X : Universe} [h : HasProducts U V X]
 
-  instance hasEmbeddedType (α : U) (β : V) : HasEmbeddedType W (α ⊓' β) := h.embed α β
+  instance hasEmbeddedType (α : U) (β : V) : HasEmbeddedType X (α ⊓' β) := h.embed α β
 
-  def Product (α : U) (β : V) : W := HasEmbeddedType.EmbeddedType W (α ⊓' β)
+  def Product (α : U) (β : V) : X := HasEmbeddedType.EmbeddedType X (α ⊓' β)
   infix:35 " ⊓ " => HasProducts.Product
   
   variable {α : U} {β : V}
 
-  def toExternal   (P : α ⊓  β) : α ⊓' β := HasEmbeddedType.toExternal   W P
-  def fromExternal (P : α ⊓' β) : α ⊓  β := HasEmbeddedType.fromExternal W P
+  def toExternal   (P : α ⊓  β) : α ⊓' β := HasEmbeddedType.toExternal   X P
+  def fromExternal (P : α ⊓' β) : α ⊓  β := HasEmbeddedType.fromExternal X P
 
-  @[simp] theorem fromToExternal (P : α ⊓  β) : fromExternal (toExternal P) = P := HasEmbeddedType.fromToExternal W P
-  @[simp] theorem toFromExternal (P : α ⊓' β) : toExternal (fromExternal P) = P := HasEmbeddedType.toFromExternal W P
+  @[simp] theorem fromToExternal (P : α ⊓  β) : fromExternal (toExternal P) = P := HasEmbeddedType.fromToExternal X P
+  @[simp] theorem toFromExternal (P : α ⊓' β) : toExternal (fromExternal P) = P := HasEmbeddedType.toFromExternal X P
 
   def fst (P : α ⊓ β) : α := (toExternal P).fst
   def snd (P : α ⊓ β) : β := (toExternal P).snd
@@ -52,7 +53,7 @@ end HasProducts
 -- `constFun`.
 
 class HasEmbeddedProducts (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U]
-  extends HasProducts.{u, u, u} U U U where
+  extends HasProducts U U U : Type (max u w) where
 (defIntroFun    {α : U} (a : α) (β : U)     : β ⟶[λ b => HasProducts.intro a b] α ⊓ β)
 (defIntroFunFun (α β : U)                   : α ⟶[λ a => defIntroFun a β] (β ⟶ α ⊓ β))
 (defElimFun     {α β γ : U} (F : α ⟶ β ⟶ γ) : α ⊓ β ⟶[λ P => F (HasProducts.fst P) (HasProducts.snd P)] γ)

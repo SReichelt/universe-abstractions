@@ -15,20 +15,20 @@ universe u v w w' w''
 
 
 
-class HasEquivalenceCondition (U : Universe.{u}) (V : Universe.{v}) [HasFunctors.{u, u, v, w} U U V] :
-  Type (max u v w') where
-(IsEquiv {α β : U} : (α ⟶ β) → (β ⟶ α) → Sort w')
+class HasEquivalenceCondition (U : Universe.{u}) (X : Universe.{v}) [HasFunctors U U X] :
+  Type (max u v w) where
+(IsEquiv {α β : U} : (α ⟶ β) → (β ⟶ α) → Sort w)
 
 namespace HasEquivalenceCondition
 
-  variable {U : Universe.{u}} {V : Universe.{v}} [HasFunctors.{u, u, v, w} U U V]
-           [h : HasEquivalenceCondition.{u, v, w, w'} U V]
+  variable {U : Universe.{u}} {X : Universe.{v}} [HasFunctors U U X]
+           [h : HasEquivalenceCondition.{u, v, w} U X]
 
   def DefEquiv (α β : U) (toFun : α ⟶ β) (invFun : β ⟶ α) := h.IsEquiv toFun invFun
 
   notation:20 α:21 " ⟷[" toFun:0 "," invFun:0 "] " β:21 => HasEquivalenceCondition.DefEquiv α β toFun invFun
 
-  structure Equiv (α β : U) : Sort (max 1 u v w') where
+  structure Equiv (α β : U) : Sort (max 1 u v w) where
   (toFun  : α ⟶ β)
   (invFun : β ⟶ α)
   (E      : α ⟷[toFun,invFun] β)
@@ -51,27 +51,27 @@ end HasEquivalenceCondition
 
 
 
-class HasEquivalences (U : Universe.{u}) (V : Universe.{v}) [HasFunctors.{u, u, v, w'} U U V]
-                      (W : outParam Universe.{w})
-  extends HasEquivalenceCondition.{u, v, w', w''} U V : Type (max u v w w'') where
-[embed (α β : U) : HasEmbeddedType.{w, max 1 u v w''} W (α ⟷' β)]
+class HasEquivalences (U : Universe.{u}) (X : Universe.{v}) [HasFunctors U U X]
+                      (Y : outParam Universe.{w})
+  extends HasEquivalenceCondition.{u, v, w'} U X : Type (max u v w w') where
+[embed (α β : U) : HasEmbeddedType.{w, max 1 u v w'} Y (α ⟷' β)]
 
 namespace HasEquivalences
 
-  variable {U V W : Universe} [HasFunctors U U V] [h : HasEquivalences U V W]
+  variable {U X Y : Universe} [HasFunctors U U X] [h : HasEquivalences U X Y]
 
-  instance hasEmbeddedType (α β : U) : HasEmbeddedType W (α ⟷' β) := h.embed α β
+  instance hasEmbeddedType (α β : U) : HasEmbeddedType Y (α ⟷' β) := h.embed α β
 
-  def Equiv (α β : U) : W := HasEmbeddedType.EmbeddedType W (α ⟷' β)
+  def Equiv (α β : U) : Y := HasEmbeddedType.EmbeddedType Y (α ⟷' β)
   infix:20 " ⟷ " => HasEquivalences.Equiv
 
   variable {α β : U}
 
-  def toExternal   (E : α ⟷  β) : α ⟷' β := HasEmbeddedType.toExternal   W E
-  def fromExternal (E : α ⟷' β) : α ⟷  β := HasEmbeddedType.fromExternal W E
+  def toExternal   (E : α ⟷  β) : α ⟷' β := HasEmbeddedType.toExternal   Y E
+  def fromExternal (E : α ⟷' β) : α ⟷  β := HasEmbeddedType.fromExternal Y E
 
-  @[simp] theorem fromToExternal (E : α ⟷  β) : fromExternal (toExternal E) = E := HasEmbeddedType.fromToExternal W E
-  @[simp] theorem toFromExternal (E : α ⟷' β) : toExternal (fromExternal E) = E := HasEmbeddedType.toFromExternal W E
+  @[simp] theorem fromToExternal (E : α ⟷  β) : fromExternal (toExternal E) = E := HasEmbeddedType.fromToExternal Y E
+  @[simp] theorem toFromExternal (E : α ⟷' β) : toExternal (fromExternal E) = E := HasEmbeddedType.toFromExternal Y E
 
   def toFun  (E : α ⟷ β) : α ⟶ β := (toExternal E).toFun
   def invFun (E : α ⟷ β) : β ⟶ α := (toExternal E).invFun
@@ -97,67 +97,67 @@ end HasEquivalences
 
 
 
-class HasIdEquiv (U V : Universe) [HasFunctors U U V] [hasIdFun : HasIdFun U] [HasEquivalenceCondition U V] where
+class HasIdEquiv (U X : Universe) [HasFunctors U U X] [hasIdFun : HasIdFun U] [HasEquivalenceCondition U X] where
 (defIdEquiv (α : U) : α ⟷[HasIdFun.idFun α, HasIdFun.idFun α] α)
 
 namespace HasIdEquiv
 
-  variable {U V : Universe} [HasFunctors U U V] [HasIdFun U]
+  variable {U X : Universe} [HasFunctors U U X] [HasIdFun U]
 
-  def idEquiv' [HasEquivalenceCondition U V] [HasIdEquiv U V] (α : U) : α ⟷' α := HasEquivalenceCondition.fromDefEquiv (defIdEquiv α)
+  def idEquiv' [HasEquivalenceCondition U X] [HasIdEquiv U X] (α : U) : α ⟷' α := HasEquivalenceCondition.fromDefEquiv (defIdEquiv α)
 
-  def idEquiv {W : Universe} [HasEquivalences U V W] [HasIdEquiv U V] (α : U) : α ⟷ α := HasEquivalences.fromExternal (idEquiv' α)
+  def idEquiv {Y : Universe} [HasEquivalences U X Y] [HasIdEquiv U X] (α : U) : α ⟷ α := HasEquivalences.fromExternal (idEquiv' α)
 
 end HasIdEquiv
 
-class HasInvEquiv' (U V : Universe) [HasFunctors U U V] [HasEquivalenceCondition U V] where
+class HasInvEquiv' (U X : Universe) [HasFunctors U U X] [HasEquivalenceCondition U X] where
 (defInvEquiv {α β : U} (E : α ⟷' β) : β ⟷[E.invFun, E.toFun] α)
 
 namespace HasInvEquiv'
 
-  variable {U V : Universe} [HasFunctors U U V] [HasEquivalenceCondition U V] [HasInvEquiv' U V]
+  variable {U X : Universe} [HasFunctors U U X] [HasEquivalenceCondition U X] [HasInvEquiv' U X]
 
   def invEquiv' {α β : U} (E : α ⟷' β) : β ⟷' α := HasEquivalenceCondition.fromDefEquiv (defInvEquiv E)
 
 end HasInvEquiv'
 
-class HasInvEquiv (U V W : Universe) [HasFunctors U U V] [HasEquivalences U V W] where
+class HasInvEquiv (U X Y : Universe) [HasFunctors U U X] [HasEquivalences U X Y] where
 (defInvEquiv {α β : U} (E : α ⟷ β) : β ⟷[HasEquivalences.invFun E, HasEquivalences.toFun E] α)
 
 namespace HasInvEquiv
 
-  variable {U V W : Universe} [HasFunctors U U V] [HasEquivalences U V W] [HasInvEquiv U V W]
+  variable {U X Y : Universe} [HasFunctors U U X] [HasEquivalences U X Y] [HasInvEquiv U X Y]
 
   def invEquiv {α β : U} (E : α ⟷ β) : β ⟷ α := HasEquivalences.fromDefEquiv (defInvEquiv E)
 
-  instance hasInvEquiv' : HasInvEquiv' U V :=
+  instance hasInvEquiv' : HasInvEquiv' U X :=
   ⟨λ E => HasEquivalences.toFromExternal E ▸ defInvEquiv (HasEquivalences.fromExternal E)⟩
 
 end HasInvEquiv
 
-class HasCompEquiv' (U V : Universe) [HasFunctors U U V] [hasCompFun : HasCompFun U U U V V] [HasEquivalenceCondition U V] where
+class HasCompEquiv' (U X : Universe) [HasFunctors U U X] [hasCompFun : HasCompFun U U U X X] [HasEquivalenceCondition U X] where
 (defCompEquiv {α β γ : U} (E : α ⟷' β) (F : β ⟷' γ) : α ⟷[HasCompFun.compFun E.toFun F.toFun,
                                                           HasCompFun.compFun F.invFun E.invFun] γ)
 
 namespace HasCompEquiv'
 
-  variable {U V : Universe} [HasFunctors U U V] [HasCompFun U U U V V] [HasEquivalenceCondition U V] [HasCompEquiv' U V]
+  variable {U X : Universe} [HasFunctors U U X] [HasCompFun U U U X X] [HasEquivalenceCondition U X] [HasCompEquiv' U X]
 
   def compEquiv' {α β γ : U} (E : α ⟷' β) (F : β ⟷' γ) : α ⟷' γ := HasEquivalenceCondition.fromDefEquiv (defCompEquiv E F)
 
 end HasCompEquiv'
 
-class HasCompEquiv (U V W : Universe) [HasFunctors U U V] [hasCompFun : HasCompFun U U U V V] [HasEquivalences U V W] where
+class HasCompEquiv (U X Y : Universe) [HasFunctors U U X] [hasCompFun : HasCompFun U U U X X] [HasEquivalences U X Y] where
 (defCompEquiv {α β γ : U} (E : α ⟷ β) (F : β ⟷ γ) : α ⟷[HasCompFun.compFun (HasEquivalences.toFun E) (HasEquivalences.toFun F),
                                                         HasCompFun.compFun (HasEquivalences.invFun F) (HasEquivalences.invFun E)] γ)
 
 namespace HasCompEquiv
 
-  variable {U V W : Universe} [HasFunctors U U V] [HasCompFun U U U V V] [HasEquivalences U V W] [HasCompEquiv U V W]
+  variable {U X Y : Universe} [HasFunctors U U X] [HasCompFun U U U X X] [HasEquivalences U X Y] [HasCompEquiv U X Y]
 
   def compEquiv {α β γ : U} (E : α ⟷ β) (F : β ⟷ γ) : α ⟷ γ := HasEquivalences.fromDefEquiv (defCompEquiv E F)
 
-  instance hasCompEquiv' : HasCompEquiv' U V :=
+  instance hasCompEquiv' : HasCompEquiv' U X :=
   ⟨λ E F => HasEquivalences.toFromExternal E ▸
             HasEquivalences.toFromExternal F ▸
             defCompEquiv (HasEquivalences.fromExternal E) (HasEquivalences.fromExternal F)⟩
@@ -166,8 +166,8 @@ end HasCompEquiv
 
 
 
-class HasEmbeddedEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedProducts.{u, w} U]
-  extends HasEquivalences.{u, u, u, w, w'} U U U where
+class HasEmbeddedEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w'} U] [HasEmbeddedProducts U]
+  extends HasEquivalences.{u, u, u, w} U U U : Type (max u w w') where
 (defElimFun (α β : U) : (α ⟷ β) ⟶[λ E => HasProducts.intro (HasEquivalences.toFun E) (HasEquivalences.invFun E)] (α ⟶ β) ⊓ (β ⟶ α))
 
 namespace HasEmbeddedEquivalences
@@ -180,8 +180,8 @@ end HasEmbeddedEquivalences
 
 
 
-class HasEquivOp (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedProducts.{u} U] [HasLinearFunOp U]
-  extends HasEmbeddedEquivalences.{u, w, w'} U where
+class HasEquivOp (U : Universe.{u}) [HasEmbeddedFunctors.{u, w'} U] [HasEmbeddedProducts.{u} U] [HasLinearFunOp U]
+  extends HasEmbeddedEquivalences.{u, w} U : Type (max u w w') where
 (defIdEquiv         (α : U)                             : α ⟷[HasLinearFunOp.idFun α, HasLinearFunOp.idFun α] α)
 (defInvEquiv        {α β : U} (E : α ⟷ β)               : β ⟷[HasEquivalences.invFun E, HasEquivalences.toFun E] α)
 (defInvEquivFun     (α β : U)                           : (α ⟷ β) ⟶[λ E => defInvEquiv E] (β ⟷ α))
@@ -253,8 +253,8 @@ end HasEquivOpEq
 
 
 
-class HasLinearCommonEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasLinearFunOp.{u, w} U]
-                                  [HasEmbeddedTop.{u, w} U] [HasEmbeddedProducts.{u, w} U] [HasEquivOp.{u, w, w'} U] where
+class HasLinearCommonEquivalences (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U]
+                                  [HasEmbeddedTop U] [HasEmbeddedProducts U] [HasEquivOp U] where
 (defFunDomainEquiv      {α β : U} (E : α ⟷ β) (γ : U) :
    (β ⟶ γ) ⟷[HasLinearFunOp.compFunFun (HasEquivalences.toFun  E) γ,
              HasLinearFunOp.compFunFun (HasEquivalences.invFun E) γ] (α ⟶ γ))
@@ -325,24 +325,24 @@ namespace HasLinearCommonEquivalences
 
 end HasLinearCommonEquivalences
 
-class HasNonLinearCommonEquivalences (U : Universe.{u}) [HasFunOp.{u, w} U] [HasEmbeddedTop.{u, w} U]
-                                     [HasEmbeddedProducts.{u} U] [HasEquivOp.{u, w, w'} U] where
+class HasNonLinearCommonEquivalences (U : Universe) [HasFunOp U] [HasEmbeddedTop U]
+                                     [HasEmbeddedProducts U] [HasEquivOp U] where
 (defProdDistrEquiv (α β γ : U) :
    (α ⟶ β ⊓ γ) ⟷[HasEmbeddedProducts.distrFun α β γ,
                  HasEmbeddedProducts.invDistrFunFun α β γ] (α ⟶ β) ⊓ (α ⟶ γ))
 
 namespace HasNonLinearCommonEquivalences
 
-  variable {U : Universe.{u}} [HasFunOp U] [HasEmbeddedTop U] [HasEmbeddedProducts U]
+  variable {U : Universe} [HasFunOp U] [HasEmbeddedTop U] [HasEmbeddedProducts U]
            [HasEquivOp U] [HasNonLinearCommonEquivalences U]
 
   @[reducible] def prodDistrEquiv (α β γ : U) : (α ⟶ β ⊓ γ) ⟷ (α ⟶ β) ⊓ (α ⟶ γ):= defProdDistrEquiv α β γ
 
 end HasNonLinearCommonEquivalences
 
-class HasBotEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasAffineFunOp.{u, w} U]
-                         [HasEmbeddedTop.{u, w} U] [HasEmbeddedBot.{u, w} U]
-                         [HasEmbeddedProducts.{u} U] [HasEquivOp.{u, w, w'} U] where
+class HasBotEquivalences (U : Universe) [HasEmbeddedFunctors U] [HasAffineFunOp U]
+                         [HasEmbeddedTop U] [HasEmbeddedBot U] [HasEmbeddedProducts U]
+                         [HasEquivOp U] where
 (defBotNotTopEquiv         :
    HasBot.Bot U ⟷[HasEmbeddedBot.elimFun (HasEmbeddedBot.Not (HasTop.Top U)),
                   HasEmbeddedBot.notTopIntroFun] HasEmbeddedBot.Not (HasTop.Top U))
@@ -355,7 +355,7 @@ class HasBotEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasA
 
 namespace HasBotEquivalences
 
-  variable {U : Universe.{u}} [HasEmbeddedFunctors U] [HasAffineFunOp U] [HasEmbeddedTop U]
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasAffineFunOp U] [HasEmbeddedTop U]
            [HasEmbeddedBot U] [HasEmbeddedProducts U] [HasEquivOp U] [HasBotEquivalences U]
 
   @[reducible] def botNotTopEquiv : HasBot.Bot U ⟷ HasEmbeddedBot.Not (HasTop.Top U) := defBotNotTopEquiv (U := U)
@@ -364,16 +364,16 @@ namespace HasBotEquivalences
 
 end HasBotEquivalences
 
-class HasClassicalEquivalences (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasLinearFunOp.{u, w} U]
-                               [HasEmbeddedBot.{u, w} U] [HasClassicalLogic.{u, w} U]
-                               [HasEmbeddedProducts.{u} U] [HasEquivOp.{u, w, w'} U] where
+class HasClassicalEquivalences (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U]
+                               [HasEmbeddedBot U] [HasClassicalLogic U]
+                               [HasEmbeddedProducts U] [HasEquivOp U] where
 (defByContradictionEquiv (α : U) :
    α ⟷[HasEmbeddedBot.notNotFun α,
        HasClassicalLogic.byContradictionFun α] HasEmbeddedBot.Not (HasEmbeddedBot.Not α))
 
 namespace HasClassicalEquivalences
 
-  variable {U : Universe.{u}} [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasEmbeddedBot U]
+  variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasEmbeddedBot U]
            [HasClassicalLogic U] [HasEmbeddedProducts U] [HasEquivOp U] [HasClassicalEquivalences U]
 
   @[reducible] def byContradictionEquiv (α : U) : α ⟷ HasEmbeddedBot.Not (HasEmbeddedBot.Not α) :=

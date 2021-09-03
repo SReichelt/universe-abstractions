@@ -1,4 +1,9 @@
 import UniverseAbstractions.Axioms.Universes
+import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Products
+import UniverseAbstractions.Axioms.Universe.Equivalences
+
+import UniverseAbstractions.Lemmas.LeanEq
 
 import mathlib4_experiments.Data.Equiv.Basic
 
@@ -12,8 +17,8 @@ universe u v w w'
 
 
 -- We define a "`V`-valued property" on a type `α` to be a function yielding a type in `V` with an
--- additional condition. If `V` is the universe `prop`, this is just a regular property, or
--- equivalently `Set α` in Lean.
+-- additional condition, similarly to the definition of functoriality. If `V` is the universe
+-- `prop`, this is just a regular property, or equivalently `Set α` in Lean.
 
 class HasProperties (U : Universe.{u}) (V : Universe.{v}) : Type (max u v w) where
 (IsProp      {α : U}         : (α → V) → Sort w)
@@ -68,3 +73,129 @@ namespace HasProperties
   end constProp
 
 end HasProperties
+
+
+
+class HasCompFunProp' (U V W : Universe) [HasFunctoriality U V] [HasProperties V W]
+                      [h : HasProperties U W] where
+(compIsProp {α : U} {β : V} (F : α ⟶' β) (P : HasProperties.Property β W) :
+   h.IsProp (λ a => P (F a)))
+(compConstEq {α : U} {β : V} (F : α ⟶' β) (γ : W) :
+   compIsProp F (HasProperties.constProp β γ) = h.constIsProp α γ)
+
+namespace HasCompFunProp'
+
+  variable {U V W : Universe} [HasFunctoriality U V] [HasProperties V W] [HasProperties U W]
+           [h : HasCompFunProp' U V W]
+
+  @[reducible] def compProp' {α : U} {β : V} (F : α ⟶' β) (P : HasProperties.Property β W) :
+    HasProperties.Property α W :=
+  ⟨h.compIsProp F P⟩
+
+  theorem compPropConstEq' {α : U} {β : V} (F : α ⟶' β) (γ : W) :
+    compProp' F (HasProperties.constProp β γ) = HasProperties.constProp α γ :=
+  congrArg HasProperties.Property.mk (h.compConstEq F γ)
+
+end HasCompFunProp'
+
+class HasCompFunProp (U V W X : Universe) [HasFunctors U V X] [HasProperties V W]
+                     [h : HasProperties U W] where
+(compIsProp {α : U} {β : V} (F : α ⟶ β) (P : HasProperties.Property β W) :
+   h.IsProp (λ a => P (F a)))
+(compConstEq {α : U} {β : V} (F : α ⟶ β) (γ : W) :
+   compIsProp F (HasProperties.constProp β γ) = h.constIsProp α γ)
+
+namespace HasCompFunProp
+
+  variable {U V W X : Universe} [HasFunctors U V X] [HasProperties V W] [HasProperties U W]
+           [h : HasCompFunProp U V W X]
+
+  @[reducible] def compProp {α : U} {β : V} (F : α ⟶ β) (P : HasProperties.Property β W) :
+    HasProperties.Property α W :=
+  ⟨h.compIsProp F P⟩
+
+  theorem compPropConstEq {α : U} {β : V} (F : α ⟶ β) (γ : W) :
+    compProp F (HasProperties.constProp β γ) = HasProperties.constProp α γ :=
+  congrArg HasProperties.Property.mk (h.compConstEq F γ)
+
+  instance hasCompFunProp' : HasCompFunProp' U V W :=
+  { compIsProp  := λ F P => funext (λ a => congrArg P.p (HasFunctors.fromExternal.eff F a)) ▸
+                            h.compIsProp (HasFunctors.fromExternal F) P,
+    compConstEq := λ F γ => h.compConstEq (HasFunctors.fromExternal F) γ }
+
+end HasCompFunProp
+
+
+
+class HasFunProp (U V W X : Universe) [HasProperties U V] [HasProperties U W] [HasFunctors V W X]
+                 [h : HasProperties U X] where
+(funIsProp {α : U} (P : HasProperties.Property α V) (Q : HasProperties.Property α W) :
+   h.IsProp (λ a => P a ⟶ Q a))
+(funConstEq (α : U) (β : V) (γ : W) :
+   funIsProp (HasProperties.constProp α β) (HasProperties.constProp α γ) = h.constIsProp α (β ⟶ γ))
+
+namespace HasFunProp
+
+  variable {U V W X : Universe} [HasProperties U V] [HasProperties U W] [HasFunctors V W X]
+           [HasProperties U X] [h : HasFunProp U V W X]
+
+  @[reducible] def funProp {α : U} (P : HasProperties.Property α V) (Q : HasProperties.Property α W) :
+    HasProperties.Property α X :=
+  ⟨h.funIsProp P Q⟩
+
+  @[reducible] def inFunProp {α : U} (β : V) (P : HasProperties.Property α W) :=
+  HasFunProp.funProp (HasProperties.constProp α β) P
+  @[reducible] def outFunProp {α : U} (P : HasProperties.Property α V) (β : W) :=
+  HasFunProp.funProp P (HasProperties.constProp α β)
+
+  theorem funPropConstEq (α : U) (β : V) (γ : W) :
+    funProp (HasProperties.constProp α β) (HasProperties.constProp α γ) = HasProperties.constProp α (β ⟶ γ) :=
+  congrArg HasProperties.Property.mk (h.funConstEq α β γ)
+
+end HasFunProp
+
+
+
+class HasProdProp (U V W X : Universe) [HasProperties U V] [HasProperties U W] [HasProducts V W X]
+                  [h : HasProperties U X] where
+(prodIsProp {α : U} (P : HasProperties.Property α V) (Q : HasProperties.Property α W) :
+   h.IsProp (λ a => P a ⊓ Q a))
+(prodConstEq (α : U) (β : V) (γ : W) :
+   prodIsProp (HasProperties.constProp α β) (HasProperties.constProp α γ) = h.constIsProp α (β ⊓ γ))
+
+namespace HasProdProp
+
+  variable {U V W X : Universe} [HasProperties U V] [HasProperties U W] [HasProducts V W X]
+           [HasProperties U X] [h : HasProdProp U V W X]
+
+  @[reducible] def prodProp {α : U} (P : HasProperties.Property α V) (Q : HasProperties.Property α W) :
+    HasProperties.Property α X :=
+  ⟨h.prodIsProp P Q⟩
+
+  theorem prodPropConstEq (α : U) (β : V) (γ : W) :
+    prodProp (HasProperties.constProp α β) (HasProperties.constProp α γ) = HasProperties.constProp α (β ⊓ γ) :=
+  congrArg HasProperties.Property.mk (h.prodConstEq α β γ)
+
+end HasProdProp
+
+
+
+class HasEquivProp (U V X : Universe) [HasProperties U V] [HasEmbeddedFunctors V]
+                   [HasEquivalences V V X] [h : HasProperties U X] where
+(equivIsProp {α : U} (P Q : HasProperties.Property α V) : h.IsProp (λ a => P a ⟷ Q a))
+(equivConstEq (α : U) (β γ : V) :
+   equivIsProp (HasProperties.constProp α β) (HasProperties.constProp α γ) = h.constIsProp α (β ⟷ γ))
+
+namespace HasEquivProp
+
+  variable {U V X : Universe} [HasProperties U V] [HasEmbeddedFunctors V] [HasEquivalences V V X]
+           [HasProperties U X] [h : HasEquivProp U V X]
+
+  @[reducible] def equivProp {α : U} (P Q : HasProperties.Property α V) : HasProperties.Property α X :=
+  ⟨h.equivIsProp P Q⟩
+
+  theorem equivPropConstEq (α : U) (β γ : V) :
+    equivProp (HasProperties.constProp α β) (HasProperties.constProp α γ) = HasProperties.constProp α (β ⟷ γ) :=
+  congrArg HasProperties.Property.mk (h.equivConstEq α β γ)
+
+end HasEquivProp

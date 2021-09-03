@@ -13,6 +13,8 @@ set_option autoBoundImplicitLocal false
 -- `Tactics/Functoriality.lean`. In order for those tactics to work correctly, they must be given
 -- as a "definitional" version first, with the expected mapping behavior.
 
+-- TODO: We should also introduce dependent variants where appropriate, and extend the functoriality tactics accordingly.
+
 
 
 namespace HasLinearFunOp

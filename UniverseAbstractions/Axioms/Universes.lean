@@ -98,7 +98,7 @@ instance {C : UniverseClass.{u}} (U : univ C) : HasInstances ⌈U⌉ := Universe
 -- implementations, `⌈α⌉` and `α'` will in fact be exactly the same.
 
 class HasEmbeddedType (U : Universe.{u}) (α' : Sort v) : Sort (max (u + 1) v) where
-(α : U)
+{α : U}
 (h : ⌈α⌉ ≃ α')
 
 namespace HasEmbeddedType
