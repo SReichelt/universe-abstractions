@@ -96,6 +96,9 @@ namespace HasTrivialFunctoriality
     defElimFun     := λ _     => defFun,
     defElimFunFun  := λ _ _ _ => defFun }
 
+  instance hasEmbeddedEquivalences [HasEquivalences U U U] [HasEmbeddedProducts U] : HasEmbeddedEquivalences U :=
+  { defElimFun  := λ _ _ => defFun }
+
 end HasTrivialFunctoriality
 
 
@@ -134,9 +137,6 @@ namespace HasTrivialEquivalenceCondition
   instance hasCompEquiv (U X Y : Universe) [HasTrivialEquivalences U X Y] : HasCompEquiv U X Y := ⟨λ _ _ => defEquiv⟩
 
   variable (U : Universe) [HasProducts U U U] [HasTrivialEquivalences U U U]
-
-  instance hasEmbeddedEquivalences : HasEmbeddedEquivalences U :=
-  { defElimFun  := λ _ _ => defFun }
 
   instance hasEquivOp : HasEquivOp U :=
   { defIdEquiv         := λ _     => defEquiv,
@@ -335,7 +335,7 @@ namespace unit
 
   @[simp] theorem inst.unique {α : unit} (a : α) : a = inst := proofIrrel a inst
 
-  instance hasTrivialFunctoriality (U : Universe.{u}) : HasTrivialFunctoriality U unit := ⟨⟩
+  instance hasTrivialInFunctoriality (U : Universe.{u}) : HasTrivialFunctoriality U unit := ⟨⟩
 
   def unitFunctor {U : Universe.{u}} {α : U} {β : unit} : α ⟶' β :=
   ⟨λ _ => inst, HasTrivialFunctoriality.defFun⟩
@@ -344,36 +344,57 @@ namespace unit
     F = unitFunctor :=
   by induction F; rfl
 
-  def funEquiv {U : Universe.{u}} (α : U) (β : unit) : ⌈Inst⌉ ≃ (α ⟶' β) :=
+  def inFunEquiv {U : Universe.{u}} (α : U) (β : unit) : ⌈Inst⌉ ≃ (α ⟶' β) :=
   { toFun    := λ _ => unitFunctor,
     invFun   := λ _ => inst,
     leftInv  := inst.unique,
     rightInv := λ F => Eq.symm (unitFunctor.unique F) }
 
-  instance hasEmbeddedFunctorType {U : Universe.{u}} (α : U) (β : unit) :
+  instance hasEmbeddedInFunctorType {U : Universe.{u}} (α : U) (β : unit) :
     HasEmbeddedType unit (α ⟶' β) :=
-  ⟨funEquiv α β⟩
+  ⟨inFunEquiv α β⟩
 
-  instance hasTrivialFunctors (U : Universe.{u}) : HasTrivialFunctoriality.HasTrivialFunctors U unit unit := ⟨⟩
+  instance hasTrivialInFunctors (U : Universe.{u}) : HasTrivialFunctoriality.HasTrivialFunctors U unit unit := ⟨⟩
+
+  instance hasTrivialOutFunctoriality (U : Universe.{u}) : HasTrivialFunctoriality unit U := ⟨⟩
+
+  def outFunEquiv {U : Universe.{u}} (α : unit) (β : U) : ⌈β⌉ ≃ (α ⟶' β) :=
+  { toFun    := λ b => ⟨λ _ => b, HasTrivialFunctoriality.defFun⟩,
+    invFun   := λ F => F inst,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedOutFunctorType {U : Universe.{u}} (α : unit) (β : U) :
+    HasEmbeddedType U (α ⟶' β) :=
+  ⟨outFunEquiv α β⟩
+
+  instance hasTrivialOutFunctors (U : Universe.{u}) : HasTrivialFunctoriality.HasTrivialFunctors unit U U := ⟨⟩
 
   instance hasEmbeddedTopType : HasEmbeddedType unit True := ⟨Equiv.refl ⌈Inst⌉⟩
 
   instance hasTop : HasTop unit := ⟨⟩
 
-  instance hasEmbeddedTop : HasEmbeddedTop unit :=
-  { defElimFun    := λ _ => HasTrivialFunctoriality.defFun,
-    defElimFunFun := λ _ => HasTrivialFunctoriality.defFun }
-
-  def prodEquiv {U : Universe.{u}} (α : U) (β : unit) : ⌈α⌉ ≃ (α ⊓' β) :=
+  def rightProdEquiv {U : Universe.{u}} (α : U) (β : unit) : ⌈α⌉ ≃ (α ⊓' β) :=
   { toFun    := λ a => ⟨a, inst⟩,
     invFun   := λ P => P.fst,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedProductType {U : Universe.{u}} (α : U) (β : unit) : HasEmbeddedType U (α ⊓' β) :=
-  ⟨prodEquiv α β⟩
+  instance hasEmbeddedRightProductType {U : Universe.{u}} (α : U) (β : unit) : HasEmbeddedType U (α ⊓' β) :=
+  ⟨rightProdEquiv α β⟩
 
-  instance hasProducts (U : Universe.{u}) : HasProducts U unit U := ⟨⟩
+  instance hasRightProducts (U : Universe.{u}) : HasProducts U unit U := ⟨⟩
+
+  def leftProdEquiv {U : Universe.{u}} (α : unit) (β : U) : ⌈β⌉ ≃ (α ⊓' β) :=
+  { toFun    := λ b => ⟨inst, b⟩,
+    invFun   := λ P => P.snd,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedLeftProductType {U : Universe.{u}} (α : unit) (β : U) : HasEmbeddedType U (α ⊓' β) :=
+  ⟨leftProdEquiv α β⟩
+
+  instance hasLeftProducts (U : Universe.{u}) : HasProducts unit U U := ⟨⟩
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit unit := ⟨⟩
 
@@ -393,9 +414,10 @@ namespace unit
 
   instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences unit unit unit := ⟨⟩
 
-  instance hasTrivialProperties (U : Universe.{u}) : HasTrivialProperties U unit := ⟨⟩
+  instance hasTrivialInProperties  (U : Universe.{u}) : HasTrivialProperties U unit := ⟨⟩
+  instance hasTrivialOutProperties (U : Universe.{u}) : HasTrivialProperties unit U := ⟨⟩
 
-  instance hasTrivialDependentFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit := ⟨⟩
+  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit := ⟨⟩
 
   def dependentUnitFunctor {U : Universe.{u}} {α : U} {P : HasProperties.Property α unit} : Π' P :=
   ⟨λ _ => inst, HasTrivialDependentFunctoriality.defPi⟩
@@ -404,29 +426,59 @@ namespace unit
     F = dependentUnitFunctor :=
   by induction F; rfl
 
-  def piEquiv {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) : ⌈Inst⌉ ≃ (Π' P) :=
+  def inPiEquiv {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) : ⌈Inst⌉ ≃ (Π' P) :=
   { toFun    := λ _ => dependentUnitFunctor,
     invFun   := λ _ => inst,
     leftInv  := inst.unique,
     rightInv := λ F => Eq.symm (dependentUnitFunctor.unique F) }
 
-  instance hasEmbeddedDependentFunctorType {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) :
+  instance hasEmbeddedDependentInFunctorType {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) :
     HasEmbeddedType unit (Π' P) :=
-  ⟨piEquiv P⟩
+  ⟨inPiEquiv P⟩
 
-  instance hasTrivialDependentFunctors (U : Universe.{u}) : HasTrivialDependentFunctoriality.HasTrivialDependentFunctors U unit unit := ⟨⟩
+  instance hasTrivialDependentInFunctors (U : Universe.{u}) :
+    HasTrivialDependentFunctoriality.HasTrivialDependentFunctors U unit unit :=
+  ⟨⟩
 
-  def sigmaEquiv {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) : ⌈α⌉ ≃ (Σ' P) :=
+  instance hasTrivialDependentOutFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality unit U := ⟨⟩
+
+  def outPiEquiv {α : unit} {U : Universe.{u}} (P : HasProperties.Property α U) : ⌈P inst⌉ ≃ (Π' P) :=
+  { toFun    := λ b => ⟨λ _ => b, HasTrivialDependentFunctoriality.defPi⟩,
+    invFun   := λ F => F inst,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedDependentOutFunctorType {α : unit} {U : Universe.{u}} (P : HasProperties.Property α U) :
+    HasEmbeddedType U (Π' P) :=
+  ⟨outPiEquiv P⟩
+
+  instance hasTrivialDependentOutFunctors (U : Universe.{u}) :
+    HasTrivialDependentFunctoriality.HasTrivialDependentFunctors unit U U :=
+  ⟨⟩
+
+  def rightSigmaEquiv {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) : ⌈α⌉ ≃ (Σ' P) :=
   { toFun    := λ a => ⟨a, inst⟩,
     invFun   := λ P => P.fst,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentProductType {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) :
+  instance hasEmbeddedDependentRightProductType {U : Universe.{u}} {α : U} (P : HasProperties.Property α unit) :
     HasEmbeddedType U (Σ' P) :=
-  ⟨sigmaEquiv P⟩
+  ⟨rightSigmaEquiv P⟩
 
-  instance hasDependentProducts (U : Universe.{u}) : HasDependentProducts U unit U := ⟨⟩
+  instance hasDependentRightProducts (U : Universe.{u}) : HasDependentProducts U unit U := ⟨⟩
+
+  def leftSigmaEquiv {α : unit} {U : Universe.{u}} (P : HasProperties.Property α U) : ⌈P inst⌉ ≃ (Σ' P) :=
+  { toFun    := λ b => ⟨inst, b⟩,
+    invFun   := λ P => P.snd,
+    leftInv  := λ _ => rfl,
+    rightInv := λ ⟨_, _⟩ => rfl }
+
+  instance hasEmbeddedDependentLeftProductType {α : unit} {U : Universe.{u}} (P : HasProperties.Property α U) :
+    HasEmbeddedType U (Σ' P) :=
+  ⟨leftSigmaEquiv P⟩
+
+  instance hasDependentLeftProducts (U : Universe.{u}) : HasDependentProducts unit U U := ⟨⟩
 
 --  def Rel (α : Sort u) : GeneralizedRelation α unit := λ _ _ => UnitType
 --
@@ -727,16 +779,13 @@ namespace type
 
   instance hasEquivalences : HasEquivalences type type type := ⟨⟩
 
-  instance hasEmbeddedEquivalences : HasEmbeddedEquivalences type :=
-  { defElimFun := λ _ _ => trivial }
-
   instance hasEquivOp : HasEquivOp type :=
   { defIdEquiv         := λ α     => DefEquiv.fromEquiv (Equiv.refl α),
     defCompEquiv       := λ e f   => DefEquiv.fromEquiv (Equiv.trans e f),
-    defCompEquivFun    := λ _ _   => trivial,
-    defCompEquivFunFun := λ _ _ _ => trivial,
+    defCompEquivFun    := λ _ _   => HasTrivialFunctoriality.defFun,
+    defCompEquivFunFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
     defInvEquiv        := λ e     => DefEquiv.fromEquiv (Equiv.symm e),
-    defInvEquivFun     := λ _ _   => trivial }
+    defInvEquivFun     := λ _ _   => HasTrivialFunctoriality.defFun }
 
   instance hasIdEquiv : HasIdEquiv type type := HasEquivOp.hasIdEquiv
   instance hasInvEquiv : HasInvEquiv type type type := HasEquivOp.hasInvEquiv
@@ -747,10 +796,10 @@ namespace type
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type :=
   { defFunDomainEquiv      := λ e _   => ⟨λ f => funext (λ b => congrArg f (e.rightInv b)),
                                           λ f => funext (λ a => congrArg f (e.leftInv  a))⟩,
-    defFunDomainEquivFun   := λ _ _ _ => trivial,
+    defFunDomainEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
     defFunCodomainEquiv    := λ e _   => ⟨λ f => funext (λ c => e.leftInv  (f c)),
                                           λ f => funext (λ c => e.rightInv (f c))⟩,
-    defFunCodomainEquivFun := λ _ _ _ => trivial,
+    defFunCodomainEquivFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
     defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
                                           λ _ => funext (λ _ => funext (λ _ => rfl))⟩,
     defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext (λ () => rfl)⟩,
@@ -758,15 +807,15 @@ namespace type
                                           λ _ => funext (λ (_, _) => rfl)⟩,
     defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
                                           λ p => prodExt (e.rightInv p.fst) rfl⟩,
-    defProdFstEquivFun     := λ _ _ _ => trivial,
+    defProdFstEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
     defProdSndEquiv        := λ e _   => ⟨λ p => prodExt rfl (e.leftInv  p.snd),
                                           λ p => prodExt rfl (e.rightInv p.snd)⟩,
-    defProdSndEquivFun     := λ _ _ _ => trivial,
+    defProdSndEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
     defProdCommEquiv       := λ _ _   => ⟨λ (_, _) => rfl, λ (_, _) => rfl⟩,
     defProdAssocEquiv      := λ _ _ _ => ⟨λ ((_, _), _) => rfl, λ (_, (_, _)) => rfl⟩,
     defProdTopEquiv        := λ _     => ⟨λ _ => rfl, λ ((), _) => rfl⟩,
     defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
-    defCompEquivEquivFun   := λ _ _ _ => trivial,
+    defCompEquivEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
     defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
 
   instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type :=
