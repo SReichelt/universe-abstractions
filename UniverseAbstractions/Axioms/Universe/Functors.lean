@@ -1,7 +1,5 @@
 import UniverseAbstractions.Axioms.Universes
 
-import UniverseAbstractions.Lemmas.LeanEq
-
 
 
 set_option autoBoundImplicitLocal false
@@ -67,17 +65,21 @@ namespace HasFunctoriality
   instance (F : α ⟶' β) : CoeDep (α ⟶' β)   F (α ⟶[F.F] β) := ⟨toDefFun F⟩
   instance {f : α →  β} : Coe    (α ⟶[f] β)   (α ⟶' β)     := ⟨fromDefFun⟩
 
+  theorem DefFun.ext {f f' : α → β} (h : ∀ a, f a = f' a) : (α ⟶[f] β) = (α ⟶[f'] β) :=
+  congrArg (DefFun α β) (funext h)
+
   def castDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) : α ⟶[f'] β :=
-  have h₁ : f = f' := funext h;
-  h₁ ▸ F
+  cast (DefFun.ext h) F
 
   @[simp] theorem fromCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
     fromDefFun (castDefFun F h) = fromDefFun F :=
-  Eq.simp_rec
+  have h₁ : f = f' := funext h;
+  by subst h₁; rfl
 
   @[simp] theorem castCastDefFun {f f' : α → β} (F : α ⟶[f] β) (h : ∀ a, f a = f' a) :
     castDefFun (castDefFun F h) (λ a => Eq.symm (h a)) = F :=
-  Eq.simp_rec_rec (ha := funext h)
+  have h₁ : f = f' := funext h;
+  by subst h₁; rfl
 
   @[simp] theorem toDefFun.eff               (F : α ⟶' β)   (a : α) : (toDefFun   F) a = F a := rfl
   @[simp] theorem fromDefFun.eff {f : α → β} (F : α ⟶[f] β) (a : α) : (fromDefFun F) a = F a := rfl
@@ -85,6 +87,12 @@ namespace HasFunctoriality
   @[simp] theorem fromToDefFun             (F : α ⟶' β)   : fromDefFun (toDefFun F) = F :=
   match F with | ⟨_, _⟩ => rfl
   @[simp] theorem toFromDefFun {f : α → β} (F : α ⟶[f] β) : toDefFun (fromDefFun F) = F := rfl
+
+  theorem Fun.Eq.eff {F F' : α ⟶' β} (h : F = F') (a : α) : F a = F' a := h ▸ rfl
+
+  theorem toDefFun.congr {F F' : α ⟶' β} (h : F = F') :
+    castDefFun (toDefFun F) (Fun.Eq.eff h) = toDefFun F' :=
+  by subst h; rfl
 
 end HasFunctoriality
 
@@ -146,8 +154,11 @@ namespace HasFunctors
   @[simp] theorem fromToDefFun' (F : α ⟶ β) {f : α → β} (h : ∀ a, F a = f a) : fromDefFun (toDefFun' F h) = F :=
   Eq.trans (fromCastDefFun (toDefFun F) h) (fromToDefFun F)
 
-  -- This is annoying to prove, and we don't need it at the moment.
-  --@[simp] theorem toFromDefFun' {f : α → β} (F : α ⟶[f] β) : toDefFun' (fromDefFun F) (fromDefFun.eff F) = F := sorry
+  @[simp] theorem toFromDefFun' {f : α → β} (F : α ⟶[f] β) : toDefFun' (fromDefFun F) (fromDefFun.eff F) = F :=
+  HasFunctoriality.toDefFun.congr (toFromExternal (HasFunctoriality.fromDefFun F))
+
+  theorem toFromDefFun {f : α → β} (F : α ⟶[f] β) : toDefFun (fromDefFun F) ≅ F :=
+  heq_of_eqRec_eq _ (toFromDefFun' F)
 
 end HasFunctors
 

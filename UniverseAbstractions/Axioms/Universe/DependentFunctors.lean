@@ -4,8 +4,6 @@ import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Axioms.Universe.Properties
 
-import UniverseAbstractions.Lemmas.LeanEq
-
 
 
 set_option autoBoundImplicitLocal false
@@ -16,7 +14,7 @@ universe u v w w' w''
 
 
 class HasDependentFunctoriality (U : Universe.{u}) (V : Universe.{v}) extends
-  HasProperties.{u, v, w} U V : Type (max u v w w') where
+  HasProperties.{u, v, w} U V : Type (max 1 u v w w') where
 (IsFun {α : U} {φ : α ⟿ V} : HasProperties.Pi φ → Sort w')
 
 namespace HasDependentFunctoriality
@@ -42,17 +40,21 @@ namespace HasDependentFunctoriality
   instance (F : Π' φ)               : CoeDep (Π'   φ) F (Π[F.f] φ) := ⟨toDefPi F⟩
   instance {f : HasProperties.Pi φ} : Coe    (Π[f] φ)   (Π'     φ) := ⟨fromDefPi⟩
 
+  theorem DefPi.ext {f f' : HasProperties.Pi φ} (h : ∀ a, f a = f' a) : (Π[f] φ) = (Π[f'] φ) :=
+  congrArg (DefPi φ) (funext h)
+
   def castDefPi {f f' : HasProperties.Pi φ} (F : Π[f] φ) (h : ∀ a, f a = f' a) : Π[f'] φ :=
-  have h₁ : f = f' := funext h;
-  h₁ ▸ F
+  cast (DefPi.ext h) F
 
   @[simp] theorem fromCastDefPi {f f' : HasProperties.Pi φ} (F : Π[f] φ) (h : ∀ a, f a = f' a) :
     fromDefPi (castDefPi F h) = fromDefPi F :=
-  Eq.simp_rec
+  have h₁ : f = f' := funext h;
+  by subst h₁; rfl
 
   @[simp] theorem castCastDefPi {f f' : HasProperties.Pi φ} (F : Π[f] φ) (h : ∀ a, f a = f' a) :
     castDefPi (castDefPi F h) (λ a => Eq.symm (h a)) = F :=
-  Eq.simp_rec_rec (ha := funext h)
+  have h₁ : f = f' := funext h;
+  by subst h₁; rfl
 
   @[simp] theorem toDefPi.eff                            (F : Π'   φ) (a : α) : (toDefPi   F) a = F a := rfl
   @[simp] theorem fromDefPi.eff {f : HasProperties.Pi φ} (F : Π[f] φ) (a : α) : (fromDefPi F) a = F a := rfl
@@ -61,12 +63,18 @@ namespace HasDependentFunctoriality
   match F with | ⟨_, _⟩ => rfl
   @[simp] theorem toFromDefPi {f : HasProperties.Pi φ} (F : Π[f] φ) : toDefPi (fromDefPi F) = F := rfl
 
+  theorem Pi.Eq.eff {F F' : Π' φ} (h : F = F') (a : α) : F a = F' a := h ▸ rfl
+
+  theorem toDefPi.congr {F F' : Π' φ} (h : F = F') :
+    castDefPi (toDefPi F) (Pi.Eq.eff h) = toDefPi F' :=
+  by subst h; rfl
+
 end HasDependentFunctoriality
 
 
 
 class HasDependentFunctors (U : Universe.{u}) (V : Universe.{v}) (X : outParam Universe.{w}) extends
-  HasDependentFunctoriality.{u, v, w', w''} U V : Type (max u v w w' w'') where
+  HasDependentFunctoriality.{u, v, w', w''} U V : Type (max 1 u v w w' w'') where
 [embed {α : U} (φ : α ⟿ V) : HasEmbeddedType.{w, max 1 u v w''} X (Π' φ)]
 
 namespace HasDependentFunctors
@@ -118,9 +126,11 @@ namespace HasDependentFunctors
   @[simp] theorem fromToDefPi' (F : Π φ) {f : HasProperties.Pi φ} (h : ∀ a, F a = f a) : fromDefPi (toDefPi' F h) = F :=
   Eq.trans (fromCastDefPi (toDefPi F) h) (fromToDefPi F)
 
-  -- This is annoying to prove, and we don't need it at the moment.
-  --@[simp] theorem toFromDefPi' {f : HasProperties.Pi φ} (F : Π[f] φ) : toDefPi' (fromDefPi F) (fromDefPi.eff F) = F :=
-  --sorry
+  @[simp] theorem toFromDefPi' {f : HasProperties.Pi φ} (F : Π[f] φ) : toDefPi' (fromDefPi F) (fromDefPi.eff F) = F :=
+  HasDependentFunctoriality.toDefPi.congr (toFromExternal (HasDependentFunctoriality.fromDefPi F))
+
+  theorem toFromDefPi {f : HasProperties.Pi φ} (F : Π[f] φ) : toDefPi (fromDefPi F) ≅ F :=
+  heq_of_eqRec_eq _ (toFromDefPi' F)
 
 end HasDependentFunctors
 
@@ -268,10 +278,8 @@ end HasConstFunPi
 
 class HasPiAppFun (U V X Y : Universe) [HasDependentFunctors U V X] [HasFunctors X V Y]
                   [HasProperties U X] [HasDependentFunctoriality U Y] [HasFunProp U X V Y] where
-(defAppFun {α : U} (a : α) (φ : α ⟿ V) :
-   (Π φ) ⟶[λ F => F a] (φ a))
-(defAppFunPi {α : U} (φ : α ⟿ V) :
-   Π[λ a => HasFunctors.fromDefFun (defAppFun a φ)] {α{Π φ} ⟶ φ})
+(defAppFun   {α : U} (a : α) (φ : α ⟿ V) : (Π φ) ⟶[λ F => F a] (φ a))
+(defAppFunPi {α : U}         (φ : α ⟿ V) : Π[λ a => HasFunctors.fromDefFun (defAppFun a φ)] {α{Π φ} ⟶ φ})
 
 namespace HasPiAppFun
 

@@ -21,7 +21,7 @@ notation:20 "Σ' " φ:21 => HasDependentProducts.Sigma' φ
 
 class HasDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasProperties.{u, v, w} U V]
                            (X : outParam Universe.{w'}) :
-  Type (max u v w w') where
+  Type (max 1 u v w w') where
 [embed {α : U} (φ : α ⟿ V) : HasEmbeddedType.{w', max 1 u v} X (Σ' φ)]
 
 namespace HasDependentProducts
