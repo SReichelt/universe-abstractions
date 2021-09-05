@@ -197,42 +197,42 @@ class HasTrivialProperties (U : Universe.{u}) (V : Universe.{v})
 namespace HasTrivialProperties
 
   instance hasProperties (U : Universe.{u}) (V : Universe.{v}) [HasTrivialProperties U V] : HasProperties.{u, v, 0} U V :=
-  { IsProp      := λ _   => True,
-    constIsProp := λ _ _ => trivial }
+  { IsProp       := λ _   => True,
+    defConstProp := λ _ _ => trivial }
 
-  def isProp {U V : Universe} [HasTrivialProperties U V] {α : U} {p : α → V} : HasProperties.IsProp p := trivial
+  def defProp {U V : Universe} [HasTrivialProperties U V] {α : U} {p : α → V} : α ⟿[p] V := trivial
 
-  theorem isPropEq {U V : Universe} [HasTrivialProperties U V] {α : U} {p : α → V} {P₁ P₂ : HasProperties.IsProp p} :
+  theorem defPropEq {U V : Universe} [HasTrivialProperties U V] {α : U} {p : α → V} {P₁ P₂ : α ⟿[p] V} :
     P₁ = P₂ :=
   proofIrrel P₁ P₂
 
   instance hasCompFunProp' (U V W : Universe) [HasFunctoriality U V] [HasProperties V W] [HasTrivialProperties U W] :
     HasCompFunProp' U V W :=
-  { compIsProp  := λ _ _ => isProp,
-    compConstEq := λ _ _ => isPropEq }
+  { defCompProp    := λ _ _ => defProp,
+    defCompConstEq := λ _ _ => defPropEq }
 
   instance hasCompFunProp (U V W X : Universe) [HasFunctors U V X] [HasProperties V W] [HasTrivialProperties U W] :
     HasCompFunProp U V W X :=
-  { compIsProp  := λ _ _ => isProp,
-    compConstEq := λ _ _ => isPropEq }
+  { defCompProp    := λ _ _ => defProp,
+    defCompConstEq := λ _ _ => defPropEq }
 
   instance hasFunProp (U V W X : Universe) [HasProperties U V] [HasProperties U W] [HasFunctors V W X]
                       [HasTrivialProperties U X] :
     HasFunProp U V W X :=
-  { funIsProp  := λ _ _   => isProp,
-    funConstEq := λ _ _ _ => isPropEq }
+  { defFunProp    := λ _ _   => defProp,
+    defFunConstEq := λ _ _ _ => defPropEq }
 
   instance hasProdProp (U V W X : Universe) [HasProperties U V] [HasProperties U W] [HasProducts V W X]
                        [HasTrivialProperties U X] :
     HasProdProp U V W X :=
-  { prodIsProp  := λ _ _   => isProp,
-    prodConstEq := λ _ _ _ => isPropEq }
+  { defProdProp    := λ _ _   => defProp,
+    defProdConstEq := λ _ _ _ => defPropEq }
 
   instance hasEquivProp (U V X : Universe) [HasProperties U V] [HasEmbeddedFunctors V] [HasEquivalences V V X]
                         [HasTrivialProperties U X] :
     HasEquivProp U V X :=
-  { equivIsProp  := λ _ _   => isProp,
-    equivConstEq := λ _ _ _ => isPropEq }
+  { defEquivProp    := λ _ _   => defProp,
+    defEquivConstEq := λ _ _ _ => defPropEq }
 
 end HasTrivialProperties
 
@@ -250,18 +250,18 @@ namespace HasTrivialDependentFunctoriality
   ⟨λ _ => True⟩
 
   def defPi {U V : Universe} [HasTrivialDependentFunctoriality U V] {α : U}
-            {φ : HasProperties.Property α V} {f : HasProperties.Pi φ} :
+            {φ : α ⟿ V} {f : HasProperties.Pi φ} :
     Π[f] φ :=
   trivial
 
   theorem defPiEq {U V : Universe} [HasTrivialDependentFunctoriality U V] {α : U}
-                  {φ : HasProperties.Property α V} {f : HasProperties.Pi φ} {F₁ F₂ : Π[f] φ} :
+                  {φ : α ⟿ V} {f : HasProperties.Pi φ} {F₁ F₂ : Π[f] φ} :
     F₁ = F₂ :=
   proofIrrel F₁ F₂
 
   class HasTrivialDependentFunctors (U : Universe.{u}) (V : Universe.{v}) (X : outParam Universe.{w}) extends
     HasTrivialDependentFunctoriality U V where
-  [embedPi {α : U} (φ : HasProperties.Property α V) : HasEmbeddedType X (Π' φ)]
+  [embedPi {α : U} (φ : α ⟿ V) : HasEmbeddedType X (Π' φ)]
 
   instance hasDependentFunctors (U V X : Universe) [h : HasTrivialDependentFunctors U V X] : HasDependentFunctors U V X :=
   { embed := h.embedPi }
@@ -278,7 +278,8 @@ namespace HasTrivialDependentFunctoriality
   instance hasPiCompFunProp (U V W X Y : Universe) [HasFunctors U V X] [HasProperties V W]
                             [HasTrivialDependentFunctors U W Y] [HasTrivialProperties X Y] :
     HasPiCompFunProp U V W X Y :=
-  { piCompPropIsProp  := λ _ _ _ => isProp }
+  { defPiCompPropProp    := λ _ _ _ => defProp,
+    defPiCompPropConstEq := λ _ _ _ => defPropEq }
 
   instance hasCompFunPi' (U V W : Universe) [HasFunctoriality U V] [HasDependentFunctoriality V W]
                          [HasTrivialDependentFunctoriality U W] :
@@ -419,20 +420,20 @@ namespace unit
 
   instance hasTrivialDependentInFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit := ⟨⟩
 
-  def dependentUnitFunctor {U : Universe.{u}} {α : U} {φ : HasProperties.Property α unit} : Π' φ :=
+  def dependentUnitFunctor {U : Universe.{u}} {α : U} {φ : α ⟿ unit} : Π' φ :=
   ⟨λ _ => inst, HasTrivialDependentFunctoriality.defPi⟩
 
-  @[simp] theorem dependentUnitFunctor.unique {U : Universe.{u}} {α : U} {φ : HasProperties.Property α unit} (F : Π' φ) :
+  @[simp] theorem dependentUnitFunctor.unique {U : Universe.{u}} {α : U} {φ : α ⟿ unit} (F : Π' φ) :
     F = dependentUnitFunctor :=
   by induction F; rfl
 
-  def inPiEquiv {U : Universe.{u}} {α : U} (φ : HasProperties.Property α unit) : ⌈Inst⌉ ≃ (Π' φ) :=
+  def inPiEquiv {U : Universe.{u}} {α : U} (φ : α ⟿ unit) : ⌈Inst⌉ ≃ (Π' φ) :=
   { toFun    := λ _ => dependentUnitFunctor,
     invFun   := λ _ => inst,
     leftInv  := inst.unique,
     rightInv := λ F => Eq.symm (dependentUnitFunctor.unique F) }
 
-  instance hasEmbeddedDependentInFunctorType {U : Universe.{u}} {α : U} (φ : HasProperties.Property α unit) :
+  instance hasEmbeddedDependentInFunctorType {U : Universe.{u}} {α : U} (φ : α ⟿ unit) :
     HasEmbeddedType unit (Π' φ) :=
   ⟨inPiEquiv φ⟩
 
@@ -442,13 +443,13 @@ namespace unit
 
   instance hasTrivialDependentOutFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality unit U := ⟨⟩
 
-  def outPiEquiv {α : unit} {U : Universe.{u}} (φ : HasProperties.Property α U) : ⌈φ inst⌉ ≃ (Π' φ) :=
+  def outPiEquiv {α : unit} {U : Universe.{u}} (φ : α ⟿ U) : ⌈φ inst⌉ ≃ (Π' φ) :=
   { toFun    := λ b => ⟨λ _ => b, HasTrivialDependentFunctoriality.defPi⟩,
     invFun   := λ F => F inst,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentOutFunctorType {α : unit} {U : Universe.{u}} (φ : HasProperties.Property α U) :
+  instance hasEmbeddedDependentOutFunctorType {α : unit} {U : Universe.{u}} (φ : α ⟿ U) :
     HasEmbeddedType U (Π' φ) :=
   ⟨outPiEquiv φ⟩
 
@@ -456,25 +457,25 @@ namespace unit
     HasTrivialDependentFunctoriality.HasTrivialDependentFunctors unit U U :=
   ⟨⟩
 
-  def rightSigmaEquiv {U : Universe.{u}} {α : U} (φ : HasProperties.Property α unit) : ⌈α⌉ ≃ (Σ' φ) :=
+  def rightSigmaEquiv {U : Universe.{u}} {α : U} (φ : α ⟿ unit) : ⌈α⌉ ≃ (Σ' φ) :=
   { toFun    := λ a => ⟨a, inst⟩,
     invFun   := λ P => P.fst,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentRightProductType {U : Universe.{u}} {α : U} (φ : HasProperties.Property α unit) :
+  instance hasEmbeddedDependentRightProductType {U : Universe.{u}} {α : U} (φ : α ⟿ unit) :
     HasEmbeddedType U (Σ' φ) :=
   ⟨rightSigmaEquiv φ⟩
 
   instance hasDependentRightProducts (U : Universe.{u}) : HasDependentProducts U unit U := ⟨⟩
 
-  def leftSigmaEquiv {α : unit} {U : Universe.{u}} (φ : HasProperties.Property α U) : ⌈φ inst⌉ ≃ (Σ' φ) :=
+  def leftSigmaEquiv {α : unit} {U : Universe.{u}} (φ : α ⟿ U) : ⌈φ inst⌉ ≃ (Σ' φ) :=
   { toFun    := λ b => ⟨inst, b⟩,
     invFun   := λ P => P.snd,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentLeftProductType {α : unit} {U : Universe.{u}} (φ : HasProperties.Property α U) :
+  instance hasEmbeddedDependentLeftProductType {α : unit} {U : Universe.{u}} (φ : α ⟿ U) :
     HasEmbeddedType U (Σ' φ) :=
   ⟨leftSigmaEquiv φ⟩
 
@@ -583,13 +584,13 @@ namespace sort
 
   instance hasTrivialDependentFunctoriality (V : Universe.{v}) : HasTrivialDependentFunctoriality sort V := ⟨⟩
 
-  def piEquiv {α : sort.{u}} {V : Universe.{v}} (φ : HasProperties.Property α V) : HasProperties.Pi φ ≃ (Π' φ) :=
+  def piEquiv {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) : HasProperties.Pi φ ≃ (Π' φ) :=
   { toFun    := λ f => ⟨f, trivial⟩,
     invFun   := λ F => F.f,
     leftInv  := λ _ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentFunctorType {α : sort.{u}} {V : Universe.{v}} (φ : HasProperties.Property α V) :
+  instance hasEmbeddedDependentFunctorType {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) :
     HasEmbeddedType sort.{imax u v} (Π' φ) :=
   ⟨piEquiv φ⟩
 
@@ -642,13 +643,13 @@ namespace prop
 
   instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences prop prop prop := ⟨⟩
 
-  def sigmaEquiv {p : prop} (φ : HasProperties.Property p prop) : (∃ a, φ a) ≃ (Σ' φ) :=
+  def sigmaEquiv {p : prop} (φ : p ⟿ prop) : (∃ a, φ a) ≃ (Σ' φ) :=
   { toFun    := λ h => ⟨Exists.prop.fst h, Exists.prop.snd h⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
     leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentProductType {p : prop} (φ : HasProperties.Property p prop) :
+  instance hasEmbeddedDependentProductType {p : prop} (φ : p ⟿ prop) :
     HasEmbeddedType prop (Σ' φ) :=
   ⟨sigmaEquiv φ⟩
 
@@ -827,25 +828,25 @@ namespace type
     defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
     defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
 
-  def sigmaEquiv {α : type} (φ : HasProperties.Property α type) : (Σ a, φ a) ≃ (Σ' φ) :=
+  def sigmaEquiv {α : type} (φ : α ⟿ type) : (Σ a, φ a) ≃ (Σ' φ) :=
   { toFun    := λ p => ⟨p.fst, p.snd⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
     leftInv  := λ ⟨_, _⟩ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentProductType {α : type} (φ : HasProperties.Property α type) :
+  instance hasEmbeddedDependentProductType {α : type} (φ : α ⟿ type) :
     HasEmbeddedType type (Σ' φ) :=
   ⟨sigmaEquiv φ⟩
 
   instance hasDependentProducts : HasDependentProducts type type type := ⟨⟩
 
-  def subtypeEquiv {α : type} (φ : HasProperties.Property α prop) : {a // φ a} ≃ (Σ' φ) :=
+  def subtypeEquiv {α : type} (φ : α ⟿ prop) : {a // φ a} ≃ (Σ' φ) :=
   { toFun    := λ p => ⟨p.val, p.property⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
     leftInv  := λ ⟨_, _⟩ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedSubtypeType {α : type} (φ : HasProperties.Property α prop) :
+  instance hasEmbeddedSubtypeType {α : type} (φ : α ⟿ prop) :
     HasEmbeddedType type (Σ' φ) :=
   ⟨subtypeEquiv φ⟩
 
