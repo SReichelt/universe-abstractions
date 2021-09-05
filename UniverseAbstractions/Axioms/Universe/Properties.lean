@@ -95,13 +95,13 @@ namespace HasProperties
 
   namespace constProp
 
-    notation:1023 "[" α:0 "]" β:1024 => HasProperties.constProp α β
+    notation:1023 α:1024 "{" β:0 "}" => HasProperties.constProp α β
 
     variable (α : U) (β : V)
 
-    def piEquivFun : Pi [α]β ≃ (α → β) := Equiv.refl (α → β)
+    def piEquivFun : Pi α{β} ≃ (α → β) := Equiv.refl (α → β)
 
-    def sigmaEquivProd : Sigma [α]β ≃ PProd ⌈α⌉ ⌈β⌉ :=
+    def sigmaEquivProd : Sigma α{β} ≃ PProd ⌈α⌉ ⌈β⌉ :=
     { toFun    := λ s => ⟨s.fst, s.snd⟩,
       invFun   := λ p => ⟨p.fst, p.snd⟩,
       leftInv  := λ ⟨_, _⟩ => rfl,
@@ -117,7 +117,7 @@ class HasCompFunProp' (U V W : Universe) [HasFunctoriality U V] [HasProperties V
                       [HasProperties U W] where
 (defCompProp {α : U} {β : V} (F : α ⟶' β) (φ : β ⟿ W) : α ⟿[λ a => φ (F a)] W)
 (defCompConstEq {α : U} {β : V} (F : α ⟶' β) (γ : W) :
-   defCompProp F [β]γ = HasProperties.defConstProp α γ)
+   defCompProp F β{γ} = HasProperties.defConstProp α γ)
 
 namespace HasCompFunProp'
 
@@ -127,7 +127,7 @@ namespace HasCompFunProp'
   @[reducible] def compProp' {α : U} {β : V} (F : α ⟶' β) (φ : β ⟿ W) : α ⟿ W := defCompProp F φ
 
   @[simp] theorem compConstEq' {α : U} {β : V} (F : α ⟶' β) (γ : W) :
-    compProp' F [β]γ = [α]γ :=
+    compProp' F β{γ} = α{γ} :=
   congrArg HasProperties.fromDefProp (defCompConstEq F γ)
 
 end HasCompFunProp'
@@ -136,7 +136,7 @@ class HasCompFunProp (U V W X : Universe) [HasFunctors U V X] [HasProperties V W
                      [HasProperties U W] where
 (defCompProp {α : U} {β : V} (F : α ⟶ β) (φ : β ⟿ W) : α ⟿[λ a => φ (F a)] W)
 (defCompConstEq {α : U} {β : V} (F : α ⟶ β) (γ : W) :
-   defCompProp F [β]γ = HasProperties.defConstProp α γ)
+   defCompProp F β{γ} = HasProperties.defConstProp α γ)
 
 namespace HasCompFunProp
 
@@ -146,7 +146,7 @@ namespace HasCompFunProp
   @[reducible] def compProp {α : U} {β : V} (F : α ⟶ β) (φ : β ⟿ W) : α ⟿ W := defCompProp F φ
 
   @[simp] theorem compConstEq {α : U} {β : V} (F : α ⟶ β) (γ : W) :
-    compProp F [β]γ = [α]γ :=
+    compProp F β{γ} = α{γ} :=
   congrArg HasProperties.fromDefProp (defCompConstEq F γ)
 
   instance hasCompFunProp' : HasCompFunProp' U V W :=
@@ -161,7 +161,7 @@ end HasCompFunProp
 class HasFunProp (U V W X : Universe) [HasProperties U V] [HasProperties U W] [HasFunctors V W X]
                  [HasProperties U X] where
 (defFunProp {α : U} (φ : α ⟿ V) (ψ : α ⟿ W) : α ⟿[λ a => φ a ⟶ ψ a] X)
-(defFunConstEq (α : U) (β : V) (γ : W) : defFunProp [α]β [α]γ = HasProperties.defConstProp α (β ⟶ γ))
+(defFunConstEq (α : U) (β : V) (γ : W) : defFunProp α{β} α{γ} = HasProperties.defConstProp α (β ⟶ γ))
 
 namespace HasFunProp
 
@@ -169,11 +169,9 @@ namespace HasFunProp
            [HasProperties U X] [HasFunProp U V W X]
 
   @[reducible] def funProp {α : U} (φ : α ⟿ V) (ψ : α ⟿ W) : α ⟿ X := defFunProp φ ψ
+  notation "{" φ:50 " ⟶ " ψ:50 "}" => HasFunProp.funProp φ ψ
 
-  @[reducible] def inFunProp {α : U} (β : V) (ψ : α ⟿ W) := HasFunProp.funProp [α]β ψ
-  @[reducible] def outFunProp {α : U} (φ : α ⟿ V) (γ : W) := HasFunProp.funProp φ [α]γ
-
-  @[simp] theorem funConstEq (α : U) (β : V) (γ : W) : funProp [α]β [α]γ = [α](β ⟶ γ) :=
+  @[simp] theorem funConstEq (α : U) (β : V) (γ : W) : {α{β} ⟶ α{γ}} = α{β ⟶ γ} :=
   congrArg HasProperties.fromDefProp (defFunConstEq α β γ)
 
 end HasFunProp
@@ -183,7 +181,7 @@ end HasFunProp
 class HasProdProp (U V W X : Universe) [HasProperties U V] [HasProperties U W] [HasProducts V W X]
                   [HasProperties U X] where
 (defProdProp {α : U} (φ : α ⟿ V) (ψ : α ⟿ W) : α ⟿[λ a => φ a ⊓ ψ a] X)
-(defProdConstEq (α : U) (β : V) (γ : W) : defProdProp [α]β [α]γ = HasProperties.defConstProp α (β ⊓ γ))
+(defProdConstEq (α : U) (β : V) (γ : W) : defProdProp α{β} α{γ} = HasProperties.defConstProp α (β ⊓ γ))
 
 namespace HasProdProp
 
@@ -191,8 +189,9 @@ namespace HasProdProp
            [HasProperties U X] [HasProdProp U V W X]
 
   @[reducible] def prodProp {α : U} (φ : α ⟿ V) (ψ : α ⟿ W) : α ⟿ X := defProdProp φ ψ
+  notation "{" φ:50 " ⊓ " ψ:50 "}" =>  HasProdProp.prodProp φ ψ
 
-  @[simp] theorem prodConstEq (α : U) (β : V) (γ : W) : prodProp [α]β [α]γ = [α](β ⊓ γ) :=
+  @[simp] theorem prodConstEq (α : U) (β : V) (γ : W) : {α{β} ⊓ α{γ}} = α{β ⊓ γ} :=
   congrArg HasProperties.fromDefProp (defProdConstEq α β γ)
 
 end HasProdProp
@@ -202,7 +201,7 @@ end HasProdProp
 class HasEquivProp (U V X : Universe) [HasProperties U V] [HasEmbeddedFunctors V]
                    [HasEquivalences V V X] [HasProperties U X] where
 (defEquivProp {α : U} (φ ψ : α ⟿ V) : α ⟿[λ a => φ a ⟷ ψ a] X)
-(defEquivConstEq (α : U) (β γ : V) : defEquivProp [α]β [α]γ = HasProperties.defConstProp α (β ⟷ γ))
+(defEquivConstEq (α : U) (β γ : V) : defEquivProp α{β} α{γ} = HasProperties.defConstProp α (β ⟷ γ))
 
 namespace HasEquivProp
 
@@ -210,8 +209,9 @@ namespace HasEquivProp
            [HasProperties U X] [HasEquivProp U V X]
 
   @[reducible] def equivProp {α : U} (φ ψ : α ⟿ V) : α ⟿ X := defEquivProp φ ψ
+  notation "{" φ:50 " ⟷ " ψ:50 "}" => HasEquivProp.equivProp φ ψ
 
-  @[simp] theorem equivConstEq (α : U) (β γ : V) : equivProp [α]β [α]γ = [α](β ⟷ γ) :=
+  @[simp] theorem equivConstEq (α : U) (β γ : V) : {α{β} ⟷ α{γ}} = α{β ⟷ γ} :=
   congrArg HasProperties.fromDefProp (defEquivConstEq α β γ)
 
 end HasEquivProp

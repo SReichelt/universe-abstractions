@@ -129,22 +129,22 @@ end HasDependentFunctors
 class HasPiFunEquiv (U : Universe.{u}) (V : Universe.{v}) (X : Universe.{w}) (Y : Universe.{w'})
                     [HasDependentFunctors U V X] [HasFunctors U V X]
                     [HasFunctors X X Y] [HasEquivalenceCondition X Y] where
-(defPiFun      {α : U} {β : V} (F : Π [α]β) : α ⟶[λ a => F a] β)
-(defPiFunFun   (α : U) (β : V)              : (Π [α]β) ⟶[λ F => defPiFun F] (α ⟶ β))
-(defFunPi      {α : U} {β : V} (F : α ⟶ β)  : Π[λ a => F a] [α]β)
-(defFunPiFun   (α : U) (β : V)              : (α ⟶ β) ⟶[λ F => defFunPi F] (Π [α]β))
-(defPiFunEquiv (α : U) (β : V)              : (Π [α]β) ⟷[defPiFunFun α β, defFunPiFun α β] (α ⟶ β))
+(defPiFun      {α : U} {β : V} (F : Π α{β}) : α ⟶[λ a => F a] β)
+(defPiFunFun   (α : U) (β : V)              : (Π α{β}) ⟶[λ F => defPiFun F] (α ⟶ β))
+(defFunPi      {α : U} {β : V} (F : α ⟶ β)  : Π[λ a => F a] α{β})
+(defFunPiFun   (α : U) (β : V)              : (α ⟶ β) ⟶[λ F => defFunPi F] (Π α{β}))
+(defPiFunEquiv (α : U) (β : V)              : (Π α{β}) ⟷[defPiFunFun α β, defFunPiFun α β] (α ⟶ β))
 
 namespace HasPiFunEquiv
 
   variable {U V X Y Z : Universe} [HasDependentFunctors U V X] [HasFunctors U V X]
            [HasFunctors X X Y] [HasEquivalences X Y Z] [HasPiFunEquiv U V X Y]
 
-  @[reducible] def piFun {α : U} {β : V} (F : Π [α]β) : α ⟶ β := defPiFun (Y := Y) F
-  @[reducible] def piFunFun (α : U) (β : V) : (Π [α]β) ⟶ (α ⟶ β) := defPiFunFun α β
-  @[reducible] def funPi {α : U} {β : V} (F : α ⟶ β) : Π [α]β := defFunPi (Y := Y) F
-  @[reducible] def funPiFun (α : U) (β : V) : (α ⟶ β) ⟶ Π [α]β := defFunPiFun α β
-  @[reducible] def piFunEquiv (α : U) (β : V) : (Π [α]β) ⟷ (α ⟶ β) := defPiFunEquiv α β
+  @[reducible] def piFun {α : U} {β : V} (F : Π α{β}) : α ⟶ β := defPiFun (Y := Y) F
+  @[reducible] def piFunFun (α : U) (β : V) : (Π α{β}) ⟶ (α ⟶ β) := defPiFunFun α β
+  @[reducible] def funPi {α : U} {β : V} (F : α ⟶ β) : Π α{β} := defFunPi (Y := Y) F
+  @[reducible] def funPiFun (α : U) (β : V) : (α ⟶ β) ⟶ Π α{β} := defFunPiFun α β
+  @[reducible] def piFunEquiv (α : U) (β : V) : (Π α{β}) ⟷ (α ⟶ β) := defPiFunEquiv α β
 
 end HasPiFunEquiv
 
@@ -155,7 +155,7 @@ class HasPiCompFunProp (U V W X Y : Universe) [HasFunctors U V X] [HasProperties
   HasCompFunProp U V W X where
 (defPiCompPropProp (α : U) {β : V} (φ : β ⟿ W) : (α ⟶ β) ⟿[λ F => Π HasCompFunProp.compProp F φ] Y)
 (defPiCompPropConstEq (α : U) (β : V) (γ : W) :
-  defPiCompPropProp α [β]γ = HasProperties.castDefProp (HasProperties.defConstProp (α ⟶ β) (Π [α]γ))
+  defPiCompPropProp α β{γ} = HasProperties.castDefProp (HasProperties.defConstProp (α ⟶ β) (Π α{γ}))
                                                        (λ _ => by simp))
 
 namespace HasPiCompFunProp
@@ -165,7 +165,7 @@ namespace HasPiCompFunProp
 
   @[reducible] def piCompPropProp (α : U) {β : V} (φ : β ⟿ W) : (α ⟶ β) ⟿ Y := defPiCompPropProp α φ
 
-  @[simp] theorem piCompPropConstEq (α : U) (β : V) (γ : W) : piCompPropProp α [β]γ = [α ⟶ β](Π [α]γ) :=
+  @[simp] theorem piCompPropConstEq (α : U) (β : V) (γ : W) : piCompPropProp α β{γ} = (α ⟶ β){Π α{γ}} :=
   Eq.trans (congrArg HasProperties.fromDefProp (defPiCompPropConstEq α β γ)) (HasProperties.fromCastDefProp _ _)
 
 end HasPiCompFunProp
@@ -245,7 +245,7 @@ end HasCompFunPiPi
 class HasConstFunPi (U V X : Universe) [HasFunctors U V X] [HasConstFun U V] [HasProperties V U]
                     [HasProperties V V] [HasDependentFunctoriality V X] [HasFunProp V U V X] where
 (defConstFunPi {β : V} (φ : β ⟿ U) :
-   Π[λ c => HasConstFun.constFun (φ c) c] HasFunProp.outFunProp φ β)
+   Π[λ c => HasConstFun.constFun (φ c) c] {φ ⟶ β{β}})
 
 namespace HasConstFunPi
 
@@ -254,12 +254,12 @@ namespace HasConstFunPi
 
   @[reducible] def constFunPi' [HasDependentFunctoriality V X] [HasFunProp V U V X]
                                [HasConstFunPi U V X] {β : V} (φ : β ⟿ U) :
-    Π' HasFunProp.outFunProp φ β :=
+    Π' {φ ⟶ β{β}} :=
   defConstFunPi φ
 
   @[reducible] def constFunPi {Y : Universe} [HasDependentFunctors V X Y] [HasFunProp V U V X]
                               [HasConstFunPi U V X] {β : V} (φ : β ⟿ U) :
-    Π HasFunProp.outFunProp φ β :=
+    Π {φ ⟶ β{β}} :=
   HasDependentFunctors.fromExternal (constFunPi' φ)
 
 end HasConstFunPi
@@ -271,7 +271,7 @@ class HasPiAppFun (U V X Y : Universe) [HasDependentFunctors U V X] [HasFunctors
 (defAppFun {α : U} (a : α) (φ : α ⟿ V) :
    (Π φ) ⟶[λ F => F a] (φ a))
 (defAppFunPi {α : U} (φ : α ⟿ V) :
-   Π[λ a => HasFunctors.fromDefFun (defAppFun a φ)] HasFunProp.inFunProp (Π φ) φ)
+   Π[λ a => HasFunctors.fromDefFun (defAppFun a φ)] {α{Π φ} ⟶ φ})
 
 namespace HasPiAppFun
 
@@ -289,13 +289,13 @@ namespace HasPiAppFun
 
   @[reducible] def appFunPi' [HasDependentFunctoriality U Y] [HasFunProp U X V Y] [HasPiAppFun U V X Y]
                              {α : U} (φ : α ⟿ V) :
-    Π' HasFunProp.inFunProp (Π φ) φ :=
+    Π' {α{Π φ} ⟶ φ} :=
   defAppFunPi φ
 
   @[reducible] def appFunPi {Z : Universe} [HasDependentFunctors U Y Z] [HasFunProp U X V Y]
                             [HasPiAppFun U V X Y]
                             {α : U} (φ : α ⟿ V) :
-    Π HasFunProp.inFunProp (Π φ) φ :=
+    Π {α{Π φ} ⟶ φ} :=
   HasDependentFunctors.fromExternal (appFunPi' φ)
 
 end HasPiAppFun

@@ -55,19 +55,19 @@ class HasSigmaProdEquiv (U : Universe.{u}) (V : Universe.{v}) (X : Universe.{w})
                         [HasProperties U V] [HasDependentProducts U V X] [HasProducts U V X]
                         [HasFunctors X X Y] [HasEquivalenceCondition X Y] where
 (defSigmaProdFun (α : U) (β : V) :
-   (Σ [α]β) ⟶[λ P => HasProducts.intro (HasDependentProducts.fst P) (HasDependentProducts.snd P)] (α ⊓ β))
+   (Σ α{β}) ⟶[λ P => HasProducts.intro (HasDependentProducts.fst P) (HasDependentProducts.snd P)] (α ⊓ β))
 (defProdSigmaFun (α : U) (β : V) :
-   (α ⊓ β) ⟶[λ φ => HasDependentProducts.intro (HasProducts.fst φ) (HasProducts.snd φ)] (Σ [α]β))
-(defSigmaProdEquiv (α : U) (β : V) : (Σ [α]β) ⟷[defSigmaProdFun α β, defProdSigmaFun α β] (α ⊓ β))
+   (α ⊓ β) ⟶[λ φ => HasDependentProducts.intro (HasProducts.fst φ) (HasProducts.snd φ)] (Σ α{β}))
+(defSigmaProdEquiv (α : U) (β : V) : (Σ α{β}) ⟷[defSigmaProdFun α β, defProdSigmaFun α β] (α ⊓ β))
 
 namespace HasSigmaProdEquiv
 
   variable {U V X Y Z: Universe} [HasProperties U V] [HasDependentProducts U V X] [HasProducts U V X]
            [HasFunctors X X Y] [HasEquivalences X Y Z] [HasSigmaProdEquiv U V X Y]
 
-  @[reducible] def sigmaProdFun (α : U) (β : V) : (Σ [α]β) ⟶ α ⊓ β := defSigmaProdFun α β
-  @[reducible] def prodSigmaFun (α : U) (β : V) : α ⊓ β ⟶ Σ [α]β := defProdSigmaFun α β
-  @[reducible] def sigmaProdEquiv (α : U) (β : V) : (Σ [α]β) ⟷ α ⊓ β := defSigmaProdEquiv α β
+  @[reducible] def sigmaProdFun (α : U) (β : V) : (Σ α{β}) ⟶ α ⊓ β := defSigmaProdFun α β
+  @[reducible] def prodSigmaFun (α : U) (β : V) : α ⊓ β ⟶ Σ α{β} := defProdSigmaFun α β
+  @[reducible] def sigmaProdEquiv (α : U) (β : V) : (Σ α{β}) ⟷ α ⊓ β := defSigmaProdEquiv α β
 
 end HasSigmaProdEquiv
 
@@ -79,11 +79,11 @@ class HasEmbeddedDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasDep
 (defIntroFun   {α : U} (φ : α ⟿ V) (a : α)                                   :
    φ a ⟶[λ b => HasDependentProducts.intro a b] (Σ φ))
 (defIntroFunPi {α : U} (φ : α ⟿ V)                                           :
-   Π[λ a => HasFunctors.fromDefFun (defIntroFun φ a)] HasFunProp.outFunProp φ (Σ φ))
-(defElimFun    {α : U} {φ : α ⟿ V} {γ : V} (F : Π HasFunProp.outFunProp φ γ) :
+   Π[λ a => HasFunctors.fromDefFun (defIntroFun φ a)] {φ ⟶ α{Σ φ}})
+(defElimFun    {α : U} {φ : α ⟿ V} {γ : V} (F : Π {φ ⟶ α{γ}}) :
    (Σ φ) ⟶[λ P => HasFunctors.funCoe (F (HasDependentProducts.fst P)) (HasDependentProducts.snd P)] γ)
 (defElimFunFun {α : U} (φ : α ⟿ V) (γ : V)                                   :
-   (Π HasFunProp.outFunProp φ γ) ⟶[λ F => defElimFun F] ((Σ φ) ⟶ γ))
+   (Π {φ ⟶ α{γ}}) ⟶[λ F => defElimFun F] ((Σ φ) ⟶ γ))
 
 namespace HasEmbeddedDependentProducts
 
@@ -91,8 +91,8 @@ namespace HasEmbeddedDependentProducts
            [HasEmbeddedDependentProducts U V]
 
   @[reducible] def introFun {α : U} (φ : α ⟿ V) (a : α) : φ a ⟶ Σ φ := defIntroFun φ a
-  @[reducible] def introFunPi {α : U} (φ : α ⟿ V) : Π HasFunProp.outFunProp φ (Σ φ) := defIntroFunPi φ
-  @[reducible] def elimFun {α : U} {φ : α ⟿ V} {γ : V} (F : Π HasFunProp.outFunProp φ γ) : (Σ φ) ⟶ γ := defElimFun F
-  @[reducible] def elimFunFun {α : U} (φ : α ⟿ V) (γ : V) : (Π HasFunProp.outFunProp φ γ) ⟶ ((Σ φ) ⟶ γ) := defElimFunFun φ γ
+  @[reducible] def introFunPi {α : U} (φ : α ⟿ V) : Π {φ ⟶ α{Σ φ}} := defIntroFunPi φ
+  @[reducible] def elimFun {α : U} {φ : α ⟿ V} {γ : V} (F : Π {φ ⟶ α{γ}}) : (Σ φ) ⟶ γ := defElimFun F
+  @[reducible] def elimFunFun {α : U} (φ : α ⟿ V) (γ : V) : (Π {φ ⟶ α{γ}}) ⟶ ((Σ φ) ⟶ γ) := defElimFunFun φ γ
 
 end HasEmbeddedDependentProducts
