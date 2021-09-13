@@ -13,8 +13,8 @@ universe u v w
 -- its instances can be regarded as types.
 -- * The canonical instance of `HasInstances` is `Sort u` itself (with `Prop` as a special case),
 --   as defined below as `sortHasInstances`.
--- * Another common case is `Bundled C` (see below) for a type class `C : Sort u → Sort v` (say,
---   `Group`, `Ring`, `Category`, etc.). I.e., for a given `S : Bundled C`, we can treat `S` as a
+-- * Another common case is `Bundled ` (see below) for a type class `φ : Sort u → Sort v` (say,
+--   `Group`, `Ring`, `Category`, etc.). I.e., for a given `A : Bundled φ`, we can treat `A` as a
 --   type.
 --
 -- `I` can be considered an index type, where each index stands for a type.
@@ -26,10 +26,10 @@ namespace HasInstances
 
   instance coeSort (I : Sort v) [h : HasInstances.{u, v} I] : CoeSort I (Sort u) := ⟨h.Inst⟩
 
-  -- Although `coeSort` lets us write `a : α` instead of `a : HasInstances.Inst α`, in other cases
-  -- we need to invoke `HasInstances.Inst α` explicitly. A custom notation `⌈α⌉` is much easier on
+  -- Although `coeSort` lets us write `a : A` instead of `a : HasInstances.Inst A`, in other cases
+  -- we need to invoke `HasInstances.Inst A` explicitly. A custom notation `⌈A⌉` is much easier on
   -- the eye.
-  notation "⌈" α:0 "⌉" => HasInstances.Inst α
+  notation "⌈" A:0 "⌉" => HasInstances.Inst A
 
   instance sortHasInstances : HasInstances.{u, u + 1} (Sort u) := ⟨id⟩
 
@@ -37,25 +37,25 @@ end HasInstances
 
 
 
--- A slight generalization of a type class `C : Sort u → Sort w`. We replace `Sort u` with an
+-- A slight generalization of a type class `φ : Sort u → Sort w`. We replace `Sort u` with an
 -- index type `I` that is an instance of `HasInstances`.
 
 def GeneralizedTypeClass (I : Sort v) [HasInstances.{u, v} I] : Sort (max v (w + 1)) := I → Sort w
 
--- For each (generalized) type class `C : I → Sort w`, we can define a "bundled instance"
--- `S : Bundled C` as a dependent pair of an `α : I` and `inst : C α`. We can treat `S` as a type
+-- For each (generalized) type class `φ : I → Sort w`, we can define a "bundled instance"
+-- `S : Bundled φ` as a dependent pair of an `A : I` and `inst : φ A`. We can treat `S` as a type
 -- by "forgetting" `inst`.
 
-structure Bundled {I : Sort v} [HasInstances.{u, v} I] (C : GeneralizedTypeClass.{u, v, w} I) :
+structure Bundled {I : Sort v} [HasInstances.{u, v} I] (φ : GeneralizedTypeClass.{u, v, w} I) :
   Sort (max 1 (u + 1) v (w + 1)) where
-(α    : I)
-[inst : C α]
+(A    : I)
+[inst : φ A]
 
 namespace Bundled
 
-  instance hasInstances {I : Sort v} [HasInstances.{u, v} I] (C : GeneralizedTypeClass.{u, v, w} I) :
-    HasInstances (Bundled C) :=
-  ⟨λ S => ⌈S.α⌉⟩
+  instance hasInstances {I : Sort v} [HasInstances.{u, v} I] (φ : GeneralizedTypeClass.{u, v, w} I) :
+    HasInstances (Bundled φ) :=
+  ⟨λ S => ⌈S.A⌉⟩
 
 end Bundled
 
@@ -63,7 +63,7 @@ end Bundled
 
 -- An abstract "universe" type that enriches the Lean universe `u` with additional information.
 -- This is just a bundled version of `HasInstances` itself. I.e. everything which satisfies
--- `HasInstances` (such as `Sort u` and any `Bundled C`, see above) can be considered as a
+-- `HasInstances` (such as `Sort u` and any `Bundled φ`, see above) can be considered as a
 -- `Universe`.
 --
 -- A `Universe` on its own is usually not very useful, but can have additional structure defined as
@@ -82,7 +82,7 @@ namespace Universe
 
   variable (U : Universe)
 
-  instance instInst : HasInstances.{u, u + 1} U.α := U.inst
+  instance instInst : HasInstances.{u, u + 1} U.A := U.inst
   instance : HasInstances ⌈U⌉ := instInst U
 
 end Universe
@@ -95,9 +95,9 @@ def sort : Universe.{u} := ⟨Sort u⟩
 
 def UniverseClass := GeneralizedTypeClass.{u + 1, u + 2, u + 1} Universe.{u}
 
-def univ (C : UniverseClass.{u}) : Universe.{u + 1} := ⟨Bundled C⟩
+def univ (φ : UniverseClass.{u}) : Universe.{u + 1} := ⟨Bundled φ⟩
 
-instance {C : UniverseClass.{u}} (U : univ C) : HasInstances.{u, u + 1} ⌈U⌉ := Universe.instInst U.α
+instance {φ : UniverseClass.{u}} (U : univ φ) : HasInstances.{u, u + 1} ⌈U⌉ := Universe.instInst U.A
 
 
 
@@ -106,22 +106,22 @@ instance {C : UniverseClass.{u}} (U : univ C) : HasInstances.{u, u + 1} ⌈U⌉ 
 -- We use `Equiv` from mathlib to give the universe implementation a bit of flexibility, but note
 -- that if `v > 1`, the equivalence may contain an equality of types nonetheless, which we avoid in
 -- the rest of the formalization. This equality is not necessarily a problem because in most
--- implementations, `⌈α⌉` and `α'` will in fact be exactly the same.
+-- implementations, `⌈A⌉` and `α` will in fact be exactly the same.
 
-class HasEmbeddedType (U : Universe.{u}) (α' : Sort v) : Sort (max (u + 1) v) where
-{α : U}
-(h : ⌈α⌉ ≃ α')
+class HasEmbeddedType (U : Universe.{u}) (α : Sort v) : Sort (max (u + 1) v) where
+{A : U}
+(h : ⌈A⌉ ≃ α)
 
 namespace HasEmbeddedType
 
-  def EmbeddedType (U : Universe.{u}) (α' : Sort v) [h : HasEmbeddedType U α'] := h.α
+  def EmbeddedType (U : Universe.{u}) (α : Sort v) [h : HasEmbeddedType U α] := h.A
 
-  variable (U : Universe.{u}) {α' : Sort v} [h : HasEmbeddedType U α']
+  variable (U : Universe.{u}) {α : Sort v} [h : HasEmbeddedType U α]
 
-  def toExternal   (a : h.α) : α'  := h.h.toFun  a
-  def fromExternal (a : α')  : h.α := h.h.invFun a
+  def toExternal   (a : h.A) : α   := h.h.toFun  a
+  def fromExternal (a : α)   : h.A := h.h.invFun a
 
-  @[simp] theorem fromToExternal (a : h.α) : fromExternal U (toExternal   U a) = a := h.h.leftInv a
-  @[simp] theorem toFromExternal (a : α')  : toExternal   U (fromExternal U a) = a := h.h.rightInv a
+  @[simp] theorem fromToExternal (a : h.A) : fromExternal U (toExternal   U a) = a := h.h.leftInv  a
+  @[simp] theorem toFromExternal (a : α)   : toExternal   U (fromExternal U a) = a := h.h.rightInv a
 
 end HasEmbeddedType

@@ -30,8 +30,8 @@ end HasTop
 
 class HasEmbeddedTop (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U]
   extends HasTop U where
-(defElimFun {α : U} (a : α) : HasTop.Top U ⟶[λ _ => a] α)
-(defElimFunFun (α : U) : α ⟶[λ a => defElimFun a] (HasTop.Top U ⟶ α))
+(defElimFun {A : U} (a : A) : HasTop.Top U ⟶[λ _ => a] A)
+(defElimFunFun (A : U) : A ⟶[λ a => defElimFun a] (HasTop.Top U ⟶ A))
 
 namespace HasEmbeddedTop
 
@@ -39,8 +39,8 @@ namespace HasEmbeddedTop
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedTop U]
 
-  @[reducible] def elimFun {α : U} (a : α) : Top U ⟶ α := defElimFun a
-  @[reducible] def elimFunFun (α : U) : α ⟶ Top U ⟶ α := defElimFunFun α
+  @[reducible] def elimFun {A : U} (a : A) : Top U ⟶ A := defElimFun a
+  @[reducible] def elimFunFun (A : U) : A ⟶ Top U ⟶ A := defElimFunFun A
 
 end HasEmbeddedTop
 
@@ -64,13 +64,13 @@ namespace HasBot
 
   variable {U : Universe} [h : HasBot U]
 
-  def elim (e : Bot U) {α : U} : α := False.elim (HasEmbeddedType.toExternal U e)
+  def elim (e : Bot U) {A : U} : A := False.elim (HasEmbeddedType.toExternal U e)
 
 end HasBot
 
 class HasEmbeddedBot (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U]
   extends HasBot U where
-(defElimFun (α : U) : HasBot.Bot U ⟶[λ e => HasBot.elim e] α)
+(defElimFun (A : U) : HasBot.Bot U ⟶[λ e => HasBot.elim e] A)
 
 namespace HasEmbeddedBot
 
@@ -78,11 +78,11 @@ namespace HasEmbeddedBot
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedBot U]
 
-  def elimFun (α : U) : Bot U ⟶ α := HasEmbeddedBot.defElimFun α
+  def elimFun (A : U) : Bot U ⟶ A := HasEmbeddedBot.defElimFun A
 
-  def Not (α : U) : U := α ⟶ Bot U
+  def Not (A : U) : U := A ⟶ Bot U
 
 end HasEmbeddedBot
 
 class HasClassicalLogic (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U] [HasEmbeddedBot.{u, w} U] where
-(byContradictionFun (α : U) : HasEmbeddedBot.Not (HasEmbeddedBot.Not α) ⟶ α)
+(byContradictionFun (A : U) : HasEmbeddedBot.Not (HasEmbeddedBot.Not A) ⟶ A)
