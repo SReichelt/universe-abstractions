@@ -185,7 +185,7 @@ end HasPiCompFunProp
 class HasCompFunPi' (U V W : Universe) [HasFunctoriality U V] [HasDependentFunctoriality V W]
                     [HasDependentFunctoriality U W] [HasCompFunProp' U V W] where
 (defCompFunPi {α : U} {β : V} {φ : β ⟿ W} (F : α ⟶' β) (G : Π' φ) :
-   Π[λ a => G (F a)] HasCompFunProp'.compProp' F φ)
+   Π[λ a => G (F a)] HasCompFunProp'.compProp F φ)
 
 namespace HasCompFunPi'
 
@@ -193,7 +193,7 @@ namespace HasCompFunPi'
            [HasDependentFunctoriality U W] [HasCompFunProp' U V W] [HasCompFunPi' U V W]
 
   @[reducible] def compFunPi' {α : U} {β : V} {φ : β ⟿ W} (F : α ⟶' β) (G : Π' φ) :
-    Π' HasCompFunProp'.compProp' F φ :=
+    Π' HasCompFunProp'.compProp F φ :=
   defCompFunPi F G
 
 end HasCompFunPi'

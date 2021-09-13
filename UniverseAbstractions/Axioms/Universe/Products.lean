@@ -19,7 +19,12 @@ class HasProducts (U : Universe.{u}) (V : Universe.{v}) (X : outParam Universe.{
 
 namespace HasProducts
 
-  variable {U V X : Universe} [h : HasProducts U V X]
+  variable {U V : Universe}
+
+  @[simp] theorem ext' {α : U} {β : V} (P : α ⊓' β) : ⟨P.fst, P.snd⟩ = P :=
+  by induction P; rfl
+
+  variable {X : Universe} [h : HasProducts U V X]
 
   instance hasEmbeddedType (α : U) (β : V) : HasEmbeddedType X (α ⊓' β) := h.embed α β
 
@@ -38,6 +43,12 @@ namespace HasProducts
   def snd (P : α ⊓ β) : β := (toExternal P).snd
 
   def intro (a : α) (b : β) : α ⊓ β := fromExternal ⟨a, b⟩
+
+  @[simp] theorem fst_intro (a : α) (b : β) : fst (intro a b) = a := congrArg PProd.fst (toFromExternal ⟨a, b⟩)
+  @[simp] theorem snd_intro (a : α) (b : β) : snd (intro a b) = b := congrArg PProd.snd (toFromExternal ⟨a, b⟩)
+
+  @[simp] theorem ext (P : α ⊓ β) : intro (fst P) (snd P) = P :=
+  Eq.trans (congrArg fromExternal (ext' (toExternal P))) (fromToExternal P)
 
 end HasProducts
 

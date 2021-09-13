@@ -551,10 +551,6 @@ end unit
 
 
 
-def sort : Universe.{u} := ⟨Sort u⟩
-@[reducible] def prop := sort.{0}
-@[reducible] def type := sort.{1}
-
 namespace sort
 
   -- One special property of the `sort` universe is that we can map out of a type in `sort` into
@@ -740,6 +736,12 @@ namespace type
 
   instance hasBot : HasBot type := ⟨⟩
 
+  noncomputable def byContradiction (α : type) (f : HasEmbeddedBot.Not (HasEmbeddedBot.Not α)) : α :=
+  Classical.choice (Classical.byContradiction (λ h => Empty.elim (f (λ a => False.elim (h ⟨a⟩)))))
+
+  noncomputable instance hasClassicalLogic : HasClassicalLogic type :=
+  { byContradictionFun := byContradiction }
+
   def prodEquiv (α β : type) : Prod α β ≃ (α ⊓' β) :=
   { toFun    := λ p => ⟨p.fst, p.snd⟩,
     invFun   := λ P => ⟨P.fst, P.snd⟩,
@@ -795,17 +797,17 @@ namespace type
   instance hasEquivOpEq : HasEquivOpEq type := HasEquivOpEq.std type
 
   instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type :=
-  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext (λ b => congrArg f (e.rightInv b)),
-                                          λ f => funext (λ a => congrArg f (e.leftInv  a))⟩,
+  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext λ b => congrArg f (e.rightInv b),
+                                          λ f => funext λ a => congrArg f (e.leftInv  a)⟩,
     defFunDomainEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defFunCodomainEquiv    := λ e _   => ⟨λ f => funext (λ c => e.leftInv  (f c)),
-                                          λ f => funext (λ c => e.rightInv (f c))⟩,
+    defFunCodomainEquiv    := λ e _   => ⟨λ f => funext λ c => e.leftInv  (f c),
+                                          λ f => funext λ c => e.rightInv (f c)⟩,
     defFunCodomainEquivFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
-                                          λ _ => funext (λ _ => funext (λ _ => rfl))⟩,
-    defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext (λ () => rfl)⟩,
-    defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext (λ _ => funext (λ _ => rfl)),
-                                          λ _ => funext (λ (_, _) => rfl)⟩,
+    defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
+                                          λ _ => funext λ _ => funext λ _ => rfl⟩,
+    defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext λ () => rfl⟩,
+    defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
+                                          λ _ => funext λ (_, _) => rfl⟩,
     defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
                                           λ p => prodExt (e.rightInv p.fst) rfl⟩,
     defProdFstEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
@@ -820,8 +822,8 @@ namespace type
     defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
 
   instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type :=
-  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext (λ _ => prodExt rfl rfl),
-                                     λ _ => prodExt (funext (λ _ => rfl)) (funext (λ _ => rfl))⟩ }
+  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext λ _ => prodExt rfl rfl,
+                                     λ _ => prodExt (funext λ _ => rfl) (funext λ _ => rfl)⟩ }
 
   instance hasBotEquivalences : HasBotEquivalences type :=
   { defBotNotTopEquiv := ⟨λ e => Empty.elim e, λ f => Empty.elim (f ())⟩,

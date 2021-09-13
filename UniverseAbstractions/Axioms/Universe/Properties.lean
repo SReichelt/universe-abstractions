@@ -67,6 +67,9 @@ namespace HasProperties
     have h₁ : p = p' := funext h;
     by subst h₁; rfl
 
+    def toDefProp' (φ : α ⟿ V) {p : α → V} (h : ∀ a, φ a = p a) : α ⟿[p] V :=
+    castDefProp (toDefProp φ) h
+
     @[simp] theorem toDefProp.eff               (φ : α ⟿ V)    (a : α) : (toDefProp   φ) a = φ a := rfl
     @[simp] theorem fromDefProp.eff {p : α → V} (φ : α ⟿[p] V) (a : α) : (fromDefProp φ) a = φ a := rfl
 
@@ -132,10 +135,10 @@ namespace HasCompFunProp'
   variable {U V W : Universe} [HasFunctoriality U V] [HasProperties V W] [HasProperties U W]
            [HasCompFunProp' U V W]
 
-  @[reducible] def compProp' {α : U} {β : V} (F : α ⟶' β) (φ : β ⟿ W) : α ⟿ W := defCompProp F φ
+  @[reducible] def compProp {α : U} {β : V} (F : α ⟶' β) (φ : β ⟿ W) : α ⟿ W := defCompProp F φ
 
-  @[simp] theorem compConstEq' {α : U} {β : V} (F : α ⟶' β) (γ : W) :
-    compProp' F β{γ} = α{γ} :=
+  @[simp] theorem compConstEq {α : U} {β : V} (F : α ⟶' β) (γ : W) :
+    compProp F β{γ} = α{γ} :=
   congrArg HasProperties.fromDefProp (defCompConstEq F γ)
 
 end HasCompFunProp'

@@ -3,6 +3,7 @@ import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Axioms.Universe.Properties
+import UniverseAbstractions.Axioms.Universe.DependentFunctors
 
 import mathlib4_experiments.Data.Equiv.Basic
 
@@ -23,9 +24,18 @@ universe u v w w'
 --
 -- Essentially, this is the universe where the expression under a quantifier "lives".
 -- TODO: Figure out what this means exactly.
+--       Maybe it allows us to assert something like: If something can be proved/constructed for
+--       arbitrary `a`, then we can universally quantify over it.
 
 -- TODO: Finish this formalization. (Does this really do what we want though? Can't we produce
 -- properties using the functoriality tactic _without_ fixing `a`?)
+-- Maybe replace all `φ` with some sort of arbitrary type-producing functions, based on an arbitrary
+-- index type? Then we can say: "If something can be proved for arbitrary index types, we can
+-- universally quantify over it."
+-- However, with an arbitrary index type, we run into trouble finding an index for e.g. the functor
+-- type between two types, because we can no longer rely on `funProp`.
+-- Can we formalize the concept of a "context"? Seems related to Sigma/Pi equivalences: Context is
+-- stacked sigmas, dependency on context is pi.
 
 structure DependentInstance {U : Universe.{u}} (α : U) (a : α) (V : Universe.{v})
                             [HasProperties.{u, v, w} U V] (φ : α ⟿ V) :
@@ -47,6 +57,8 @@ def dependentUniverse {U : Universe.{u}} (α : U) (a : α) (V : Universe.{v}) [H
   inst := ⟨DependentInstance α a V⟩ }
 
 namespace dependentUniverse
+
+  def type {U V : Universe} [HasProperties U V] {α : U} (φ : α ⟿ V) (a : α) : dependentUniverse α a V := φ
 
   variable {U : Universe.{u}} (α : U) (a : α)
 
@@ -72,14 +84,34 @@ namespace dependentUniverse
     ⟨funEquiv α a V W X φ ψ⟩
 
     instance hasFunctors : HasFunctors (dependentUniverse α a V) (dependentUniverse α a W)
-                                       (dependentUniverse α a X) :=
-    ⟨⟩
+                                       (dependentUniverse α a X) := ⟨⟩
 
   end
 
-  instance hasEmbeddedFunctors (V : Universe) [HasProperties U V] [HasEmbeddedFunctors V]
-                               [HasFunProp U V V V] :
-    HasEmbeddedFunctors (dependentUniverse α a V) :=
-  ⟨⟩
+  section
+
+    variable (V : Universe) [HasProperties U V] [HasEmbeddedFunctors V] [HasFunProp U V V V]
+
+    instance hasEmbeddedFunctors : HasEmbeddedFunctors (dependentUniverse α a V) := ⟨⟩
+
+    instance hasLinearFunOp [h : HasLinearFunOp V] : HasLinearFunOp (dependentUniverse α a V) :=
+    { defIdFun         := λ (φ : α ⟿ V) => h.defIdFun (φ a),
+      defAppFun        := λ b (ψ : α ⟿ V) => h.defAppFun b.b (ψ a),
+      defAppFunFun     := λ (φ : α ⟿ V) (ψ : α ⟿ V) => h.defAppFunFun (φ a) (ψ a),
+      defCompFun       := λ F G => h.defCompFun F.b G.b,
+      defCompFunFun    := λ F (χ : α ⟿ V) => h.defCompFunFun F.b (χ a),
+      defCompFunFunFun := λ (φ : α ⟿ V) (ψ : α ⟿ V) (χ : α ⟿ V) => h.defCompFunFunFun (φ a) (ψ a) (χ a) }
+
+    instance hasAffineFunOp [h : HasAffineFunOp V] : HasAffineFunOp (dependentUniverse α a V) :=
+    { defConstFun    := λ (φ : α ⟿ V) {_} c => h.defConstFun (φ a) c.b,
+      defConstFunFun := λ (φ : α ⟿ V) (ψ : α ⟿ V) => h.defConstFunFun (φ a) (ψ a) }
+
+    instance hasFullFunOp [h : HasFullFunOp V] : HasFullFunOp (dependentUniverse α a V) :=
+    { defDupFun    := λ F => h.defDupFun F.b,
+      defDupFunFun := λ (φ : α ⟿ V) (ψ : α ⟿ V) => h.defDupFunFun (φ a) (ψ a) }
+
+    instance hasFunOp [HasFullFunOp V] : HasFunOp (dependentUniverse α a V) := ⟨⟩
+
+  end
 
 end dependentUniverse

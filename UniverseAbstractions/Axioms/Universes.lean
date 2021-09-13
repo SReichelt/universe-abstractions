@@ -87,6 +87,10 @@ namespace Universe
 
 end Universe
 
+def sort : Universe.{u} := ⟨Sort u⟩
+@[reducible] def prop := sort.{0}
+@[reducible] def type := sort.{1}
+
 
 
 def UniverseClass := GeneralizedTypeClass.{u + 1, u + 2, u + 1} Universe.{u}

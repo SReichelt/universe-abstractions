@@ -287,14 +287,14 @@ namespace HasLinearFunOp
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U]
 
-  def hasIdFun : HasIdFun U := ⟨defIdFun⟩
+  instance hasIdFun : HasIdFun U := ⟨defIdFun⟩
 
   @[reducible] def idFun (α : U) : α ⟶ α := defIdFun α
 
   @[reducible] def appFun {α : U} (a : α) (β : U) : (α ⟶ β) ⟶ β := defAppFun a β
   @[reducible] def appFunFun (α β : U) : α ⟶ (α ⟶ β) ⟶ β := defAppFunFun α β
 
-  def hasCompFun : HasCompFun U U U U U := ⟨defCompFun⟩
+  instance hasCompFun : HasCompFun U U U U U := ⟨defCompFun⟩
 
   @[reducible] def compFun {α β γ : U} (F : α ⟶ β) (G : β ⟶ γ) : α ⟶ γ := defCompFun F G
   @[reducible] def compFunFun {α β : U} (F : α ⟶ β) (γ : U) : (β ⟶ γ) ⟶ (α ⟶ γ) := defCompFunFun F γ
@@ -312,10 +312,9 @@ class HasLinearFunOpEq (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U]
 
 namespace HasLinearFunOpEq
 
-  def std (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U] :=
-  HasLinearFunOpEq.mk (U := U)
-                      (hasIdFun := HasLinearFunOp.hasIdFun) (hasCompFun := HasLinearFunOp.hasCompFun)
-                      (λ _ => rfl) (λ _ _ => rfl)
+  instance std (U : Universe) [HasEmbeddedFunctors U] [HasLinearFunOp U] : HasLinearFunOpEq U :=
+  { defIdFunEq   := λ _   => rfl,
+    defCompFunEq := λ _ _ => rfl }
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasIdFun U] [HasCompFun U U U U U]
            [HasLinearFunOpEq U]
@@ -338,7 +337,7 @@ namespace HasSubLinearFunOp
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasSubLinearFunOp U]
 
-  def hasConstFun : HasConstFun U U := ⟨defConstFun⟩
+  instance hasConstFun : HasConstFun U U := ⟨defConstFun⟩
 
   @[reducible] def constFun (α : U) {β : U} (c : β) : α ⟶ β := defConstFun α c
   @[reducible] def constFunFun (α β : U) : β ⟶ (α ⟶ β) := defConstFunFun α β
@@ -346,15 +345,13 @@ namespace HasSubLinearFunOp
 end HasSubLinearFunOp
 
 class HasSubLinearFunOpEq (U : Universe) [HasEmbeddedFunctors U] [HasSubLinearFunOp U]
-                          [hasConstFun : HasConstFun U U] where
+                          [HasConstFun U U] where
 (defConstFunEq (α : U) {β : U} (c : β) : HasSubLinearFunOp.defConstFun α c = HasConstFun.defConstFun α c)
 
 namespace HasSubLinearFunOpEq
 
-  def std (U : Universe) [HasEmbeddedFunctors U] [HasSubLinearFunOp U] :
-    HasSubLinearFunOpEq U (hasConstFun := HasSubLinearFunOp.hasConstFun) :=
-  HasSubLinearFunOpEq.mk (hasConstFun := HasSubLinearFunOp.hasConstFun)
-                         (λ _ {_} _ => rfl)
+  instance std (U : Universe) [HasEmbeddedFunctors U] [HasSubLinearFunOp U] : HasSubLinearFunOpEq U :=
+  { defConstFunEq := λ _ {_} _ => rfl }
 
   variable {U : Universe} [HasEmbeddedFunctors U] [HasSubLinearFunOp U] [HasConstFun U U]
            [HasSubLinearFunOpEq U]
