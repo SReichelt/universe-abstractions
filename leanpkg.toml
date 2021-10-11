@@ -1,7 +1,7 @@
 [package]
-name = "Structure"
+name = "UniverseAbstractions"
 version = "0.1"
-lean_version = "leanprover/lean4:nightly-2021-08-08"
+lean_version = "leanprover/lean4:nightly-2021-10-08"
 
 [dependencies]
 mathlib4_experiments = {git = "https://github.com/SReichelt/mathlib4_experiments", rev = "23a366bb3fb29794749738945ce373d52879e06c"}

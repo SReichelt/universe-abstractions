@@ -23,12 +23,12 @@ set_option autoBoundImplicitLocal false
 
 
 
-variable {U : Universe} [HasFunOp U]
+variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasFullFunOp U]
 
-def testRaw (A B : U) (F : A ⟶ B) : A ⟶ B := by makeFunctor (HasFunctors.funCoe F)
+def testRaw (A B : U) (F : A ⟶ B) : A ⟶ B := by makeFunctor (HasFunctors.apply F)
 #print testRaw
 
-def testRawFunct (A B : U) (F : A ⟶ B) : A ⟶[HasFunctors.funCoe F] B :=
+def testRawFunct (A B : U) (F : A ⟶ B) : A ⟶[HasFunctors.apply F] B :=
 by functoriality
 
 def testConst (A B : U) (b : B) : A ⟶ B := Λ a => b
@@ -64,7 +64,7 @@ def testFromToDefFun (A B : U) : (A ⟶ B) ⟶ (A ⟶ B) :=
 #print testFromToDefFun
 theorem testFromToDefPiEff (A B : U) (F : A ⟶ B) :
   testFromToDefFun A B F = F :=
-by simp [testFromToDefFun]
+HasFunctors.byDef
 
 def testApp (A B : U) (a : A) : (A ⟶ B) ⟶ B := Λ F => F a
 #print testApp
@@ -78,14 +78,20 @@ def testIndirApp (A B : U) (a : A) : (A ⟶ B) ⟶ B := Λ F => apply F a
 def testFixSnd (A B C : U) (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := Λ a => F a b
 #print testFixSnd
 
-def testTestFixSnd (A B C : U) (F : A ⟶ B ⟶ C) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := Λ F b => testFixSnd A B C F b
-#print testTestFixSnd
+def testSwap (A B C : U) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := Λ F b => testFixSnd A B C F b
+#print testSwap
 
-def testRevTestFixSnd (A B C : U) (F : A ⟶ B ⟶ C) : B ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := Λ b F => testFixSnd A B C F b
-#print testRevTestFixSnd
+def testRevSwap (A B C : U) : B ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := Λ b F => testFixSnd A B C F b
+#print testRevSwap
+
+def testSwap₂₃ (A B C D : U) : (A ⟶ B ⟶ C ⟶ D) ⟶ (A ⟶ C ⟶ B ⟶ D) := Λ F a c b => F a b c
+#print testSwap₂₃
 
 def testComp (A B C : U) (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := Λ a => G (F a)
 #print testComp
+theorem testCompEff (A B C : U) (F : A ⟶ B) (G : B ⟶ C) (a : A) :
+  (testComp A B C F G) a = G (F a) :=
+HasLinearFunOp.byDef₂
 
 def testTestComp (A B C : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C) := Λ F G => testComp A B C F G
 #print testTestComp
@@ -101,7 +107,7 @@ def testCompComp (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶
 #print testCompComp
 theorem testCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
   (testCompComp A B C D F G H) a = H (G (F a)) :=
-by simp [testCompComp]
+HasLinearFunOp.byDef₃
 
 def testCompCompFunct (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶[λ a => H (G (F a))] D :=
 by functoriality
@@ -151,7 +157,7 @@ def testDupArg (A B C : U) (F : A ⟶ C ⟶ A ⟶ B) (c : C) : A ⟶ B := Λ a =
 def testTestDupArg (A B C : U) : (A ⟶ C ⟶ A ⟶ B) ⟶ C ⟶ (A ⟶ B) := Λ F c => testDupArg A B C F c
 #print testTestDupArg
 
-def testSubst (A B C : U) (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶ C := Λ a => (G a) (F a)
+def testSubst (A B C : U) (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶ C := Λ a => G a (F a)
 #print testSubst
 
 def testTestSubst (A B C : U) : (A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := Λ F G => testSubst A B C F G
@@ -159,3 +165,9 @@ def testTestSubst (A B C : U) : (A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := �
 
 def testRevTestSubst (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) := Λ G F => testSubst A B C F G
 #print testRevTestSubst
+
+def testSubst₂ (A B C D : U) (F : A ⟶ B ⟶ C) (G : A ⟶ B ⟶ C ⟶ D) : A ⟶ B ⟶ D := Λ a b => G a b (F a b)
+#print testSubst₂
+
+def testDup₃ (A B : U) : (A ⟶ A ⟶ A ⟶ B) ⟶ (A ⟶ B) := Λ F a => F a a a
+#print testDup₃

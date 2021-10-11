@@ -1,7 +1,3 @@
-import mathlib4_experiments.Data.Equiv.Basic
-
-
-
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
@@ -32,6 +28,8 @@ namespace HasInstances
   notation "⌈" A:0 "⌉" => HasInstances.Inst A
 
   instance sortHasInstances : HasInstances.{u, u + 1} (Sort u) := ⟨id⟩
+  instance unitHasInstances : HasInstances.{0, 1}     Unit     := ⟨λ _ => True⟩
+  instance boolHasInstances : HasInstances.{0, 1}     Bool     := ⟨λ b => cond b True False⟩
 
 end HasInstances
 
@@ -87,41 +85,122 @@ namespace Universe
 
 end Universe
 
+
+
+def unit : Universe.{0} := ⟨Unit⟩
+
+namespace unit
+
+  def Inst : unit := ()
+
+  def inst {A : unit} : A := trivial
+
+end unit
+
+
+
+def boolean : Universe.{0} := ⟨Bool⟩
+
+namespace boolean
+
+  def True  : boolean := true
+  def False : boolean := false
+
+  def inst : True := trivial
+
+end boolean
+
+
+
 def sort : Universe.{u} := ⟨Sort u⟩
 @[reducible] def prop := sort.{0}
-@[reducible] def type := sort.{1}
+@[reducible] def type := sort.{u + 1}
+
+
+
+namespace Bundled
+
+  def univ {I : Type u} [HasInstances.{u, u + 1} I] (φ : GeneralizedTypeClass.{u, u + 1, u} I) :
+    Universe.{u} :=
+  ⟨Bundled φ⟩
+
+  instance univ.inst {I : Type u} [HasInstances.{u, u + 1} I] {φ : GeneralizedTypeClass.{u, u + 1, u} I}
+                     (A : univ φ) :
+    φ A.A :=
+  A.inst
+
+end Bundled
 
 
 
 def UniverseClass := GeneralizedTypeClass.{u + 1, u + 2, u + 1} Universe.{u}
 
-def univ (φ : UniverseClass.{u}) : Universe.{u + 1} := ⟨Bundled φ⟩
+namespace UniverseClass
 
-instance {φ : UniverseClass.{u}} (U : univ φ) : HasInstances.{u, u + 1} ⌈U⌉ := Universe.instInst U.A
+  def univ (φ : UniverseClass.{u}) : Universe.{u + 1} := Bundled.univ φ
+
+  instance {φ : UniverseClass.{u}} (U : univ φ) : HasInstances.{u, u + 1} ⌈U⌉ := Universe.instInst U.A
+
+end UniverseClass
 
 
 
--- A type class on a universe that says that we can find a specific type in it.
---
--- We use `Equiv` from mathlib to give the universe implementation a bit of flexibility, but note
--- that if `v > 1`, the equivalence may contain an equality of types nonetheless, which we avoid in
--- the rest of the formalization. This equality is not necessarily a problem because in most
--- implementations, `⌈A⌉` and `α` will in fact be exactly the same.
+noncomputable def PEmpty.elim {C : Sort v} (e : PEmpty.{u}) : C := PEmpty.rec (λ _ => C) e
 
-class HasEmbeddedType (U : Universe.{u}) (α : Sort v) : Sort (max (u + 1) v) where
-{A : U}
-(h : ⌈A⌉ ≃ α)
+namespace Universe
 
-namespace HasEmbeddedType
+  def emptyUniverse : Universe.{u} :=
+  { A    := PEmpty.{u + 1},
+    inst := ⟨PEmpty.elim⟩ }
 
-  def EmbeddedType (U : Universe.{u}) (α : Sort v) [h : HasEmbeddedType U α] := h.A
 
-  variable (U : Universe.{u}) {α : Sort v} [h : HasEmbeddedType U α]
+  def singletonUniverse (α : Sort u) : Universe.{u} :=
+  { A    := PUnit.{u + 1},
+    inst := ⟨λ _ => α⟩ }
 
-  def toExternal   (a : h.A) : α   := h.h.toFun  a
-  def fromExternal (a : α)   : h.A := h.h.invFun a
+  def singletonUniverse.type (α : Sort u) : singletonUniverse α := PUnit.unit
+  notation "⌉" α:0 "⌈" => Universe.singletonUniverse.type α
 
-  @[simp] theorem fromToExternal (a : h.A) : fromExternal U (toExternal   U a) = a := h.h.leftInv  a
-  @[simp] theorem toFromExternal (a : α)   : toExternal   U (fromExternal U a) = a := h.h.rightInv a
 
-end HasEmbeddedType
+  instance (U : Universe.{u}) : HasInstances.{u, u + 1} (Option ⌈U⌉) :=
+  ⟨λ C => match C with
+          | none   => PEmpty.{u}
+          | some A => ⌈A⌉⟩
+
+  def optionUniverse (U : Universe.{u}) : Universe.{u} := ⟨Option ⌈U⌉⟩
+
+
+  structure LiftedType (U : Universe.{u}) : Type (max 1 u v) where
+  (A : U)
+
+  structure LiftedInstance {U : Universe.{u}} (A : U) : Sort (max 1 u v) where
+  (a : A)
+
+  instance (U : Universe.{u}) : HasInstances.{max 1 u v, (max 1 u v) + 1} (LiftedType.{u, v} U) :=
+  ⟨λ C => LiftedInstance.{u, v} C.A⟩
+
+  def liftedUniverse (U : Universe.{u}) : Universe.{max 1 u v} := ⟨LiftedType.{u, v} U⟩
+
+
+  structure TypeProduct (U : Universe.{u}) (V : Universe.{v}) : Type (max 1 u v) where
+  (A : U)
+  (B : V)
+
+  instance (U : Universe.{u}) (V : Universe.{v}) : HasInstances.{max 1 u v, (max 1 u v) + 1} (TypeProduct U V) :=
+  ⟨λ C => PProd ⌈C.A⌉ ⌈C.B⌉⟩
+
+  def productUniverse (U : Universe.{u}) (V : Universe.{v}) : Universe.{max 1 u v} := ⟨TypeProduct U V⟩
+
+
+  inductive TypeSum (U V : Universe.{u}) : Type u where
+  | inU (A : U)
+  | inV (B : V)
+
+  instance (U V : Universe.{u}) : HasInstances.{u, u + 1} (TypeSum U V) :=
+  ⟨λ C => match C with
+          | TypeSum.inU A => ⌈A⌉
+          | TypeSum.inV B => ⌈B⌉⟩
+
+  def sumUniverse (U V : Universe.{u}) : Universe.{u} := ⟨TypeSum U V⟩
+
+end Universe

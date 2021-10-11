@@ -1,3 +1,8 @@
+-- TODO: Adapt to `HasIdentity`.
+#exit 0
+
+
+
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Singletons
@@ -185,7 +190,7 @@ class HasEquivOp (U : Universe.{u}) [HasEmbeddedFunctors.{u, w'} U] [HasEmbedded
 (defIdEquiv         (A : U)                             : A ⟷[HasLinearFunOp.idFun A, HasLinearFunOp.idFun A] A)
 (defInvEquiv        {A B : U} (E : A ⟷ B)               : B ⟷[HasEquivalences.invFun E, HasEquivalences.toFun E] A)
 (defInvEquivFun     (A B : U)                           : (A ⟷ B) ⟶[λ E => defInvEquiv E] (B ⟷ A))
-(defCompEquiv       {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷[HasEquivalences.toFun F ⊙ HasEquivalences.toFun E, HasEquivalences.invFun E ⊙ HasEquivalences.invFun F] C)
+(defCompEquiv       {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷[HasEquivalences.toFun F • HasEquivalences.toFun E, HasEquivalences.invFun E • HasEquivalences.invFun F] C)
 (defCompEquivFun    {A B : U} (E : A ⟷ B) (C : U)       : (B ⟷ C) ⟶[λ F => defCompEquiv E F] (A ⟷ C))
 (defCompEquivFunFun (A B C : U)                         : (A ⟷ B) ⟶[λ E => defCompEquivFun E C] ((B ⟷ C) ⟶ (A ⟷ C)))
 

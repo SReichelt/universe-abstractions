@@ -14,20 +14,21 @@ set_option autoBoundImplicitLocal false
 -- https://en.wikipedia.org/wiki/Combinatory_logic), we obtain an algorithm to construct a functor
 -- for a given lambda term, i.e. to prove functoriality automatically.
 --
--- Below, `F`, `G`, etc. denote functors, whereas `a`, `b`, etc. denote arbitrary terms.
+-- Below, `t` and `T` denote arbitrary terms of the correct type (which is a functor type in case
+-- of `T`).
 -- We write `Λ a => b` for the functor obtained for `λ a => b` using this algorithm recursively.
 --
---  Term                  | Condition      | Functor
+--  Functor               | Condition      | Definition
 -- -----------------------+----------------+-------------------------------------------------------
---  `λ a => b`            | `a` not in `b` | `constFun _ b`
---  `λ a => a`            |                | `idFun _`
---  `λ a => F a`          | `a` not in `F` | `F`
---  `λ a => F b`          | `a` not in `F` | `compFun (Λ a => b) F`
---  `λ F => F b`          | `F` not in `b` | `appFun b _`
---  `λ a => F b`          | `a` not in `b` | `swapFun (Λ a => F) b`
---  `λ a => F a`          |                | `dupFun (Λ a => F)`
---  `λ a => F b`          |                | `substFun (Λ a => b) (Λ a => F)`
---  `λ a => ?Fun b₁...bₙ` |                | `Λ a => (?FunFun b₁...bₙ₋₁) bₙ`
+--  `Λ a => t`            | `a` not in `t` | `constFun _ t`
+--  `Λ a => a`            |                | `idFun _`
+--  `Λ a => T a`          | `a` not in `T` | `T`
+--  `Λ a => T t`          | `a` not in `T` | `compFun (Λ a => t) T`
+--  `Λ F => F t`          | `F` not in `t` | `appFun t _`
+--  `Λ a => T t`          | `a` not in `t` | `swapFun (Λ a => T) t`
+--  `Λ a => T a`          |                | `dupFun (Λ a => T)`
+--  `Λ a => T t`          |                | `substFun (Λ a => t) (Λ a => T)`
+--  `Λ a => ?Fun t₁...tₙ` |                | `Λ a => (?FunFun t₁...tₙ₋₁) tₙ`
 --                        |                | (optimization: use `rev` if it makes `?FunFun` term
 --                        |                | constant)
 --
@@ -55,20 +56,21 @@ namespace Lean
     mkHasInstancesInst u (mkLevelSucc u) U' (mkApp (mkConst ``Universe.instInst [u]) U) A
 
   structure FunUniv where
-  (mvarId : MVarId)
-  (u w    : Level)
-  (U U' h : Expr)
+  (mvarId   : MVarId)
+  (u iu     : Level)
+  (U U'     : Expr)
+  (hId hFun : Expr)
 
   namespace FunUniv
 
     def getDecl (φ : FunUniv) (n : Name) : Expr :=
-      mkApp2 (mkConst n [φ.u, φ.w]) φ.U φ.h
+      mkApp3 (mkConst n [φ.u, φ.iu]) φ.U φ.hId φ.hFun
 
     def mkTypeInst (φ : FunUniv) (A : Expr) : Expr :=
       mkUniverseInstInst φ.u φ.U φ.U' A
 
     def mkFunType (φ : FunUniv) (A B : Expr) : Expr :=
-      mkApp2 (φ.getDecl ``HasEmbeddedFunctors.Fun) A B
+      mkApp2 (φ.getDecl ``HasEmbeddedFunctors.Helpers.Fun) A B
 
     def mkFreshTypeMVar (φ : FunUniv): MetaM Expr :=
       mkFreshExprMVar φ.U'
@@ -128,15 +130,15 @@ namespace Lean
         let B_b ← φ.mkFreshTypeMVar
         let G ← φ.mkFreshInstMVar (φ.mkFunType B_b f.B)
         let b ← φ.mkFreshInstMVar B_b
-        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.funCoe) B_b f.B G b) then
+        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.Helpers.apply) B_b f.B G b) then
           let G ← instantiateMVars G
           let b ← instantiateMVars b
           return ← constructLambdaAppFunctor φ f B_b G b
         let A_G ← φ.mkFreshTypeMVar
         let B_G ← φ.mkFreshTypeMVar
         let g ← mkFreshExprMVar (← mkArrow (φ.mkTypeInst A_G) (φ.mkTypeInst B_G))
-        let G' ← mkFreshExprMVar (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.DefFun) A_G B_G g)
-        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.fromDefFun) A_G B_G g G') then
+        let G' ← mkFreshExprMVar (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.Helpers.DefFun) A_G B_G g)
+        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.Helpers.fromDefFun) A_G B_G g G') then
           let g ← instantiateMVars g
           let G' ← instantiateMVars G'
           return ← constructLambdaDefFunFunctor φ f A_G B_G g G'
@@ -158,7 +160,8 @@ namespace Lean
           if ← f_b.isId then
             return G
           let F_b ← constructLambdaFunctor φ f_b
-          return mkApp6 (φ.getDecl ``HasLinearFunOp.revCompFun) hHasLinearFunOp f.A B_b f.B G F_b
+          -- TODO: Write as `trans` to enable notation.
+          return mkApp6 (φ.getDecl ``HasLinearFunOp.compFun) hHasLinearFunOp f.A B_b f.B F_b G
         | none => do
           match ← f_b.asConstant with
           | some b => do
@@ -193,7 +196,7 @@ namespace Lean
 
     partial def constructLambdaDefFunFunctor (φ : FunUniv) (f : LambdaAbstr) (A_G B_G g G' : Expr) : MetaM Expr := do
       let G ← φ.mkFreshInstMVar (φ.mkFunType A_G B_G)
-      if ← isDefEq G' (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.toDefFun) A_G B_G G) then
+      if ← isDefEq G' (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.Helpers.toDefFun) A_G B_G G) then
         let G ← instantiateMVars G
         return ← constructLambdaFunctor φ ⟨f.A, f.B, f.a, G⟩
       withReducible do
@@ -217,13 +220,13 @@ namespace Lean
         if ← isDefEq G' (mkApp6 (φ.getDecl ``HasLinearFunOp.defCompFun) hHasLinearFunOp A_G A₁ B_G F₁ F₂) then
           let F₁ ← instantiateMVars F₁
           let F₂ ← instantiateMVars F₂
-          let revComp := mkApp5 (φ.getDecl ``HasLinearFunOp.revCompFunFun) hHasLinearFunOp A_G A₁ B_G F₂
-          return ← match ← f.exprAsConstant revComp with
-          | some revComp =>
-            constructLambdaAppFunctor φ f A_F₁ revComp F₁
-          | none =>
-            let comp := mkApp5 (φ.getDecl ``HasLinearFunOp.compFunFun) hHasLinearFunOp A_G A₁ F₁ B_G
+          let comp := mkApp5 (φ.getDecl ``HasLinearFunOp.compFunFun) hHasLinearFunOp A_G A₁ F₁ B_G
+          return ← match ← f.exprAsConstant comp with
+          | some comp =>
             constructLambdaAppFunctor φ f A_F₂ comp F₂
+          | none =>
+            let revComp := mkApp5 (φ.getDecl ``HasLinearFunOp.revCompFunFun) hHasLinearFunOp A_G A₁ B_G F₂
+            constructLambdaAppFunctor φ f A_F₁ revComp F₁
         let A₂ ← φ.mkFreshTypeMVar
         let A₃ ← φ.mkFreshTypeMVar
         let A_F₃ := φ.mkFunType A₁ A₂
@@ -243,13 +246,13 @@ namespace Lean
         if ← isDefEq G' (mkApp6 (φ.getDecl ``HasLinearFunOp.defSwapFun) hHasLinearFunOp A_G A₁ B_G F₅ a₁) then
           let F₅ ← instantiateMVars F₅
           let a₁ ← instantiateMVars a₁
-          let revSwap := mkApp5 (φ.getDecl ``HasLinearFunOp.revSwapFunFun) hHasLinearFunOp A_G A₁ a₁ B_G
-          return ← match ← f.exprAsConstant revSwap with
-          | some revSwap =>
-            constructLambdaAppFunctor φ f A_F₅ revSwap F₅
-          | none =>
-            let swap := mkApp5 (φ.getDecl ``HasLinearFunOp.swapFunFun) hHasLinearFunOp A_G A₁ B_G F₅
+          let swap := mkApp5 (φ.getDecl ``HasLinearFunOp.swapFunFun) hHasLinearFunOp A_G A₁ B_G F₅
+          return ← match ← f.exprAsConstant swap with
+          | some swap =>
             constructLambdaAppFunctor φ f A₁ swap a₁
+          | none =>
+            let revSwap := mkApp5 (φ.getDecl ``HasLinearFunOp.revSwapFunFun) hHasLinearFunOp A_G A₁ a₁ B_G
+            constructLambdaAppFunctor φ f A_F₅ revSwap F₅
         let A_F₆ := φ.mkFunType A₁ (φ.mkFunType A_G A₂)
         let F₆ ← φ.mkFreshInstMVar A_F₆
         if ← isDefEq G' (mkApp5 (φ.getDecl ``HasLinearFunOp.defSwapFunFun) hHasLinearFunOp A₁ A_G A₂ F₆) then
@@ -274,13 +277,13 @@ namespace Lean
         if ← isDefEq G' (mkApp6 (φ.getDecl ``HasFullFunOp.defSubstFun) hHasFullFunOp A_G A₁ B_G F₁ F₈) then
           let F₁ ← instantiateMVars F₁
           let F₈ ← instantiateMVars F₈
-          let revSubst := mkApp5 (φ.getDecl ``HasFullFunOp.revSubstFunFun) hHasFullFunOp A_G A₁ B_G F₈
-          return ← match ← f.exprAsConstant revSubst with
-          | some revSubst =>
-            constructLambdaAppFunctor φ f A_F₁ revSubst F₁
-          | none =>
-            let subst := mkApp5 (φ.getDecl ``HasFullFunOp.substFunFun) hHasFullFunOp A_G A₁ F₁ B_G
+          let subst := mkApp5 (φ.getDecl ``HasFullFunOp.substFunFun) hHasFullFunOp A_G A₁ F₁ B_G
+          return ← match ← f.exprAsConstant subst with
+          | some subst =>
             constructLambdaAppFunctor φ f A_F₈ subst F₈
+          | none =>
+            let revSubst := mkApp5 (φ.getDecl ``HasFullFunOp.revSubstFunFun) hHasFullFunOp A_G A₁ B_G F₈
+            constructLambdaAppFunctor φ f A_F₁ revSubst F₁
         if ← isDefEq G' (mkApp5 (φ.getDecl ``HasFullFunOp.defSubstFunFun) hHasFullFunOp A₁ A₂ F₃ A₃) then
           let F₃ ← instantiateMVars F₃
           let subst := mkApp4 (φ.getDecl ``HasFullFunOp.substFunFunFun) hHasFullFunOp A₁ A₂ A₃
@@ -306,7 +309,7 @@ namespace Lean
       constructLambdaFunctor φ ⟨A, B, a, t⟩
     | f => do
       let F ← φ.mkFreshInstMVar (φ.mkFunType A B)
-      if ← isDefEq f (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.funCoe) A B F) then
+      if ← isDefEq f (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.Helpers.apply) A B F) then
         return F
       let a := mkFVar (← mkFreshFVarId)
       withLocalDecl `a BinderInfo.default A' fun a =>
@@ -320,22 +323,24 @@ namespace Lean
   def makeFunctor (mvarId : MVarId) (hf : Syntax) : TacticM Expr := do
     let type ← getMVarType mvarId
     let u ← mkFreshLevelMVar
-    let w ← mkFreshLevelMVar
+    let iu ← mkFreshLevelMVar
     let U ← mkFreshExprMVar (mkConst ``Universe [u])
-    let h ← mkFreshExprMVar (mkApp (mkConst ``HasEmbeddedFunctors [u, w]) U)
+    let hId ← mkFreshExprMVar (mkApp (mkConst ``HasIdentity [u, iu]) U)
+    let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasEmbeddedFunctors [u, iu]) U hId)
     let U' := mkUniverseInst u U
-    let φ' : FunUniv := ⟨mvarId, u, w, U, U', h⟩
+    let φ' : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
     let A ← φ'.mkFreshTypeMVar
     let B ← φ'.mkFreshTypeMVar
     if ← isDefEq type (φ'.mkTypeInst (φ'.mkFunType A B)) then
       let u ← instantiateLevelMVars u
-      let w ← instantiateLevelMVars w
+      let iu ← instantiateLevelMVars iu
       let U ← instantiateMVars U
       let U' ← instantiateMVars U'
-      let h ← instantiateMVars h
+      let hId ← instantiateMVars hId
+      let hFun ← instantiateMVars hFun
       let A ← instantiateMVars A
       let B ← instantiateMVars B
-      let φ : FunUniv := ⟨mvarId, u, w, U, U', h⟩
+      let φ : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
       let A' := φ.mkTypeInst A
       let B' := φ.mkTypeInst B
       let f ← elabTerm hf (← mkArrow A' B')
@@ -376,33 +381,35 @@ namespace Lean
   def functoriality (mvarId : MVarId) : TacticM Expr := do
     let type ← getMVarType mvarId
     let u ← mkFreshLevelMVar
-    let w ← mkFreshLevelMVar
+    let iu ← mkFreshLevelMVar
     let U ← mkFreshExprMVar (mkConst ``Universe [u])
-    let h ← mkFreshExprMVar (mkApp (mkConst ``HasEmbeddedFunctors [u, w]) U)
+    let hId ← mkFreshExprMVar (mkApp (mkConst ``HasIdentity [u, iu]) U)
+    let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasEmbeddedFunctors [u, iu]) U hId)
     let U' := mkUniverseInst u U
-    let φ' : FunUniv := ⟨mvarId, u, w, U, U', h⟩
+    let φ' : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
     let A ← φ'.mkFreshTypeMVar
     let B ← φ'.mkFreshTypeMVar
     let A' := φ'.mkTypeInst A
     let B' := φ'.mkTypeInst B
     let f ← mkFreshExprMVar (← mkArrow A' B')
-    if ← isDefEq type (mkApp3 (φ'.getDecl ``HasEmbeddedFunctors.DefFun) A B f) then
+    if ← isDefEq type (mkApp3 (φ'.getDecl ``HasEmbeddedFunctors.Helpers.DefFun) A B f) then
       let u ← instantiateLevelMVars u
-      let w ← instantiateLevelMVars w
+      let iu ← instantiateLevelMVars iu
       let U ← instantiateMVars U
       let U' ← instantiateMVars U'
-      let h ← instantiateMVars h
+      let hId ← instantiateMVars hId
+      let hFun ← instantiateMVars hFun
       let A ← instantiateMVars A
       let B ← instantiateMVars B
       let A' ← instantiateMVars A'
       let B' ← instantiateMVars B'
       let f ← instantiateMVars f
-      let φ : FunUniv := ⟨mvarId, u, w, U, U', h⟩
+      let φ : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
       let F ← constructFunctor φ A B A' B' f
-      let hDefTypeBody := mkApp3 (mkConst ``Eq [u]) B' (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.funCoe) A B F (mkBVar 0)) (mkApp f (mkBVar 0))
+      let hDefTypeBody := mkApp3 (mkConst ``Eq [u]) B' (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.Helpers.apply) A B F (mkBVar 0)) (mkApp f (mkBVar 0))
       let hDefType := mkForall `a BinderInfo.default A' hDefTypeBody
-      let hDef ← elabTerm (← `(λ _ => by simp [HasEmbeddedFunctors.funCoe])) hDefType
-      return mkApp5 (φ'.getDecl ``HasEmbeddedFunctors.toDefFun') A B F f hDef
+      let hDef ← elabTerm (← `(λ _ => by simp [HasEmbeddedFunctors.Helpers.apply])) hDefType
+      return mkApp5 (φ'.getDecl ``HasEmbeddedFunctors.Helpers.toDefFun') A B F f hDef
     throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasEmbeddedFunctors.DefFun'"
 
   elab "functoriality" : tactic => do

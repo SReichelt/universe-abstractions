@@ -1,3 +1,8 @@
+-- TODO: Adapt to `HasIdentity`.
+#exit 0
+
+
+
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Singletons
@@ -13,12 +18,12 @@ namespace HasEmbeddedTop
 
   open HasTop
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedTop U]
+  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasEmbeddedTop U]
 
-  def defIntroFun [HasSubLinearFunOp U] (A : U) : A ⟶[λ _ => top U] Top U :=
-  HasSubLinearFunOp.defConstFun A (top U)
+  def defIntroFun [HasConstFun U U] (A : U) : A ⟶[λ _ => top U] Top U :=
+  HasConstFun.defConstFun A (top U)
 
-  @[reducible] def introFun [HasSubLinearFunOp U] (A : U) : A ⟶ Top U := defIntroFun A
+  @[reducible] def introFun [HasConstFun U U] (A : U) : A ⟶ Top U := defIntroFun A
 
   def defInvElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶[λ F => F (top U)] A :=
   HasLinearFunOp.defAppFun (top U) A
@@ -33,7 +38,7 @@ namespace HasEmbeddedBot
 
   open HasBot
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedBot U]
+  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasEmbeddedBot U]
 
   def contraIntroFun [HasLinearFunOp U] (A : U) : A ⟶ Not A ⟶ Bot U :=
   HasLinearFunOp.appFunFun A (Bot U)
