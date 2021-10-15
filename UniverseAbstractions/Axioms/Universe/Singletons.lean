@@ -36,21 +36,21 @@ end HasTop
 -- Eliminating from `Top` should not require `SubLinearFunOp`, as conceptually, an instance of
 -- `Top` does not hold any data. Therefore, we define a specialized version of `constFun`.
 
-class HasEmbeddedTop (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasEmbeddedFunctors U]
+class HasInternalTop (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
   extends HasTop U where
 (defElimFun {A : U} (a : A) : T ⟶[λ _ => a] A)
 (defElimFunFun (A : U) : A ⟶[λ a => defElimFun a] (T ⟶ A))
 
-namespace HasEmbeddedTop
+namespace HasInternalTop
 
   open HasTop
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasEmbeddedTop U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalTop U]
 
   @[reducible] def elimFun {A : U} (a : A) : Top U ⟶ A := defElimFun a
   @[reducible] def elimFunFun (A : U) : A ⟶ Top U ⟶ A := defElimFunFun A
 
-end HasEmbeddedTop
+end HasInternalTop
 
 
 
@@ -66,22 +66,22 @@ namespace HasBot
 
 end HasBot
 
-class HasEmbeddedBot (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasEmbeddedFunctors U]
+class HasInternalBot (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
   extends HasBot U where
 (defElimFun (A : U) : HasBot.Bot U ⟶[λ b => HasBot.elim b A] A)
 
-namespace HasEmbeddedBot
+namespace HasInternalBot
 
   open HasBot
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasEmbeddedBot U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalBot U]
 
-  def elimFun (A : U) : Bot U ⟶ A := HasEmbeddedBot.defElimFun A
+  def elimFun (A : U) : Bot U ⟶ A := HasInternalBot.defElimFun A
 
   def Not (A : U) : U := A ⟶ Bot U
 
-end HasEmbeddedBot
+end HasInternalBot
 
-class HasClassicalLogic (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasEmbeddedFunctors U]
-                        [HasEmbeddedBot U] where
-(byContradictionFun (A : U) : HasEmbeddedBot.Not (HasEmbeddedBot.Not A) ⟶ A)
+class HasClassicalLogic (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
+                        [HasInternalBot U] where
+(byContradictionFun (A : U) : HasInternalBot.Not (HasInternalBot.Not A) ⟶ A)

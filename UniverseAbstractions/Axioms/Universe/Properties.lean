@@ -214,14 +214,14 @@ end HasProdProp
 
 
 
-class HasEquivProp (U V V_V : Universe) [HasProperties U V] [HasEmbeddedFunctors V]
+class HasEquivProp (U V V_V : Universe) [HasProperties U V] [HasInternalFunctors V]
                    [HasEquivalences V V V_V] [HasProperties U V_V] where
 (defEquivProp {A : U} (φ ψ : A ⟿ V) : A ⟿[λ a => φ a ⟷ ψ a] V_V)
 (defEquivConstEq (A : U) (B C : V) : defEquivProp A{B} A{C} = HasProperties.defConstProp A (B ⟷ C))
 
 namespace HasEquivProp
 
-  variable {U V V_V : Universe} [HasProperties U V] [HasEmbeddedFunctors V] [HasEquivalences V V V_V]
+  variable {U V V_V : Universe} [HasProperties U V] [HasInternalFunctors V] [HasEquivalences V V V_V]
            [HasProperties U V_V] [HasEquivProp U V V_V]
 
   @[reducible] def equivProp {A : U} (φ ψ : A ⟿ V) : A ⟿ V_V := defEquivProp φ ψ

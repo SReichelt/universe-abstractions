@@ -17,7 +17,7 @@ namespace MetaRelation
 
   open HasFunctors HasLinearFunOp
 
-  variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasEmbeddedFunctors V]
+  variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
            (R : MetaRelation α V)
 
   class HasSymmFun [HasSymm R] where

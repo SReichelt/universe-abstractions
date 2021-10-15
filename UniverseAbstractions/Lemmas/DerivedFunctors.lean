@@ -21,7 +21,7 @@ namespace HasLinearFunOp
 
   open HasFunctors HasCongrArg
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasLinearFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
 
   -- The "swap" functor swaps the arguments of a nested functor.
   -- Its plain version `swapFun` actually just fixes the second argument.
@@ -113,7 +113,7 @@ namespace HasFullFunOp
 
   open HasFunctors HasCongrArg HasLinearFunOp HasNonLinearFunOp
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasFullFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U]
 
   -- The S combinator (see https://en.wikipedia.org/wiki/SKI_combinator_calculus), which in our case says
   -- that if we can functorially construct a functor `G a : B ⟶ C` and an argument `F a : B` from `a`,

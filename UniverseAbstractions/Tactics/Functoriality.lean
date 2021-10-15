@@ -43,7 +43,7 @@ namespace Lean
 
   open Meta Elab Tactic
 
-  -- Some helper code so that we can work with a `(U : Universe) [h : HasEmbeddedFunctors U]` more
+  -- Some helper code so that we can work with a `(U : Universe) [h : HasInternalFunctors U]` more
   -- easily in meta code.
 
   def mkHasInstancesInst (u v : Level) (U h A : Expr) : Expr :=
@@ -70,7 +70,7 @@ namespace Lean
       mkUniverseInstInst φ.u φ.U φ.U' A
 
     def mkFunType (φ : FunUniv) (A B : Expr) : Expr :=
-      mkApp2 (φ.getDecl ``HasEmbeddedFunctors.Helpers.Fun) A B
+      mkApp2 (φ.getDecl ``HasInternalFunctors.Helpers.Fun) A B
 
     def mkFreshTypeMVar (φ : FunUniv): MetaM Expr :=
       mkFreshExprMVar φ.U'
@@ -130,15 +130,15 @@ namespace Lean
         let B_b ← φ.mkFreshTypeMVar
         let G ← φ.mkFreshInstMVar (φ.mkFunType B_b f.B)
         let b ← φ.mkFreshInstMVar B_b
-        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.Helpers.apply) B_b f.B G b) then
+        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasInternalFunctors.Helpers.apply) B_b f.B G b) then
           let G ← instantiateMVars G
           let b ← instantiateMVars b
           return ← constructLambdaAppFunctor φ f B_b G b
         let A_G ← φ.mkFreshTypeMVar
         let B_G ← φ.mkFreshTypeMVar
         let g ← mkFreshExprMVar (← mkArrow (φ.mkTypeInst A_G) (φ.mkTypeInst B_G))
-        let G' ← mkFreshExprMVar (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.Helpers.DefFun) A_G B_G g)
-        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.Helpers.fromDefFun) A_G B_G g G') then
+        let G' ← mkFreshExprMVar (mkApp3 (φ.getDecl ``HasInternalFunctors.Helpers.DefFun) A_G B_G g)
+        if ← isDefEq f.t (mkApp4 (φ.getDecl ``HasInternalFunctors.Helpers.fromDefFun) A_G B_G g G') then
           let g ← instantiateMVars g
           let G' ← instantiateMVars G'
           return ← constructLambdaDefFunFunctor φ f A_G B_G g G'
@@ -196,7 +196,7 @@ namespace Lean
 
     partial def constructLambdaDefFunFunctor (φ : FunUniv) (f : LambdaAbstr) (A_G B_G g G' : Expr) : MetaM Expr := do
       let G ← φ.mkFreshInstMVar (φ.mkFunType A_G B_G)
-      if ← isDefEq G' (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.Helpers.toDefFun) A_G B_G G) then
+      if ← isDefEq G' (mkApp3 (φ.getDecl ``HasInternalFunctors.Helpers.toDefFun) A_G B_G G) then
         let G ← instantiateMVars G
         return ← constructLambdaFunctor φ ⟨f.A, f.B, f.a, G⟩
       withReducible do
@@ -309,7 +309,7 @@ namespace Lean
       constructLambdaFunctor φ ⟨A, B, a, t⟩
     | f => do
       let F ← φ.mkFreshInstMVar (φ.mkFunType A B)
-      if ← isDefEq f (mkApp3 (φ.getDecl ``HasEmbeddedFunctors.Helpers.apply) A B F) then
+      if ← isDefEq f (mkApp3 (φ.getDecl ``HasInternalFunctors.Helpers.apply) A B F) then
         return F
       let a := mkFVar (← mkFreshFVarId)
       withLocalDecl `a BinderInfo.default A' fun a =>
@@ -326,7 +326,7 @@ namespace Lean
     let iu ← mkFreshLevelMVar
     let U ← mkFreshExprMVar (mkConst ``Universe [u])
     let hId ← mkFreshExprMVar (mkApp (mkConst ``HasIdentity [u, iu]) U)
-    let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasEmbeddedFunctors [u, iu]) U hId)
+    let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasInternalFunctors [u, iu]) U hId)
     let U' := mkUniverseInst u U
     let φ' : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
     let A ← φ'.mkFreshTypeMVar
@@ -345,7 +345,7 @@ namespace Lean
       let B' := φ.mkTypeInst B
       let f ← elabTerm hf (← mkArrow A' B')
       return ← constructFunctor φ A B A' B' f
-    throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasEmbeddedFunctors.Fun'"
+    throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasInternalFunctors.Fun'"
 
   elab "makeFunctor " hf:term : tactic => do
     let mvarId ← getMainGoal
@@ -384,7 +384,7 @@ namespace Lean
     let iu ← mkFreshLevelMVar
     let U ← mkFreshExprMVar (mkConst ``Universe [u])
     let hId ← mkFreshExprMVar (mkApp (mkConst ``HasIdentity [u, iu]) U)
-    let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasEmbeddedFunctors [u, iu]) U hId)
+    let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasInternalFunctors [u, iu]) U hId)
     let U' := mkUniverseInst u U
     let φ' : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
     let A ← φ'.mkFreshTypeMVar
@@ -392,7 +392,7 @@ namespace Lean
     let A' := φ'.mkTypeInst A
     let B' := φ'.mkTypeInst B
     let f ← mkFreshExprMVar (← mkArrow A' B')
-    if ← isDefEq type (mkApp3 (φ'.getDecl ``HasEmbeddedFunctors.Helpers.DefFun) A B f) then
+    if ← isDefEq type (mkApp3 (φ'.getDecl ``HasInternalFunctors.Helpers.DefFun) A B f) then
       let u ← instantiateLevelMVars u
       let iu ← instantiateLevelMVars iu
       let U ← instantiateMVars U
@@ -406,11 +406,11 @@ namespace Lean
       let f ← instantiateMVars f
       let φ : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
       let F ← constructFunctor φ A B A' B' f
-      let hDefTypeBody := mkApp3 (mkConst ``Eq [u]) B' (mkApp4 (φ.getDecl ``HasEmbeddedFunctors.Helpers.apply) A B F (mkBVar 0)) (mkApp f (mkBVar 0))
+      let hDefTypeBody := mkApp3 (mkConst ``Eq [u]) B' (mkApp4 (φ.getDecl ``HasInternalFunctors.Helpers.apply) A B F (mkBVar 0)) (mkApp f (mkBVar 0))
       let hDefType := mkForall `a BinderInfo.default A' hDefTypeBody
-      let hDef ← elabTerm (← `(λ _ => by simp [HasEmbeddedFunctors.Helpers.apply])) hDefType
-      return mkApp5 (φ'.getDecl ``HasEmbeddedFunctors.Helpers.toDefFun') A B F f hDef
-    throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasEmbeddedFunctors.DefFun'"
+      let hDef ← elabTerm (← `(λ _ => by simp [HasInternalFunctors.Helpers.apply])) hDefType
+      return mkApp5 (φ'.getDecl ``HasInternalFunctors.Helpers.toDefFun') A B F f hDef
+    throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasInternalFunctors.DefFun'"
 
   elab "functoriality" : tactic => do
     let mvarId ← getMainGoal

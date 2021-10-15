@@ -183,14 +183,14 @@ end HasCompFun
 
 
 
-class HasEmbeddedFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
+class HasInternalFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
   HasFunctors U U U, HasCongrArg U U : Type (max u iu)
 
-namespace HasEmbeddedFunctors.Helpers
+namespace HasInternalFunctors.Helpers
 
   -- Restricted copies of definitions in `HasFunctors` to help functoriality tactic.
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U]
 
   @[reducible] def Fun (A B : U) : U := HasFunctors.Fun A B
   @[reducible] def DefFun (A B : U) (f : A → B) := HasFunctors.DefFun A B f
@@ -204,7 +204,7 @@ namespace HasEmbeddedFunctors.Helpers
 
   @[reducible] def toDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) : A ⟶[f] B := HasFunctors.toDefFun' F h
 
-end HasEmbeddedFunctors.Helpers
+end HasInternalFunctors.Helpers
 
 
 
@@ -229,7 +229,7 @@ end HasEmbeddedFunctors.Helpers
 
 
 
-class HasLinearFunOp (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] where
+class HasLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
 (defIdFun         (A : U)                             : A ⟶[id] A)
 (defAppFun        {A : U} (a : A) (B : U)             : (A ⟶ B) ⟶[λ F => F a] B)
 (defAppFunFun     (A B : U)                           : A ⟶[λ a => defAppFun a B] ((A ⟶ B) ⟶ B))
@@ -241,7 +241,7 @@ namespace HasLinearFunOp
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasLinearFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
 
   instance hasIdFun : HasIdFun U := ⟨defIdFun⟩
 
@@ -301,7 +301,7 @@ end HasLinearFunOp
 
 
 
-class HasSubLinearFunOp (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] where
+class HasSubLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
 (defConstFun    (A : U) {B : U} (b : B) : A ⟶[Function.const ⌈A⌉ b] B)
 (defConstFunFun (A B : U)               : B ⟶[λ b => defConstFun A b] (A ⟶ B))
 
@@ -309,7 +309,7 @@ namespace HasSubLinearFunOp
 
   open HasFunctors
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasSubLinearFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasSubLinearFunOp U]
 
   instance hasConstFun : HasConstFun U U := ⟨defConstFun⟩
 
@@ -323,11 +323,11 @@ namespace HasSubLinearFunOp
 
 end HasSubLinearFunOp
 
-class HasAffineFunOp (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] extends HasLinearFunOp U, HasSubLinearFunOp U
+class HasAffineFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends HasLinearFunOp U, HasSubLinearFunOp U
 
 
 
-class HasNonLinearFunOp (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] where
+class HasNonLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
 (defDupFun    {A B : U} (F : A ⟶ A ⟶ B) : A ⟶[λ a => F a a] B)
 (defDupFunFun (A B : U)                 : (A ⟶ A ⟶ B) ⟶[λ F => defDupFun F] (A ⟶ B))
 
@@ -335,7 +335,7 @@ namespace HasNonLinearFunOp
 
   open HasFunctors
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasNonLinearFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasNonLinearFunOp U]
 
   @[reducible] def dupFun {A B : U} (F : A ⟶ A ⟶ B) : A ⟶ B := defDupFun F
   @[reducible] def dupFunFun (A B : U) : (A ⟶ A ⟶ B) ⟶ (A ⟶ B) := defDupFunFun A B
@@ -347,4 +347,4 @@ namespace HasNonLinearFunOp
 
 end HasNonLinearFunOp
 
-class HasFullFunOp (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] extends HasAffineFunOp U, HasNonLinearFunOp U
+class HasFullFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends HasAffineFunOp U, HasNonLinearFunOp U

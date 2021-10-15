@@ -68,16 +68,16 @@ end HasProducts
 -- required to always use both sides of a product; eliminating to either `A` or `B` requires
 -- `constFun`.
 
-class HasEmbeddedProducts (U : Universe.{u}) [HasEmbeddedFunctors.{u, w} U]
+class HasInternalProducts (U : Universe.{u}) [HasInternalFunctors.{u, w} U]
   extends HasProducts U U U : Type (max u w) where
 (defIntroFun    {A : U} (a : A) (B : U)     : B ⟶[λ b => HasProducts.intro a b] A ⊓ B)
 (defIntroFunFun (A B : U)                   : A ⟶[λ a => defIntroFun a B] (B ⟶ A ⊓ B))
 (defElimFun     {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶[λ P => F (HasProducts.fst P) (HasProducts.snd P)] C)
 (defElimFunFun  (A B C : U)                 : (A ⟶ B ⟶ C) ⟶[λ F => defElimFun F] (A ⊓ B ⟶ C))
 
-namespace HasEmbeddedProducts
+namespace HasInternalProducts
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasEmbeddedProducts U]
+  variable {U : Universe} [HasInternalFunctors U] [HasInternalProducts U]
 
   @[reducible] def introFun {A : U} (a : A) (B : U) : B ⟶ A ⊓ B := defIntroFun a B
   @[reducible] def introFunFun (A B : U) : A ⟶ B ⟶ A ⊓ B := defIntroFunFun A B
@@ -85,4 +85,4 @@ namespace HasEmbeddedProducts
   @[reducible] def elimFun {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶ C := defElimFun F
   @[reducible] def elimFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⊓ B ⟶ C) := defElimFunFun A B C
 
-end HasEmbeddedProducts
+end HasInternalProducts

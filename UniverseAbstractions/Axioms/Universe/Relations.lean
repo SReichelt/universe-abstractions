@@ -23,15 +23,15 @@ universe u v w w' w''
 
 
 
-class HasRelations (U : Universe.{u}) [HasFunOp.{u, w} U] [HasEmbeddedProducts.{u, w} U]
+class HasRelations (U : Universe.{u}) [HasFunOp.{u, w} U] [HasInternalProducts.{u, w} U]
                    (V : Universe.{v}) extends
   HasDependentFunctors.{u, v, v, w', w''} U V V : Type (max 1 u v w w' w'')
 
 namespace HasRelations
 
-  open HasProducts HasEmbeddedProducts HasCompFunProp'
+  open HasProducts HasInternalProducts HasCompFunProp'
 
-  variable {U : Universe.{u}} [HasFunOp.{u, w} U] [HasEmbeddedProducts.{u, w} U]
+  variable {U : Universe.{u}} [HasFunOp.{u, w} U] [HasInternalProducts.{u, w} U]
 
   def relMap {V : Universe.{v}} [HasRelations.{u, v, w, w', w''} U V] {A : U} (r : A ⊓ A → V) :
     A → A → V :=
@@ -77,7 +77,7 @@ namespace HasRelations
 
     def HasRefl.refl [HasRefl θ] (a : A) : θ a a := reflPi a
 
-    variable [HasEmbeddedFunctors V] [HasFunProp U V V V]
+    variable [HasInternalFunctors V] [HasFunProp U V V V]
 
     class HasTrans where
     (transPi : Π {compProp extractABFun' θ ⟶ {compProp extractBCFun' θ ⟶ compProp extractACFun' θ}})
@@ -102,7 +102,7 @@ namespace HasRelations
 
     class IsPreorder extends HasRefl θ, HasTrans θ
 
-    variable [HasEmbeddedProducts V] [HasEmbeddedEquivalences V] [HasEquivProp U V V]
+    variable [HasInternalProducts V] [HasInternalEquivalences V] [HasEquivProp U V V]
 
     class HasSymm where
     (symmPi : Π {θ ⟶ compProp (commFun' A A) θ})
@@ -176,19 +176,19 @@ namespace HasRelations
 
   #exit
 
-  def HasTrans.revTrans {θ : A ⤐ V} [HasEmbeddedFunctors V] [HasLinearFunOp V] [h : HasTrans θ]
+  def HasTrans.revTrans {θ : A ⤐ V} [HasInternalFunctors V] [HasLinearFunOp V] [h : HasTrans θ]
                         {a b c : A} : θ b c ⟶ θ a b ⟶ θ a c :=
   HasLinearFunOp.swapFunFun h.trans
 
-  @[simp] theorem HasTrans.revTrans.eff {θ : A ⤐ V} [HasEmbeddedFunctors V] [HasLinearFunOp V] [h : HasTrans θ]
+  @[simp] theorem HasTrans.revTrans.eff {θ : A ⤐ V} [HasInternalFunctors V] [HasLinearFunOp V] [h : HasTrans θ]
                                         {a b c : A} (g : θ b c) (f : θ a b) :
     h.revTrans g f = h.trans f g :=
   by apply HasLinearFunOp.swapFunFun.effEff
 
-  def HasTrans.trans' {θ : A ⤐ V} [HasEmbeddedFunctors V] [h : HasTrans θ]
+  def HasTrans.trans' {θ : A ⤐ V} [HasInternalFunctors V] [h : HasTrans θ]
                       {a b c : A} (f : θ a b) (g : θ b c) : θ a c := h.trans f g
 
-  def HasSymm.symm' {θ : A ⤐ V} [HasEmbeddedFunctors V] [HasInternalEquivalences V] [h : HasSymm θ]
+  def HasSymm.symm' {θ : A ⤐ V} [HasInternalFunctors V] [HasInternalEquivalences V] [h : HasSymm θ]
                     {a b : A} (f : θ a b) : θ b a := HasInternalEquivalences.to h.symm f
 
   -- When reasoning about instances of `θ a b`, we would like to write `trans` as composition, `refl` as
@@ -197,12 +197,12 @@ namespace HasRelations
 
   section Notation
 
-    @[reducible] def revComp {θ : A ⤐ V} [HasEmbeddedFunctors V] [h : HasTrans θ] {a b c : A} (g : θ b c) (f : θ a b) : θ a c := h.trans' f g
+    @[reducible] def revComp {θ : A ⤐ V} [HasInternalFunctors V] [h : HasTrans θ] {a b c : A} (g : θ b c) (f : θ a b) : θ a c := h.trans' f g
     infixr:90 " • " => revComp
 
     @[reducible] def ident (θ : A ⤐ V) [h : HasRefl θ] (a : A) : θ a a := h.refl a
 
-    @[reducible] def inv {θ : A ⤐ V} [HasEmbeddedFunctors V] [HasInternalEquivalences V] [h : HasSymm θ] {a b : A} (f : θ a b) : θ b a := h.symm' f
+    @[reducible] def inv {θ : A ⤐ V} [HasInternalFunctors V] [HasInternalEquivalences V] [h : HasSymm θ] {a b : A} (f : θ a b) : θ b a := h.symm' f
     postfix:max "⁻¹" => inv
 
   end Notation
@@ -215,7 +215,7 @@ namespace HasRelations
 
     instance hasRefl (c : B) : HasRefl (ConstRel (A := A) B) := ⟨λ _ => c⟩
 
-    variable [HasEmbeddedFunctors V] [HasAffineFunOp V]
+    variable [HasInternalFunctors V] [HasAffineFunOp V]
 
     instance hasTrans : HasTrans (ConstRel (A := A) B) := ⟨HasSubLinearFunOp.constFun B (HasLinearFunOp.idFun B)⟩
     instance isPreorder (c : B) : IsPreorder (ConstRel (A := A) B) := { toHasRefl := hasRefl B c }
@@ -228,7 +228,7 @@ namespace HasRelations
     --@[simp] theorem symmEq  {a₁ a₂    : A} (c : B) : (hasSymm  (A := A) B).symm'  (a := a₁) (b := a₂)           c   = c :=
     --HasLinearFunOp.idFun.eff B c
     --@[simp] theorem transEq {a₁ a₂ a₃ : A} (c : B) : (hasTrans (A := A) B).trans' (a := a₁) (b := a₂) (c := a₃) c c = c :=
-    --let h₁ := congrArg HasEmbeddedFunctors.funCoe (HasAffineFunOp.constFun.eff B (HasLinearFunOp.idFun B) c);
+    --let h₁ := congrArg HasInternalFunctors.funCoe (HasAffineFunOp.constFun.eff B (HasLinearFunOp.idFun B) c);
     --Eq.trans (congrFun h₁ c) (HasLinearFunOp.idFun.eff B c)
 
   end ConstRel
@@ -242,7 +242,7 @@ end HasRelations
 
 section AttachedRelations
 
-  variable {U : Universe.{u}} (A : U) (V : Universe.{v}) [HasEmbeddedFunctors V]
+  variable {U : Universe.{u}} (A : U) (V : Universe.{v}) [HasInternalFunctors V]
 
   class HasArrows where
   (Arrow      : A ⤐ V)

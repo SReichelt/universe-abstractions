@@ -21,7 +21,7 @@ def functorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe
 
 namespace functorUniverse
 
-  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasEmbeddedFunctors
+  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasInternalFunctors
        HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp HasFullFunOp
        HasLinearFunExt HasAffineFunExt HasFullFunExt
 
@@ -69,7 +69,7 @@ namespace functorUniverse
       (A !⟶ B) ⟶ (A !⟶ C) :=
     G
 
-    variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasEmbeddedFunctors U]
+    variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasInternalFunctors U]
              [HasLinearFunOp U] [HasLinearFunExt U]
 
     instance hasIndependentCongrArg : HasCongrArg ({A ⟶} U) ({A ⟶} U) :=
@@ -173,7 +173,7 @@ namespace functorUniverse
   instance hasCongrArg : HasCongrArg ({A ⟶} U) ({A ⟶} U) :=
   ⟨λ {B C : U} (G : A ⟶ B ⟶ C) {F₁ F₂ : A ⟶ B} h => defCongrArg (defRevSubstFunFun G) h⟩
 
-  instance hasEmbeddedFunctors : HasEmbeddedFunctors ({A ⟶} U) := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors ({A ⟶} U) := ⟨⟩
 
   def baseIdFun (B : U) : A ⟶ B ⟶ B := embedFunctor A (idFun B)
   def baseIdFun.eff (B : U) (F : A ⟶ B) :
@@ -399,7 +399,7 @@ namespace optionalFunctorUniverse
 
   notation:20 "{" A:0 " ⟶}? " V:21 => optionalFunctorUniverse A V
 
-  variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasEmbeddedFunctors U] [HasLinearFunOp U]
+  variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasInternalFunctors U] [HasLinearFunOp U]
 
   instance hasIdentity' {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
                         (IV : Universe.{iv}) [hConst : HasIdentity'.{v, iv} V IV]
@@ -446,6 +446,6 @@ namespace optionalFunctorUniverse
               | fn _,    empty   => λ G => PEmpty.elim G
               | empty,   _       => λ G => PEmpty.elim G⟩
 
-  noncomputable instance hasEmbeddedFunctors : HasEmbeddedFunctors ({A ⟶}? U) := ⟨⟩
+  noncomputable instance hasInternalFunctors : HasInternalFunctors ({A ⟶}? U) := ⟨⟩
 
 end optionalFunctorUniverse

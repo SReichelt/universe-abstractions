@@ -16,7 +16,7 @@ namespace HasLinearFunOp.HasLinearFunExt
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
 
   def swapId {A : U} (a : A) (B : U) :
     swapFun (idFun (A ⟶ B)) a
@@ -127,7 +127,7 @@ namespace HasAffineFunOp.HasAffineFunExt
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasLinearFunOp.HasLinearFunExt HasSubLinearFunOp
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasAffineFunOp U] [HasAffineFunExt U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasAffineFunOp U] [HasAffineFunExt U]
 
   def swapConst (A : U) {B C : U} (F : B ⟶ C) (b : B) :
     swapFun (constFun A F) b
@@ -185,7 +185,7 @@ namespace HasFullFunOp.HasFullFunExt
   open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasLinearFunOp.HasLinearFunExt
        HasSubLinearFunOp HasAffineFunOp.HasAffineFunExt HasNonLinearFunOp
 
-  variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasFullFunOp U] [HasFullFunExt U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U] [HasFullFunExt U]
 
   def substAltDef {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) :
     dupFun (swapFunFun G • F)

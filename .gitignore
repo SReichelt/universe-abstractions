@@ -3,6 +3,8 @@
 *.fls
 *.fdb*
 *.log
+*.bbl
+*.blg
 *.synctex*
 /_target
 /leanpkg.path

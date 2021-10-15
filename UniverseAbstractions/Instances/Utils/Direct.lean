@@ -11,7 +11,7 @@ set_option autoBoundImplicitLocal false
 
 
 
-variable (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U]
+variable (U : Universe) [HasIdentity U] [HasInternalFunctors U]
 
 
 

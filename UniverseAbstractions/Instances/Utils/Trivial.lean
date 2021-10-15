@@ -37,7 +37,7 @@ namespace HasTrivialFunctoriality
     HasCompFun U V W :=
   ⟨λ _ _ => defFun⟩
 
-  variable (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] [HasTrivialFunctoriality U U]
+  variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialFunctoriality U U]
 
   instance hasLinearFunOp : HasLinearFunOp U :=
   { defIdFun         := λ _     => defFun,
@@ -71,7 +71,7 @@ namespace HasTrivialExtensionality
     F₁ ≃[e] F₂ :=
   h.mkFunEq e
 
-  variable (U : Universe) [HasIdentity U] [HasEmbeddedFunctors U] [HasTrivialExtensionality U U]
+  variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialExtensionality U U]
 
   instance hasLinearFunExt [HasLinearFunOp U] : HasLinearFunOp.HasLinearFunExt U :=
   { rightId              := λ _         => funEq,

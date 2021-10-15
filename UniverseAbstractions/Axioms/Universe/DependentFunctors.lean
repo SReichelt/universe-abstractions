@@ -224,7 +224,7 @@ namespace HasCompFunPi
 
 end HasCompFunPi
 
-class HasCompFunPiPi (U : Universe) [HasEmbeddedFunctors U] [HasDependentFunctors U U U]
+class HasCompFunPiPi (U : Universe) [HasInternalFunctors U] [HasDependentFunctors U U U]
                      [HasPiCompFunProp U U U U U] extends
   HasCompFunPi U U U U U where
 (defRevCompFunPiPi (A : U) {B : U} {φ : B ⟿ U} (G : Π φ) :
@@ -237,7 +237,7 @@ class HasCompFunPiPi (U : Universe) [HasEmbeddedFunctors U] [HasDependentFunctor
 
 namespace HasCompFunPiPi
 
-  variable {U : Universe} [HasEmbeddedFunctors U] [HasDependentFunctors U U U]
+  variable {U : Universe} [HasInternalFunctors U] [HasDependentFunctors U U U]
            [HasPiCompFunProp U U U U U] [HasCompFunPiPi U]
 
   @[reducible] def revCompFunPiPi (A : U) {B : U} {φ : B ⟿ U} (G : Π φ) :

@@ -23,7 +23,7 @@ set_option autoBoundImplicitLocal false
 
 
 
-variable {U : Universe} [HasIdentity U] [HasEmbeddedFunctors U] [HasFullFunOp U]
+variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U]
 
 def testRaw (A B : U) (F : A ⟶ B) : A ⟶ B := by makeFunctor (HasFunctors.apply F)
 #print testRaw

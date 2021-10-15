@@ -34,7 +34,7 @@ namespace HasLinearFunOp
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun
 
-  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasEmbeddedFunctors U] [HasLinearFunOp U]
+  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasLinearFunOp U]
 
   class HasLinearFunExt where
   (rightId {A B : U} (F : A ⟶ B) : F • idFun A ≃[λ _ => byArgDef • byDef] F)
@@ -121,7 +121,7 @@ namespace HasAffineFunOp
 
   open MetaRelation HasFunctors HasCongrArg HasLinearFunOp HasSubLinearFunOp
 
-  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasEmbeddedFunctors U] [HasAffineFunOp U]
+  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasAffineFunOp U]
 
   class HasAffineFunExt extends HasLinearFunExt U where
   (rightConst (A : U) {B C : U} (b : B) (F : B ⟶ C) : F • constFun A b
@@ -155,7 +155,7 @@ namespace HasFullFunOp
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp
 
-  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasEmbeddedFunctors U] [HasFullFunOp U]
+  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasFullFunOp U]
 
   class HasFullFunExt extends HasAffineFunExt U where
   (dupSwap {A B : U} (F : A ⟶ A ⟶ B) : dupFun (swapFunFun F)
@@ -215,4 +215,4 @@ end HasFullFunOp
 
 
 class HasStandardFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
-  HasEmbeddedFunctors U, HasFullFunOp U, HasFullFunOp.HasFullFunExt U : Type (max u iu)
+  HasInternalFunctors U, HasFullFunOp U, HasFullFunOp.HasFullFunExt U : Type (max u iu)

@@ -69,12 +69,12 @@ namespace unit
     HasTrivialExtensionality unit V :=
   ⟨λ e => e inst⟩
 
-  -- Embedded functors are given by `hasInFunctors` due to its priority.
+  -- Internal functors are given by `hasInFunctors` due to its priority.
 
-  instance hasEmbeddedFunctors : HasEmbeddedFunctors unit := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors unit := ⟨⟩
   instance hasStandardFunctors : HasStandardFunctors unit := ⟨⟩
 
---  instance hasEmbeddedTopType : HasEmbeddedType unit True := ⟨Equiv.refl ⌈Inst⌉⟩
+--  instance hasInternalTopType : HasEmbeddedType unit True := ⟨Equiv.refl ⌈Inst⌉⟩
 --
 --  instance hasTop : HasTop unit := ⟨⟩
 --
@@ -84,7 +84,7 @@ namespace unit
 --    leftInv  := λ _ => rfl,
 --    rightInv := λ ⟨_, _⟩ => rfl }
 --
---  instance hasEmbeddedRightProductType {U : Universe.{u}} (A : U) (B : unit) : HasEmbeddedType U (A ⊓' B) :=
+--  instance hasInternalRightProductType {U : Universe.{u}} (A : U) (B : unit) : HasEmbeddedType U (A ⊓' B) :=
 --  ⟨rightProdEquiv A B⟩
 --
 --  instance hasRightProducts (U : Universe.{u}) : HasProducts U unit U := ⟨⟩
@@ -95,7 +95,7 @@ namespace unit
 --    leftInv  := λ _ => rfl,
 --    rightInv := λ ⟨_, _⟩ => rfl }
 --
---  instance hasEmbeddedLeftProductType {U : Universe.{u}} (A : unit) (B : U) : HasEmbeddedType U (A ⊓' B) :=
+--  instance hasInternalLeftProductType {U : Universe.{u}} (A : unit) (B : U) : HasEmbeddedType U (A ⊓' B) :=
 --  ⟨leftProdEquiv A B⟩
 --
 --  instance hasLeftProducts (U : Universe.{u}) : HasProducts unit U U := ⟨⟩
@@ -113,7 +113,7 @@ namespace unit
 --    leftInv  := inst.unique,
 --    rightInv := λ E => Eq.symm (unitEquivalence.unique E) }
 --
---  instance hasEmbeddedEquivType (A B : unit) : HasEmbeddedType unit (A ⟷' B) :=
+--  instance hasInternalEquivType (A B : unit) : HasEmbeddedType unit (A ⟷' B) :=
 --  ⟨equivEquiv A B⟩
 --
 --  instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences unit unit unit := ⟨⟩
@@ -136,7 +136,7 @@ namespace unit
 --    leftInv  := inst.unique,
 --    rightInv := λ F => Eq.symm (dependentUnitFunctor.unique F) }
 --
---  instance hasEmbeddedDependentInFunctorType {U : Universe.{u}} {A : U} (φ : A ⟿ unit) :
+--  instance hasInternalDependentInFunctorType {U : Universe.{u}} {A : U} (φ : A ⟿ unit) :
 --    HasEmbeddedType unit (Π' φ) :=
 --  ⟨inPiEquiv φ⟩
 --
@@ -152,7 +152,7 @@ namespace unit
 --    leftInv  := λ _ => rfl,
 --    rightInv := λ ⟨_, _⟩ => rfl }
 --
---  instance hasEmbeddedDependentOutFunctorType {A : unit} {U : Universe.{u}} (φ : A ⟿ U) :
+--  instance hasInternalDependentOutFunctorType {A : unit} {U : Universe.{u}} (φ : A ⟿ U) :
 --    HasEmbeddedType U (Π' φ) :=
 --  ⟨outPiEquiv φ⟩
 --
@@ -166,7 +166,7 @@ namespace unit
 --    leftInv  := λ _ => rfl,
 --    rightInv := λ ⟨_, _⟩ => rfl }
 --
---  instance hasEmbeddedDependentRightProductType {U : Universe.{u}} {A : U} (φ : A ⟿ unit) :
+--  instance hasInternalDependentRightProductType {U : Universe.{u}} {A : U} (φ : A ⟿ unit) :
 --    HasEmbeddedType U (Σ' φ) :=
 --  ⟨rightSigmaEquiv φ⟩
 --
@@ -178,7 +178,7 @@ namespace unit
 --    leftInv  := λ _ => rfl,
 --    rightInv := λ ⟨_, _⟩ => rfl }
 --
---  instance hasEmbeddedDependentLeftProductType {A : unit} {U : Universe.{u}} (φ : A ⟿ U) :
+--  instance hasInternalDependentLeftProductType {A : unit} {U : Universe.{u}} (φ : A ⟿ U) :
 --    HasEmbeddedType U (Σ' φ) :=
 --  ⟨leftSigmaEquiv φ⟩
 --
@@ -195,7 +195,7 @@ namespace boolean
   instance hasIdentity' : HasIdentity' boolean unit :=
   ⟨λ A => unit.unitEq ⌈A⌉⟩
 
-  -- Embedded functors in `boolean` are defined as implication.
+  -- Internal functors in `boolean` are defined as implication.
 
   instance hasFunctors : HasFunctors boolean boolean boolean :=
   { Fun   := λ a b => cond a b true,
@@ -212,7 +212,7 @@ namespace boolean
   instance hasCongrArg : HasCongrArg boolean boolean :=
   ⟨λ {_ _} _ {_ _} _ => inst⟩
 
-  instance hasEmbeddedFunctors : HasEmbeddedFunctors boolean := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors boolean := ⟨⟩
 
   instance hasTrivialExtensionality : HasTrivialExtensionality boolean boolean :=
   ⟨λ _ => inst⟩
@@ -250,7 +250,7 @@ namespace sort
 --    leftInv  := λ _ => rfl,
 --    rightInv := λ ⟨_, _⟩ => rfl }
 --
---  instance hasEmbeddedDependentFunctorType {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) :
+--  instance hasInternalDependentFunctorType {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) :
 --    HasEmbeddedType sort.{imax u v} (Π' φ) :=
 --  ⟨piEquiv φ⟩
 --
@@ -271,11 +271,11 @@ theorem Exists.prop.snd {p : Prop} {q : p → Prop} : (e : ∃ h, q h) → q (Ex
 
 namespace prop
 
-  instance hasEmbeddedTopType : HasEmbeddedType prop True := ⟨Equiv.refl True⟩
+  instance hasInternalTopType : HasEmbeddedType prop True := ⟨Equiv.refl True⟩
 
   instance hasTop : HasTop prop := ⟨⟩
 
-  instance hasEmbeddedBotType : HasEmbeddedType prop False := ⟨Equiv.refl False⟩
+  instance hasInternalBotType : HasEmbeddedType prop False := ⟨Equiv.refl False⟩
 
   instance hasBot : HasBot prop := ⟨⟩
 
@@ -288,7 +288,7 @@ namespace prop
     leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
+  instance hasInternalProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
   ⟨prodEquiv p q⟩
 
   instance hasProducts : HasProducts prop prop prop := ⟨⟩
@@ -301,7 +301,7 @@ namespace prop
     leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ ⟨_, _, _⟩ => by simp; exact HEq.rfl }
 
-  instance hasEmbeddedEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
+  instance hasInternalEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
   ⟨equivEquiv p q⟩
 
   instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences prop prop prop := ⟨⟩
@@ -312,7 +312,7 @@ namespace prop
     leftInv  := λ _ => proofIrrel _ _,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentProductType {p : prop} (φ : p ⟿ prop) :
+  instance hasInternalDependentProductType {p : prop} (φ : p ⟿ prop) :
     HasEmbeddedType prop (Σ' φ) :=
   ⟨sigmaEquiv φ⟩
 
@@ -336,7 +336,7 @@ namespace type
     leftInv  := λ () => rfl,
     rightInv := λ _  => proofIrrel _ _ }
 
-  instance hasEmbeddedTopType : HasEmbeddedType type True := ⟨topEquiv⟩
+  instance hasInternalTopType : HasEmbeddedType type True := ⟨topEquiv⟩
 
   instance hasTop : HasTop type := ⟨⟩
 
@@ -346,11 +346,11 @@ namespace type
     leftInv  := λ e => Empty.elim e,
     rightInv := λ _ => proofIrrel _ _ }
 
-  instance hasEmbeddedBotType : HasEmbeddedType type False := ⟨botEquiv⟩
+  instance hasInternalBotType : HasEmbeddedType type False := ⟨botEquiv⟩
 
   instance hasBot : HasBot type := ⟨⟩
 
-  noncomputable def byContradiction (α : type) (f : HasEmbeddedBot.Not (HasEmbeddedBot.Not α)) : α :=
+  noncomputable def byContradiction (α : type) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
   Classical.choice (Classical.byContradiction (λ h => Empty.elim (f (λ a => False.elim (h ⟨a⟩)))))
 
   noncomputable instance hasClassicalLogic : HasClassicalLogic type :=
@@ -362,7 +362,7 @@ namespace type
     leftInv  := λ (_, _) => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedProductType (α β : type) : HasEmbeddedType type (α ⊓' β) :=
+  instance hasInternalProductType (α β : type) : HasEmbeddedType type (α ⊓' β) :=
   ⟨prodEquiv α β⟩
 
   instance hasProducts : HasProducts type type type := ⟨⟩
@@ -391,7 +391,7 @@ namespace type
     leftInv  := λ ⟨_, _, _, _⟩ => rfl,
     rightInv := λ ⟨_, _, _⟩ => rfl }
 
-  instance hasEmbeddedEquivType (α β : type) : HasEmbeddedType type (α ⟷' β) :=
+  instance hasInternalEquivType (α β : type) : HasEmbeddedType type (α ⟷' β) :=
   ⟨equivEquiv α β⟩
 
   instance hasEquivalences : HasEquivalences type type type := ⟨⟩
@@ -450,7 +450,7 @@ namespace type
     leftInv  := λ ⟨_, _⟩ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedDependentProductType {α : type} (φ : α ⟿ type) :
+  instance hasInternalDependentProductType {α : type} (φ : α ⟿ type) :
     HasEmbeddedType type (Σ' φ) :=
   ⟨sigmaEquiv φ⟩
 
@@ -462,7 +462,7 @@ namespace type
     leftInv  := λ ⟨_, _⟩ => rfl,
     rightInv := λ ⟨_, _⟩ => rfl }
 
-  instance hasEmbeddedSubtypeType {α : type} (φ : α ⟿ prop) :
+  instance hasInternalSubtypeType {α : type} (φ : α ⟿ prop) :
     HasEmbeddedType type (Σ' φ) :=
   ⟨subtypeEquiv φ⟩
 

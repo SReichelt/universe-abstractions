@@ -60,7 +60,7 @@ namespace CommSemigroup
 
   instance hasCongrArg : HasCongrArg univ univ := sorry
 
-  instance hasEmbeddedFunctors : HasEmbeddedFunctors univ := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors univ := ⟨⟩
 
   @[simp] theorem simp_op_arg {A B : univ} (F : A ⟶ B) (a₁ a₂ : A) : F (op a₁ a₂) = op (F a₁) (F a₂) :=
   simp_op_arg' F a₁ a₂

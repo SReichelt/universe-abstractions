@@ -78,8 +78,8 @@ end HasSigmaProdEquiv
 
 
 
-class HasEmbeddedDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasDependentFunctors.{u, v, v, w} U V V]
-                                   [HasEmbeddedFunctors V] [HasFunProp U V V V]
+class HasInternalDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasDependentFunctors.{u, v, v, w} U V V]
+                                   [HasInternalFunctors V] [HasFunProp U V V V]
   extends HasDependentProducts.{u, v, w, v} U V V where
 (defIntroFun   {A : U} (φ : A ⟿ V) (a : A)                                   :
    φ a ⟶[λ b => HasDependentProducts.intro a b] (Σ φ))
@@ -90,14 +90,14 @@ class HasEmbeddedDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasDep
 (defElimFunFun {A : U} (φ : A ⟿ V) (C : V)                                   :
    (Π {φ ⟶ A{C}}) ⟶[λ F => defElimFun F] ((Σ φ) ⟶ C))
 
-namespace HasEmbeddedDependentProducts
+namespace HasInternalDependentProducts
 
-  variable {U V : Universe} [HasDependentFunctors U V V] [HasEmbeddedFunctors V] [HasFunProp U V V V]
-           [HasEmbeddedDependentProducts U V]
+  variable {U V : Universe} [HasDependentFunctors U V V] [HasInternalFunctors V] [HasFunProp U V V V]
+           [HasInternalDependentProducts U V]
 
   @[reducible] def introFun {A : U} (φ : A ⟿ V) (a : A) : φ a ⟶ Σ φ := defIntroFun φ a
   @[reducible] def introFunPi {A : U} (φ : A ⟿ V) : Π {φ ⟶ A{Σ φ}} := defIntroFunPi φ
   @[reducible] def elimFun {A : U} {φ : A ⟿ V} {C : V} (F : Π {φ ⟶ A{C}}) : (Σ φ) ⟶ C := defElimFun F
   @[reducible] def elimFunFun {A : U} (φ : A ⟿ V) (C : V) : (Π {φ ⟶ A{C}}) ⟶ ((Σ φ) ⟶ C) := defElimFunFun φ C
 
-end HasEmbeddedDependentProducts
+end HasInternalDependentProducts

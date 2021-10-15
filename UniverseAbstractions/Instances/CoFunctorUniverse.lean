@@ -56,7 +56,7 @@ namespace coFunctorUniverse
       (B ⟶! A) ⟶ (C ⟶! A) :=
     G
 
-    variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasEmbeddedFunctors U]
+    variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasInternalFunctors U]
              [HasLinearFunOp U]
 
     instance hasIndependentCongrArg : HasCongrArg (U {⟶ A}) (U {⟶ A}) :=
