@@ -73,13 +73,13 @@
 
 In this document, we describe a mathematical framework to automate proofs that follow from structural
 properties. Such automation can be implemented in theorem provers, and in fact this document is
-largely intended as documentation for the accompanying formalization in Lean 4\cite{lean4}.
+largely intended as documentation for the accompanying formalization in Lean 4 \cite{lean4}.
 At the same time, the algorithms are simple enough to be carried out by hand, and quite often the
 existence of an algorithm can be used to prove a result without actually executing the algorithm, so
 our results can be useful for informal mathematics as well.
 
 The framework is built around the realization that categories and functors form a simply-typed lambda
-calculus\cite{simply-typed-lambda-calculus} when objects are regarded up to isomorphism, because
+calculus \cite{simply-typed-lambda-calculus} when objects are regarded up to isomorphism, because
 functors corresponding to the $\nm{S}$ and $\nm{K}$ combinators exist (theorem
 \ref{thm:funop}).\footnote{This is different from the interpretation of simply-typed lambda calculus
 as the internal logic of a Cartesian closed category, mainly due to the different interpretation of
@@ -98,7 +98,7 @@ for a sufficiently `generic' $a$ (which we make precise), then $F$ and $G$ are n
 The main goal is to automate proofs of isomorphism invariance in a similar way, but this is work in
 progress.
 
-The framework is influenced by ideas from Homotopy Type Theory\cite{hottbook}, but it is built on
+The framework is influenced by ideas from Homotopy Type Theory \cite{hottbook}, but it is built on
 conventional mathematical foundations: in this document, we work in Zermelo-Fraenkel (ZF) set
 theory with universes, whereas the Lean formalization is directly based on the Calculus of Inductive
 Constructions implemented in Lean, without assuming any additional axioms. When we use
@@ -112,7 +112,7 @@ Although we specifically work in Zermelo-Fraenkel (ZF) set theory with (a finite
 Grothendieck universes, we will ignore all issues related to the sizes of collections.
 Explicit universe constraints are given in the Lean formalization. Since the logic
 implemented in Lean has been proved to be equiconsistent with ZF plus choice and a finite
-number of inaccessible cardinals\cite{lean-type-theory}, it is safe to assume that analogous
+number of inaccessible cardinals \cite{lean-type-theory}, it is safe to assume that analogous
 constraints are sufficient in the latter.
 
 Therefore, we reserve the word `universe' for our own use except where specified otherwise:
@@ -141,7 +141,7 @@ The words `universe', `type', and `instance' do not carry any meaning beyond wha
 It is important to distinguish between ``$a : A$'' and ``$a \in A$'' because $A$ may in fact be a
 set that is different from $S_A.$\footnote{$A$ is always a set in ZF in theory, but in our case it
 may also be a set in practice.} This difference can be regarded as an indirection, similarly to
-Tarski-style universes in type theory\cite{tarski}.
+Tarski-style universes in type theory \cite{tarski}.
 
 Since the definition of a universe does not contain any axioms about types and instances, there
 are a lot of examples of such universes. Fix a Grothendieck universe $U.$
@@ -172,8 +172,8 @@ are a lot of examples of such universes. Fix a Grothendieck universe $U.$
 
 Furthermore, we define two specific universes of interest:
 \begin{itemize}
-  \item $\Bool := \Set_{\{0, 1\}}$, where $0$ and $1$ are to be understood as von Neumann
-  ordinals\cite{von-neumann-ordinals}, so that $0$ is an empty type and $1$ is a type with a single
+  \item $\Bool := \Set_{\{0, 1\}}$, where $0$ and $1$ are to be understood as von Neumann ordinals
+  \cite{von-neumann-ordinals}, so that $0$ is an empty type and $1$ is a type with a single
   instance $\emptyset : 1.$\footnote{In the Lean formalization of this theory, we have two different universes
   corresponding to the Lean types \Lean{Bool} and \Lean{Prop}. Both of them map to $\Bool$ in this document.}
   \item $\Unit := \Set_{\{1\}}.$
@@ -565,8 +565,8 @@ Finally, we can apply transitivity twice to arrive at
   $F : A \to B$ is functorial, and also that this application functor is functorial in
   $a.$
 
-  Moreover, all of these functors can in fact be regarded as combinators\cite{combinators}
-  in a simply-typed lambda calculus\cite{simply-typed-lambda-calculus}, so we use
+  Moreover, all of these functors can in fact be regarded as combinators \cite{combinators}
+  in a simply-typed lambda calculus \cite{simply-typed-lambda-calculus}, so we use
   established names for these combinators as much as possible.
 \end{remarks}
 
@@ -676,7 +676,7 @@ a universe with linear functor operations.)
     \item For $\Bool,$ we can show that all functors exist by doing a case-by-case
     analysis on the types $A,B,\ldots$ being either $0$ or $1.$ This can be simplified by
     treating ``$\to$'' as implication and observing that all implications hold, or even
-    further by applying the Curry-Howard correspondence\cite{curry-howard}.\\
+    further by applying the Curry-Howard correspondence \cite{curry-howard}.\\
     Since $\Bool$ has instance equivalences in $\Unit,$ those are trivially satisfied.
     %
     \item The functors of $\Set$ are just functions. Since functions are
@@ -784,7 +784,7 @@ functor operations, we will now describe an algorithm to prove functoriality
 automatically, i.e.\ to obtain a functor that matches a given definition.
 
 This algorithm is actually just a slight adaptation of the well-known algorithm to
-transform lambda abstractions into terms built from combinators\cite{combinators}. In a
+transform lambda abstractions into terms built from combinators \cite{combinators}. In a
 simply-typed lambda calculus, this algorithm always terminates. So as long as one is
 not interested in the specific behavior of the functor (beyond how it maps instances),
 there is no need to execute the algorithm explicitly -- verifying the preconditions
