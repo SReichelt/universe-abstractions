@@ -19,7 +19,7 @@ universe u iu
 -- values, we demand that these functors are equivalent.
 --
 -- For SKI calculus, a list of sufficient axioms is given in
--- https://www.cin.ufpe.br/~djo/files/Lambda-Calculus%20and%20Combinators.pdf, definition 8.10.
+-- Hindley/Seldin: Lambda-Calculus and Combinators: An Introduction, definition 8.10.
 -- The axioms roughly correspond to the following axioms/definitions in this file and
 -- `DerivedFunctorExtensionality.lean`:
 -- * E-ax 1: `substConst`/`rightConst`

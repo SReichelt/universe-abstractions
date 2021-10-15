@@ -198,7 +198,7 @@ namespace boolean
   -- Embedded functors in `boolean` are defined as implication.
 
   instance hasFunctors : HasFunctors boolean boolean boolean :=
-  { Fun   := λ a b => !a || b,
+  { Fun   := λ a b => cond a b true,
     apply := λ {a b} hF ha => match a with
                               | true  => hF
                               | false => False.elim ha }

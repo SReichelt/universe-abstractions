@@ -423,8 +423,8 @@ namespace optionalFunctorUniverse
                       | _,       _       => empty,
     apply := λ {β γ} => match β, γ with
                         | const B, const C => λ (G : B ⟶ C)   (b : B)  => G b
-                        | fn AB,   fn AC   => λ (G : AB ⟶ AC) (F : AB) => G F
                         | const B, fn AC   => λ (G : B ⟶ AC)  (b : B)  => G b
+                        | fn AB,   fn AC   => λ (G : AB ⟶ AC) (F : AB) => G F
                         | idFn,    _       => λ G _ => G
                         | const _, idFn    => PEmpty.elim
                         | fn _,    const _ => PEmpty.elim
@@ -436,8 +436,8 @@ namespace optionalFunctorUniverse
   noncomputable instance hasCongrArg : HasCongrArg ({A ⟶}? U) ({A ⟶}? U) :=
   ⟨λ {β γ} => match β, γ with
               | const B, const C => λ (G : B ⟶ C)   {_ _} h => congrArg G h
-              | fn AB,   fn AC   => λ (G : AB ⟶ AC) {_ _} h => congrArg G h
               | const B, fn AC   => λ (G : B ⟶ AC)  {_ _} h => congrArg G h
+              | fn AB,   fn AC   => λ (G : AB ⟶ AC) {_ _} h => congrArg G h
               | idFn,    _       => λ G {_ _} _ => HasRefl.refl G
               | const _, idFn    => λ G => PEmpty.elim G
               | fn _,    const _ => λ G => PEmpty.elim G
