@@ -2,11 +2,41 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
+import UniverseAbstractions.Axioms.Universe.Singletons
 
 
 
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
+
+universe u
+
+
+
+namespace unit
+
+  open MetaRelation
+
+  def unitEq (α : Sort u) : EquivalenceRelation α unit :=
+  { R := unitRelation α Inst,
+    h := unitEquivalence α inst }
+
+end unit
+
+class HasTrivialIdentity (U : Universe)
+
+namespace HasTrivialIdentity
+
+  instance hasIdentity' (U : Universe) [HasTrivialIdentity U] :
+    HasIdentity' U unit :=
+  ⟨λ A => unit.unitEq ⌈A⌉⟩
+
+  instance hasCongrArg (U V : Universe) [HasIdentity U] [HasTrivialIdentity V]
+                       {UV : Universe} [HasFunctors U V UV] :
+    HasCongrArg U V :=
+  ⟨λ {_ _} _ {_ _} _ => unit.inst⟩
+
+end HasTrivialIdentity
 
 
 
@@ -55,6 +85,13 @@ namespace HasTrivialFunctoriality
   { defDupFun    := λ _   => defFun,
     defDupFunFun := λ _ _ => defFun }
 
+  instance hasInternalTop [HasTop U] : HasInternalTop U :=
+  { defElimFun    := λ _ => defFun,
+    defElimFunFun := λ _ => defFun }
+
+  instance hasInternalBot [HasBot U] : HasInternalBot U :=
+  { defElimFun := λ _ => defFun }
+
 end HasTrivialFunctoriality
 
 
@@ -64,6 +101,11 @@ class HasTrivialExtensionality (U V : Universe) [HasIdentity V] {UV : Universe} 
 (mkFunEq {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : ∀ a, F₁ a ≃ F₂ a) : F₁ ≃[e] F₂)
 
 namespace HasTrivialExtensionality
+
+  instance fromTrivialIdentity (U V : Universe) [HasIdentity V] {UV : Universe} [HasTrivialIdentity UV]
+                               [HasFunctors U V UV] :
+    HasTrivialExtensionality U V :=
+  ⟨λ _ => unit.inst⟩
 
   def funEq {U V : Universe} [HasIdentity V] {UV : Universe} [HasIdentity UV]
             [HasFunctors U V UV] [h : HasTrivialExtensionality U V]

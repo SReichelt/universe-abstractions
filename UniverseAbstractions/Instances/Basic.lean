@@ -18,7 +18,7 @@ import mathlib4_experiments.Data.Equiv.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v
+universe u v w
 
 
 
@@ -26,14 +26,9 @@ namespace unit
 
   open MetaRelation
 
-  def unitEq (α : Sort u) : EquivalenceRelation α unit :=
-  { R := unitRelation α Inst,
-    h := unitEquivalence α inst }
-
   -- `unit` has instance equivalences in `unit`.
 
-  instance hasIdentity' : HasIdentity' unit unit :=
-  ⟨λ A => unitEq ⌈A⌉⟩
+  instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨⟩
 
   -- Functors into `unit` are trivial.
 
@@ -44,12 +39,6 @@ namespace unit
   instance hasTrivialInFunctoriality (U : Universe.{u}) : HasTrivialFunctoriality U unit :=
   ⟨λ _ => { F   := inst,
             eff := λ _ => inst }⟩
-
-  instance hasInCongrArg (U : Universe.{u}) [HasIdentity U] : HasCongrArg U unit :=
-  ⟨λ {_ _} _ {_ _} _ => inst⟩
-
-  instance hasTrivialInExtensionality (U : Universe.{u}) : HasTrivialExtensionality U unit :=
-  ⟨λ _ => inst⟩
 
   -- Functors from `unit` to `V` are the same as instances of `V`.
 
@@ -62,22 +51,23 @@ namespace unit
   ⟨λ f => { F   := f inst,
             eff := λ _ => HasRefl.refl (f inst) }⟩
 
-  instance hasOutCongrArg (V : Universe.{v}) [HasIdentity V] : HasCongrArg unit V :=
-  ⟨λ {_ _} F {_ _} _ => HasRefl.refl F⟩
-
-  instance hasTrivialOutExtensionality (V : Universe.{v}) [HasIdentity V] :
-    HasTrivialExtensionality unit V :=
-  ⟨λ e => e inst⟩
-
   -- Internal functors are given by `hasInFunctors` due to its priority.
 
   instance hasInternalFunctors : HasInternalFunctors unit := ⟨⟩
   instance hasStandardFunctors : HasStandardFunctors unit := ⟨⟩
 
---  instance hasInternalTopType : HasEmbeddedType unit True := ⟨Equiv.refl ⌈Inst⌉⟩
---
---  instance hasTop : HasTop unit := ⟨⟩
---
+  instance hasTop : HasTop unit :=
+  { T     := Inst,
+    t     := inst,
+    topEq := λ _ => inst }
+
+  instance hasBot : HasBot unit :=
+  { B    := Inst,
+    elim := λ _ _ => inst }
+
+  instance hasClassicalLogic : HasClassicalLogic unit :=
+  { byContradictionFun := λ _ => inst }
+
 --  def rightProdEquiv {U : Universe.{u}} (A : U) (B : unit) : ⌈A⌉ ≃ (A ⊓' B) :=
 --  { toFun    := λ a => ⟨a, inst⟩,
 --    invFun   := λ P => P.fst,
@@ -190,10 +180,11 @@ end unit
 
 namespace boolean
 
+  open MetaRelation
+
   -- `boolean` has instance equivalences in `unit`.
 
-  instance hasIdentity' : HasIdentity' boolean unit :=
-  ⟨λ A => unit.unitEq ⌈A⌉⟩
+  instance hasTrivialIdentity : HasTrivialIdentity boolean := ⟨⟩
 
   -- Internal functors in `boolean` are defined as implication.
 
@@ -209,15 +200,26 @@ namespace boolean
                          | false => inst,
                   eff := λ _ => inst }⟩
 
-  instance hasCongrArg : HasCongrArg boolean boolean :=
-  ⟨λ {_ _} _ {_ _} _ => inst⟩
-
   instance hasInternalFunctors : HasInternalFunctors boolean := ⟨⟩
-
-  instance hasTrivialExtensionality : HasTrivialExtensionality boolean boolean :=
-  ⟨λ _ => inst⟩
-
   instance hasStandardFunctors : HasStandardFunctors boolean := ⟨⟩
+
+  -- `Top` is `true` and `Bot` is `false`.
+
+  instance hasTop : HasTop boolean :=
+  { T     := True,
+    t     := inst,
+    topEq := λ _ => unit.inst }
+
+  instance hasBot : HasBot boolean :=
+  { B    := False,
+    elim := False.elim }
+
+  -- `boolean` has classical logic without assuming choice.
+
+  instance hasClassicalLogic : HasClassicalLogic boolean :=
+  { byContradictionFun := λ b => match b with
+                                 | true  => inst
+                                 | false => inst }
 
 end boolean
 
@@ -260,9 +262,6 @@ namespace sort
 
 end sort
 
--- TODO: Adapt
-#exit
-
 theorem Exists.prop.fst {p : Prop} {q : p → Prop} : (∃ h, q h) → p
 | ⟨h, _⟩ => h
 
@@ -271,201 +270,206 @@ theorem Exists.prop.snd {p : Prop} {q : p → Prop} : (e : ∃ h, q h) → q (Ex
 
 namespace prop
 
-  instance hasInternalTopType : HasEmbeddedType prop True := ⟨Equiv.refl True⟩
+  instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨⟩
 
-  instance hasTop : HasTop prop := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors prop := ⟨⟩
+  instance hasStandardFunctors : HasStandardFunctors prop := ⟨⟩
 
-  instance hasInternalBotType : HasEmbeddedType prop False := ⟨Equiv.refl False⟩
+  -- `Top` is `True`, `Bot` is `False`.
 
-  instance hasBot : HasBot prop := ⟨⟩
+  instance hasTop : HasTop prop :=
+  { T     := True,
+    t     := trivial,
+    topEq := λ _ => unit.inst }
+
+  instance hasBot : HasBot prop :=
+  { B    := False,
+    elim := False.elim }
+
+  -- `prop` has classical logic via choice.
 
   instance hasClassicalLogic : HasClassicalLogic prop :=
   { byContradictionFun := @Classical.byContradiction }
 
-  def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
-  { toFun    := λ h => ⟨h.left, h.right⟩,
-    invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ _ => proofIrrel _ _,
-    rightInv := λ ⟨_, _⟩ => rfl }
-
-  instance hasInternalProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
-  ⟨prodEquiv p q⟩
-
-  instance hasProducts : HasProducts prop prop prop := ⟨⟩
-
-  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop prop := ⟨⟩
-
-  def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
-  { toFun    := λ h => ⟨h.mp, h.mpr, trivial⟩,
-    invFun   := λ E => ⟨E.toFun, E.invFun⟩,
-    leftInv  := λ _ => proofIrrel _ _,
-    rightInv := λ ⟨_, _, _⟩ => by simp; exact HEq.rfl }
-
-  instance hasInternalEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
-  ⟨equivEquiv p q⟩
-
-  instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences prop prop prop := ⟨⟩
-
-  def sigmaEquiv {p : prop} (φ : p ⟿ prop) : (∃ a, φ a) ≃ (Σ' φ) :=
-  { toFun    := λ h => ⟨Exists.prop.fst h, Exists.prop.snd h⟩,
-    invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ _ => proofIrrel _ _,
-    rightInv := λ ⟨_, _⟩ => rfl }
-
-  instance hasInternalDependentProductType {p : prop} (φ : p ⟿ prop) :
-    HasEmbeddedType prop (Σ' φ) :=
-  ⟨sigmaEquiv φ⟩
-
-  instance hasDependentProducts : HasDependentProducts prop prop prop := ⟨⟩
-
-end prop
-
-theorem Equiv.trans_symm_trans {α : Sort u} {β : Sort v} {γ : Sort w} (e : α ≃ β) (f : α ≃ γ) :
-  trans (trans e (symm e)) f = f :=
-by simp
-
-theorem Equiv.symm_trans_trans {α : Sort u} {β : Sort v} {γ : Sort w} (e : α ≃ β) (f : β ≃ γ) :
-  trans (trans (symm e) e) f = f :=
-by simp
+--  def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
+--  { toFun    := λ h => ⟨h.left, h.right⟩,
+--    invFun   := λ P => ⟨P.fst, P.snd⟩,
+--    leftInv  := λ _ => proofIrrel _ _,
+--    rightInv := λ ⟨_, _⟩ => rfl }
+--
+--  instance hasInternalProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
+--  ⟨prodEquiv p q⟩
+--
+--  instance hasProducts : HasProducts prop prop prop := ⟨⟩
+--
+--  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop prop := ⟨⟩
+--
+--  def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
+--  { toFun    := λ h => ⟨h.mp, h.mpr, trivial⟩,
+--    invFun   := λ E => ⟨E.toFun, E.invFun⟩,
+--    leftInv  := λ _ => proofIrrel _ _,
+--    rightInv := λ ⟨_, _, _⟩ => by simp; exact HEq.rfl }
+--
+--  instance hasInternalEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
+--  ⟨equivEquiv p q⟩
+--
+--  instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences prop prop prop := ⟨⟩
+--
+--  def sigmaEquiv {p : prop} (φ : p ⟿ prop) : (∃ a, φ a) ≃ (Σ' φ) :=
+--  { toFun    := λ h => ⟨Exists.prop.fst h, Exists.prop.snd h⟩,
+--    invFun   := λ P => ⟨P.fst, P.snd⟩,
+--    leftInv  := λ _ => proofIrrel _ _,
+--    rightInv := λ ⟨_, _⟩ => rfl }
+--
+--  instance hasInternalDependentProductType {p : prop} (φ : p ⟿ prop) :
+--    HasEmbeddedType prop (Σ' φ) :=
+--  ⟨sigmaEquiv φ⟩
+--
+--  instance hasDependentProducts : HasDependentProducts prop prop prop := ⟨⟩
+--
+--end prop
 
 namespace type
 
-  def topEquiv : Unit ≃ True :=
-  { toFun    := λ _  => trivial,
-    invFun   := λ _  => (),
-    leftInv  := λ () => rfl,
-    rightInv := λ _  => proofIrrel _ _ }
+  instance hasIdentity' : HasIdentity' type.{u} prop :=
+  ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
 
-  instance hasInternalTopType : HasEmbeddedType type True := ⟨topEquiv⟩
+  instance hasCongrArg : HasCongrArg type.{u} type.{u} :=
+  ⟨λ f => congrArg f⟩
 
-  instance hasTop : HasTop type := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors type.{u} := ⟨⟩
 
-  def botEquiv : Empty ≃ False :=
-  { toFun    := Empty.elim,
-    invFun   := False.elim,
-    leftInv  := λ e => Empty.elim e,
-    rightInv := λ _ => proofIrrel _ _ }
+  instance hasTrivialExtensionality : HasTrivialExtensionality type.{u} type.{u} :=
+  ⟨funext⟩
 
-  instance hasInternalBotType : HasEmbeddedType type False := ⟨botEquiv⟩
+  instance hasStandardFunctors : HasStandardFunctors type.{u} := ⟨⟩
 
-  instance hasBot : HasBot type := ⟨⟩
+  instance hasTop : HasTop type.{u} :=
+  { T     := PUnit.{u + 1},
+    t     := PUnit.unit,
+    topEq := λ t' => by induction t'; rfl }
 
-  noncomputable def byContradiction (α : type) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
-  Classical.choice (Classical.byContradiction (λ h => Empty.elim (f (λ a => False.elim (h ⟨a⟩)))))
+  -- TODO: Remove `noncomputable` if problem with `PEmpty.elim` can be solved.
+  noncomputable instance hasBot : HasBot type.{u} :=
+  { B    := PEmpty.{u + 1},
+    elim := PEmpty.elim }
 
-  noncomputable instance hasClassicalLogic : HasClassicalLogic type :=
+  noncomputable def byContradiction (α : type.{u}) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
+  Classical.choice (Classical.byContradiction (λ h => PEmpty.elim (f (λ a => False.elim (h ⟨a⟩)))))
+
+  noncomputable instance hasClassicalLogic : HasClassicalLogic type.{u} :=
   { byContradictionFun := byContradiction }
 
-  def prodEquiv (α β : type) : Prod α β ≃ (α ⊓' β) :=
-  { toFun    := λ p => ⟨p.fst, p.snd⟩,
-    invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ (_, _) => rfl,
-    rightInv := λ ⟨_, _⟩ => rfl }
-
-  instance hasInternalProductType (α β : type) : HasEmbeddedType type (α ⊓' β) :=
-  ⟨prodEquiv α β⟩
-
-  instance hasProducts : HasProducts type type type := ⟨⟩
-
-  theorem prodExt {α β : type} {p q : Prod α β} (hFst : p.fst = q.fst) (hSnd : p.snd = q.snd) :
-    p = q :=
-  by induction p; induction q; simp [hFst, hSnd]
-
-  class DefEquiv {α β : type} (toFun : α → β) (invFun : β → α) : Prop where
-  (leftInv  : ∀ a, invFun (toFun a) = a)
-  (rightInv : ∀ b, toFun (invFun b) = b)
-
-  instance hasEquivalenceCondition : HasEquivalenceCondition type type := ⟨DefEquiv⟩
-
-  @[reducible] def DefEquiv.fromEquiv {α β : type} (e : ⌈α⌉ ≃ ⌈β⌉) : α ⟷[sort.toFunctor e.toFun, sort.toFunctor e.invFun] β :=
-  ⟨e.leftInv, e.rightInv⟩
-
-  @[reducible] def DefEquiv.inv {α β : type} {toFun : α → β} {invFun : β → α}
-                                (h : α ⟷[sort.toFunctor toFun, sort.toFunctor invFun] β) :
-    β ⟷[sort.toFunctor invFun, sort.toFunctor toFun] α :=
-  ⟨h.rightInv, h.leftInv⟩
-
-  def equivEquiv (α β : type) : Equiv α β ≃ (α ⟷' β) :=
-  { toFun    := λ e => ⟨e.toFun, e.invFun, DefEquiv.fromEquiv e⟩,
-    invFun   := λ E => ⟨E.toFun, E.invFun, E.E.leftInv, E.E.rightInv⟩,
-    leftInv  := λ ⟨_, _, _, _⟩ => rfl,
-    rightInv := λ ⟨_, _, _⟩ => rfl }
-
-  instance hasInternalEquivType (α β : type) : HasEmbeddedType type (α ⟷' β) :=
-  ⟨equivEquiv α β⟩
-
-  instance hasEquivalences : HasEquivalences type type type := ⟨⟩
-
-  instance hasEquivOp : HasEquivOp type :=
-  { defIdEquiv         := λ α     => DefEquiv.fromEquiv (Equiv.refl α),
-    defCompEquiv       := λ e f   => DefEquiv.fromEquiv (Equiv.trans e f),
-    defCompEquivFun    := λ _ _   => HasTrivialFunctoriality.defFun,
-    defCompEquivFunFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defInvEquiv        := λ e     => DefEquiv.fromEquiv (Equiv.symm e),
-    defInvEquivFun     := λ _ _   => HasTrivialFunctoriality.defFun }
-
-  instance hasIdEquiv : HasIdEquiv type type := HasEquivOp.hasIdEquiv
-  instance hasInvEquiv : HasInvEquiv type type type := HasEquivOp.hasInvEquiv
-  instance hasCompEquiv : HasCompEquiv type type type := HasEquivOp.hasCompEquiv
-
-  instance hasEquivOpEq : HasEquivOpEq type := HasEquivOpEq.std type
-
-  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type :=
-  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext λ b => congrArg f (e.rightInv b),
-                                          λ f => funext λ a => congrArg f (e.leftInv  a)⟩,
-    defFunDomainEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defFunCodomainEquiv    := λ e _   => ⟨λ f => funext λ c => e.leftInv  (f c),
-                                          λ f => funext λ c => e.rightInv (f c)⟩,
-    defFunCodomainEquivFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
-                                          λ _ => funext λ _ => funext λ _ => rfl⟩,
-    defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext λ () => rfl⟩,
-    defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
-                                          λ _ => funext λ (_, _) => rfl⟩,
-    defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
-                                          λ p => prodExt (e.rightInv p.fst) rfl⟩,
-    defProdFstEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defProdSndEquiv        := λ e _   => ⟨λ p => prodExt rfl (e.leftInv  p.snd),
-                                          λ p => prodExt rfl (e.rightInv p.snd)⟩,
-    defProdSndEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defProdCommEquiv       := λ _ _   => ⟨λ (_, _) => rfl, λ (_, _) => rfl⟩,
-    defProdAssocEquiv      := λ _ _ _ => ⟨λ ((_, _), _) => rfl, λ (_, (_, _)) => rfl⟩,
-    defProdTopEquiv        := λ _     => ⟨λ _ => rfl, λ ((), _) => rfl⟩,
-    defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
-    defCompEquivEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
-    defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
-
-  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type :=
-  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext λ _ => prodExt rfl rfl,
-                                     λ _ => prodExt (funext λ _ => rfl) (funext λ _ => rfl)⟩ }
-
-  instance hasBotEquivalences : HasBotEquivalences type :=
-  { defBotNotTopEquiv := ⟨λ e => Empty.elim e, λ f => Empty.elim (f ())⟩,
-    defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
-    defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
-
-  def sigmaEquiv {α : type} (φ : α ⟿ type) : (Σ a, φ a) ≃ (Σ' φ) :=
-  { toFun    := λ p => ⟨p.fst, p.snd⟩,
-    invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ ⟨_, _⟩ => rfl,
-    rightInv := λ ⟨_, _⟩ => rfl }
-
-  instance hasInternalDependentProductType {α : type} (φ : α ⟿ type) :
-    HasEmbeddedType type (Σ' φ) :=
-  ⟨sigmaEquiv φ⟩
-
-  instance hasDependentProducts : HasDependentProducts type type type := ⟨⟩
-
-  def subtypeEquiv {α : type} (φ : α ⟿ prop) : {a // φ a} ≃ (Σ' φ) :=
-  { toFun    := λ p => ⟨p.val, p.property⟩,
-    invFun   := λ P => ⟨P.fst, P.snd⟩,
-    leftInv  := λ ⟨_, _⟩ => rfl,
-    rightInv := λ ⟨_, _⟩ => rfl }
-
-  instance hasInternalSubtypeType {α : type} (φ : α ⟿ prop) :
-    HasEmbeddedType type (Σ' φ) :=
-  ⟨subtypeEquiv φ⟩
-
-  instance hasSubtypes : HasDependentProducts type prop type := ⟨⟩
+--  def prodEquiv (α β : type.{u}) : Prod α β ≃ (α ⊓' β) :=
+--  { toFun    := λ p => ⟨p.fst, p.snd⟩,
+--    invFun   := λ P => ⟨P.fst, P.snd⟩,
+--    leftInv  := λ (_, _) => rfl,
+--    rightInv := λ ⟨_, _⟩ => rfl }
+--
+--  instance hasInternalProductType (α β : type.{u}) : HasEmbeddedType type.{u} (α ⊓' β) :=
+--  ⟨prodEquiv α β⟩
+--
+--  instance hasProducts : HasProducts type.{u} type.{u} type.{u} := ⟨⟩
+--
+--  theorem prodExt {α β : type.{u}} {p q : Prod α β} (hFst : p.fst = q.fst) (hSnd : p.snd = q.snd) :
+--    p = q :=
+--  by induction p; induction q; simp [hFst, hSnd]
+--
+--  class DefEquiv {α β : type.{u}} (toFun : α → β) (invFun : β → α) : Prop where
+--  (leftInv  : ∀ a, invFun (toFun a) = a)
+--  (rightInv : ∀ b, toFun (invFun b) = b)
+--
+--  instance hasEquivalenceCondition : HasEquivalenceCondition type.{u} type.{u} := ⟨DefEquiv⟩
+--
+--  @[reducible] def DefEquiv.fromEquiv {α β : type.{u}} (e : ⌈α⌉ ≃ ⌈β⌉) : α ⟷[sort.toFunctor e.toFun, sort.toFunctor e.invFun] β :=
+--  ⟨e.leftInv, e.rightInv⟩
+--
+--  @[reducible] def DefEquiv.inv {α β : type.{u}} {toFun : α → β} {invFun : β → α}
+--                                (h : α ⟷[sort.toFunctor toFun, sort.toFunctor invFun] β) :
+--    β ⟷[sort.toFunctor invFun, sort.toFunctor toFun] α :=
+--  ⟨h.rightInv, h.leftInv⟩
+--
+--  def equivEquiv (α β : type.{u}) : Equiv α β ≃ (α ⟷' β) :=
+--  { toFun    := λ e => ⟨e.toFun, e.invFun, DefEquiv.fromEquiv e⟩,
+--    invFun   := λ E => ⟨E.toFun, E.invFun, E.E.leftInv, E.E.rightInv⟩,
+--    leftInv  := λ ⟨_, _, _, _⟩ => rfl,
+--    rightInv := λ ⟨_, _, _⟩ => rfl }
+--
+--  instance hasInternalEquivType (α β : type.{u}) : HasEmbeddedType type.{u} (α ⟷' β) :=
+--  ⟨equivEquiv α β⟩
+--
+--  instance hasEquivalences : HasEquivalences type.{u} type.{u} type.{u} := ⟨⟩
+--
+--  instance hasEquivOp : HasEquivOp type.{u} :=
+--  { defIdEquiv         := λ α     => DefEquiv.fromEquiv (Equiv.refl α),
+--    defCompEquiv       := λ e f   => DefEquiv.fromEquiv (Equiv.trans e f),
+--    defCompEquivFun    := λ _ _   => HasTrivialFunctoriality.defFun,
+--    defCompEquivFunFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
+--    defInvEquiv        := λ e     => DefEquiv.fromEquiv (Equiv.symm e),
+--    defInvEquivFun     := λ _ _   => HasTrivialFunctoriality.defFun }
+--
+--  instance hasIdEquiv : HasIdEquiv type.{u} type.{u} := HasEquivOp.hasIdEquiv
+--  instance hasInvEquiv : HasInvEquiv type.{u} type.{u} type.{u} := HasEquivOp.hasInvEquiv
+--  instance hasCompEquiv : HasCompEquiv type.{u} type.{u} type.{u} := HasEquivOp.hasCompEquiv
+--
+--  instance hasEquivOpEq : HasEquivOpEq type.{u} := HasEquivOpEq.std type.{u}
+--
+--  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type.{u} :=
+--  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext λ b => congrArg f (e.rightInv b),
+--                                          λ f => funext λ a => congrArg f (e.leftInv  a)⟩,
+--    defFunDomainEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
+--    defFunCodomainEquiv    := λ e _   => ⟨λ f => funext λ c => e.leftInv  (f c),
+--                                          λ f => funext λ c => e.rightInv (f c)⟩,
+--    defFunCodomainEquivFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
+--    defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
+--                                          λ _ => funext λ _ => funext λ _ => rfl⟩,
+--    defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext λ () => rfl⟩,
+--    defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
+--                                          λ _ => funext λ (_, _) => rfl⟩,
+--    defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
+--                                          λ p => prodExt (e.rightInv p.fst) rfl⟩,
+--    defProdFstEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
+--    defProdSndEquiv        := λ e _   => ⟨λ p => prodExt rfl (e.leftInv  p.snd),
+--                                          λ p => prodExt rfl (e.rightInv p.snd)⟩,
+--    defProdSndEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
+--    defProdCommEquiv       := λ _ _   => ⟨λ (_, _) => rfl, λ (_, _) => rfl⟩,
+--    defProdAssocEquiv      := λ _ _ _ => ⟨λ ((_, _), _) => rfl, λ (_, (_, _)) => rfl⟩,
+--    defProdTopEquiv        := λ _     => ⟨λ _ => rfl, λ ((), _) => rfl⟩,
+--    defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
+--    defCompEquivEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
+--    defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
+--
+--  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type.{u} :=
+--  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext λ _ => prodExt rfl rfl,
+--                                     λ _ => prodExt (funext λ _ => rfl) (funext λ _ => rfl)⟩ }
+--
+--  instance hasBotEquivalences : HasBotEquivalences type.{u} :=
+--  { defBotNotTopEquiv := ⟨λ e => Empty.elim e, λ f => Empty.elim (f ())⟩,
+--    defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
+--    defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
+--
+--  def sigmaEquiv {α : type.{u}} (φ : α ⟿ type.{u}) : (Σ a, φ a) ≃ (Σ' φ) :=
+--  { toFun    := λ p => ⟨p.fst, p.snd⟩,
+--    invFun   := λ P => ⟨P.fst, P.snd⟩,
+--    leftInv  := λ ⟨_, _⟩ => rfl,
+--    rightInv := λ ⟨_, _⟩ => rfl }
+--
+--  instance hasInternalDependentProductType {α : type.{u}} (φ : α ⟿ type.{u}) :
+--    HasEmbeddedType type.{u} (Σ' φ) :=
+--  ⟨sigmaEquiv φ⟩
+--
+--  instance hasDependentProducts : HasDependentProducts type.{u} type.{u} type.{u} := ⟨⟩
+--
+--  def subtypeEquiv {α : type.{u}} (φ : α ⟿ prop) : {a // φ a} ≃ (Σ' φ) :=
+--  { toFun    := λ p => ⟨p.val, p.property⟩,
+--    invFun   := λ P => ⟨P.fst, P.snd⟩,
+--    leftInv  := λ ⟨_, _⟩ => rfl,
+--    rightInv := λ ⟨_, _⟩ => rfl }
+--
+--  instance hasInternalSubtypeType {α : type.{u}} (φ : α ⟿ prop) :
+--    HasEmbeddedType type.{u} (Σ' φ) :=
+--  ⟨subtypeEquiv φ⟩
+--
+--  instance hasSubtypes : HasDependentProducts type.{u} prop type.{u} := ⟨⟩
 
 end type
