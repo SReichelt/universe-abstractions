@@ -288,6 +288,10 @@ namespace HasLinearFunOp
     (fromDefFun F) a b c ≃ (f a) b c :=
   congrFun byFunDef c
 
+  def byFunDef₃ {A B C D E : U} {f : A → (B ⟶ C ⟶ D ⟶ E)} {F : A ⟶[f] (B ⟶ C ⟶ D ⟶ E)} {a : A} {b : B} {c : C} {d : D} :
+    (fromDefFun F) a b c d ≃ (f a) b c d :=
+  congrFun byFunDef₂ d
+
   def byDef₂ {A B C : U} {f : A → B → C} {F' : ∀ a, B ⟶[f a] C} {F : A ⟶[λ a => F' a] (B ⟶ C)} {a : A} {b : B} :
     (fromDefFun F) a b ≃ f a b :=
   byDef • byFunDef

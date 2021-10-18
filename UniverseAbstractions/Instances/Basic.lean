@@ -56,10 +56,11 @@ namespace unit
   instance hasInternalFunctors : HasInternalFunctors unit := ⟨⟩
   instance hasStandardFunctors : HasStandardFunctors unit := ⟨⟩
 
+  -- `Inst` can serve as both top and bottom.
+
   instance hasTop : HasTop unit :=
   { T     := Inst,
-    t     := inst,
-    topEq := λ _ => inst }
+    t     := inst }
 
   instance hasBot : HasBot unit :=
   { B    := Inst,
@@ -68,28 +69,20 @@ namespace unit
   instance hasClassicalLogic : HasClassicalLogic unit :=
   { byContradictionFun := λ _ => inst }
 
---  def rightProdEquiv {U : Universe.{u}} (A : U) (B : unit) : ⌈A⌉ ≃ (A ⊓' B) :=
---  { toFun    := λ a => ⟨a, inst⟩,
---    invFun   := λ P => P.fst,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalRightProductType {U : Universe.{u}} (A : U) (B : unit) : HasEmbeddedType U (A ⊓' B) :=
---  ⟨rightProdEquiv A B⟩
---
---  instance hasRightProducts (U : Universe.{u}) : HasProducts U unit U := ⟨⟩
---
---  def leftProdEquiv {U : Universe.{u}} (A : unit) (B : U) : ⌈B⌉ ≃ (A ⊓' B) :=
---  { toFun    := λ b => ⟨inst, b⟩,
---    invFun   := λ P => P.snd,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalLeftProductType {U : Universe.{u}} (A : unit) (B : U) : HasEmbeddedType U (A ⊓' B) :=
---  ⟨leftProdEquiv A B⟩
---
---  instance hasLeftProducts (U : Universe.{u}) : HasProducts unit U U := ⟨⟩
---
+  -- A product with `unit` is equivalent to the type itself.
+
+  instance hasRightProducts (U : Universe.{u}) : HasProducts U unit U :=
+  { Prod  := λ A _ => A,
+    intro := λ a _ => a,
+    fst   := id,
+    snd   := λ _ => inst }
+
+  instance hasLeftProducts (V : Universe.{v}) : HasProducts unit V V :=
+  { Prod  := λ _ B => B,
+    intro := λ _ b => b,
+    fst   := λ _ => inst,
+    snd   := id }
+
 --  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit unit := ⟨⟩
 --
 --  @[reducible] def unitEquivalence {A B : unit} : A ⟷' B := ⟨inst, inst, HasTrivialEquivalenceCondition.defEquiv⟩
@@ -207,8 +200,7 @@ namespace boolean
 
   instance hasTop : HasTop boolean :=
   { T     := True,
-    t     := inst,
-    topEq := λ _ => unit.inst }
+    t     := inst }
 
   instance hasBot : HasBot boolean :=
   { B    := False,
@@ -220,6 +212,18 @@ namespace boolean
   { byContradictionFun := λ b => match b with
                                  | true  => inst
                                  | false => inst }
+
+  instance hasProducts : HasProducts boolean boolean boolean :=
+  { Prod  := and,
+    intro := λ {a b} ha hb => match a with
+                              | false => ha
+                              | true  => hb,
+    fst   := λ {a b} h => match a with
+                          | false => h
+                          | true  => inst,
+    snd   := λ {a b} h => match a with
+                          | false => False.elim h
+                          | true  => h }
 
 end boolean
 
@@ -279,8 +283,7 @@ namespace prop
 
   instance hasTop : HasTop prop :=
   { T     := True,
-    t     := trivial,
-    topEq := λ _ => unit.inst }
+    t     := trivial }
 
   instance hasBot : HasBot prop :=
   { B    := False,
@@ -291,17 +294,12 @@ namespace prop
   instance hasClassicalLogic : HasClassicalLogic prop :=
   { byContradictionFun := @Classical.byContradiction }
 
---  def prodEquiv (p q : prop) : (p ∧ q) ≃ (p ⊓' q) :=
---  { toFun    := λ h => ⟨h.left, h.right⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ _ => proofIrrel _ _,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalProductType (p q : prop) : HasEmbeddedType prop (p ⊓' q) :=
---  ⟨prodEquiv p q⟩
---
---  instance hasProducts : HasProducts prop prop prop := ⟨⟩
---
+  instance hasProducts : HasProducts prop prop prop :=
+  { Prod  := And,
+    intro := And.intro,
+    fst   := And.left,
+    snd   := And.right }
+
 --  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop prop := ⟨⟩
 --
 --  def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
@@ -334,20 +332,22 @@ namespace type
   instance hasIdentity' : HasIdentity' type.{u} prop :=
   ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
 
-  instance hasCongrArg : HasCongrArg type.{u} type.{u} :=
+  instance hasCongrArg : HasCongrArg type.{u} type.{v} :=
   ⟨λ f => congrArg f⟩
 
   instance hasInternalFunctors : HasInternalFunctors type.{u} := ⟨⟩
 
-  instance hasTrivialExtensionality : HasTrivialExtensionality type.{u} type.{u} :=
+  instance hasTrivialExtensionality : HasTrivialExtensionality type.{u} type.{v} :=
   ⟨funext⟩
 
   instance hasStandardFunctors : HasStandardFunctors type.{u} := ⟨⟩
 
   instance hasTop : HasTop type.{u} :=
   { T     := PUnit.{u + 1},
-    t     := PUnit.unit,
-    topEq := λ t' => by induction t'; rfl }
+    t     := PUnit.unit }
+  
+  instance hasTopEq : HasTop.HasTopEq type.{u} :=
+  ⟨λ t' => by induction t'; rfl⟩
 
   -- TODO: Remove `noncomputable` if problem with `PEmpty.elim` can be solved.
   noncomputable instance hasBot : HasBot type.{u} :=
@@ -360,21 +360,17 @@ namespace type
   noncomputable instance hasClassicalLogic : HasClassicalLogic type.{u} :=
   { byContradictionFun := byContradiction }
 
---  def prodEquiv (α β : type.{u}) : Prod α β ≃ (α ⊓' β) :=
---  { toFun    := λ p => ⟨p.fst, p.snd⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ (_, _) => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalProductType (α β : type.{u}) : HasEmbeddedType type.{u} (α ⊓' β) :=
---  ⟨prodEquiv α β⟩
---
---  instance hasProducts : HasProducts type.{u} type.{u} type.{u} := ⟨⟩
---
---  theorem prodExt {α β : type.{u}} {p q : Prod α β} (hFst : p.fst = q.fst) (hSnd : p.snd = q.snd) :
---    p = q :=
---  by induction p; induction q; simp [hFst, hSnd]
---
+  instance hasProducts : HasProducts type.{u} type.{v} type.{max u v} :=
+  { Prod  := PProd,
+    intro := PProd.mk,
+    fst   := PProd.fst,
+    snd   := PProd.snd }
+
+  instance hasProductEq : HasProducts.HasProductEq type.{u} type.{v} :=
+  { introEq := λ p   => by induction p; rfl,
+    fstEq   := λ a b => rfl,
+    sndEq   := λ a b => rfl }
+
 --  class DefEquiv {α β : type.{u}} (toFun : α → β) (invFun : β → α) : Prop where
 --  (leftInv  : ∀ a, invFun (toFun a) = a)
 --  (rightInv : ∀ b, toFun (invFun b) = b)

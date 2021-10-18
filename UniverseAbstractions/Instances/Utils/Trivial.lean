@@ -3,6 +3,7 @@ import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Singletons
+import UniverseAbstractions.Axioms.Universe.Products
 
 
 
@@ -35,6 +36,17 @@ namespace HasTrivialIdentity
                        {UV : Universe} [HasFunctors U V UV] :
     HasCongrArg U V :=
   ⟨λ {_ _} _ {_ _} _ => unit.inst⟩
+
+  instance hasTopEq (U : Universe) [HasTrivialIdentity U] [HasTop U] :
+    HasTop.HasTopEq U :=
+  ⟨λ _ => unit.inst⟩
+
+  instance hasProductEq (U V : Universe) [HasTrivialIdentity U] [HasTrivialIdentity V]
+                        {UxV : Universe} [HasTrivialIdentity UxV] [HasProducts U V UxV] :
+    HasProducts.HasProductEq U V :=
+  { introEq := λ _   => unit.inst,
+    fstEq   := λ _ _ => unit.inst,
+    sndEq   := λ _ _ => unit.inst }
 
 end HasTrivialIdentity
 
@@ -86,11 +98,16 @@ namespace HasTrivialFunctoriality
     defDupFunFun := λ _ _ => defFun }
 
   instance hasInternalTop [HasTop U] : HasInternalTop U :=
-  { defElimFun    := λ _ => defFun,
-    defElimFunFun := λ _ => defFun }
+  { defElimFun := λ _ => defFun }
 
   instance hasInternalBot [HasBot U] : HasInternalBot U :=
   { defElimFun := λ _ => defFun }
+
+  instance hasInternalProducts [HasProducts U U U] : HasInternalProducts U :=
+  { defIntroFun    := λ _ _   => defFun,
+    defIntroFunFun := λ _ _   => defFun,
+    defElimFun     := λ _     => defFun,
+    defElimFunFun  := λ _ _ _ => defFun }
 
 end HasTrivialFunctoriality
 
@@ -154,5 +171,14 @@ namespace HasTrivialExtensionality
     substDup       := λ _ _   => funEq,
     substDupExt    := λ _ _   => funEq,
     substDupExtExt := λ _ _ _ => funEq }
+
+  instance hasInternalTopExt [HasLinearFunOp U] [HasInternalTop U] [HasTop.HasTopEq U] :
+    HasInternalTop.HasTopExt U :=
+  { topEqExt := λ _ => funEq,
+    swapElim := λ _ => funEq }
+
+  instance hasProductExt [HasLinearFunOp U] [HasInternalProducts U] [HasProducts.HasProductEq U U] :
+    HasInternalProducts.HasProductExt U :=
+  { introEqExt := λ _ _ => funEq }
 
 end HasTrivialExtensionality

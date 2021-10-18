@@ -1,6 +1,7 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
 
@@ -11,22 +12,30 @@ universe u iu
 
 
 
-class HasTop (U : Universe.{u}) [HasIdentity.{u, iu} U] where
+class HasTop (U : Universe.{u}) where
 (T : U)
 (t : T)
-(topEq (t' : T) : t' ≃ t)
 
 namespace HasTop
 
-  variable (U : Universe) [HasIdentity U] [h : HasTop U] 
+  variable (U : Universe) [h : HasTop U] 
 
   @[reducible] def Top : U     := h.T
   @[reducible] def top : Top U := h.t
 
-  instance isSubsingleton : HasIdentity'.IsSubsingleton (Top U) :=
-  ⟨λ a b => (h.topEq b)⁻¹ • h.topEq a⟩
-
 end HasTop
+
+class HasTop.HasTopEq (U : Universe.{u}) [HasTop.{u} U] [HasIdentity.{u, iu} U] where
+(topEq (t' : Top U) : t' ≃ top U)
+
+namespace HasTop.HasTopEq
+
+  variable (U : Universe) [HasIdentity U] [HasTop U] [HasTop.HasTopEq U]
+
+  instance isSubsingleton : HasIdentity'.IsSubsingleton (Top U) :=
+  ⟨λ a b => (topEq b)⁻¹ • topEq a⟩
+
+end HasTop.HasTopEq
 
 -- Eliminating from `Top` should not require `SubLinearFunOp`, as conceptually, an instance of
 -- `Top` does not hold any data. Therefore, we define a specialized version of `constFun`.
@@ -34,7 +43,6 @@ end HasTop
 class HasInternalTop (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
   extends HasTop U where
 (defElimFun {A : U} (a : A) : T ⟶[λ _ => a] A)
-(defElimFunFun (A : U) : A ⟶[λ a => defElimFun a] (T ⟶ A))
 
 namespace HasInternalTop
 
@@ -43,9 +51,18 @@ namespace HasInternalTop
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalTop U]
 
   @[reducible] def elimFun {A : U} (a : A) : Top U ⟶ A := defElimFun a
-  @[reducible] def elimFunFun (A : U) : A ⟶ Top U ⟶ A := defElimFunFun A
 
 end HasInternalTop
+
+class HasInternalTop.HasTopExt (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
+                               [HasLinearFunOp U] [HasInternalTop U] extends
+  HasTop.HasTopEq U where
+(topEqExt {A : U} {a : A} {F : HasTop.Top U ⟶ A} (h : F (HasTop.top U) ≃ a) :
+   F ≃[λ t => HasFunctors.byDef⁻¹ • h • (HasCongrArg.congrArg F (topEq t))] elimFun a)
+(swapElim {A : U} (a : A) :
+   HasLinearFunOp.swapFun (elimFun (HasLinearFunOp.idFun A)) a
+   ≃[λ t => HasFunctors.byDef⁻¹ • (HasLinearFunOp.byDef₂ • HasFunctors.byDef)]
+   elimFun a)
 
 
 
