@@ -10,7 +10,7 @@ import UniverseAbstractions.Lemmas.DerivedFunctors
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u iu
+universe u v uv iu iv iuv
 
 
 
@@ -27,6 +27,25 @@ universe u iu
 -- * E-ax 3: `leftId`
 -- * E-ax 4: `leftConst` and `dupConst`
 -- * E-ax 5: `substAssoc`
+
+
+
+class HasSubsingletonExt (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}}
+                         [HasIdentity V] [HasIdentity UV] [HasFunctors U V UV] where
+(eqExt {A : U} {B : V} [h : HasIdentity'.IsSubsingleton B] (F₁ F₂ : A ⟶ B) :
+   F₁ ≃[λ a => h.eq (F₁ a) (F₂ a)] F₂)
+
+namespace HasSubsingletonExt
+
+  open HasIdentity'
+
+  variable {U V UV : Universe} [HasIdentity V] [HasIdentity UV] [HasFunctors U V UV]
+           [HasSubsingletonExt U V]
+
+  instance isSubsingleton (A : U) (B : V) [IsSubsingleton B] : IsSubsingleton (A ⟶ B) :=
+  { eq := eqExt }
+
+end HasSubsingletonExt
 
 
 

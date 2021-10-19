@@ -8,7 +8,7 @@ import UniverseAbstractions.Lemmas.DerivedFunctors
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u iu
+universe u v iu
 
 
 
@@ -24,6 +24,10 @@ namespace HasTop
   @[reducible] def top : Top U := h.t
 
 end HasTop
+
+def HasTop.topEquivalence (α : Sort u) (V : Universe.{v}) [HasTop V] : EquivalenceRelation α V :=
+{ R := MetaRelation.unitRelation    α (HasTop.Top V),
+  h := MetaRelation.unitEquivalence α (HasTop.top V) }
 
 class HasTop.HasTopEq (U : Universe.{u}) [HasTop.{u} U] [HasIdentity.{u, iu} U] where
 (topEq (t' : Top U) : t' ≃ top U)
@@ -55,14 +59,10 @@ namespace HasInternalTop
 end HasInternalTop
 
 class HasInternalTop.HasTopExt (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
-                               [HasLinearFunOp U] [HasInternalTop U] extends
+                               [HasInternalTop U] extends
   HasTop.HasTopEq U where
-(topEqExt {A : U} {a : A} {F : HasTop.Top U ⟶ A} (h : F (HasTop.top U) ≃ a) :
-   F ≃[λ t => HasFunctors.byDef⁻¹ • h • (HasCongrArg.congrArg F (topEq t))] elimFun a)
-(swapElim {A : U} (a : A) :
-   HasLinearFunOp.swapFun (elimFun (HasLinearFunOp.idFun A)) a
-   ≃[λ t => HasFunctors.byDef⁻¹ • (HasLinearFunOp.byDef₂ • HasFunctors.byDef)]
-   elimFun a)
+(elimFunEq {A : U} {a : A} {F : HasTop.Top U ⟶ A} (e : F (HasTop.top U) ≃ a) :
+   F ≃[λ t => HasFunctors.byDef⁻¹ • e • HasCongrArg.congrArg F (topEq t)] elimFun a)
 
 
 

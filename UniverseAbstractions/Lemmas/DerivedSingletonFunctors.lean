@@ -15,7 +15,8 @@ set_option autoBoundImplicitLocal false
 
 namespace HasInternalTop
 
-  open HasFunctors HasLinearFunOp HasLinearFunOp.HasLinearFunExt HasTop HasTopExt
+  open HasFunctors HasCongrArg HasLinearFunOp HasSubLinearFunOp HasAffineFunOp
+       HasSubsingletonExt HasLinearFunExt HasAffineFunExt HasTop HasTopEq HasTopExt
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalTop U]
 
@@ -24,28 +25,37 @@ namespace HasInternalTop
 
   @[reducible] def introFun [HasConstFun U U] (A : U) : A ⟶ Top U := defIntroFun A
 
+  def HasTopExt.introFunEq [HasConstFun U U] [HasSubsingletonExt U U] [HasTopEq U]
+                           {A : U} (F : A ⟶ Top U) :
+    F ≃[λ a => byDef⁻¹ • topEq (F a)] introFun A :=
+  eqExt F (introFun A)
+
+  def HasTopExt.elimFunConstEq [HasConstFun U U] [HasTopExt U] {A : U} (a : A) :
+    elimFun a ≃ HasConstFun.constFun (Top U) a :=
+  (elimFunEq byDef)⁻¹
+
   def defElimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
-    A ⟶[λ a => defElimFun a] (Top U ⟶ A) :=
+    A ⟶[λ a => elimFun a] (Top U ⟶ A) :=
   swapFunFun (elimFun (idFun A))
-  ◄ swapElim _
+  ◄ elimFunEq (F := swapFun (elimFun (idFun A)) _) (byDef • byFunDef • byDef)
 
   @[reducible] def elimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
     A ⟶ Top U ⟶ A :=
   defElimFunFun A
 
+  def HasTopExt.elimFunEqExt [HasLinearFunOp U] [HasLinearFunExt U] [HasTopExt U] {A : U}
+                             {F : A ⟶ Top U ⟶ A} (h : swapFun F (top U) ≃ idFun A) :
+    F ≃ elimFunFun A :=
+  (reverseSwap (elimFunEq (h • byDef)))⁻¹
+
+  def HasTopExt.elimFunFunConstEq [HasAffineFunOp U] [HasAffineFunExt U] [HasTopExt U] (A : U) :
+    elimFunFun A ≃ constFunFun (Top U) A :=
+  (elimFunEqExt (swapConstFun (top U) A))⁻¹
+
   def defInvElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶[λ F => F (top U)] A :=
   defAppFun (top U) A
 
   @[reducible] def invElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶ A := defInvElimFun A
-
-  namespace HasTopExt
-
-    def topEqExtExt [HasLinearFunOp U] [HasLinearFunExt U] [HasTopExt U] {A : U}
-                    (F : A ⟶ Top U ⟶ A) (h : swapFun F (top U) ≃ idFun A) :
-      F ≃ elimFunFun A :=
-    (reverseSwap (topEqExt (h • byDef)))⁻¹
-
-  end HasTopExt
 
 end HasInternalTop
 

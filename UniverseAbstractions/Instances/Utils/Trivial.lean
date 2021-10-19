@@ -174,8 +174,7 @@ namespace HasTrivialExtensionality
 
   instance hasInternalTopExt [HasLinearFunOp U] [HasInternalTop U] [HasTop.HasTopEq U] :
     HasInternalTop.HasTopExt U :=
-  { topEqExt := λ _ => funEq,
-    swapElim := λ _ => funEq }
+  { elimFunEq := λ _ => funEq }
 
   instance hasProductExt [HasLinearFunOp U] [HasInternalProducts U] [HasProducts.HasProductEq U U] :
     HasInternalProducts.HasProductExt U :=
