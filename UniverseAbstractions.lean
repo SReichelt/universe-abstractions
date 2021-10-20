@@ -5,8 +5,15 @@ import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
+
 import UniverseAbstractions.Lemmas.DerivedFunctors
+import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality
 import UniverseAbstractions.Lemmas.DerivedSingletonFunctors
 import UniverseAbstractions.Lemmas.DerivedProductFunctors
+
 import UniverseAbstractions.Tactics.Functoriality
+
 import UniverseAbstractions.Instances.Basic
+import UniverseAbstractions.Instances.FunctorUniverse
+import UniverseAbstractions.Instances.CoFunctorUniverse
+import UniverseAbstractions.Instances.Algebra

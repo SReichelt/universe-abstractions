@@ -246,6 +246,19 @@ namespace sort
   ⟨λ f => { F   := f,
             eff := λ a => HasRefl.refl (f a) }⟩
 
+  instance hasIdentity' : HasIdentity' sort.{u} prop :=
+  ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
+
+  instance hasCongrArg : HasCongrArg sort.{u} sort.{v} :=
+  ⟨λ f => congrArg f⟩
+
+  instance hasInternalFunctors : HasInternalFunctors sort.{u} := ⟨⟩
+
+  instance hasTrivialExtensionality : HasTrivialExtensionality sort.{u} sort.{v} :=
+  ⟨funext⟩
+
+  instance hasStandardFunctors : HasStandardFunctors sort.{u} := ⟨⟩
+
 --  instance hasTrivialProperties (V : Universe.{v}) : HasTrivialProperties sort V := ⟨⟩
 --
 --  instance hasTrivialDependentFunctoriality (V : Universe.{v}) : HasTrivialDependentFunctoriality sort V := ⟨⟩
@@ -273,11 +286,6 @@ theorem Exists.prop.snd {p : Prop} {q : p → Prop} : (e : ∃ h, q h) → q (Ex
 | ⟨_, h⟩ => h
 
 namespace prop
-
-  instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨⟩
-
-  instance hasInternalFunctors : HasInternalFunctors prop := ⟨⟩
-  instance hasStandardFunctors : HasStandardFunctors prop := ⟨⟩
 
   -- `Top` is `True`, `Bot` is `False`.
 
@@ -328,19 +336,6 @@ namespace prop
 --end prop
 
 namespace type
-
-  instance hasIdentity' : HasIdentity' type.{u} prop :=
-  ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
-
-  instance hasCongrArg : HasCongrArg type.{u} type.{v} :=
-  ⟨λ f => congrArg f⟩
-
-  instance hasInternalFunctors : HasInternalFunctors type.{u} := ⟨⟩
-
-  instance hasTrivialExtensionality : HasTrivialExtensionality type.{u} type.{v} :=
-  ⟨funext⟩
-
-  instance hasStandardFunctors : HasStandardFunctors type.{u} := ⟨⟩
 
   instance hasTop : HasTop type.{u} :=
   { T     := PUnit.{u + 1},

@@ -80,7 +80,7 @@ end HasBot
 
 class HasInternalBot (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
   extends HasBot U where
-(defElimFun (A : U) : HasBot.Bot U ⟶[λ b => HasBot.elim b A] A)
+(defElimFun (A : U) : B ⟶[λ b => HasBot.elim b A] A)
 
 namespace HasInternalBot
 

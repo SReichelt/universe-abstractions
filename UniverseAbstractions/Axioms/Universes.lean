@@ -45,14 +45,14 @@ def GeneralizedTypeClass (I : Sort v) [HasInstances.{u, v} I] : Sort (max v (w +
 -- by "forgetting" `inst`.
 
 structure Bundled {I : Sort v} [HasInstances.{u, v} I] (φ : GeneralizedTypeClass.{u, v, w} I) :
-  Sort (max 1 (u + 1) v (w + 1)) where
+  Sort (max (u + 1) v (w + 1)) where
 (A    : I)
 [inst : φ A]
 
 namespace Bundled
 
   instance hasInstances {I : Sort v} [HasInstances.{u, v} I] (φ : GeneralizedTypeClass.{u, v, w} I) :
-    HasInstances (Bundled φ) :=
+    HasInstances.{u, max (u + 1) v (w + 1)} (Bundled φ) :=
   ⟨λ S => ⌈S.A⌉⟩
 
 end Bundled
@@ -82,6 +82,8 @@ namespace Universe
 
   instance instInst : HasInstances.{u, u + 1} U.A := U.inst
   instance : HasInstances ⌈U⌉ := instInst U
+
+  def univ : Universe.{u + 1} := ⟨Universe.{u}⟩
 
 end Universe
 
@@ -120,12 +122,12 @@ def sort : Universe.{u} := ⟨Sort u⟩
 
 namespace Bundled
 
-  def univ {I : Type u} [HasInstances.{u, u + 1} I] (φ : GeneralizedTypeClass.{u, u + 1, u} I) :
-    Universe.{u} :=
+  def TypeClass (U : Universe.{max u w}) := GeneralizedTypeClass.{max u w, (max u w) + 1, w} ⌈U⌉
+
+  def univ {U : Universe.{max u w}} (φ : TypeClass.{u, w} U) : Universe.{max u w} :=
   ⟨Bundled φ⟩
 
-  instance univ.inst {I : Type u} [HasInstances.{u, u + 1} I] {φ : GeneralizedTypeClass.{u, u + 1, u} I}
-                     (A : univ φ) :
+  instance univ.inst {U : Universe.{max u w}} {φ : TypeClass.{u, w} U} (A : univ φ) :
     φ A.A :=
   A.inst
 
@@ -133,13 +135,14 @@ end Bundled
 
 
 
-def UniverseClass := GeneralizedTypeClass.{u + 1, u + 2, u + 1} Universe.{u}
+def UniverseClass := Bundled.TypeClass.{(max u w) + 1, w} Universe.univ.{max u w}
 
 namespace UniverseClass
 
-  def univ (φ : UniverseClass.{u}) : Universe.{u + 1} := Bundled.univ φ
+  def univ (φ : UniverseClass.{u, w}) : Universe.{(max u w) + 1} := Bundled.univ.{(max u w) + 1, w} φ
 
-  instance {φ : UniverseClass.{u}} (U : univ φ) : HasInstances.{u, u + 1} ⌈U⌉ := Universe.instInst U.A
+  instance {φ : UniverseClass.{u, w}} (U : univ φ) : HasInstances.{max u w, (max u w) + 1} ⌈U⌉ :=
+  Universe.instInst U.A
 
 end UniverseClass
 

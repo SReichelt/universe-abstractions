@@ -4,6 +4,7 @@ import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
+import UniverseAbstractions.Axioms.Categories
 
 
 
@@ -58,6 +59,8 @@ class HasTrivialFunctoriality (U V : Universe) [HasIdentity V] {UV : Universe}
 
 namespace HasTrivialFunctoriality
 
+  open MetaRelation
+
   def defFun {U V : Universe} [HasIdentity V] {UV : Universe} [HasFunctors U V UV]
              [h : HasTrivialFunctoriality U V] {A : U} {B : V} {f : A → B} :
     A ⟶[f] B :=
@@ -108,6 +111,15 @@ namespace HasTrivialFunctoriality
     defIntroFunFun := λ _ _   => defFun,
     defElimFun     := λ _     => defFun,
     defElimFunFun  := λ _ _ _ => defFun }
+
+  instance hasTransFun (α : Sort u) (R : MetaRelation α U) [HasTrans R] :
+    HasTransFun R :=
+  { defTransFun    := λ _ _   => defFun,
+    defTransFunFun := λ _ _ _ => defFun }
+
+  instance hasSymmFun (α : Sort u) (R : MetaRelation α U) [HasSymm R] :
+    HasSymmFun R :=
+  { defSymmFun := λ _ _ => defFun }
 
 end HasTrivialFunctoriality
 
