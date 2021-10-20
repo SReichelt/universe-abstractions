@@ -5,7 +5,7 @@ import UniverseAbstractions.Axioms.Universe.Functors
 
 
 set_option autoBoundImplicitLocal false
-set_option pp.universes true
+--set_option pp.universes true
 
 universe u cu v cv w iuw
 
