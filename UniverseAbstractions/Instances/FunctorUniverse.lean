@@ -209,7 +209,7 @@ namespace functorUniverse
     defCongrArg (defDupFunFun A (B ⟶ D))
                 (defCongrArg (defRevCompFunFun A (compFunFun H (B ⟶ D)))
                              (reverseSwap (swapCompExt G (compFunFunFun B C D))) •
-                swapCompExt H (compFunFun G (B ⟶ D) • swapFunFun (compFunFunFun B C D)))⁻¹
+                 swapCompExt H (compFunFun G (B ⟶ D) • swapFunFun (compFunFunFun B C D)))⁻¹
 
     def baseCompFunFunFun (B C D : U) : A ⟶ (B ⟶ C) ⟶ (C ⟶ D) ⟶ (B ⟶ D) := embedFunctor A (compFunFunFun B C D)
     def baseCompFunFunFun.eff (B C D : U) (G : A ⟶ B ⟶ C) :
@@ -286,18 +286,18 @@ namespace functorUniverse
       instance embedAppFun {B C : U} {b : B} [hb : HasSimpEmbed A b] :
         HasSimpEmbed A (appFun b C) :=
       ⟨appFun (U := {A ⟶} U) hb.simpEmbed C,
-      byFunApp A (HasRefl.refl _) hb.simpEmbedEq⟩
+       byFunApp A (HasRefl.refl _) hb.simpEmbedEq⟩
 
       instance embedCompFunFun {B C D : U} {G : B ⟶ C} [hG : HasSimpEmbed A G] :
         HasSimpEmbed A (compFunFun G D) :=
       ⟨compFunFun (U := {A ⟶} U) (toFunctor A hG.simpEmbed) D,
-      byFunApp A (HasRefl.refl _) hG.simpEmbedEq⟩
+       byFunApp A (HasRefl.refl _) hG.simpEmbedEq⟩
 
       instance embedCompFun {B C D : U} {G : B ⟶ C} {H : C ⟶ D}
                             [hG : HasSimpEmbed A G] [hH : HasSimpEmbed A H] :
         HasSimpEmbed A (compFun G H) :=
       ⟨compFun (U := {A ⟶} U) (toFunctor A hG.simpEmbed) (toFunctor A hH.simpEmbed),
-      byFunApp A (embedCompFunFun A).simpEmbedEq hH.simpEmbedEq⟩
+       byFunApp A (embedCompFunFun A).simpEmbedEq hH.simpEmbedEq⟩
 
       instance embedTrans {B C D : U} {G : B ⟶ C} {H : C ⟶ D}
                           [hG : HasSimpEmbed A G] [hH : HasSimpEmbed A H] :
@@ -307,12 +307,12 @@ namespace functorUniverse
       instance embedConstFun {B C : U} {c : C} [hc : HasSimpEmbed A c] :
         HasSimpEmbed A (constFun B c) :=
       ⟨constFun (U := {A ⟶} U) B hc.simpEmbed,
-      byFunApp A (HasRefl.refl _) hc.simpEmbedEq⟩
+       byFunApp A (HasRefl.refl _) hc.simpEmbedEq⟩
 
       instance embedDupFun {B C : U} {G : B ⟶ B ⟶ C} [hG : HasSimpEmbed A G] :
         HasSimpEmbed A (dupFun G) :=
       ⟨dupFun (U := {A ⟶} U) (toFunctor A hG.simpEmbed),
-      byFunApp A (HasRefl.refl _) hG.simpEmbedEq⟩
+       byFunApp A (HasRefl.refl _) hG.simpEmbedEq⟩
 
       instance embedSwapFun {B C D : U} {G : B ⟶ C ⟶ D} {c : C}
                             [hG : HasSimpEmbed A G] [hc : HasSimpEmbed A c] :
