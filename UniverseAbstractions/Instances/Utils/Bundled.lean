@@ -5,9 +5,9 @@ import UniverseAbstractions.Axioms.Universe.Functors
 
 
 set_option autoBoundImplicitLocal false
---set_option pp.universes true
+set_option pp.universes true
 
-universe u v w
+universe u v w iuw
 
 
 
@@ -42,7 +42,7 @@ namespace Bundled
                         inst := h.funInst A B },
     apply := Fun.f }
 
-  def defFun {φ : SimpleTypeClass.{max u w}} [HasIdentity (univ φ)] {W : Universe.{w}}
+  def defFun {φ : SimpleTypeClass.{max u w}} [hId : HasIdentity.{(max u w) + 1, iuw} (univ φ)] {W : Universe.{w}}
              [h : HasFunctoriality φ φ W] [HasFunctorInstances.{u, w} φ]
              {A B : univ φ} {f : A → B} (isFun : h.IsFun f) :
     A ⟶[f] B :=
