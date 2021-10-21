@@ -12,8 +12,6 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u
-
 
 
 class HasTrivialIdentity (U : Universe) [HasIdentity U] where
@@ -170,10 +168,12 @@ namespace HasTrivialExtensionality
     F₁ ≃[e] F₂ :=
   h.mkFunEq e
 
-  variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialExtensionality U U]
-
-  instance hasSubsingletonExt : HasSubsingletonExt U U :=
+  instance hasSubsingletonExt (U V : Universe) [HasIdentity V] {UV : Universe}
+                              [HasIdentity UV] [HasTrivialIdentity UV] [HasFunctors U V UV] :
+    HasSubsingletonExt U V :=
   { eqExt := λ _ _ => funEq }
+
+  variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialExtensionality U U]
 
   instance hasLinearFunExt [HasLinearFunOp U] : HasLinearFunOp.HasLinearFunExt U :=
   { rightId              := λ _         => funEq,
@@ -235,8 +235,8 @@ end HasTrivialExtensionality
 
 
 class HasTrivialEquivalenceCondition (U : Universe) [HasIdentity U] [HasInternalFunctors U]
-                             [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
-                             [HasInternalProducts U] [HasInternalEquivalences U] where
+                                     [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
+                                     [HasInternalProducts U] [HasInternalEquivalences U] where
 (mkEquiv {A B : U} (e : HasInternalEquivalences.EquivDesc A B) : A ⟷[e] B)
 
 namespace HasTrivialEquivalenceCondition
