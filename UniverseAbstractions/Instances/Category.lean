@@ -4,7 +4,7 @@ import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
-import UniverseAbstractions.Axioms.Categories
+import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Instances.Basic
 import UniverseAbstractions.Instances.Utils.Bundled
 
@@ -15,43 +15,43 @@ import mathlib4_experiments.CoreExt
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v iv
+universe u u' v iv
 
 
 
-class Category (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasLinearFunOp V]
+class Category (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasFullFunOp V]
                (α : Type (max u v iv)) :
   Type (max u v iv) where
-(M         : MetaRelation α V)
-[hPreorder : MetaRelation.IsPreorder  M]
-[hTransFun : MetaRelation.HasTransFun M]
-[hCategory : MetaRelation.IsCategory  M]
+(M                  : MetaRelation α V)
+[hCategory          : MetaRelation.IsCategory M]
+[I                  : MetaRelation α V]
+[hGroupoid          : MetaRelation.IsGroupoid I]
+(isoToHom (a b : α) : I a b ⟶ M a b)
+-- TODO: isoToHom must be functor of categories
 
 namespace Category
 
-  open MetaRelation IsSemigroupoid IsCategory Bundled
+  open MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder Bundled
 
-  @[reducible] def typeClass (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasLinearFunOp V] :
+  @[reducible] def typeClass (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasFullFunOp V] :
     SimpleTypeClass.{(max u v iv) + 1, (max u v iv) + 1} := Category.{u, v, iv} V
-  @[reducible] def univ (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasLinearFunOp V] :
+  @[reducible] def univ (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasFullFunOp V] :
     Universe := Bundled.univ.{u + 1, (max u v iv) + 1} (typeClass.{u, v, iv} V)
 
-  variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasLinearFunOp V]
+  variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V] [HasFullFunOp V]
 
   instance inst (A : univ.{u, v, iv} V) : Category.{u, v, iv} V ⌈A⌉ := Bundled.inst A
 
-  def Hom.rel (A : univ V) : MetaRelation ⌈A⌉ V := (inst A).M
-  @[reducible] def Hom {A : univ V} (a b : A) := ⌈(Hom.rel A) a b⌉
+  instance isCategory (A : univ V) : IsCategory (inst A).M := (inst A).hCategory
 
-  instance isPreorder  (A : univ V) : IsPreorder  (Hom.rel A) := (inst A).hPreorder
-  instance hasTransFun (A : univ V) : HasTransFun (Hom.rel A) := (inst A).hTransFun
-  instance isCategory  (A : univ V) : IsCategory  (Hom.rel A) := (inst A).hCategory
+  @[reducible] def Hom {A : univ V} (a b : A) := (inst A).M a b
+  infixr:20 " ⇾ " => Category.Hom
 
-  def idHom {A : univ V} (a : A) : Hom a a := HasRefl.refl a
+  def idHom {A : univ V} (a : A) : a ⇾ a := HasRefl.refl a
 
-  -- TODO: Integrate iso into `IsCategory`
+  -- TODO: Integrate iso into `IsCategory` and functor
 
-  class IsIso {A : univ V} {a b : A} (f : Hom a b) (g : Hom b a) where
+  class IsIso {A : univ V} {a b : A} (f : a ⇾ b) (g : b ⇾ a) where
   (gfInv : g • f ≃ idHom a)
   (fgInv : f • g ≃ idHom b)
 
@@ -61,13 +61,13 @@ namespace Category
     ⟨rightId (idHom a), rightId (idHom a)⟩
 
     instance symm {A : univ V} {a b : A}
-                  (f : Hom a b) (g : Hom b a) [isIso : IsIso f g] :
+                  (f : a ⇾ b) (g : b ⇾ a) [isIso : IsIso f g] :
       IsIso g f :=
     ⟨isIso.fgInv, isIso.gfInv⟩
 
     instance trans {A : univ V} {a b c : A}
-                   (f  : Hom a b) (g  : Hom b a) [isIso : IsIso f  g]
-                   (f' : Hom b c) (g' : Hom c b) [isIso : IsIso f' g'] :
+                   (f  : a ⇾ b) (g  : b ⇾ a) [isIso : IsIso f  g]
+                   (f' : b ⇾ c) (g' : c ⇾ b) [isIso : IsIso f' g'] :
       IsIso (f' • f) (g • g') :=
     ⟨sorry,
      sorry⟩
@@ -75,8 +75,8 @@ namespace Category
   end IsIso
 
   structure Iso {A : univ V} (a b : A) where
-  (f     : Hom a b)
-  (g     : Hom b a)
+  (f     : a ⇾ b)
+  (g     : b ⇾ a)
   [isIso : IsIso f g]
 
   namespace Iso
@@ -96,12 +96,24 @@ namespace Category
 
   instance hasIdentity' : HasIdentity' (univ V) sort := ⟨Iso.equivalence⟩
 
-  class IsFun {A B : univ.{u, v, iv} V} (φ : A → B) : Type (max u v iv) where
-  (mapHom  {a b   : A}                             : Hom a b → Hom (φ a) (φ b))
-  (h_refl  (a     : A)                             : mapHom (idHom a) ≃ idHom (φ a))
-  (h_trans {a b c : A} (f : Hom a b) (g : Hom b c) : mapHom (g • f) ≃ mapHom g • mapHom f)
+  class IsFun {A : univ.{u, v, iv} V} {B : univ.{u', v, iv} V} (φ : A → B) : Type (max u v iv) where
+  (mapHom             {a b : A}                           : (a ⇾ b) ⟶ (φ a ⇾ φ b))
+  (mapHom_refl        (a : A)                             : mapHom (idHom a) ≃ idHom (φ a))
+  (mapHom_trans       {a b c : A} (f : a ⇾ b) (g : b ⇾ c) : mapHom (g • f) ≃ mapHom g • mapHom f)
+  (mapHom_transExt    {a b : A} (f : a ⇾ b) (c : A)       :
+     mapHom • HasTransFun.transFun (inst A).M f c
+     ≃[λ g => (byDef • byDef)⁻¹ •
+              mapHom_trans f g •
+              (byArgDef • byDef)]
+     HasTransFun.transFun (inst B).M (mapHom f) (φ c) • mapHom)
+  (mapHom_transExtExt (a b c : A)                         :
+     revCompFunFun (b ⇾ c) mapHom • HasTransFun.transFunFun (inst A).M a b c
+     ≃[λ f => (byDef • byArgDef • byArgDef • byDef)⁻¹ •
+              mapHom_transExt f c •
+              (byDef • byArgDef • byDef)]
+     compFunFun mapHom (φ a ⇾ φ c) • HasTransFun.transFunFun (inst B).M (φ a) (φ b) (φ c) • mapHom)
 
-  instance hasFunctoriality : HasFunctoriality (typeClass.{u, v, iv} V) (typeClass.{u, v, iv} V) type.{max u v iv} :=
+  instance hasFunctoriality : HasFunctoriality (typeClass.{u, v, iv} V) (typeClass.{u', v, iv} V) type.{max u v iv} :=
   ⟨IsFun⟩
 
   instance funIsPreorder : IsPreorder (V := type.{max u v iv})

@@ -59,8 +59,10 @@ namespace MetaRelation
 
   open HasRefl HasCongrArg HasTransFun HasSymmFun HasSubLinearFunOp HasFullFunOp
 
-  class IsSemigroupoid [HasTrans R] [HasTransFun R] [HasLinearFunOp V] where
+  class IsAssociative [HasTrans R] where
   (assoc {a b c d : α} (f : R a b) (g : R b c) (h : R c d) : (h • g) • f ≃ h • (g • f))
+
+  class IsAssociative.IsAssociativeExt [HasTrans R] [IsAssociative R] [HasTransFun R] [HasLinearFunOp V] where
   (assocExt {a b c : α} (f : R a b) (g : R b c) (d : α) :
      transFun R f d • transFun R g d
      ≃[λ h => byDef⁻¹ • assoc f g h • (byDef • byArgDef • byDef)]
@@ -78,9 +80,17 @@ namespace MetaRelation
               (byDef • byArgDef • byArgDef₂ • byArgDef • byDef)]
      revCompFunFun (R b c) (transFunFun R a c d) • transFunFun R a b c)
 
-  class IsCategory [IsPreorder R] [HasTransFun R] [HasLinearFunOp V] extends IsSemigroupoid R where
+  class IsSemigroupoid [HasLinearFunOp V] extends
+    HasTrans R, IsAssociative R,
+    HasTransFun R, IsAssociative.IsAssociativeExt R
+
+  class IsCategoricalPreorder [IsPreorder R] extends IsAssociative R where
   (rightId {a b : α} (f : R a b) : f • refl a ≃ f)
   (leftId  {a b : α} (f : R a b) : refl b • f ≃ f)
+
+  class IsCategoricalPreorder.IsCategoricalPreorderExt [IsPreorder R] [IsCategoricalPreorder R]
+                                                       [HasTransFun R] [HasLinearFunOp V] extends
+    IsAssociative.IsAssociativeExt R where
   (rightIdExt (a b : α) : transFun    R (refl a) b
                           ≃[λ f => byDef⁻¹ • rightId f • byDef]
                           idFun (R a b))
@@ -88,14 +98,30 @@ namespace MetaRelation
                           ≃[λ f => byDef⁻¹ • leftId  f • byDef]
                           idFun (R a b))
 
-  class IsGroupoid [IsEquivalence R] [HasTransFun R] [HasSymmFun R] [HasFullFunOp V] extends IsCategory R where
+  class IsCategory [HasLinearFunOp V] extends
+    IsPreorder R, IsCategoricalPreorder R,
+    HasTransFun R, IsCategoricalPreorder.IsCategoricalPreorderExt R
+
+  instance categoryIsSemigroupoid [HasLinearFunOp V] [IsCategory R] : IsSemigroupoid R := ⟨⟩
+
+  class IsGroupoidEquivalence [IsEquivalence R] extends IsCategoricalPreorder R where
   (leftInv  {a b : α} (f : R a b) : f⁻¹ • f ≃ refl (R := R) a)
   (rightInv {a b : α} (f : R a b) : f • f⁻¹ ≃ refl (R := R) b)
+
+  class IsGroupoidEquivalence.IsGroupoidEquivalenceExt [IsEquivalence R] [IsGroupoidEquivalence R]
+                                                       [HasTransFun R] [HasSymmFun R] [HasFullFunOp V] extends
+    IsCategoricalPreorder.IsCategoricalPreorderExt R where
   (leftInvExt  (a b : α) : substFun (symmFun R a b) (transFunFun    R a b a)
                            ≃[λ f => byDef⁻¹ • leftInv  f • (byDef • byArgDef • byFunDef • byDef)]
                            constFun (R a b) (refl a))
   (rightInvExt (a b : α) : substFun (symmFun R a b) (revTransFunFun R b a b)
                            ≃[λ f => byDef⁻¹ • rightInv f • (byDef • byArgDef • byFunDef • byDef)]
                            constFun (R a b) (refl b))
+
+  class IsGroupoid [HasFullFunOp V] extends
+    IsEquivalence R, IsGroupoidEquivalence R,
+    HasTransFun R, HasSymmFun R, IsGroupoidEquivalence.IsGroupoidEquivalenceExt R
+
+  instance groupoidIsCategory [HasFullFunOp V] [IsGroupoid R] : IsCategory R := ⟨⟩
 
 end MetaRelation

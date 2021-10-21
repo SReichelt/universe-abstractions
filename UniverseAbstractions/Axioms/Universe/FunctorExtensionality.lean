@@ -2,7 +2,7 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Relations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
-import UniverseAbstractions.Axioms.Categories
+import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
@@ -122,13 +122,15 @@ namespace HasLinearFunOp
   { defTransFun    := defCompFunFun,
     defTransFunFun := defCompFunFunFun }
 
-  instance isCategory [h : HasLinearFunExt U] : IsCategory (α := ⌈U⌉) Fun :=
+  instance isCategoricalPreorder [h : HasLinearFunExt U] : IsCategoricalPreorder (α := ⌈U⌉) Fun :=
   { assoc          := h.compAssoc,
-    assocExt       := h.compAssocExt,
+    rightId        := h.rightId,
+    leftId         := h.leftId }
+
+  instance isCategory [h : HasLinearFunExt U] : IsCategory (α := ⌈U⌉) Fun :=
+  { assocExt       := h.compAssocExt,
     assocExtExt    := h.compAssocExtExt,
     assocExtExtExt := h.compAssocExtExtExt,
-    rightId        := h.rightId,
-    leftId         := h.leftId,
     rightIdExt     := h.rightIdExt,
     leftIdExt      := h.leftIdExt }
 

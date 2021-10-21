@@ -4,7 +4,6 @@ import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
-import UniverseAbstractions.Axioms.Categories
 
 
 
@@ -15,39 +14,37 @@ universe u
 
 
 
-namespace unit
-
-  open MetaRelation
-
-  def unitEq (α : Sort u) : EquivalenceRelation α unit :=
-  { R := unitRelation α Inst,
-    h := unitEquivalence α inst }
-
-end unit
-
-class HasTrivialIdentity (U : Universe)
+class HasTrivialIdentity (U : Universe) [HasIdentity U] where
+(mkEq {A : U} (a b : A) : a ≃ b)
 
 namespace HasTrivialIdentity
 
-  instance hasIdentity' (U : Universe) [HasTrivialIdentity U] :
-    HasIdentity' U unit :=
-  ⟨λ A => unit.unitEq ⌈A⌉⟩
+  def eq {U : Universe} [HasIdentity U] [HasTrivialIdentity U] {A : U} {a b : A} :
+    a ≃ b :=
+  mkEq a b
 
-  instance hasCongrArg (U V : Universe) [HasIdentity U] [HasTrivialIdentity V]
-                       {UV : Universe} [HasFunctors U V UV] :
+  def defFun {U V : Universe} [HasIdentity V] [HasTrivialIdentity V]
+             {UV : Universe} [HasFunctors U V UV]
+             {A : U} {B : V} (F : A ⟶ B) {f : A → B} : A ⟶[f] B :=
+  ⟨F, λ _ => eq⟩
+
+  instance hasCongrArg (U V : Universe) [HasIdentity U] [HasIdentity V]
+                       [HasTrivialIdentity V] {UV : Universe} [HasFunctors U V UV] :
     HasCongrArg U V :=
-  ⟨λ {_ _} _ {_ _} _ => unit.inst⟩
+  ⟨λ {_ _} _ {_ _} _ => eq⟩
 
-  instance hasTopEq (U : Universe) [HasTrivialIdentity U] [HasTop U] :
+  instance hasTopEq (U : Universe) [HasIdentity U] [HasTrivialIdentity U] [HasTop U] :
     HasTop.HasTopEq U :=
-  ⟨λ _ => unit.inst⟩
+  ⟨λ _ => eq⟩
 
-  instance hasProductEq (U V : Universe) [HasTrivialIdentity U] [HasTrivialIdentity V]
-                        {UxV : Universe} [HasTrivialIdentity UxV] [HasProducts U V UxV] :
+  instance hasProductEq (U V : Universe) [HasIdentity U] [HasTrivialIdentity U]
+                        [HasIdentity V] [HasTrivialIdentity V]
+                        {UxV : Universe} [HasIdentity UxV] [HasTrivialIdentity UxV]
+                        [HasProducts U V UxV] :
     HasProducts.HasProductEq U V :=
-  { introEq := λ _   => unit.inst,
-    fstEq   := λ _ _ => unit.inst,
-    sndEq   := λ _ _ => unit.inst }
+  { introEq := λ _   => eq,
+    fstEq   := λ _ _ => eq,
+    sndEq   := λ _ _ => eq }
 
 end HasTrivialIdentity
 
@@ -112,15 +109,6 @@ namespace HasTrivialFunctoriality
     defElimFun     := λ _     => defFun,
     defElimFunFun  := λ _ _ _ => defFun }
 
-  instance hasTransFun (α : Sort u) (R : MetaRelation α U) [HasTrans R] :
-    HasTransFun R :=
-  { defTransFun    := λ _ _   => defFun,
-    defTransFunFun := λ _ _ _ => defFun }
-
-  instance hasSymmFun (α : Sort u) (R : MetaRelation α U) [HasSymm R] :
-    HasSymmFun R :=
-  { defSymmFun := λ _ _ => defFun }
-
 end HasTrivialFunctoriality
 
 
@@ -131,10 +119,10 @@ class HasTrivialExtensionality (U V : Universe) [HasIdentity V] {UV : Universe} 
 
 namespace HasTrivialExtensionality
 
-  instance fromTrivialIdentity (U V : Universe) [HasIdentity V] {UV : Universe} [HasTrivialIdentity UV]
-                               [HasFunctors U V UV] :
+  instance fromTrivialIdentity (U V : Universe) [HasIdentity V] {UV : Universe}
+                               [HasIdentity UV] [HasTrivialIdentity UV] [HasFunctors U V UV] :
     HasTrivialExtensionality U V :=
-  ⟨λ _ => unit.inst⟩
+  ⟨λ _ => HasTrivialIdentity.eq⟩
 
   def funEq {U V : Universe} [HasIdentity V] {UV : Universe} [HasIdentity UV]
             [HasFunctors U V UV] [h : HasTrivialExtensionality U V]

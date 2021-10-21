@@ -28,7 +28,16 @@ namespace unit
 
   -- `unit` has instance equivalences in `unit`.
 
-  instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨⟩
+  def unitEq (α : Sort u) : EquivalenceRelation α unit :=
+  { R := unitRelation α Inst,
+    h := unitEquivalence α inst }
+
+  def unitIdentity' (U : Universe) : HasIdentity' U unit :=
+  ⟨λ A => unit.unitEq ⌈A⌉⟩
+
+  instance hasIdentity' : HasIdentity' unit unit := unitIdentity' unit
+
+  instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨λ _ _ => unit.inst⟩
 
   -- Functors into `unit` are trivial.
 
@@ -37,8 +46,7 @@ namespace unit
     apply := λ _ _ => inst }
 
   instance hasTrivialInFunctoriality (U : Universe.{u}) : HasTrivialFunctoriality U unit :=
-  ⟨λ _ => { F   := inst,
-            eff := λ _ => inst }⟩
+  ⟨λ _ => HasTrivialIdentity.defFun inst⟩
 
   -- Functors from `unit` to `V` are the same as instances of `V`.
 
@@ -177,7 +185,9 @@ namespace boolean
 
   -- `boolean` has instance equivalences in `unit`.
 
-  instance hasTrivialIdentity : HasTrivialIdentity boolean := ⟨⟩
+  instance hasIdentity' : HasIdentity' boolean unit := unit.unitIdentity' boolean
+
+  instance hasTrivialIdentity : HasTrivialIdentity boolean := ⟨λ _ _ => unit.inst⟩
 
   -- Internal functors in `boolean` are defined as implication.
 
@@ -188,10 +198,10 @@ namespace boolean
                               | false => False.elim ha }
 
   instance hasTrivialFunctoriality : HasTrivialFunctoriality boolean boolean :=
-  ⟨λ {a b} p => { F   := match a with
-                         | true  => p inst
-                         | false => inst,
-                  eff := λ _ => inst }⟩
+  ⟨λ {a b} p => let F : a ⟶ b := match a with
+                                 | true  => p inst
+                                 | false => inst;
+                HasTrivialIdentity.defFun F⟩
 
   instance hasInternalFunctors : HasInternalFunctors boolean := ⟨⟩
   instance hasStandardFunctors : HasStandardFunctors boolean := ⟨⟩
@@ -212,6 +222,8 @@ namespace boolean
   { byContradictionFun := λ b => match b with
                                  | true  => inst
                                  | false => inst }
+
+  -- Products are given by `and`.
 
   instance hasProducts : HasProducts boolean boolean boolean :=
   { Prod  := and,
@@ -279,13 +291,15 @@ namespace sort
 
 end sort
 
-theorem Exists.prop.fst {p : Prop} {q : p → Prop} : (∃ h, q h) → p
+theorem Exists.Prop.fst {p : Prop} {q : p → Prop} : (∃ h, q h) → p
 | ⟨h, _⟩ => h
 
-theorem Exists.prop.snd {p : Prop} {q : p → Prop} : (e : ∃ h, q h) → q (Exists.prop.fst e)
+theorem Exists.Prop.snd {p : Prop} {q : p → Prop} : (e : ∃ h, q h) → q (Exists.Prop.fst e)
 | ⟨_, h⟩ => h
 
 namespace prop
+
+  instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
 
   -- `Top` is `True`, `Bot` is `False`.
 
