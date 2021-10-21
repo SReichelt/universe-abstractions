@@ -36,7 +36,7 @@ namespace HasTop.HasTopEq
 
   variable (U : Universe) [HasIdentity U] [HasTop U] [HasTop.HasTopEq U]
 
-  instance isSubsingleton : HasIdentity'.IsSubsingleton (Top U) :=
+  instance isSubsingleton : HasInstanceEquivalences.IsSubsingleton (Top U) :=
   ⟨λ a b => (topEq b)⁻¹ • topEq a⟩
 
 end HasTop.HasTopEq

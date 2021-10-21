@@ -45,9 +45,9 @@ namespace functorUniverse
     A !⟶ B :=
   HasConstFun.constFun A b
 
-  instance hasIdentity' {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
-                        (IUV : Universe.{iv}) [h : HasIdentity'.{v, iv} UV IUV] :
-    HasIdentity'.{v, iv} ({A ⟶} V) IUV :=
+  instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
+                        (IUV : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} UV IUV] :
+    HasInstanceEquivalences.{v, iv} ({A ⟶} V) IUV :=
   ⟨λ (B : V) => h.Eq (A ⟶ B)⟩
 
   section Functors
@@ -355,18 +355,18 @@ namespace functorUniverse
 
     end HasSimpEmbed
 
-    instance isSubsingleton (B : U) [hSub : HasIdentity'.IsSubsingleton (A !⟶ B)] :
-      HasIdentity'.IsSubsingleton (A ⟶ B) :=
+    instance isSubsingleton (B : U) [hSub : HasInstanceEquivalences.IsSubsingleton (A !⟶ B)] :
+      HasInstanceEquivalences.IsSubsingleton (A ⟶ B) :=
     ⟨hSub.eq⟩
 
-    def baseEqExt [HasSubsingletonExt U U] {B C : U} [hSub : HasIdentity'.IsSubsingleton (A !⟶ C)]
+    def baseEqExt [HasSubsingletonExt U U] {B C : U} [hSub : HasInstanceEquivalences.IsSubsingleton (A !⟶ C)]
                   (F₁ F₂ : A ⟶ B ⟶ C) :
       F₁ ≃ F₂ :=
     bySwap (eqExt (swapFunFun F₂) (swapFunFun F₁))
 
     instance hasSubsingletonExt [HasSubsingletonExt U U] :
       HasSubsingletonExt ({A ⟶} U) ({A ⟶} U) :=
-    ⟨λ {AB AC} [hSub : HasIdentity'.IsSubsingleton AC] F₁ F₂ => baseEqExt A (hSub := hSub) F₁ F₂⟩
+    ⟨λ {AB AC} [hSub : HasInstanceEquivalences.IsSubsingleton AC] F₁ F₂ => baseEqExt A (hSub := hSub) F₁ F₂⟩
 
     instance hasDirectLinearFunExt : HasDirectLinearFunExt ({A ⟶} U) :=
     { rightId        := λ B C     : U => HasSimpEmbed.bySimp A (rightIdExt B C),
@@ -463,10 +463,10 @@ namespace optionalFunctorUniverse
 
   notation:20 "{" A:0 " ⟶}? " V:21 => optionalFunctorUniverse A V
 
-  instance hasIdentity' {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
-                        (IV : Universe.{iv}) [hConst : HasIdentity'.{v, iv} V IV]
-                        [hFn : HasIdentity'.{v, iv} ({A ⟶} V) IV] [HasTop IV] :
-    HasIdentity'.{v, iv} ({A ⟶}? V) IV :=
+  instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
+                        (IV : Universe.{iv}) [hConst : HasInstanceEquivalences.{v, iv} V IV]
+                        [hFn : HasInstanceEquivalences.{v, iv} ({A ⟶} V) IV] [HasTop IV] :
+    HasInstanceEquivalences.{v, iv} ({A ⟶}? V) IV :=
   ⟨λ β => match β with
           | const B => hConst.Eq B
           | fn AB   => hFn.Eq AB

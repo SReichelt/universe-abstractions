@@ -1,5 +1,5 @@
 -- TODO: Adapt to `HasIdentity`.
-#exit 0
+#exit
 
 
 

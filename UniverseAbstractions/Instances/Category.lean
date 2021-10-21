@@ -94,7 +94,7 @@ namespace Category
 
   end Iso
 
-  instance hasIdentity' : HasIdentity' (univ V) sort := ⟨Iso.equivalence⟩
+  instance hasInstanceEquivalences : HasInstanceEquivalences (univ V) sort := ⟨Iso.equivalence⟩
 
   class IsFun {A : univ.{u, v, iv} V} {B : univ.{u', v, iv} V} (φ : A → B) : Type (max u v iv) where
   (mapHom             {a b : A}                           : (a ⇾ b) ⟶ (φ a ⇾ φ b))

@@ -45,14 +45,13 @@ namespace HasFunctors
     CoeFun ⌈A ⟶ B⌉ (λ _ => A → B) :=
   ⟨apply⟩
 
-  structure DefFun {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
-                   (A : U) (B : V) (f : A → B) where
+  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V] 
+
+  structure DefFun (A : U) (B : V) (f : A → B) where
   (F           : A ⟶ B)
   (eff (a : A) : F a ≃ f a)
 
   notation:20 A:21 " ⟶[" f:0 "] " B:21 => HasFunctors.DefFun A B f
-
-  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V] 
 
   class IsFunApp (A : outParam ⌈U⌉) {B : V} (b : B) where
   (F : A ⟶ B)
@@ -271,9 +270,9 @@ namespace HasLinearFunOp
     a := F,
     e := byDef }
 
-  instance hasRefl    : HasRefl    (α := ⌈U⌉) Fun := ⟨idFun⟩
-  instance hasTrans   : HasTrans   (α := ⌈U⌉) Fun := ⟨compFun⟩
-  instance isPreorder : IsPreorder (α := ⌈U⌉) Fun := ⟨⟩
+  instance isPreorder : IsPreorder (α := U) Fun :=
+  { refl  := idFun,
+    trans := compFun }
 
   instance hasTrans.isFunApp {A B C : U} {F : A ⟶ B} {G : B ⟶ C} : IsFunApp (B ⟶ C) (G • F) :=
   compFun.isFunApp

@@ -1,9 +1,10 @@
 -- TODO: Adapt to `HasIdentity`, use functors.
-#exit 0
+#exit
 
 
 
 import UniverseAbstractions.Axioms.Universes
+import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
@@ -15,17 +16,19 @@ import mathlib4_experiments.Data.Equiv.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w w'
+universe u v uv
 
 
 
--- We define a "`V`-valued property" on a type `A` to be a function yielding a type in `V` with an
--- additional condition, similarly to the definition of functoriality. If `V` is the universe
--- `prop`, this is just a regular property, or equivalently `Set A` in Lean.
+-- We define a "`V`-valued property" on a type `A` to be a functor into the singleton universe
+-- `⌊V⌋`, i.e. a function yielding a type in `V` with an additional condition.
+-- A `prop`-valued property is just a regular property, or equivalently `Set A` in Lean.
 
-class HasProperties (U : Universe.{u}) (V : Universe.{v}) : Type (max u v w) where
-(IsProp       {A : U}         : (A → V) → Sort w)
-(defConstProp (A : U) (B : V) : IsProp (Function.const ⌈A⌉ B))
+class HasProperties (U : Universe.{u}) (V : Universe.{v}) [HasIdentity V]
+                    (UV : outParam Universe.{uv}) extends
+  HasFunctors U ⌉V⌈ UV, HasConstFun U ⌉V⌈
+
+#exit
 
 namespace HasProperties
 
@@ -102,6 +105,8 @@ namespace HasProperties
     (h : Sigma φ)
 
   end Properties
+
+  #exit
 
   -- Given a type `B : V`, we can define a constant property that always yields this type. `Pi`
   -- applied to this property is just the type of functions from `A` to `B`, and `Sigma` applied to

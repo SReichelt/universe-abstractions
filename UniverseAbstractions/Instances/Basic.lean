@@ -32,10 +32,10 @@ namespace unit
   { R := unitRelation α Inst,
     h := unitEquivalence α inst }
 
-  def unitIdentity' (U : Universe) : HasIdentity' U unit :=
+  def unitInstanceEquivalences (U : Universe) : HasInstanceEquivalences U unit :=
   ⟨λ A => unit.unitEq ⌈A⌉⟩
 
-  instance hasIdentity' : HasIdentity' unit unit := unitIdentity' unit
+  instance hasInstanceEquivalences : HasInstanceEquivalences unit unit := unitInstanceEquivalences unit
 
   instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨λ _ _ => unit.inst⟩
 
@@ -67,8 +67,8 @@ namespace unit
   -- `Inst` can serve as both top and bottom.
 
   instance hasTop : HasTop unit :=
-  { T     := Inst,
-    t     := inst }
+  { T := Inst,
+    t := inst }
 
   instance hasBot : HasBot unit :=
   { B    := Inst,
@@ -91,24 +91,16 @@ namespace unit
     fst   := λ _ => inst,
     snd   := id }
 
---  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit unit := ⟨⟩
---
---  @[reducible] def unitEquivalence {A B : unit} : A ⟷' B := ⟨inst, inst, HasTrivialEquivalenceCondition.defEquiv⟩
---
---  @[simp] theorem unitEquivalence.unique {A B : unit} (E : A ⟷' B) : E = unitEquivalence :=
---  by induction E; simp
---
---  def equivEquiv (A B : unit) : ⌈Inst⌉ ≃ (A ⟷' B) :=
---  { toFun    := λ _ => unitEquivalence,
---    invFun   := λ _ => inst,
---    leftInv  := inst.unique,
---    rightInv := λ E => Eq.symm (unitEquivalence.unique E) }
---
---  instance hasInternalEquivType (A B : unit) : HasEmbeddedType unit (A ⟷' B) :=
---  ⟨equivEquiv A B⟩
---
---  instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences unit unit unit := ⟨⟩
---
+  instance hasEquivalences : HasEquivalences unit unit unit :=
+  { Equiv    := λ _ _ => Inst,
+    toFun    := λ _   => inst,
+    invFun   := λ _   => inst,
+    leftInv  := λ _ _ => inst,
+    rightInv := λ _ _ => inst }
+
+  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit :=
+  ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
+
 --  instance hasTrivialInProperties  (U : Universe.{u}) : HasTrivialProperties U unit := ⟨⟩
 --  instance hasTrivialOutProperties (U : Universe.{u}) : HasTrivialProperties unit U := ⟨⟩
 --
@@ -185,7 +177,7 @@ namespace boolean
 
   -- `boolean` has instance equivalences in `unit`.
 
-  instance hasIdentity' : HasIdentity' boolean unit := unit.unitIdentity' boolean
+  instance hasInstanceEquivalences : HasInstanceEquivalences boolean unit := unit.unitInstanceEquivalences boolean
 
   instance hasTrivialIdentity : HasTrivialIdentity boolean := ⟨λ _ _ => unit.inst⟩
 
@@ -198,10 +190,10 @@ namespace boolean
                               | false => False.elim ha }
 
   instance hasTrivialFunctoriality : HasTrivialFunctoriality boolean boolean :=
-  ⟨λ {a b} p => let F : a ⟶ b := match a with
-                                 | true  => p inst
-                                 | false => inst;
-                HasTrivialIdentity.defFun F⟩
+  ⟨λ {a b} p => have h : a ⟶ b := match a with
+                                  | true  => p inst
+                                  | false => inst;
+                HasTrivialIdentity.defFun h⟩
 
   instance hasInternalFunctors : HasInternalFunctors boolean := ⟨⟩
   instance hasStandardFunctors : HasStandardFunctors boolean := ⟨⟩
@@ -209,8 +201,8 @@ namespace boolean
   -- `Top` is `true` and `Bot` is `false`.
 
   instance hasTop : HasTop boolean :=
-  { T     := True,
-    t     := inst }
+  { T := True,
+    t := inst }
 
   instance hasBot : HasBot boolean :=
   { B    := False,
@@ -237,6 +229,29 @@ namespace boolean
                           | false => False.elim h
                           | true  => h }
 
+  -- Equivalence is given by boolean equality.
+
+  instance hasEquivalences : HasEquivalences boolean boolean boolean :=
+  { Equiv    := λ a b : Bool => a == b,
+    toFun    := λ {a b} h => match a, b with
+                             | true,  false => h
+                             | true,  true  => h
+                             | false, _     => inst,
+    invFun   := λ {a b} h => match b, a with
+                             | true,  false => h
+                             | true,  true  => h
+                             | false, _     => inst,
+    leftInv  := λ _ _ => inst,
+    rightInv := λ _ _ => inst }
+
+  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition boolean :=
+  ⟨λ {a b} e => have h : a ⟷ b := match a, b with
+                                  | false, false => inst
+                                  | false, true  => False.elim e.invFun
+                                  | true,  false => False.elim e.toFun
+                                  | true,  true  => inst;
+                HasTrivialIdentity.defEquiv h⟩
+
 end boolean
 
 
@@ -245,9 +260,9 @@ namespace sort
 
   open MetaRelation
 
-  -- Functors from `sort` to any other universe are just functions: Instance equivalence
-  -- in `sort` is given by equality (or `unit` for `prop`), so functors do not need to
-  -- respect anything else besides equality.
+  -- Functors from `sort` to any universe are just functions: Instance equivalence
+  -- in `sort` is given by equality, so functors do not need to respect anything else
+  -- besides equality.
 
   instance hasFunctors (V : Universe.{v}) : HasFunctors sort.{u} V sort.{imax u v} :=
   { Fun   := λ α B => α → B,
@@ -258,7 +273,7 @@ namespace sort
   ⟨λ f => { F   := f,
             eff := λ a => HasRefl.refl (f a) }⟩
 
-  instance hasIdentity' : HasIdentity' sort.{u} prop :=
+  instance hasInstanceEquivalences : HasInstanceEquivalences sort.{u} prop :=
   ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
 
   instance hasCongrArg : HasCongrArg sort.{u} sort.{v} :=
@@ -304,17 +319,19 @@ namespace prop
   -- `Top` is `True`, `Bot` is `False`.
 
   instance hasTop : HasTop prop :=
-  { T     := True,
-    t     := trivial }
+  { T := True,
+    t := trivial }
 
   instance hasBot : HasBot prop :=
   { B    := False,
     elim := False.elim }
 
-  -- `prop` has classical logic via choice.
+  -- `prop` has classical logic if we want.
 
   instance hasClassicalLogic : HasClassicalLogic prop :=
   { byContradictionFun := @Classical.byContradiction }
+
+  -- Products are given by `And`.
 
   instance hasProducts : HasProducts prop prop prop :=
   { Prod  := And,
@@ -322,19 +339,19 @@ namespace prop
     fst   := And.left,
     snd   := And.right }
 
---  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop prop := ⟨⟩
---
---  def equivEquiv (p q : prop) : (p ↔ q) ≃ (p ⟷' q) :=
---  { toFun    := λ h => ⟨h.mp, h.mpr, trivial⟩,
---    invFun   := λ E => ⟨E.toFun, E.invFun⟩,
---    leftInv  := λ _ => proofIrrel _ _,
---    rightInv := λ ⟨_, _, _⟩ => by simp; exact HEq.rfl }
---
---  instance hasInternalEquivType (p q : prop) : HasEmbeddedType prop (p ⟷' q) :=
---  ⟨equivEquiv p q⟩
---
---  instance hasTrivialEquivalences : HasTrivialEquivalenceCondition.HasTrivialEquivalences prop prop prop := ⟨⟩
---
+  -- Equivalences are given by `Iff`.
+
+  instance hasEquivalences : HasEquivalences prop prop prop :=
+  { Equiv    := Iff,
+    toFun    := Iff.mp,
+    invFun   := Iff.mpr,
+    leftInv  := λ _ _ => proofIrrel _ _,
+    rightInv := λ _ _ => proofIrrel _ _ }
+
+  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
+  ⟨λ {p q} e => have h : p ↔ q := ⟨e.toFun, e.invFun⟩;
+                HasTrivialIdentity.defEquiv h⟩
+
 --  def sigmaEquiv {p : prop} (φ : p ⟿ prop) : (∃ a, φ a) ≃ (Σ' φ) :=
 --  { toFun    := λ h => ⟨Exists.prop.fst h, Exists.prop.snd h⟩,
 --    invFun   := λ P => ⟨P.fst, P.snd⟩,
@@ -352,8 +369,8 @@ namespace prop
 namespace type
 
   instance hasTop : HasTop type.{u} :=
-  { T     := PUnit.{u + 1},
-    t     := PUnit.unit }
+  { T := PUnit.{u + 1},
+    t := PUnit.unit }
   
   instance hasTopEq : HasTop.HasTopEq type.{u} :=
   ⟨λ t' => by induction t'; rfl⟩
@@ -380,79 +397,16 @@ namespace type
     fstEq   := λ a b => rfl,
     sndEq   := λ a b => rfl }
 
---  class DefEquiv {α β : type.{u}} (toFun : α → β) (invFun : β → α) : Prop where
---  (leftInv  : ∀ a, invFun (toFun a) = a)
---  (rightInv : ∀ b, toFun (invFun b) = b)
---
---  instance hasEquivalenceCondition : HasEquivalenceCondition type.{u} type.{u} := ⟨DefEquiv⟩
---
---  @[reducible] def DefEquiv.fromEquiv {α β : type.{u}} (e : ⌈α⌉ ≃ ⌈β⌉) : α ⟷[sort.toFunctor e.toFun, sort.toFunctor e.invFun] β :=
---  ⟨e.leftInv, e.rightInv⟩
---
---  @[reducible] def DefEquiv.inv {α β : type.{u}} {toFun : α → β} {invFun : β → α}
---                                (h : α ⟷[sort.toFunctor toFun, sort.toFunctor invFun] β) :
---    β ⟷[sort.toFunctor invFun, sort.toFunctor toFun] α :=
---  ⟨h.rightInv, h.leftInv⟩
---
---  def equivEquiv (α β : type.{u}) : Equiv α β ≃ (α ⟷' β) :=
---  { toFun    := λ e => ⟨e.toFun, e.invFun, DefEquiv.fromEquiv e⟩,
---    invFun   := λ E => ⟨E.toFun, E.invFun, E.E.leftInv, E.E.rightInv⟩,
---    leftInv  := λ ⟨_, _, _, _⟩ => rfl,
---    rightInv := λ ⟨_, _, _⟩ => rfl }
---
---  instance hasInternalEquivType (α β : type.{u}) : HasEmbeddedType type.{u} (α ⟷' β) :=
---  ⟨equivEquiv α β⟩
---
---  instance hasEquivalences : HasEquivalences type.{u} type.{u} type.{u} := ⟨⟩
---
---  instance hasEquivOp : HasEquivOp type.{u} :=
---  { defIdEquiv         := λ α     => DefEquiv.fromEquiv (Equiv.refl α),
---    defCompEquiv       := λ e f   => DefEquiv.fromEquiv (Equiv.trans e f),
---    defCompEquivFun    := λ _ _   => HasTrivialFunctoriality.defFun,
---    defCompEquivFunFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
---    defInvEquiv        := λ e     => DefEquiv.fromEquiv (Equiv.symm e),
---    defInvEquivFun     := λ _ _   => HasTrivialFunctoriality.defFun }
---
---  instance hasIdEquiv : HasIdEquiv type.{u} type.{u} := HasEquivOp.hasIdEquiv
---  instance hasInvEquiv : HasInvEquiv type.{u} type.{u} type.{u} := HasEquivOp.hasInvEquiv
---  instance hasCompEquiv : HasCompEquiv type.{u} type.{u} type.{u} := HasEquivOp.hasCompEquiv
---
---  instance hasEquivOpEq : HasEquivOpEq type.{u} := HasEquivOpEq.std type.{u}
---
---  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type.{u} :=
---  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext λ b => congrArg f (e.rightInv b),
---                                          λ f => funext λ a => congrArg f (e.leftInv  a)⟩,
---    defFunDomainEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
---    defFunCodomainEquiv    := λ e _   => ⟨λ f => funext λ c => e.leftInv  (f c),
---                                          λ f => funext λ c => e.rightInv (f c)⟩,
---    defFunCodomainEquivFun := λ _ _ _ => HasTrivialFunctoriality.defFun,
---    defSwapFunFunEquiv     := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
---                                          λ _ => funext λ _ => funext λ _ => rfl⟩,
---    defTopElimEquiv        := λ _     => ⟨λ _ => rfl, λ f => funext λ () => rfl⟩,
---    defProdElimFunEquiv    := λ _ _ _ => ⟨λ _ => funext λ _ => funext λ _ => rfl,
---                                          λ _ => funext λ (_, _) => rfl⟩,
---    defProdFstEquiv        := λ e _   => ⟨λ p => prodExt (e.leftInv  p.fst) rfl,
---                                          λ p => prodExt (e.rightInv p.fst) rfl⟩,
---    defProdFstEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
---    defProdSndEquiv        := λ e _   => ⟨λ p => prodExt rfl (e.leftInv  p.snd),
---                                          λ p => prodExt rfl (e.rightInv p.snd)⟩,
---    defProdSndEquivFun     := λ _ _ _ => HasTrivialFunctoriality.defFun,
---    defProdCommEquiv       := λ _ _   => ⟨λ (_, _) => rfl, λ (_, _) => rfl⟩,
---    defProdAssocEquiv      := λ _ _ _ => ⟨λ ((_, _), _) => rfl, λ (_, (_, _)) => rfl⟩,
---    defProdTopEquiv        := λ _     => ⟨λ _ => rfl, λ ((), _) => rfl⟩,
---    defCompEquivEquiv      := λ e _   => ⟨Equiv.symm_trans_trans e, Equiv.trans_symm_trans e⟩,
---    defCompEquivEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
---    defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
---
---  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type.{u} :=
---  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext λ _ => prodExt rfl rfl,
---                                     λ _ => prodExt (funext λ _ => rfl) (funext λ _ => rfl)⟩ }
---
---  instance hasBotEquivalences : HasBotEquivalences type.{u} :=
---  { defBotNotTopEquiv := ⟨λ e => Empty.elim e, λ f => Empty.elim (f ())⟩,
---    defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
---    defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
---
+  instance hasEquivalences : HasEquivalences type.{u} type.{v} type.{max u v} :=
+  { Equiv    := Equiv,
+    toFun    := Equiv.toFun,
+    invFun   := Equiv.invFun,
+    leftInv  := Equiv.leftInv,
+    rightInv := Equiv.rightInv }
+
+  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
+  ⟨λ e => ⟨⟨e.toFun, e.invFun, e.equiv.left.inv, e.equiv.right.inv⟩, rfl, rfl⟩⟩
+
 --  def sigmaEquiv {α : type.{u}} (φ : α ⟿ type.{u}) : (Σ a, φ a) ≃ (Σ' φ) :=
 --  { toFun    := λ p => ⟨p.fst, p.snd⟩,
 --    invFun   := λ P => ⟨P.fst, P.snd⟩,

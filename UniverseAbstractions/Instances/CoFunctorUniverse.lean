@@ -29,9 +29,9 @@ namespace coFunctorUniverse
 
   def inst {U : Universe.{u}} {V VU : Universe.{v}} [HasFunctors V U VU] {B : V} {A : U} (F : B ⟶ A) : B ⟶! A := F
 
-  instance hasIdentity' {U : Universe.{u}} (A : U) (V : Universe.{v}) {VU : Universe.{v}} [HasFunctors V U VU]
-                        (IVU : Universe.{iv}) [h : HasIdentity'.{v, iv} VU IVU] :
-    HasIdentity'.{v, iv} (V {⟶ A}) IVU :=
+  instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {VU : Universe.{v}} [HasFunctors V U VU]
+                        (IVU : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} VU IVU] :
+    HasInstanceEquivalences.{v, iv} (V {⟶ A}) IVU :=
   ⟨λ (B : V) => h.Eq (B ⟶ A)⟩
 
   def idInst {U : Universe.{u}} (A : U) {UU : Universe.{u}} [HasFunctors U U UU] [HasIdentity.{u, iu} U]

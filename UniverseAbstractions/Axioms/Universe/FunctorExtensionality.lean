@@ -32,12 +32,12 @@ universe u v uv iu iv iuv
 
 class HasSubsingletonExt (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}}
                          [HasIdentity V] [HasIdentity UV] [HasFunctors U V UV] where
-(eqExt {A : U} {B : V} [h : HasIdentity'.IsSubsingleton B] (F₁ F₂ : A ⟶ B) :
+(eqExt {A : U} {B : V} [h : HasInstanceEquivalences.IsSubsingleton B] (F₁ F₂ : A ⟶ B) :
    F₁ ≃[λ a => h.eq (F₁ a) (F₂ a)] F₂)
 
 namespace HasSubsingletonExt
 
-  open HasIdentity'
+  open HasInstanceEquivalences
 
   variable {U V UV : Universe} [HasIdentity V] [HasIdentity UV] [HasFunctors U V UV]
            [HasSubsingletonExt U V]

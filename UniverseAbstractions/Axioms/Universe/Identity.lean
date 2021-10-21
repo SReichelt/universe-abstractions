@@ -12,12 +12,12 @@ universe u v iu iv
 
 
 
-class HasIdentity' (U : Universe.{u}) (IU : outParam Universe.{iu}) : Type (max u iu) where
+class HasInstanceEquivalences (U : Universe.{u}) (IU : outParam Universe.{iu}) : Type (max u iu) where
 (Eq (A : U) : EquivalenceRelation ⌈A⌉ IU)
 
-namespace HasIdentity'
+namespace HasInstanceEquivalences
 
-  variable {U IU : Universe} [h : HasIdentity' U IU]
+  variable {U IU : Universe} [h : HasInstanceEquivalences U IU]
 
   instance hasEquivalence (A : U) : HasEquivalence ⌈A⌉ ⌈A⌉ := ⟨(h.Eq A).R⟩
   instance hasInstances (A : U) : HasInstances (HasEquivalence.γ ⌈A⌉ ⌈A⌉) := Universe.instInst IU
@@ -28,11 +28,11 @@ namespace HasIdentity'
   class IsSubsingleton (A : U) where
   (eq (a b : A) : a ≃ b)
 
-end HasIdentity'
+end HasInstanceEquivalences
 
 class HasIdentity (U : Universe.{u}) : Type (max u (iu + 1)) where
 (IU : Universe.{iu})
-[h  : HasIdentity' U IU]
+[h  : HasInstanceEquivalences U IU]
 
 namespace HasIdentity
 
@@ -41,8 +41,8 @@ namespace HasIdentity
   @[reducible] def univ := h.IU
   notation "⌊" U:0 "⌋" => HasIdentity.univ U
 
-  instance hasIdentity' : HasIdentity' U ⌊U⌋ := h.h
+  instance hasInstanceEquivalences : HasInstanceEquivalences U ⌊U⌋ := h.h
 
 end HasIdentity
 
-instance HasIdentity'.hasIdentity (U IU : Universe) [HasIdentity' U IU] : HasIdentity U := ⟨IU⟩
+instance HasInstanceEquivalences.hasIdentity (U IU : Universe) [HasInstanceEquivalences U IU] : HasIdentity U := ⟨IU⟩

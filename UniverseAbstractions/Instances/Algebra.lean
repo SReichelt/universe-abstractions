@@ -33,7 +33,7 @@ namespace CommSemigroup
 
   instance inst (A : univ) : CommSemigroup ⌈A⌉ := Bundled.inst A
 
-  instance hasIdentity' : HasIdentity' univ prop := ⟨λ A => @Eq.isEquivalence ⌈A⌉⟩
+  instance hasInstanceEquivalences : HasInstanceEquivalences univ prop := ⟨λ A => @Eq.isEquivalence ⌈A⌉⟩
 
   class IsHom {A B : univ} (f : A → B) : Prop where
   (h_op (a b : A) : f (op a b) = op (f a) (f b))
