@@ -5,6 +5,7 @@ import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
+import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
 
 
 
@@ -86,6 +87,29 @@ namespace HasTrivialFunctoriality
                       [HasFunctors U V UV] [HasFunctors V W VW] [HasFunctors U W UW]
                       [HasTrivialFunctoriality U W] :
     HasCompFun U V W :=
+  ⟨λ _ _ => defFun⟩
+
+  instance hasFunProp (U V W : Universe) {UpV UpW VW UpVW : Universe}
+                      [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasFunctors V W VW]
+                      [HasIdentity {VW}] [HasFunctors U {VW} UpVW]
+                      [HasTrivialFunctoriality U {VW}] :
+    HasFunProp U V W :=
+  ⟨λ _ _ => defFun⟩
+
+  instance hasProdProp (U V W : Universe) {UpV UpW VxW UpVxW : Universe}
+                       [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasProducts V W VxW]
+                       [HasIdentity {VxW}] [HasFunctors U {VxW} UpVxW]
+                       [HasTrivialFunctoriality U {VxW}] :
+    HasProdProp U V W :=
+  ⟨λ _ _ => defFun⟩
+
+  instance hasEquivProp (U V W : Universe) {UpV UpW VW WV V_W UpV_W : Universe}
+                        [HasIdentity V] [HasIdentity W]
+                        [HasFunctors U {V} UpV] [HasFunctors U {W} UpW]
+                        [HasFunctors V W VW] [HasFunctors W V WV] [HasEquivalences V W V_W]
+                        [HasIdentity {V_W}] [HasFunctors U {V_W} UpV_W]
+                        [HasTrivialFunctoriality U {V_W}] :
+    HasEquivProp U V W :=
   ⟨λ _ _ => defFun⟩
 
   variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialFunctoriality U U]
