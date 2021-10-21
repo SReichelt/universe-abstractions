@@ -14,21 +14,25 @@ universe u v uv vu u_v
 
 
 
+def HasEquivalences.Inv {U V UV VU : Universe} [HasIdentity U]
+                        [HasFunctors U V UV] [HasFunctors V U VU]
+                        {A : U} {B : V} (toFun : A ⟶ B) (invFun : B ⟶ A) :=
+∀ a, invFun (toFun a) ≃ a
+
 class HasEquivalences (U : Universe.{u}) (V : Universe.{v}) [HasIdentity U] [HasIdentity V]
-                      {UV : Universe.{uv}} {VU : Universe.{vu}} [HasIdentity UV] [HasIdentity VU]
+                      {UV : Universe.{uv}} {VU : Universe.{vu}}
                       [HasFunctors U V UV] [HasFunctors V U VU]
                       (U_V : outParam Universe.{u_v}) where
-(Equiv                                            : U → V → U_V)
-(toFun    {A : U} {B : V} (E : Equiv A B)         : A ⟶ B)
-(invFun   {A : U} {B : V} (E : Equiv A B)         : B ⟶ A)
-(leftInv  {A : U} {B : V} (E : Equiv A B) (a : A) : invFun E (toFun E a) ≃ a)
-(rightInv {A : U} {B : V} (E : Equiv A B) (b : B) : toFun E (invFun E b) ≃ b)
+(Equiv                                    : U → V → U_V)
+(toFun    {A : U} {B : V}                 : Equiv A B → (A ⟶ B))
+(invFun   {A : U} {B : V}                 : Equiv A B → (B ⟶ A))
+(leftInv  {A : U} {B : V} (E : Equiv A B) : HasEquivalences.Inv (toFun E) (invFun E))
+(rightInv {A : U} {B : V} (E : Equiv A B) : HasEquivalences.Inv (invFun E) (toFun E))
 
 namespace HasEquivalences
 
-  variable {U V UV VU U_V : Universe}
-           [HasIdentity U] [HasIdentity V] [HasIdentity UV] [HasIdentity VU]
-           [HasFunctors U V UV] [HasFunctors V U VU] [HasEquivalences U V (UV := UV) (VU := VU) U_V]
+  variable {U V UV VU U_V : Universe} [HasIdentity U] [HasIdentity V]
+           [HasFunctors U V UV] [HasFunctors V U VU] [HasEquivalences U V U_V]
 
   -- Work around bug (?) that turns `UV` and `VU` into explicit parameters.
   @[reducible] def Equiv' (A : U) (B : V) : U_V := Equiv (UV := UV) (VU := VU) A B
@@ -38,6 +42,14 @@ end HasEquivalences
 
 
 
+  def HasInternalEquivalences.InvExt {U : Universe} [HasIdentity U] [HasInternalFunctors U]
+                                     [HasLinearFunOp U]
+                                     {A B : U} {toFun : A ⟶ B} {invFun : B ⟶ A}
+                                     (inv : HasEquivalences.Inv toFun invFun) :=
+  invFun • toFun
+  ≃[λ a => HasFunctors.byDef⁻¹ • inv a • HasFunctors.byDef]
+  HasLinearFunOp.idFun A
+
 class HasInternalEquivalences (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
                               [HasLinearFunOp U] [HasInternalProducts U]
   extends HasEquivalences U U U where
@@ -45,14 +57,8 @@ class HasInternalEquivalences (U : Universe.{u}) [HasIdentity U] [HasInternalFun
    (A ⟷ B)
    ⟶[λ E => HasProducts.intro (HasEquivalences.toFun E) (HasEquivalences.invFun E)]
    (A ⟶ B) ⊓ (B ⟶ A))
-(leftInvExt  {A B : U} (E : Equiv A B) :
-   invFun E • toFun E
-   ≃[λ a => HasFunctors.byDef⁻¹ • leftInv E a • HasFunctors.byDef]
-   HasLinearFunOp.idFun A)
-(rightInvExt {A B : U} (E : Equiv A B) :
-   toFun E • invFun E
-   ≃[λ b => HasFunctors.byDef⁻¹ • rightInv E b • HasFunctors.byDef]
-   HasLinearFunOp.idFun B)
+(leftInvExt  {A B : U} (E : Equiv A B) : HasInternalEquivalences.InvExt (leftInv  E))
+(rightInvExt {A B : U} (E : Equiv A B) : HasInternalEquivalences.InvExt (rightInv E))
 
 namespace HasInternalEquivalences
 
@@ -65,10 +71,8 @@ namespace HasInternalEquivalences
   @[reducible] def elimFun (A B : U) : (A ⟷ B) ⟶ (A ⟶ B) ⊓ (B ⟶ A) := defElimFun A B
 
   structure HalfEquivDesc {A B : U} (toFun : A ⟶ B) (invFun : B ⟶ A) where
-  (inv (a : A) : invFun (toFun a) ≃ a)
-  (invExt      : invFun • toFun
-                 ≃[λ a => byDef⁻¹ • inv a • byDef]
-                 idFun A)
+  (inv    : Inv toFun invFun)
+  (invExt : InvExt inv)
 
   namespace HalfEquivDesc
 
@@ -192,7 +196,7 @@ namespace HasEquivOp
 
   def equivRelation : EquivalenceRelation U U := ⟨Equiv'⟩
 
-  instance typeEquivalences : HasInstanceEquivalences (singletonUniverse U) U := ⟨λ _ => equivRelation⟩
+  instance typeEquivalences : HasInstanceEquivalences {U} U := ⟨λ _ => equivRelation⟩
 
 end HasEquivOp
 
@@ -216,13 +220,13 @@ namespace HasEquivOpFun
 
   @[reducible] def symmFun (A B : U) : (A ⟷ B) ⟶ (B ⟷ A) := defSymmFun A B
 
-  instance hasSymmFun : HasSymmFun (α := ⌈U⌉) Equiv' :=
+  instance hasSymmFun : HasSymmFun (α := U) Equiv' :=
   { defSymmFun := defSymmFun }
 
   @[reducible] def transFun {A B : U} (E : A ⟷ B) (C : U) : (B ⟷ C) ⟶ (A ⟷ C) := defTransFun E C
   @[reducible] def transFunFun (A B C : U) : (A ⟷ B) ⟶ (B ⟷ C) ⟶ (A ⟷ C) := defTransFunFun A B C
 
-  instance hasTransFun : HasTransFun (α := ⌈U⌉) Equiv' :=
+  instance hasTransFun : HasTransFun (α := U) Equiv' :=
   { defTransFun    := defTransFun,
     defTransFunFun := defTransFunFun }
 

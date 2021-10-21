@@ -5,9 +5,9 @@ import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
-import UniverseAbstractions.Axioms.Universe.Properties
-import UniverseAbstractions.Axioms.Universe.DependentFunctors
-import UniverseAbstractions.Axioms.Universe.DependentProducts
+import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 import UniverseAbstractions.Instances.Utils.Trivial
 
 import mathlib4_experiments.CoreExt
@@ -101,9 +101,6 @@ namespace unit
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit :=
   ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
 
---  instance hasTrivialInProperties  (U : Universe.{u}) : HasTrivialProperties U unit := ⟨⟩
---  instance hasTrivialOutProperties (U : Universe.{u}) : HasTrivialProperties unit U := ⟨⟩
---
 --  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit := ⟨⟩
 --
 --  def dependentUnitFunctor {U : Universe.{u}} {A : U} {φ : A ⟿ unit} : Π' φ :=
@@ -286,8 +283,6 @@ namespace sort
 
   instance hasStandardFunctors : HasStandardFunctors sort.{u} := ⟨⟩
 
---  instance hasTrivialProperties (V : Universe.{v}) : HasTrivialProperties sort V := ⟨⟩
---
 --  instance hasTrivialDependentFunctoriality (V : Universe.{v}) : HasTrivialDependentFunctoriality sort V := ⟨⟩
 --
 --  def piEquiv {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) : HasProperties.Pi φ ≃ (Π' φ) :=
@@ -349,8 +344,7 @@ namespace prop
     rightInv := λ _ _ => proofIrrel _ _ }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
-  ⟨λ {p q} e => have h : p ↔ q := ⟨e.toFun, e.invFun⟩;
-                HasTrivialIdentity.defEquiv h⟩
+  ⟨λ e => HasTrivialIdentity.defEquiv (U := prop) (Iff.intro e.toFun e.invFun)⟩
 
 --  def sigmaEquiv {p : prop} (φ : p ⟿ prop) : (∃ a, φ a) ≃ (Σ' φ) :=
 --  { toFun    := λ h => ⟨Exists.prop.fst h, Exists.prop.snd h⟩,
@@ -363,8 +357,8 @@ namespace prop
 --  ⟨sigmaEquiv φ⟩
 --
 --  instance hasDependentProducts : HasDependentProducts prop prop prop := ⟨⟩
---
---end prop
+
+end prop
 
 namespace type
 

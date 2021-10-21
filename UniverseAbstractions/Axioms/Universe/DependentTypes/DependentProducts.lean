@@ -7,8 +7,8 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
-import UniverseAbstractions.Axioms.Universe.Properties
-import UniverseAbstractions.Axioms.Universe.DependentFunctors
+import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
 
 
 
@@ -53,28 +53,6 @@ namespace HasDependentProducts
   def intro (a : A) (b : φ a) : Σ φ := fromExternal ⟨a, b⟩
 
 end HasDependentProducts
-
-
-
-class HasSigmaProdEquiv (U : Universe.{u}) (V : Universe.{v}) (UxV : Universe.{w}) (UxVUxV : Universe.{w'})
-                        [HasProperties U V] [HasDependentProducts U V UxV] [HasProducts U V UxV]
-                        [HasFunctors UxV UxV UxVUxV] [HasEquivalenceCondition UxV UxVUxV] where
-(defSigmaProdFun (A : U) (B : V) :
-   (Σ A{B}) ⟶[λ P => HasProducts.intro (HasDependentProducts.fst P) (HasDependentProducts.snd P)] (A ⊓ B))
-(defProdSigmaFun (A : U) (B : V) :
-   (A ⊓ B) ⟶[λ φ => HasDependentProducts.intro (HasProducts.fst φ) (HasProducts.snd φ)] (Σ A{B}))
-(defSigmaProdEquiv (A : U) (B : V) : (Σ A{B}) ⟷[defSigmaProdFun A B, defProdSigmaFun A B] (A ⊓ B))
-
-namespace HasSigmaProdEquiv
-
-  variable {U V UxV UxVUxV UxV_UxV : Universe} [HasProperties U V] [HasDependentProducts U V UxV] [HasProducts U V UxV]
-           [HasFunctors UxV UxV UxVUxV] [HasEquivalences UxV UxVUxV UxV_UxV] [HasSigmaProdEquiv U V UxV UxVUxV]
-
-  @[reducible] def sigmaProdFun (A : U) (B : V) : (Σ A{B}) ⟶ A ⊓ B := defSigmaProdFun A B
-  @[reducible] def prodSigmaFun (A : U) (B : V) : A ⊓ B ⟶ Σ A{B} := defProdSigmaFun A B
-  @[reducible] def sigmaProdEquiv (A : U) (B : V) : (Σ A{B}) ⟷ A ⊓ B := defSigmaProdEquiv A B
-
-end HasSigmaProdEquiv
 
 
 

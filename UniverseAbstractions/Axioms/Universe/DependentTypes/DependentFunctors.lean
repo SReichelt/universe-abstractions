@@ -5,9 +5,7 @@
 
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
-import UniverseAbstractions.Axioms.Universe.Products
-import UniverseAbstractions.Axioms.Universe.Equivalences
-import UniverseAbstractions.Axioms.Universe.Properties
+import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
 
 
 
@@ -138,30 +136,6 @@ namespace HasDependentFunctors
   heq_of_eqRec_eq _ (toFromDefPi' F)
 
 end HasDependentFunctors
-
-
-
-class HasPiFunEquiv (U : Universe.{u}) (V : Universe.{v}) (UV : Universe.{w}) (UVUV : Universe.{w'})
-                    [HasDependentFunctors U V UV] [HasFunctors U V UV]
-                    [HasFunctors UV UV UVUV] [HasEquivalenceCondition UV UVUV] where
-(defPiFun      {A : U} {B : V} (F : Π A{B}) : A ⟶[λ a => F a] B)
-(defPiFunFun   (A : U) (B : V)              : (Π A{B}) ⟶[λ F => defPiFun F] (A ⟶ B))
-(defFunPi      {A : U} {B : V} (F : A ⟶ B)  : Π[λ a => F a] A{B})
-(defFunPiFun   (A : U) (B : V)              : (A ⟶ B) ⟶[λ F => defFunPi F] (Π A{B}))
-(defPiFunEquiv (A : U) (B : V)              : (Π A{B}) ⟷[defPiFunFun A B, defFunPiFun A B] (A ⟶ B))
-
-namespace HasPiFunEquiv
-
-  variable {U V UV UVUV UV_UV : Universe} [HasDependentFunctors U V UV] [HasFunctors U V UV]
-           [HasFunctors UV UV UVUV] [HasEquivalences UV UVUV UV_UV] [HasPiFunEquiv U V UV UVUV]
-
-  @[reducible] def piFun {A : U} {B : V} (F : Π A{B}) : A ⟶ B := defPiFun (UVUV := UVUV) F
-  @[reducible] def piFunFun (A : U) (B : V) : (Π A{B}) ⟶ (A ⟶ B) := defPiFunFun A B
-  @[reducible] def funPi {A : U} {B : V} (F : A ⟶ B) : Π A{B} := defFunPi (UVUV := UVUV) F
-  @[reducible] def funPiFun (A : U) (B : V) : (A ⟶ B) ⟶ Π A{B} := defFunPiFun A B
-  @[reducible] def piFunEquiv (A : U) (B : V) : (Π A{B}) ⟷ (A ⟶ B) := defPiFunEquiv A B
-
-end HasPiFunEquiv
 
 
 

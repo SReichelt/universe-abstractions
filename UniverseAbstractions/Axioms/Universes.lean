@@ -160,9 +160,12 @@ namespace Universe
   def singletonUniverse (α : Sort u) : Universe.{u} :=
   { A    := PUnit.{u + 1},
     inst := ⟨λ _ => α⟩ }
+  notation "{" α:0 "}" => Universe.singletonUniverse α
 
-  def singletonUniverse.type (α : Sort u) : singletonUniverse α := PUnit.unit
-  notation "⌉" α:0 "⌈" => Universe.singletonUniverse.type α
+  def singletonUniverse.type (α : Sort u) : {α} := PUnit.unit
+  notation "⌊" α:0 "⌋" => Universe.singletonUniverse.type α
+
+  instance (α : Sort u) [h : HasInstances α] : HasInstances ⌈⌊α⌋⌉ := h
 
 
   instance (U : Universe.{u}) : HasInstances.{u, u + 1} (Option ⌈U⌉) :=

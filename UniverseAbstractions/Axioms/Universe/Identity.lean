@@ -39,9 +39,8 @@ namespace HasIdentity
   variable (U : Universe) [h : HasIdentity U]
 
   @[reducible] def univ := h.IU
-  notation "⌊" U:0 "⌋" => HasIdentity.univ U
 
-  instance hasInstanceEquivalences : HasInstanceEquivalences U ⌊U⌋ := h.h
+  instance hasInstanceEquivalences : HasInstanceEquivalences U (univ U) := h.h
 
 end HasIdentity
 
