@@ -24,9 +24,10 @@ namespace HasFunctors
   variable {A : U} (φ : A ⟶ ⌊V⌋)
 
   def propType (a : A) : V := φ a
+  notation "⌋" φ "⌊" => HasFunctors.propType φ
 
-  def Pi    : Sort (imax u v)  := ∀  a, propType φ a
-  def Sigma : Sort (max 1 u v) := Σ' a, propType φ a
+  def Pi    : Sort (imax u v)  := ∀  a, ⌋φ⌊ a
+  def Sigma : Sort (max 1 u v) := Σ' a, ⌋φ⌊ a
 
   class IsUniversal where
   (h : Pi φ)
@@ -46,7 +47,7 @@ namespace HasCongrArg
            [HasTypeIdentity V] [HasCongrArg U {V}]
 
   def propCongrArg {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ : A} :
-    a₁ ≃ a₂ → (propType φ a₁ ⟷ propType φ a₂) :=
+    a₁ ≃ a₂ → (⌋φ⌊ a₁ ⟷ ⌋φ⌊ a₂) :=
   congrArg φ
 
 end HasCongrArg

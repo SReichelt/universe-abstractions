@@ -68,6 +68,16 @@ namespace HasTrivialIdentity
     HasDependentCongrArg U V :=
   ⟨λ {_ _} _ {_ _} _ => eq⟩
 
+  instance hasDependentProductEq (U V : Universe) {UpV UxV : Universe}
+                                 [HasFunctors U {V} UpV] [HasDependentProducts U V UxV]
+                                 [HasIdentity U] [HasTrivialIdentity U] [HasTypeIdentity V]
+                                 [HasTrivialIdentity V] [HasCongrArg U {V}] [HasIdentity UxV]
+                                 [HasTrivialIdentity UxV] :
+    HasDependentProducts.HasDependentProductEq U V :=
+  { introEq := λ _   => eq,
+    fstEq   := λ _ _ => eq,
+    sndEq   := λ _ _ => eq }
+
 end HasTrivialIdentity
 
 

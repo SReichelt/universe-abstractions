@@ -10,7 +10,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v uv vu u_v
+universe u v uv vu u_v iu
 
 
 
@@ -306,8 +306,8 @@ end DependentEquivalence
 
 
 
-class HasTypeIdentity (U : Universe) where
-[hasIdentity             : HasIdentity                    U]
+class HasTypeIdentity (U : Universe.{u}) where
+[hasIdentity             : HasIdentity.{u, iu}            U]
 [hasInternalFunctors     : HasInternalFunctors            U]
 [hasLinearFunOp          : HasLinearFunOp                 U]
 [hasLinearFunExt         : HasLinearFunOp.HasLinearFunExt U]

@@ -1,8 +1,3 @@
--- TODO: Adapt to `HasIdentity`.
-#exit
-
-
-
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.Products
@@ -15,44 +10,37 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w w'
+universe u v upv uv
 
 
 
-def HasDependentProducts.Sigma' {U : Universe.{u}} {V : Universe.{v}} [HasProperties U V]
-                                {A : U} (φ : A ⟿ V) :=
-HasProperties.Sigma φ
-notation:20 "Σ' " φ:21 => HasDependentProducts.Sigma' φ
-
-class HasDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasProperties.{u, v, w} U V]
-                           (UxV : outParam Universe.{w'}) :
-  Type (max 1 u v w w') where
-[embed {A : U} (φ : A ⟿ V) : HasEmbeddedType.{w', max 1 u v} UxV (Σ' φ)]
+class HasDependentProducts (U : Universe.{u}) (V : Universe.{v}) {UpV : Universe.{upv}}
+                           [HasFunctors U {V} UpV] (UxV : outParam Universe.{uv}) where
+(Sigma {A : U} (φ : A ⟶ ⌊V⌋)                     : UxV)
+(intro {A : U} {φ : A ⟶ ⌊V⌋} (a : A) (b : ⌋φ⌊ a) : Sigma φ)
+(fst   {A : U} {φ : A ⟶ ⌊V⌋} (P : Sigma φ)       : A)
+(snd   {A : U} {φ : A ⟶ ⌊V⌋} (P : Sigma φ)       : ⌋φ⌊ (fst P))
 
 namespace HasDependentProducts
 
-  variable {U V UxV : Universe} [HasProperties U V] [h : HasDependentProducts U V UxV]
+  open HasFunctors HasCongrArg
 
-  instance hasEmbeddedType {A : U} (φ : A ⟿ V) : HasEmbeddedType UxV (Σ' φ) :=
-  h.embed φ
-
-  def Sigma {A : U} (φ : A ⟿ V) : UxV := HasEmbeddedType.EmbeddedType UxV (Σ' φ)
   notation:20 "Σ " φ:21 => HasDependentProducts.Sigma φ
-
-  variable {A : U} {φ : A ⟿ V}
-
-  def toExternal   (P : Σ  φ) : Σ' φ := HasEmbeddedType.toExternal   UxV P
-  def fromExternal (P : Σ' φ) : Σ  φ := HasEmbeddedType.fromExternal UxV P
-
-  @[simp] theorem fromToExternal (P : Σ  φ) : fromExternal (toExternal P) = P := HasEmbeddedType.fromToExternal UxV P
-  @[simp] theorem toFromExternal (P : Σ' φ) : toExternal (fromExternal P) = P := HasEmbeddedType.toFromExternal UxV P
-
-  def fst (P : Σ φ) : A         := (toExternal P).fst
-  def snd (P : Σ φ) : φ (fst P) := (toExternal P).snd
-
-  def intro (a : A) (b : φ a) : Σ φ := fromExternal ⟨a, b⟩
+  
+  class HasDependentProductEq (U : Universe.{u}) (V : Universe.{v}) {UpV : Universe.{upv}}
+                              [HasFunctors U {V} UpV] {UxV : Universe.{uv}}
+                              [HasDependentProducts U V UxV] [HasIdentity U]
+                              [HasTypeIdentity V] [HasCongrArg U {V}] [HasIdentity UxV] where
+  (introEq {A : U} {φ : A ⟶ ⌊V⌋} (P : Σ φ)           : intro (fst P) (snd P) ≃ P)
+  (fstEq   {A : U} {φ : A ⟶ ⌊V⌋} (a : A) (b : ⌋φ⌊ a) : fst (intro a b) ≃ a)
+  (sndEq   {A : U} {φ : A ⟶ ⌊V⌋} (a : A) (b : ⌋φ⌊ a) : snd (intro a b) ≃[propCongrArg φ (fstEq a b)] b)
 
 end HasDependentProducts
+
+
+
+#exit
+
 
 
 

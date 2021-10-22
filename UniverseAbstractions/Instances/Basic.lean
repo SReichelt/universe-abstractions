@@ -18,13 +18,13 @@ import mathlib4_experiments.Data.Equiv.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w
+universe u v w iu upv
 
 
 
 namespace unit
 
-  open MetaRelation
+  open MetaRelation HasFunctors HasInternalEquivalences
 
   -- `unit` has instance equivalences in `unit`.
 
@@ -59,6 +59,9 @@ namespace unit
   ⟨λ f => { F   := f inst,
             eff := λ _ => HasRefl.refl (f inst) }⟩
 
+  instance hasOutCongrArg (V : Universe.{v}) [HasIdentity V] : HasCongrArg unit V :=
+  ⟨λ {_ _} f {_ _} _ => HasRefl.refl (f inst)⟩
+
   -- Internal functors are given by `hasInFunctors` due to its priority.
 
   instance hasInternalFunctors : HasInternalFunctors unit := ⟨⟩
@@ -85,11 +88,23 @@ namespace unit
     fst   := id,
     snd   := λ _ => inst }
 
+  instance hasRightProductEq (U : Universe.{u}) [HasIdentity U] :
+    HasProducts.HasProductEq U unit :=
+  { introEq := λ a   => HasRefl.refl a,
+    fstEq   := λ a _ => HasRefl.refl a,
+    sndEq   := λ _ _ => inst }
+
   instance hasLeftProducts (V : Universe.{v}) : HasProducts unit V V :=
   { Prod  := λ _ B => B,
     intro := λ _ b => b,
     fst   := λ _ => inst,
     snd   := id }
+
+  instance hasLeftProductEq (V : Universe.{v}) [HasIdentity V] :
+    HasProducts.HasProductEq unit V :=
+  { introEq := λ b   => HasRefl.refl b,
+    fstEq   := λ _ _ => inst,
+    sndEq   := λ _ b => HasRefl.refl b }
 
   -- Type equivalence is trivial.
 
@@ -130,29 +145,34 @@ namespace unit
   ⟨λ f => { F   := f inst,
             eff := λ _ => HasRefl.refl (f inst) }⟩
 
---  def rightSigmaEquiv {U : Universe.{u}} {A : U} (φ : A ⟿ unit) : ⌈A⌉ ≃ (Σ' φ) :=
---  { toFun    := λ a => ⟨a, inst⟩,
---    invFun   := λ P => P.fst,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalDependentRightProductType {U : Universe.{u}} {A : U} (φ : A ⟿ unit) :
---    HasEmbeddedType U (Σ' φ) :=
---  ⟨rightSigmaEquiv φ⟩
---
---  instance hasDependentRightProducts (U : Universe.{u}) : HasDependentProducts U unit U := ⟨⟩
---
---  def leftSigmaEquiv {A : unit} {U : Universe.{u}} (φ : A ⟿ U) : ⌈φ inst⌉ ≃ (Σ' φ) :=
---  { toFun    := λ b => ⟨inst, b⟩,
---    invFun   := λ P => P.snd,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalDependentLeftProductType {A : unit} {U : Universe.{u}} (φ : A ⟿ U) :
---    HasEmbeddedType U (Σ' φ) :=
---  ⟨leftSigmaEquiv φ⟩
---
---  instance hasDependentLeftProducts (U : Universe.{u}) : HasDependentProducts unit U U := ⟨⟩
+  instance hasDependentOutCongrArg (V : Universe.{v}) [HasTypeIdentity V] : HasDependentCongrArg unit V :=
+  ⟨λ {_ _} _ {_ _} _ => byDef • byToDef⟩
+
+  -- Same for dependent products.
+
+  instance hasRightDependentProducts (U : Universe.{u}) : HasDependentProducts U unit U :=
+  { Sigma := λ {A} _ => A,
+    intro := λ a _ => a,
+    fst   := id,
+    snd   := λ _ => inst }
+
+  instance hasRightDependentProductEq (U : Universe.{u}) [HasIdentity U] :
+    HasDependentProducts.HasDependentProductEq U unit :=
+  { introEq := λ a   => HasRefl.refl a,
+    fstEq   := λ a _ => HasRefl.refl a,
+    sndEq   := λ _ _ => inst }
+
+  instance hasLeftDependentProducts (V : Universe.{v}) : HasDependentProducts unit V V :=
+  { Sigma := λ φ => φ inst,
+    intro := λ _ b => b,
+    fst   := λ _ => inst,
+    snd   := id }
+
+  instance hasLeftDependentProductEq (V : Universe.{v}) [HasTypeIdentity V] :
+    HasDependentProducts.HasDependentProductEq unit V :=
+  { introEq := λ b   => HasRefl.refl b,
+    fstEq   := λ _ _ => inst,
+    sndEq   := λ _ _ => byDef • byToDef }
 
 end unit
 
@@ -169,6 +189,8 @@ namespace boolean
   instance hasTrivialIdentity : HasTrivialIdentity boolean := ⟨λ _ _ => unit.inst⟩
 
   -- Internal functors in `boolean` are defined as implication.
+  -- TODO: Generalize this to functors into an arbitrary universe.
+  --       Then dependent types will start to make sense for `boolean` as well.
 
   instance hasFunctors : HasFunctors boolean boolean boolean :=
   { Fun   := λ a b => cond a b true,
@@ -243,32 +265,91 @@ end boolean
 
 
 
+-- We can define functors from any universe with propositional identities, i.e. a
+-- universe where identities of identities are trivial (such as `sort`). Such functors
+-- just need to map equivalent values to equivalent values. In general this captures
+-- isomorphism invariance.
+
+structure PropositionalFunctor {U : Universe.{u}} {V : Universe.{v}}
+                                [HasIdentity.{u, iu} U] [HasIdentity.{v, 0} V]
+                                (A : U) (B : V) :
+  Sort (max 1 u v) where
+(f                    : A → B)
+(congrArg {a₁ a₂ : A} : a₁ ≃ a₂ → f a₁ ≃ f a₂)
+
+namespace PropositionalFunctor
+
+  variable (U : Universe.{u}) (V : Universe.{v}) [HasIdentity.{u, iu} U]
+           [HasIdentity.{v, 0} V]
+
+  instance (priority := low) hasPropositionalFunctors : HasFunctors U V sort.{max 1 u v} :=
+  { Fun   := PropositionalFunctor,
+    apply := PropositionalFunctor.f }
+
+  instance (priority := low) hasPropositionalCongrArg : HasCongrArg U V :=
+  ⟨PropositionalFunctor.congrArg⟩
+
+end PropositionalFunctor
+
+structure PropositionalDependentFunctor {U : Universe.{u}} {V : Universe.{v}}
+                                        [HasIdentity.{u, iu} U] [HasTypeIdentity.{v, 0} V]
+                                        {UpV : Universe.{upv}} [HasFunctors U {V} UpV]
+                                        [HasCongrArg U {V}] {A : U} (φ : A ⟶ ⌊V⌋) :
+  Sort (max 1 u v) where
+(f                                  : HasFunctors.Pi φ)
+(congrArg {a₁ a₂ : A} (e : a₁ ≃ a₂) : f a₁ ≃[HasCongrArg.propCongrArg φ e] f a₂)
+
+namespace PropositionalDependentFunctor
+
+  variable (U : Universe.{u}) (V : Universe.{v}) [HasIdentity.{u, iu} U] [HasTypeIdentity.{v, 0} V]
+           {UpV : Universe.{upv}} [HasFunctors U {V} UpV] [HasCongrArg U {V}]
+
+  instance (priority := low) hasPropositionalDependentFunctors : HasDependentFunctors U V sort.{max 1 u v} :=
+  { Pi    := PropositionalDependentFunctor,
+    apply := PropositionalDependentFunctor.f }
+
+  instance (priority := low) hasPropositionalCongrArg : HasDependentCongrArg U V :=
+  ⟨PropositionalDependentFunctor.congrArg⟩
+
+end PropositionalDependentFunctor
+
+
+
 namespace sort
 
-  open MetaRelation HasFunctors HasDependentFunctors
+  open MetaRelation HasFunctors HasInternalEquivalences HasDependentFunctors
+
+  -- Instance equivalences of all `sort.{u}` are given by equality.
+  -- For `prop`, we could define instance equivalences to be in `unit` instead of
+  -- relying on proof irrelevance, but it's easier to generalize over `prop` and
+  -- `type` if we have a single definition.
+
+  instance hasInstanceEquivalences : HasInstanceEquivalences sort.{u} prop :=
+  ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
 
   -- Functors from `sort` to any universe are just functions: Instance equivalence
   -- in `sort` is given by equality, so functors do not need to respect anything else
   -- besides equality.
 
-  instance hasFunctors (V : Universe.{v}) : HasFunctors sort.{u} V sort.{imax u v} :=
+  instance hasOutFunctors (V : Universe.{v}) : HasFunctors sort.{u} V sort.{imax u v} :=
   { Fun   := λ α B => α → B,
     apply := id }
 
-  def defFun {A : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V} (f : A → B) :
-    DefFun A B f :=
+  def defOutFun {α : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V} (f : α → B) :
+    DefFun α B f :=
   { F   := f,
     eff := λ a => HasRefl.refl (f a) }
 
-  instance hasTrivialFunctoriality (V : Universe.{v}) [HasIdentity V] :
+  instance hasTrivialOutFunctoriality (V : Universe.{v}) [HasIdentity V] :
     HasTrivialFunctoriality sort.{u} V :=
-  ⟨defFun⟩
-
-  instance hasInstanceEquivalences : HasInstanceEquivalences sort.{u} prop :=
-  ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
+  ⟨defOutFun⟩
 
   instance hasCongrArg : HasCongrArg sort.{u} sort.{v} :=
   ⟨λ f => congrArg f⟩
+
+  instance (priority := low) hasOutCongrArg (V : Universe.{v}) [HasIdentity V] :
+    HasCongrArg sort.{u} V :=
+  ⟨λ {_ _} f {_ _} e => e ▸ HasRefl.refl _⟩
 
   instance hasInternalFunctors : HasInternalFunctors sort.{u} := ⟨⟩
 
@@ -277,7 +358,50 @@ namespace sort
 
   instance hasStandardFunctors : HasStandardFunctors sort.{u} := ⟨⟩
 
-  -- The same is true for dependent functors.
+  -- There are top and bottom types that work generically for `sort`.
+
+  instance hasTop : HasTop sort.{u} :=
+  { T := PUnit,
+    t := PUnit.unit }
+  
+  instance hasTopEq : HasTop.HasTopEq sort.{u} :=
+  ⟨λ ⟨⟩ => rfl⟩
+
+  -- TODO: Remove `noncomputable` if problem with `PEmpty.elim` can be solved.
+  noncomputable instance hasBot : HasBot sort.{u} :=
+  { B    := PEmpty,
+    elim := PEmpty.elim }
+
+  noncomputable def byContradiction (α : sort.{u}) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
+  Classical.choice (Classical.byContradiction (λ h => PEmpty.elim (f (λ a => False.elim (h ⟨a⟩)))))
+
+  noncomputable instance hasClassicalLogic : HasClassicalLogic sort.{u} :=
+  { byContradictionFun := byContradiction }
+
+  -- Same for products, but usually the specialized versions for `prop` and `type`
+  -- should be used.
+
+  instance (priority := low) hasProducts : HasProducts sort.{u} sort.{v} sort.{max 1 u v} :=
+  { Prod  := PProd,
+    intro := PProd.mk,
+    fst   := PProd.fst,
+    snd   := PProd.snd }
+
+  instance (priority := low) hasProductEq : HasProducts.HasProductEq sort.{u} sort.{v} :=
+  { introEq := λ ⟨_, _⟩ => rfl,
+    fstEq   := λ _ _    => rfl,
+    sndEq   := λ _ _    => rfl }
+
+  -- `Equiv` also works for general `sort`, but is overridden for `prop`.
+
+  instance hasEquivalences : HasEquivalences sort.{u} sort.{v} sort.{max 1 u v} :=
+  { Equiv    := Equiv,
+    toFun    := Equiv.toFun,
+    invFun   := Equiv.invFun,
+    leftInv  := Equiv.leftInv,
+    rightInv := Equiv.rightInv }
+
+  -- Dependent functors are analogous to independent functors.
 
   instance hasDependentFunctors (V : Universe.{v}) :
     HasDependentFunctors sort.{u} V sort.{imax u v} :=
@@ -296,34 +420,28 @@ namespace sort
 
 end sort
 
-theorem Exists.Prop.fst {p : Prop} {q : p → Prop} : (∃ h, q h) → p
-| ⟨h, _⟩ => h
-
-theorem Exists.Prop.snd {p : Prop} {q : p → Prop} : (e : ∃ h, q h) → q (Exists.Prop.fst e)
-| ⟨_, h⟩ => h
-
 namespace prop
 
   instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
 
-  -- `Top` is `True`, `Bot` is `False`.
+  -- In `prop`, `Top` is `True` and `Bot` is `False`.
 
-  instance hasTop : HasTop prop :=
+  instance (priority := high) hasTop : HasTop prop :=
   { T := True,
     t := trivial }
 
-  instance hasBot : HasBot prop :=
+  instance (priority := high) hasBot : HasBot prop :=
   { B    := False,
     elim := False.elim }
 
   -- `prop` has classical logic if we want.
 
-  instance hasClassicalLogic : HasClassicalLogic prop :=
+  instance (priority := high) hasClassicalLogic : HasClassicalLogic prop :=
   { byContradictionFun := @Classical.byContradiction }
 
   -- Products are given by `And`.
 
-  instance hasProducts : HasProducts prop prop prop :=
+  instance (priority := high) hasProducts : HasProducts prop prop prop :=
   { Prod  := And,
     intro := And.intro,
     fst   := And.left,
@@ -331,7 +449,7 @@ namespace prop
 
   -- Equivalences are given by `Iff`.
 
-  instance hasEquivalences : HasEquivalences prop prop prop :=
+  instance (priority := high) hasEquivalences : HasEquivalences prop prop prop :=
   { Equiv    := Iff,
     toFun    := Iff.mp,
     invFun   := Iff.mpr,
@@ -341,83 +459,112 @@ namespace prop
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
   ⟨λ e => HasTrivialIdentity.defEquiv (U := prop) (Iff.intro e.toFun e.invFun)⟩
 
---  def sigmaEquiv {p : prop} (φ : p ⟿ prop) : (∃ a, φ a) ≃ (Σ' φ) :=
---  { toFun    := λ h => ⟨Exists.prop.fst h, Exists.prop.snd h⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ _ => proofIrrel _ _,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalDependentProductType {p : prop} (φ : p ⟿ prop) :
---    HasEmbeddedType prop (Σ' φ) :=
---  ⟨sigmaEquiv φ⟩
---
---  instance hasDependentProducts : HasDependentProducts prop prop prop := ⟨⟩
+  -- Dependent functors into `prop` are straightforward.
+
+  instance hasDependentCongrArg : HasDependentCongrArg sort.{u} prop :=
+  ⟨λ {_ _} f {_ _} e => proofIrrel _ _⟩
+
+  -- Dependent products are given by `∃`, requiring choice to obtain a witness
+  -- unless the witness is in `prop`.
+
+  instance (priority := high) hasDependentProducts : HasDependentProducts prop prop prop :=
+  { Sigma := λ φ => ∃ h₁, φ h₁,
+    intro := λ h₁ h₂ => ⟨h₁, h₂⟩,
+    fst   := λ ⟨h₁, _⟩ => h₁,
+    snd   := λ ⟨_, h₂⟩ => h₂ }
+
+  noncomputable instance (priority := low) hasClassicalDependentProducts
+                                             (U : Universe.{u}) [HasIdentity U] :
+    HasDependentProducts U prop prop :=
+  { Sigma := λ φ => ∃ a, φ a,
+    intro := λ a h => ⟨a, h⟩,
+    fst   := Classical.choose,
+    snd   := Classical.choose_spec }
 
 end prop
 
 namespace type
 
-  instance hasTop : HasTop type.{u} :=
-  { T := PUnit.{u + 1},
-    t := PUnit.unit }
+  -- Use specialized types for `type.{0}` if possible.
+
+  instance (priority := high) hasTop : HasTop type.{0} :=
+  { T := Unit,
+    t := Unit.unit }
   
-  instance hasTopEq : HasTop.HasTopEq type.{u} :=
-  ⟨λ t' => by induction t'; rfl⟩
+  instance (priority := high) hasTopEq : HasTop.HasTopEq type.{0} :=
+  ⟨λ ⟨⟩ => rfl⟩
 
-  -- TODO: Remove `noncomputable` if problem with `PEmpty.elim` can be solved.
-  noncomputable instance hasBot : HasBot type.{u} :=
-  { B    := PEmpty.{u + 1},
-    elim := PEmpty.elim }
+  instance (priority := high) hasBot : HasBot type.{0} :=
+  { B    := Empty,
+    elim := Empty.elim }
 
-  noncomputable def byContradiction (α : type.{u}) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
-  Classical.choice (Classical.byContradiction (λ h => PEmpty.elim (f (λ a => False.elim (h ⟨a⟩)))))
+  noncomputable def byContradiction (α : type.{0}) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
+  Classical.choice (Classical.byContradiction (λ h => Empty.elim (f (λ a => False.elim (h ⟨a⟩)))))
 
-  noncomputable instance hasClassicalLogic : HasClassicalLogic type.{u} :=
+  noncomputable instance (priority := high) hasClassicalLogic : HasClassicalLogic type.{0} :=
   { byContradictionFun := byContradiction }
 
+  -- Products are given by `Prod`.
+
   instance hasProducts : HasProducts type.{u} type.{v} type.{max u v} :=
-  { Prod  := PProd,
-    intro := PProd.mk,
-    fst   := PProd.fst,
-    snd   := PProd.snd }
+  { Prod  := Prod,
+    intro := Prod.mk,
+    fst   := Prod.fst,
+    snd   := Prod.snd }
 
   instance hasProductEq : HasProducts.HasProductEq type.{u} type.{v} :=
-  { introEq := λ p   => by induction p; rfl,
-    fstEq   := λ a b => rfl,
-    sndEq   := λ a b => rfl }
+  { introEq := λ ⟨_, _⟩ => rfl,
+    fstEq   := λ _ _    => rfl,
+    sndEq   := λ _ _    => rfl }
 
-  instance hasEquivalences : HasEquivalences type.{u} type.{v} type.{max u v} :=
-  { Equiv    := Equiv,
-    toFun    := Equiv.toFun,
-    invFun   := Equiv.invFun,
-    leftInv  := Equiv.leftInv,
-    rightInv := Equiv.rightInv }
+  -- `type` has internal equivalences (but general `sort` does not, although each
+  -- individual `sort.{u}` does). These equivalences can be constructed automatically.
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
   ⟨λ e => ⟨⟨e.toFun, e.invFun, e.equiv.left.inv, e.equiv.right.inv⟩, rfl, rfl⟩⟩
 
---  def sigmaEquiv {α : type.{u}} (φ : α ⟿ type.{u}) : (Σ a, φ a) ≃ (Σ' φ) :=
---  { toFun    := λ p => ⟨p.fst, p.snd⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ ⟨_, _⟩ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalDependentProductType {α : type.{u}} (φ : α ⟿ type.{u}) :
---    HasEmbeddedType type.{u} (Σ' φ) :=
---  ⟨sigmaEquiv φ⟩
---
---  instance hasDependentProducts : HasDependentProducts type.{u} type.{u} type.{u} := ⟨⟩
---
---  def subtypeEquiv {α : type.{u}} (φ : α ⟿ prop) : {a // φ a} ≃ (Σ' φ) :=
---  { toFun    := λ p => ⟨p.val, p.property⟩,
---    invFun   := λ P => ⟨P.fst, P.snd⟩,
---    leftInv  := λ ⟨_, _⟩ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalSubtypeType {α : type.{u}} (φ : α ⟿ prop) :
---    HasEmbeddedType type.{u} (Σ' φ) :=
---  ⟨subtypeEquiv φ⟩
---
---  instance hasSubtypes : HasDependentProducts type.{u} prop type.{u} := ⟨⟩
+  -- The target equality of dependent functors contains a cast, but we can eliminate
+  -- it easily.
+
+  instance hasDependentCongrArg : HasDependentCongrArg sort.{u} type.{v} :=
+  ⟨λ {_ _} _ {_ _} e => by subst e; rfl⟩
+
+  -- Dependent products are given by either `Sigma`, `PSigma`, or `Subtype`,
+  -- depending on the universe levels.
+
+  instance hasDependentProducts : HasDependentProducts type.{u} type.{v} type.{max u v} :=
+  { Sigma := Sigma,
+    intro := Sigma.mk,
+    fst   := Sigma.fst,
+    snd   := Sigma.snd }
+
+  instance hasDependentProductEq : HasDependentProducts.HasDependentProductEq type.{u} type.{v} :=
+  { introEq := λ ⟨_, _⟩ => rfl,
+    fstEq   := λ _ _    => rfl,
+    sndEq   := λ _ _    => rfl }
+
+  instance (priority := low) hasDependentProducts' :
+    HasDependentProducts sort.{u} type.{v} sort.{max u (v + 1)} :=
+  { Sigma := PSigma,
+    intro := PSigma.mk,
+    fst   := PSigma.fst,
+    snd   := PSigma.snd }
+
+  instance (priority := low) hasDependentProductEq' :
+    HasDependentProducts.HasDependentProductEq sort.{u} type.{v} :=
+  { introEq := λ ⟨_, _⟩ => rfl,
+    fstEq   := λ _ _    => rfl,
+    sndEq   := λ _ _    => rfl }
+
+  instance hasSubtypes : HasDependentProducts type.{u} prop type.{u} :=
+  { Sigma := Subtype,
+    intro := Subtype.mk,
+    fst   := Subtype.val,
+    snd   := Subtype.property }
+
+  instance hasSubtypeEq : HasDependentProducts.HasDependentProductEq type.{u} prop :=
+  { introEq := λ ⟨_, _⟩ => rfl,
+    fstEq   := λ _ _    => rfl,
+    sndEq   := λ _ _    => proofIrrel _ _ }
 
 end type

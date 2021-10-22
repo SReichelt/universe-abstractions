@@ -148,6 +148,7 @@ end UniverseClass
 
 
 
+def Empty.elim {C : Sort v} (e : Empty) : C := Empty.rec (λ _ => C) e
 noncomputable def PEmpty.elim {C : Sort v} (e : PEmpty.{u}) : C := PEmpty.rec (λ _ => C) e
 
 namespace Universe
