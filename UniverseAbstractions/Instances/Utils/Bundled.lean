@@ -40,7 +40,7 @@ namespace Bundled
   def defFun {φ : SimpleTypeClass.{max 1 u w, cu}} [hId : HasIdentity.{max 1 u cu w, iuw} (univ.{max 1 u w, cu} φ)]
              {W : Universe.{w}} [h : HasFunctoriality φ φ W] [HasFunctorInstances.{u, cu, w} φ]
              {A B : univ.{max 1 u w, cu} φ} {f : A → B} (isFun : h.IsFun f) :
-    A ⟶[f] B :=
+    A ⟶{f} B :=
   { F   := { f     := f,
              isFun := isFun },
     eff := λ a => HasRefl.refl (f a) }

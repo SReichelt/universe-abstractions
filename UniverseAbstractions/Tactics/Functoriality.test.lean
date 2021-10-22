@@ -28,7 +28,7 @@ variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U]
 def testRaw (A B : U) (F : A ⟶ B) : A ⟶ B := by makeFunctor (HasFunctors.apply F)
 #print testRaw
 
-def testRawFunct (A B : U) (F : A ⟶ B) : A ⟶[HasFunctors.apply F] B :=
+def testRawFunct (A B : U) (F : A ⟶ B) : A ⟶{HasFunctors.apply F} B :=
 by functoriality
 
 def testConst (A B : U) (b : B) : A ⟶ B := Λ a => b
@@ -37,7 +37,7 @@ def testConst (A B : U) (b : B) : A ⟶ B := Λ a => b
 def testNamedConst (A B : U) (b : B) : A ⟶ B := by makeFunctor (Function.const ⌈A⌉ b)
 #print testNamedConst
 
-def testConstFunct (A B : U) (b : B) : A ⟶[Function.const ⌈A⌉ b] B :=
+def testConstFunct (A B : U) (b : B) : A ⟶{Function.const ⌈A⌉ b} B :=
 by functoriality
 
 def testTestConst (A B : U) : B ⟶ (A ⟶ B) := Λ b => testConst A B b
@@ -109,7 +109,7 @@ theorem testCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) 
   (testCompComp A B C D F G H) a = H (G (F a)) :=
 HasLinearFunOp.byDef₃
 
-def testCompCompFunct (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶[λ a => H (G (F a))] D :=
+def testCompCompFunct (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶{λ a => H (G (F a))} D :=
 by functoriality
 
 def testTestCompComp (A B C D : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (C ⟶ D) ⟶ (A ⟶ D) := Λ F G H => testCompComp A B C D F G H
@@ -122,9 +122,9 @@ by simp [testTestCompComp]
 -- `by simp [testCompComp]` but only outputs `by simp`. Maybe we could solve this by giving `simp`
 -- a slightly different target type. E.g. we could let `constructFunctor` produce an unfolded
 -- version of the function that we are constructing a functor for.
---def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶[λ G => testCompComp A B C D F G H] (A ⟶ D) :=
+--def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => testCompComp A B C D F G H} (A ⟶ D) :=
 --by functoriality
-def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶[λ G => Λ a => H (G (F a))] (A ⟶ D) :=
+def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => Λ a => H (G (F a))} (A ⟶ D) :=
 by functoriality
 
 def testComp₂ (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) : A ⟶ B ⟶ D := Λ a b => G (F a b)

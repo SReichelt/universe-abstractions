@@ -6,6 +6,8 @@ import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 
 
 
@@ -27,7 +29,7 @@ namespace HasTrivialIdentity
 
   def defFun {U V : Universe} [HasIdentity V] [HasTrivialIdentity V]
              {UV : Universe} [HasFunctors U V UV]
-             {A : U} {B : V} (F : A ⟶ B) {f : A → B} : A ⟶[f] B :=
+             {A : U} {B : V} (F : A ⟶ B) {f : A → B} : A ⟶{f} B :=
   ⟨F, λ _ => eq⟩
 
   instance hasCongrArg (U V : Universe) [HasIdentity U] [HasIdentity V]
@@ -51,8 +53,20 @@ namespace HasTrivialIdentity
   def defEquiv {U : Universe} [HasIdentity U] [HasTrivialIdentity U]
                [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
                [HasInternalProducts U] [HasInternalEquivalences U]
-               {A B : U} (E : A ⟷ B) {e : EquivDesc A B} : A ⟷[e] B :=
+               {A B : U} (E : A ⟷ B) {e : EquivDesc A B} : A ⟷{e} B :=
   ⟨E, eq, eq⟩
+
+  def defPi {U V : Universe} [HasIdentity V] [HasTrivialIdentity V]
+            {UpV UV : Universe} [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
+            {A : U} {φ : A ⟶ ⌊V⌋} (F : Π φ) {f : HasFunctors.Pi φ} : Π{f} φ := 
+  ⟨F, λ _ => eq⟩
+
+  instance hasDependentCongrArg (U V : Universe) {UpV UV : Universe}
+                                [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
+                                [HasIdentity U] [HasTypeIdentity V] [HasTrivialIdentity V]
+                                [HasCongrArg U {V}] :
+    HasDependentCongrArg U V :=
+  ⟨λ {_ _} _ {_ _} _ => eq⟩
 
 end HasTrivialIdentity
 
@@ -60,7 +74,7 @@ end HasTrivialIdentity
 
 class HasTrivialFunctoriality (U V : Universe) [HasIdentity V] {UV : Universe}
                               [HasFunctors U V UV] where
-(mkDefFun {A : U} {B : V} (f : A → B) : A ⟶[f] B)
+(mkDefFun {A : U} {B : V} (f : A → B) : A ⟶{f} B)
 
 namespace HasTrivialFunctoriality
 
@@ -68,7 +82,7 @@ namespace HasTrivialFunctoriality
 
   def defFun {U V : Universe} [HasIdentity V] {UV : Universe} [HasFunctors U V UV]
              [h : HasTrivialFunctoriality U V] {A : U} {B : V} {f : A → B} :
-    A ⟶[f] B :=
+    A ⟶{f} B :=
   h.mkDefFun f
 
   instance hasIdFun (U : Universe) [HasIdentity U] {UU : Universe} [HasFunctors U U UU]
@@ -153,7 +167,7 @@ end HasTrivialFunctoriality
 
 class HasTrivialExtensionality (U V : Universe) [HasIdentity V] {UV : Universe} [HasIdentity UV]
                                [HasFunctors U V UV] where
-(mkFunEq {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : ∀ a, F₁ a ≃ F₂ a) : F₁ ≃[e] F₂)
+(mkFunEq {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : ∀ a, F₁ a ≃ F₂ a) : F₁ ≃{e} F₂)
 
 namespace HasTrivialExtensionality
 
@@ -165,7 +179,7 @@ namespace HasTrivialExtensionality
   def funEq {U V : Universe} [HasIdentity V] {UV : Universe} [HasIdentity UV]
             [HasFunctors U V UV] [h : HasTrivialExtensionality U V]
             {A : U} {B : V} {F₁ F₂ : A ⟶ B} {e : ∀ a, F₁ a ≃ F₂ a} :
-    F₁ ≃[e] F₂ :=
+    F₁ ≃{e} F₂ :=
   h.mkFunEq e
 
   instance hasSubsingletonExt (U V : Universe) [HasIdentity V] {UV : Universe}
@@ -237,7 +251,7 @@ end HasTrivialExtensionality
 class HasTrivialEquivalenceCondition (U : Universe) [HasIdentity U] [HasInternalFunctors U]
                                      [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
                                      [HasInternalProducts U] [HasInternalEquivalences U] where
-(mkEquiv {A B : U} (e : HasInternalEquivalences.EquivDesc A B) : A ⟷[e] B)
+(mkEquiv {A B : U} (e : HasInternalEquivalences.EquivDesc A B) : A ⟷{e} B)
 
 namespace HasTrivialEquivalenceCondition
 
@@ -247,7 +261,7 @@ namespace HasTrivialEquivalenceCondition
                [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalProducts U]
                [HasInternalEquivalences U] [HasTrivialEquivalenceCondition U]
                {A B : U} {e : EquivDesc A B} :
-    A ⟷[e] B :=
+    A ⟷{e} B :=
   mkEquiv e
 
   variable (U : Universe) [HasIdentity U] [HasInternalFunctors U]
@@ -259,4 +273,22 @@ namespace HasTrivialEquivalenceCondition
     defSymm  := λ _   => defEquiv,
     defTrans := λ _ _ => defEquiv }
 
+  instance hasTypeIdentity : HasTypeIdentity U := ⟨⟩
+
 end HasTrivialEquivalenceCondition
+
+
+
+class HasTrivialDependentFunctoriality (U V : Universe) [HasIdentity V] {UV UpV : Universe}
+                                       [HasFunctors U {V} UpV] [HasDependentFunctors U V UV] where
+(mkDefPi {A : U} {φ : A ⟶ ⌊V⌋} (f : HasFunctors.Pi φ) : Π{f} φ)
+
+namespace HasTrivialDependentFunctoriality
+
+  def defPi {U V : Universe} [HasIdentity V] {UV UpV : Universe} [HasFunctors U {V} UpV]
+            [HasDependentFunctors U V UV] [h : HasTrivialDependentFunctoriality U V]
+            {A : U} {φ : A ⟶ ⌊V⌋} {f : HasFunctors.Pi φ} :
+    Π{f} φ :=
+  h.mkDefPi f
+
+end HasTrivialDependentFunctoriality

@@ -55,15 +55,15 @@ namespace HasRelations
 
   instance coeRel : CoeFun (A ⤐ V) (λ _ => A → A → V) := ⟨λ θ => relMap θ.p⟩
 
-  def defExtractABFun : (A ⊓ A) ⊓ A ⟶[λ P => intro (fst (fst P)) (snd (fst P))] A ⊓ A :=
+  def defExtractABFun : (A ⊓ A) ⊓ A ⟶{λ P => intro (fst (fst P)) (snd (fst P))} A ⊓ A :=
   fstFun (A ⊓ A) A
   ◄ λ _ => by simp
 
-  def defExtractBCFun : (A ⊓ A) ⊓ A ⟶[λ P => intro (snd (fst P)) (snd P)] A ⊓ A :=
+  def defExtractBCFun : (A ⊓ A) ⊓ A ⟶{λ P => intro (snd (fst P)) (snd P)} A ⊓ A :=
   elim₃LFun (HasSubLinearFunOp.constFun A (introFunFun A A))
   ◄ λ _ => by simp [elim₃LFun]
 
-  def defExtractACFun : (A ⊓ A) ⊓ A ⟶[λ P => intro (fst (fst P)) (snd P)] A ⊓ A :=
+  def defExtractACFun : (A ⊓ A) ⊓ A ⟶{λ P => intro (fst (fst P)) (snd P)} A ⊓ A :=
   elim₃LFun (HasLinearFunOp.swapFunFun (HasSubLinearFunOp.constFun A (introFunFun A A)))
   ◄ λ _ => by simp [elim₃LFun]
 
@@ -118,12 +118,12 @@ namespace HasRelations
 
   class HasTransEquiv [HasTrans θ] [HasSymm θ] where
   (defTransEquiv    {a b : A} (f : θ a b) (c : A) :
-      θ b c ⟷[HasTrans.trans θ a b c f, HasTrans.trans θ b a c (HasSymm.symm θ a b f)] θ a c)
+      θ b c ⟷{HasTrans.trans θ a b c f, HasTrans.trans θ b a c (HasSymm.symm θ a b f)} θ a c)
   (defTransEquivFun (a b c : A)                   :
-      θ a b ⟶[λ f => HasEquivalences.fromDefEquiv (defTransEquiv f c)] (θ b c ⟷ θ a c))
+      θ a b ⟶{λ f => HasEquivalences.fromDefEquiv (defTransEquiv f c)} (θ b c ⟷ θ a c))
 
   class HasSymmEquiv [HasSymm θ] where
-  (defSymmEquiv (a b : A) : θ a b ⟷[HasSymm.symm θ a b, HasSymm.symm θ b a] θ b a)
+  (defSymmEquiv (a b : A) : θ a b ⟷{HasSymm.symm θ a b, HasSymm.symm θ b a} θ b a)
 
   class IsEquivalence extends IsPreorder θ, HasSymm θ, HasTransEquiv θ
 
@@ -137,7 +137,7 @@ namespace HasRelations
   class HasIdEquivPi (φ : A ⟿ V) where
   [hasIdFun   : HasIdFun V]
   [hasIdEquiv : HasIdEquiv V V]
-  (F          : Π[λ a => HasIdEquiv.idEquiv (φ a)] {φ ⟷ φ})
+  (F          : Π{λ a => HasIdEquiv.idEquiv (φ a)} {φ ⟷ φ})
 
   instance substRel.hasRefl (φ : A ⟿ V) [h : HasIdEquivPi φ] :
     HasRefl (substRel φ) :=

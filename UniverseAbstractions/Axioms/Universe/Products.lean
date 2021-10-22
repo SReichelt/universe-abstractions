@@ -44,20 +44,37 @@ end HasProducts
 
 class HasInternalProducts (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] extends
   HasProducts U U U where
-(defIntroFun    {A : U} (a : A) (B : U)     : B ⟶[λ b => HasProducts.intro a b] A ⊓ B)
-(defIntroFunFun (A B : U)                   : A ⟶[λ a => defIntroFun a B] (B ⟶ A ⊓ B))
-(defElimFun     {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶[λ P => F (HasProducts.fst P) (HasProducts.snd P)] C)
-(defElimFunFun  (A B C : U)                 : (A ⟶ B ⟶ C) ⟶[λ F => defElimFun F] (A ⊓ B ⟶ C))
+(defIntroFun    {A : U} (a : A) (B : U)     : B ⟶{λ b => HasProducts.intro a b} A ⊓ B)
+(defIntroFunFun (A B : U)                   : A ⟶{λ a => defIntroFun a B} (B ⟶ A ⊓ B))
+(defElimFun     {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶{λ P => F (HasProducts.fst P) (HasProducts.snd P)} C)
+(defElimFunFun  (A B C : U)                 : (A ⟶ B ⟶ C) ⟶{λ F => defElimFun F} (A ⊓ B ⟶ C))
 
 namespace HasInternalProducts
+
+  open HasFunctors HasProducts
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalProducts U]
 
   @[reducible] def introFun {A : U} (a : A) (B : U) : B ⟶ A ⊓ B := defIntroFun a B
   @[reducible] def introFunFun (A B : U) : A ⟶ B ⟶ A ⊓ B := defIntroFunFun A B
 
+  instance intro.isFunApp {A B : U} {a : A} {b : B} : IsFunApp B (intro a b) :=
+  { F := introFun a B,
+    a := b,
+    e := byDef }
+
+  instance introFun.isFunApp {A B : U} {a : A} : IsFunApp A (introFun a B) :=
+  { F := introFunFun A B,
+    a := a,
+    e := byDef }
+
   @[reducible] def elimFun {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶ C := defElimFun F
   @[reducible] def elimFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⊓ B ⟶ C) := defElimFunFun A B C
+
+  instance elimFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} : IsFunApp (A ⟶ B ⟶ C) (elimFun F) :=
+  { F := elimFunFun A B C,
+    a := F,
+    e := byDef }
 
 end HasInternalProducts
 
@@ -67,5 +84,5 @@ class HasInternalProducts.HasProductExt (U : Universe.{u}) [HasIdentity.{u, iu} 
   HasProducts.HasProductEq U U where
 (introEqExt (A B : U) :
    elimFun (introFunFun A B)
-   ≃[λ P => HasFunctors.byDef⁻¹ • introEq P • (HasLinearFunOp.byDef₂ • HasFunctors.byDef)]
+   ≃{HasLinearFunOp.byDef₂ ▻ λ P => introEq P ◅}
    HasLinearFunOp.idFun (A ⊓ B))

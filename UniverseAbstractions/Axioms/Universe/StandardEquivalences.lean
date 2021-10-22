@@ -57,14 +57,14 @@ class HasLinearCommonEquivalences (U : Universe) [HasInternalFunctors U] [HasLin
    (B ⟶ C) ⟷[HasLinearFunOp.compFunFun (HasEquivalences.toFun  E) C,
              HasLinearFunOp.compFunFun (HasEquivalences.invFun E) C] (A ⟶ C))
 (defFunDomainEquivFun   (A B C : U)                   :
-   (A ⟷ B) ⟶[λ E => defFunDomainEquiv E C] ((B ⟶ C) ⟷ (A ⟶ C)))
+   (A ⟷ B) ⟶{λ E => defFunDomainEquiv E C} ((B ⟶ C) ⟷ (A ⟶ C)))
 (defFunCodomainEquiv    {A B : U} (E : A ⟷ B) (C : U) :
    (C ⟶ A) ⟷[HasLinearFunOp.revCompFunFun C (HasEquivalences.toFun  E),
              HasLinearFunOp.revCompFunFun C (HasEquivalences.invFun E)] (C ⟶ B))
 (defFunCodomainEquivFun (A B C : U)                   :
-   (A ⟷ B) ⟶[λ E => defFunCodomainEquiv E C] ((C ⟶ A) ⟷ (C ⟶ B)))
+   (A ⟷ B) ⟶{λ E => defFunCodomainEquiv E C} ((C ⟶ A) ⟷ (C ⟶ B)))
 (defSwapFunFunEquiv     (A B C : U)                   :
-   (A ⟶ B ⟶ C) ⟷[HasLinearFunOp.swapFunFunFun A B C, HasLinearFunOp.swapFunFunFun B A C] (B ⟶ A ⟶ C))
+   (A ⟶ B ⟶ C) ⟷{HasLinearFunOp.swapFunFunFun A B C, HasLinearFunOp.swapFunFunFun B A C} (B ⟶ A ⟶ C))
 (defTopElimEquiv        (A : U)                       :
    A ⟷[HasInternalTop.elimFunFun A,
        HasInternalTop.invElimFun A] (HasTop.Top U ⟶ A))
@@ -75,25 +75,25 @@ class HasLinearCommonEquivalences (U : Universe) [HasInternalFunctors U] [HasLin
    A ⊓ C ⟷[HasInternalProducts.replaceFstFun (HasEquivalences.toFun  E) C,
            HasInternalProducts.replaceFstFun (HasEquivalences.invFun E) C] B ⊓ C)
 (defProdFstEquivFun     (A B C : U)                   :
-   (A ⟷ B) ⟶[λ E => defProdFstEquiv E C] (A ⊓ C ⟷ B ⊓ C))
+   (A ⟷ B) ⟶{λ E => defProdFstEquiv E C} (A ⊓ C ⟷ B ⊓ C))
 (defProdSndEquiv        {A B : U} (E : A ⟷ B) (C : U) :
    C ⊓ A ⟷[HasInternalProducts.replaceSndFun (HasEquivalences.toFun  E) C,
            HasInternalProducts.replaceSndFun (HasEquivalences.invFun E) C] C ⊓ B)
 (defProdSndEquivFun     (A B C : U)                   :
-   (A ⟷ B) ⟶[λ E => defProdSndEquiv E C] (C ⊓ A ⟷ C ⊓ B))
+   (A ⟷ B) ⟶{λ E => defProdSndEquiv E C} (C ⊓ A ⟷ C ⊓ B))
 (defProdCommEquiv       (A B : U)                     :
-   A ⊓ B ⟷[HasInternalProducts.commFun A B, HasInternalProducts.commFun B A] B ⊓ A)
+   A ⊓ B ⟷{HasInternalProducts.commFun A B, HasInternalProducts.commFun B A} B ⊓ A)
 (defProdAssocEquiv      (A B C : U)                   :
-   (A ⊓ B) ⊓ C ⟷[HasInternalProducts.assocLRFun A B C, HasInternalProducts.assocRLFun A B C] A ⊓ (B ⊓ C))
+   (A ⊓ B) ⊓ C ⟷{HasInternalProducts.assocLRFun A B C, HasInternalProducts.assocRLFun A B C} A ⊓ (B ⊓ C))
 (defProdTopEquiv        (A : U)                       :
    A ⟷[HasInternalProducts.prodTopIntroFun A,
        HasInternalProducts.prodTopElimFun A] HasTop.Top U ⊓ A)
 (defCompEquivEquiv      {A B : U} (E : A ⟷ B) (C : U) :
-   (B ⟷ C) ⟷[HasEquivOp.compEquivFun E C, HasEquivOp.compEquivFun (HasEquivOp.invEquiv E) C] (A ⟷ C))
+   (B ⟷ C) ⟷{HasEquivOp.compEquivFun E C, HasEquivOp.compEquivFun (HasEquivOp.invEquiv E) C} (A ⟷ C))
 (defCompEquivEquivFun   (A B C : U)                   :
-   (A ⟷ B) ⟶[λ E => defCompEquivEquiv E C] ((B ⟷ C) ⟷ (A ⟷ C)))
+   (A ⟷ B) ⟶{λ E => defCompEquivEquiv E C} ((B ⟷ C) ⟷ (A ⟷ C)))
 (defInvEquivEquiv       (A B : U)                     :
-   (A ⟷ B) ⟷[HasEquivOp.invEquivFun A B, HasEquivOp.invEquivFun B A] (B ⟷ A))
+   (A ⟷ B) ⟷{HasEquivOp.invEquivFun A B, HasEquivOp.invEquivFun B A} (B ⟷ A))
 
 namespace HasLinearCommonEquivalences
 

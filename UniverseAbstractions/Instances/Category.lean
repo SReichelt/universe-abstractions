@@ -102,15 +102,11 @@ namespace Category
   (mapHom_trans       {a b c : A} (f : a ⇾ b) (g : b ⇾ c) : mapHom (g • f) ≃ mapHom g • mapHom f)
   (mapHom_transExt    {a b : A} (f : a ⇾ b) (c : A)       :
      mapHom • HasTransFun.transFun (inst A).M f c
-     ≃[λ g => (byDef • byDef)⁻¹ •
-              mapHom_trans f g •
-              (byArgDef • byDef)]
+     ≃{byArgDef ▻ λ g => mapHom_trans f g ◅ byDef}
      HasTransFun.transFun (inst B).M (mapHom f) (φ c) • mapHom)
   (mapHom_transExtExt (a b c : A)                         :
      revCompFunFun (b ⇾ c) mapHom • HasTransFun.transFunFun (inst A).M a b c
-     ≃[λ f => (byDef • byArgDef • byArgDef • byDef)⁻¹ •
-              mapHom_transExt f c •
-              (byDef • byArgDef • byDef)]
+     ≃{byDef • byArgDef ▻ λ f => mapHom_transExt f c ◅ byDef • byArgDef • byArgDef}
      compFunFun mapHom (φ a ⇾ φ c) • HasTransFun.transFunFun (inst B).M (φ a) (φ b) (φ c) • mapHom)
 
   instance hasFunctoriality : HasFunctoriality (typeClass.{u, v, iv} V) (typeClass.{u', v, iv} V) type.{max u v iv} :=

@@ -29,7 +29,7 @@ namespace HasLinearFunOp
   -- given in a specific order, it is also functorial in the two arguments given in the reverse
   -- order.
 
-  def defSwapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶[λ a => F a b] C :=
+  def defSwapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶{λ a => F a b} C :=
   appFun b C • F
   ◄ byDef
 
@@ -37,9 +37,9 @@ namespace HasLinearFunOp
 
   instance swapFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} {b : B} :
     IsFunApp ((B ⟶ C) ⟶ C) (swapFun F b) :=
-  hasTrans.isFunApp
+  compFun.isFunApp
 
-  def defSwapFunFun {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶[λ b => swapFun F b] (A ⟶ C) :=
+  def defSwapFunFun {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶{λ b => swapFun F b} (A ⟶ C) :=
   compFunFun F C • appFunFun B C
   ◄ byDef • byArgDef
 
@@ -47,9 +47,9 @@ namespace HasLinearFunOp
 
   instance swapFunFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} :
     IsFunApp (((B ⟶ C) ⟶ C) ⟶ (A ⟶ C)) (swapFunFun F) :=
-  hasTrans.isFunApp
+  compFun.isFunApp
 
-  def defSwapFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶[λ F => swapFunFun F] (B ⟶ A ⟶ C) :=
+  def defSwapFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶{λ F => swapFunFun F} (B ⟶ A ⟶ C) :=
   compFunFun (appFunFun B C) (A ⟶ C) • compFunFunFun A (B ⟶ C) C
   ◄ byDef • byArgDef
 
@@ -57,13 +57,13 @@ namespace HasLinearFunOp
 
   instance swapFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((((B ⟶ C) ⟶ C) ⟶ (A ⟶ C)) ⟶ (B ⟶ A ⟶ C)) (swapFunFunFun A B C) :=
-  hasTrans.isFunApp
+  compFun.isFunApp
 
   -- We can apply the "swap" functor to itself to obtain its functoriality in reverse order.
 
   @[reducible] def revSwapFun {A B C : U} (b : B) (F : A ⟶ B ⟶ C) : A ⟶ C := swapFun F b
 
-  def defRevSwapFunFun (A : U) {B : U} (b : B) (C : U) : (A ⟶ B ⟶ C) ⟶[λ F => revSwapFun b F] (A ⟶ C) :=
+  def defRevSwapFunFun (A : U) {B : U} (b : B) (C : U) : (A ⟶ B ⟶ C) ⟶{λ F => revSwapFun b F} (A ⟶ C) :=
   swapFun (swapFunFunFun A B C) b
   ◄ byDef₂
 
@@ -73,7 +73,7 @@ namespace HasLinearFunOp
     IsFunApp ((B ⟶ A ⟶ C) ⟶ (A ⟶ C)) (revSwapFunFun A b C) :=
   swapFun.isFunApp
 
-  def defRevSwapFunFunFun (A B C : U) : B ⟶[λ b => revSwapFunFun A b C] ((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) :=
+  def defRevSwapFunFunFun (A B C : U) : B ⟶{λ b => revSwapFunFun A b C} ((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) :=
   defSwapFunFun (swapFunFunFun A B C)
 
   @[reducible] def revSwapFunFunFun (A B C : U) : B ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := defRevSwapFunFunFun A B C
@@ -86,7 +86,7 @@ namespace HasLinearFunOp
 
   @[reducible] def revCompFun {A B C : U} (G : B ⟶ C) (F : A ⟶ B) : A ⟶ C := compFun F G
 
-  def defRevCompFunFun (A : U) {B C : U} (G : B ⟶ C) : (A ⟶ B) ⟶[λ F => revCompFun G F] (A ⟶ C) :=
+  def defRevCompFunFun (A : U) {B C : U} (G : B ⟶ C) : (A ⟶ B) ⟶{λ F => revCompFun G F} (A ⟶ C) :=
   swapFun (compFunFunFun A B C) G
   ◄ byDef₂
 
@@ -96,7 +96,7 @@ namespace HasLinearFunOp
     IsFunApp (((B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) (revCompFunFun A G) :=
   swapFun.isFunApp
 
-  def defRevCompFunFunFun (A B C : U) : (B ⟶ C) ⟶[λ G => revCompFunFun A G] ((A ⟶ B) ⟶ (A ⟶ C)) :=
+  def defRevCompFunFunFun (A B C : U) : (B ⟶ C) ⟶{λ G => revCompFunFun A G} ((A ⟶ B) ⟶ (A ⟶ C)) :=
   defSwapFunFun (compFunFunFun A B C)
 
   @[reducible] def revCompFunFunFun (A B C : U) : (B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) := defRevCompFunFunFun A B C
@@ -120,7 +120,7 @@ namespace HasFullFunOp
   -- then the construction of `(G a) (F a)` from `a` is also functorial.
   -- We give two versions of the functor that differ in their argument order, analogously to composition.
 
-  def defSubstFun {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶[λ a => G a (F a)] C :=
+  def defSubstFun {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶{λ a => G a (F a)} C :=
   dupFun (compFunFun F C • G)
   ◄ byDef₂ • byFunDef
 
@@ -130,7 +130,7 @@ namespace HasFullFunOp
     IsFunApp (A ⟶ A ⟶ C) (substFun F G) :=
   dupFun.isFunApp
 
-  def defSubstFunFun {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ B ⟶ C) ⟶[λ G => substFun F G] (A ⟶ C) :=
+  def defSubstFunFun {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ B ⟶ C) ⟶{λ G => substFun F G} (A ⟶ C) :=
   dupFunFun A C • revCompFunFun A (compFunFun F C)
   ◄ byDef • byArgDef
 
@@ -138,9 +138,9 @@ namespace HasFullFunOp
 
   instance substFunFun.isFunApp {A B C : U} {F : A ⟶ B} :
     IsFunApp ((A ⟶ A ⟶ C) ⟶ (A ⟶ C)) (substFunFun F C) :=
-  hasTrans.isFunApp
+  compFun.isFunApp
 
-  def defSubstFunFunFun (A B C : U) : (A ⟶ B) ⟶[λ F => substFunFun F C] ((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) :=
+  def defSubstFunFunFun (A B C : U) : (A ⟶ B) ⟶{λ F => substFunFun F C} ((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) :=
   revCompFunFun (A ⟶ B ⟶ C) (dupFunFun A C) •
   revCompFunFunFun A (B ⟶ C) (A ⟶ C) •
   compFunFunFun A B C
@@ -151,13 +151,13 @@ namespace HasFullFunOp
 
   instance substFunFunFun.isFunApp {A B C : U} :
     IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (substFunFunFun A B C) :=
-  hasTrans.isFunApp
+  compFun.isFunApp
 
   -- Substitution with reverse argument order.
 
   @[reducible] def revSubstFun {A B C : U} (G : A ⟶ B ⟶ C) (F : A ⟶ B) := substFun F G
 
-  def defRevSubstFunFun {A B C : U} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶[λ F => revSubstFun G F] (A ⟶ C) :=
+  def defRevSubstFunFun {A B C : U} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶{λ F => revSubstFun G F} (A ⟶ C) :=
   swapFun (substFunFunFun A B C) G
   ◄ byDef₂
 
@@ -167,7 +167,7 @@ namespace HasFullFunOp
     IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) (revSubstFunFun G) :=
   swapFun.isFunApp
 
-  def defRevSubstFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶[λ G => revSubstFunFun G] ((A ⟶ B) ⟶ (A ⟶ C)) :=
+  def defRevSubstFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶{λ G => revSubstFunFun G} ((A ⟶ B) ⟶ (A ⟶ C)) :=
   defSwapFunFun (substFunFunFun A B C)
 
   @[reducible] def revSubstFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) :=

@@ -14,47 +14,66 @@ set_option autoBoundImplicitLocal false
 
 namespace HasInternalProducts
 
-  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp HasProducts HasTop
+  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp
+       HasFullFunOp HasProducts HasTop
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalProducts U]
 
-  def defFstFun [HasAffineFunOp U] (A B : U) : A ⊓ B ⟶[λ P => fst P] A :=
+  def defFstFun [HasAffineFunOp U] (A B : U) : A ⊓ B ⟶{λ P => fst P} A :=
   elimFun (constFunFun B A)
   ◄ byDef₂
 
   @[reducible] def fstFun [HasAffineFunOp U] (A B : U) : A ⊓ B ⟶ A := defFstFun A B
 
-  def defSndFun [HasAffineFunOp U] (A B : U) : A ⊓ B ⟶[λ P => snd P] B :=
+  instance fst.isFunApp [HasAffineFunOp U] {A B : U} {P : A ⊓ B} : IsFunApp (A ⊓ B) (fst P) :=
+  { F := fstFun A B,
+    a := P,
+    e := byDef }
+
+  def defSndFun [HasAffineFunOp U] (A B : U) : A ⊓ B ⟶{λ P => snd P} B :=
   elimFun (constFun A (idFun B))
   ◄ byDef₂
 
   @[reducible] def sndFun [HasAffineFunOp U] (A B : U) : A ⊓ B ⟶ B := defSndFun A B
 
-  def defDupIntroFun [HasFullFunOp U] (A : U) : A ⟶[λ a => intro a a] A ⊓ A :=
+  instance snd.isFunApp [HasAffineFunOp U] {A B : U} {P : A ⊓ B} : IsFunApp (A ⊓ B) (snd P) :=
+  { F := sndFun A B,
+    a := P,
+    e := byDef }
+
+  def defDupIntroFun [HasFullFunOp U] (A : U) : A ⟶{λ a => intro a a} A ⊓ A :=
   dupFun (introFunFun A A)
   ◄ byDef₂
 
   @[reducible] def dupIntroFun [HasFullFunOp U] (A : U) : A ⟶ A ⊓ A := defDupIntroFun A
 
-  def defRevIntroFun [HasLinearFunOp U] (A : U) {B : U} (b : B) : A ⟶[λ a => intro a b] A ⊓ B :=
+  def defRevIntroFun [HasLinearFunOp U] (A : U) {B : U} (b : B) : A ⟶{λ a => intro a b} A ⊓ B :=
   swapFun (introFunFun A B) b
   ◄ byDef₂
 
   @[reducible] def revIntroFun [HasLinearFunOp U] (A : U) {B : U} (b : B) : A ⟶ A ⊓ B := defRevIntroFun A b
 
-  def defRevIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶[λ b => revIntroFun A b] (A ⟶ A ⊓ B) :=
+  instance revIntroFun.isFunApp [HasLinearFunOp U] {A B : U} {b : B} :
+    IsFunApp ((B ⟶ A ⊓ B) ⟶ A ⊓ B) (revIntroFun A b) :=
+  swapFun.isFunApp
+
+  def defRevIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶{λ b => revIntroFun A b} (A ⟶ A ⊓ B) :=
   defSwapFunFun (introFunFun A B)
 
   @[reducible] def revIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶ A ⟶ A ⊓ B := defRevIntroFunFun A B
 
+  instance revIntroFunFun.isFunApp [HasLinearFunOp U] {A B : U} :
+    IsFunApp (((B ⟶ A ⊓ B) ⟶ A ⊓ B) ⟶ (A ⟶ A ⊓ B)) (revIntroFunFun A B) :=
+  swapFunFun.isFunApp
+
   def defRevElimFun [HasLinearFunOp U] {A B C : U} (F : B ⟶ A ⟶ C) :
-    A ⊓ B ⟶[λ P => F (snd P) (fst P)] C :=
+    A ⊓ B ⟶{λ P => F (snd P) (fst P)} C :=
   elimFun (swapFunFun F)
   ◄ byDef₂
 
   @[reducible] def revElimFun [HasLinearFunOp U] {A B C : U} (F : B ⟶ A ⟶ C) : A ⊓ B ⟶ C := defRevElimFun F
 
-  def defRevElimFunFun [HasLinearFunOp U] (A B C : U) : (B ⟶ A ⟶ C) ⟶[λ F => revElimFun F] (A ⊓ B ⟶ C) :=
+  def defRevElimFunFun [HasLinearFunOp U] (A B C : U) : (B ⟶ A ⟶ C) ⟶{λ F => revElimFun F} (A ⊓ B ⟶ C) :=
   elimFunFun A B C • swapFunFunFun B A C
   ◄ byDef • byArgDef
 
@@ -62,19 +81,19 @@ namespace HasInternalProducts
 
   def invElim [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) (a : A) (b : B) : C := F (intro a b)
 
-  def defInvElimFun [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) (a : A) : B ⟶[λ b => invElim F a b] C :=
+  def defInvElimFun [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) (a : A) : B ⟶{λ b => invElim F a b} C :=
   F • introFun a B
   ◄ byArgDef
 
   @[reducible] def invElimFun [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) (a : A) : B ⟶ C := defInvElimFun F a
 
-  def defInvElimFunFun [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) : A ⟶[λ a => invElimFun F a] (B ⟶ C) :=
+  def defInvElimFunFun [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) : A ⟶{λ a => invElimFun F a} (B ⟶ C) :=
   revCompFunFun B F • introFunFun A B
   ◄ byDef • byArgDef
 
   @[reducible] def invElimFunFun [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) : A ⟶ B ⟶ C := defInvElimFunFun F
 
-  def defInvElimFunFunFun [HasLinearFunOp U] (A B C : U) : (A ⊓ B ⟶ C) ⟶[λ P => invElimFunFun P] (A ⟶ B ⟶ C) :=
+  def defInvElimFunFunFun [HasLinearFunOp U] (A B C : U) : (A ⊓ B ⟶ C) ⟶{λ P => invElimFunFun P} (A ⟶ B ⟶ C) :=
   compFunFun (introFunFun A B) (B ⟶ C) • revCompFunFunFun B (A ⊓ B) C
   ◄ byDef • byArgDef
 
@@ -82,7 +101,7 @@ namespace HasInternalProducts
   defInvElimFunFunFun A B C
 
   def defReplaceFstFun [HasLinearFunOp U] {A B : U} (F : A ⟶ B) (C : U) :
-    A ⊓ C ⟶[λ P => intro (F (fst P)) (snd P)] B ⊓ C :=
+    A ⊓ C ⟶{λ P => intro (F (fst P)) (snd P)} B ⊓ C :=
   elimFun (introFunFun B C • F)
   ◄ byDef₂ • byFunDef
 
@@ -90,7 +109,7 @@ namespace HasInternalProducts
   defReplaceFstFun F C
 
   def defReplaceFstFunFun [HasLinearFunOp U] (A B C : U) :
-    (A ⟶ B) ⟶[λ F => replaceFstFun F C] (A ⊓ C ⟶ B ⊓ C) :=
+    (A ⟶ B) ⟶{λ F => replaceFstFun F C} (A ⊓ C ⟶ B ⊓ C) :=
   elimFunFun A C (B ⊓ C) • revCompFunFun A (introFunFun B C)
   ◄ byDef • byArgDef
 
@@ -98,7 +117,7 @@ namespace HasInternalProducts
   defReplaceFstFunFun A B C
 
   def defReplaceSndFun [HasLinearFunOp U] {A B : U} (F : A ⟶ B) (C : U) :
-    C ⊓ A ⟶[λ P => intro (fst P) (F (snd P))] C ⊓ B :=
+    C ⊓ A ⟶{λ P => intro (fst P) (F (snd P))} C ⊓ B :=
   revElimFun (revIntroFunFun C B • F)
   ◄ byDef₂ • byFunDef
 
@@ -106,14 +125,14 @@ namespace HasInternalProducts
   defReplaceSndFun F C
 
   def defReplaceSndFunFun [HasLinearFunOp U] (A B C : U) :
-    (A ⟶ B) ⟶[λ F => replaceSndFun F C] (C ⊓ A ⟶ C ⊓ B) :=
+    (A ⟶ B) ⟶{λ F => replaceSndFun F C} (C ⊓ A ⟶ C ⊓ B) :=
   revElimFunFun C A (C ⊓ B) • revCompFunFun A (revIntroFunFun C B)
   ◄ byDef • byArgDef
 
   @[reducible] def replaceSndFunFun [HasLinearFunOp U] (A B C : U) : (A ⟶ B) ⟶ (C ⊓ A ⟶ C ⊓ B) :=
   defReplaceSndFunFun A B C
 
-  def defCommFun [HasLinearFunOp U] (A B : U) : A ⊓ B ⟶[λ P => intro (snd P) (fst P)] B ⊓ A :=
+  def defCommFun [HasLinearFunOp U] (A B : U) : A ⊓ B ⟶{λ P => intro (snd P) (fst P)} B ⊓ A :=
   elimFun (revIntroFunFun B A)
   ◄ byDef₂
 
@@ -131,14 +150,14 @@ namespace HasInternalProducts
   def elim₃RFun [HasLinearFunOp U] {A B C D : U} (F : A ⟶ B ⟶ C ⟶ D) : A ⊓ (B ⊓ C) ⟶ D := elimFun (elimFunFun B C D • F)
 
   def defAssocLRFun [HasLinearFunOp U] (A B C : U) :
-    (A ⊓ B) ⊓ C ⟶[λ P => intro₃R (fst (fst P)) (snd (fst P)) (snd P)] A ⊓ (B ⊓ C) :=
+    (A ⊓ B) ⊓ C ⟶{λ P => intro₃R (fst (fst P)) (snd (fst P)) (snd P)} A ⊓ (B ⊓ C) :=
   elim₃LFun (intro₃RFunFun A B C)
   ◄ byDef • byDef • byFunDef • byFunDef₂ • congrFun (congrFun byArgDef _) _ • byFunDef₂ • byFunDef
 
   @[reducible] def assocLRFun [HasLinearFunOp U] (A B C : U) : (A ⊓ B) ⊓ C ⟶ A ⊓ (B ⊓ C) := defAssocLRFun A B C
 
   def defAssocRLFun [HasLinearFunOp U] (A B C : U) :
-    A ⊓ (B ⊓ C) ⟶[λ P => intro₃L (fst P) (fst (snd P)) (snd (snd P))] (A ⊓ B) ⊓ C :=
+    A ⊓ (B ⊓ C) ⟶{λ P => intro₃L (fst P) (fst (snd P)) (snd (snd P))} (A ⊓ B) ⊓ C :=
   elim₃RFun (intro₃LFunFun A B C)
   ◄ byDef₂ • congrFun byArgDef _ • byFunDef • byDef₂ • congrFun byArgDef _ •
     congrFun (congrArg _ byArgDef) _ • congrFun byArgDef _ • byFunDef
@@ -146,23 +165,23 @@ namespace HasInternalProducts
   @[reducible] def assocRLFun [HasLinearFunOp U] (A B C : U) : A ⊓ (B ⊓ C) ⟶ (A ⊓ B) ⊓ C := defAssocRLFun A B C
 
   def defMergeFun [HasFullFunOp U] {A B C : U} (F : A ⟶ B) (G : A ⟶ C) :
-    A ⟶[λ a => intro (F a) (G a)] B ⊓ C :=
-  HasFullFunOp.substFun F (revIntroFunFun B C • G)
+    A ⟶{λ a => intro (F a) (G a)} B ⊓ C :=
+  substFun F (revIntroFunFun B C • G)
   ◄ byDef₂ • byFunDef
 
   @[reducible] def mergeFun [HasFullFunOp U] {A B C : U} (F : A ⟶ B) (G : A ⟶ C) : A ⟶ B ⊓ C := defMergeFun F G
 
   def defMergeFunFun [HasFullFunOp U] {A B : U} (F : A ⟶ B) (C : U) :
-    (A ⟶ C) ⟶[λ G => mergeFun F G] (A ⟶ B ⊓ C) :=
-  HasFullFunOp.substFunFun F (B ⊓ C) • revCompFunFun A (revIntroFunFun B C)
+    (A ⟶ C) ⟶{λ G => mergeFun F G} (A ⟶ B ⊓ C) :=
+  substFunFun F (B ⊓ C) • revCompFunFun A (revIntroFunFun B C)
   ◄ byDef • byArgDef
 
   @[reducible] def mergeFunFun [HasFullFunOp U] {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ C) ⟶ (A ⟶ B ⊓ C) :=
   defMergeFunFun F C
 
-  def defMergeFunFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⟶[λ F => mergeFunFun F C] ((A ⟶ C) ⟶ (A ⟶ B ⊓ C)) :=
+  def defMergeFunFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⟶{λ F => mergeFunFun F C} ((A ⟶ C) ⟶ (A ⟶ B ⊓ C)) :=
   compFunFun (revCompFunFun A (revIntroFunFun B C)) (A ⟶ B ⊓ C) •
-  HasFullFunOp.substFunFunFun A B (B ⊓ C)
+  substFunFunFun A B (B ⊓ C)
   ◄ byDef • byArgDef
 
   @[reducible] def mergeFunFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ B ⊓ C) :=
@@ -171,7 +190,7 @@ namespace HasInternalProducts
   def distr [HasAffineFunOp U] {A B C : U} (F : A ⟶ B ⊓ C) : (A ⟶ B) ⊓ (A ⟶ C) :=
   intro (fstFun B C • F) (sndFun B C • F) -- TODO: Rewrite using tactic, as a test
 
-  def defDistrFun [HasFullFunOp U] (A B C : U) : (A ⟶ B ⊓ C) ⟶[λ F => distr F] (A ⟶ B) ⊓ (A ⟶ C) :=
+  def defDistrFun [HasFullFunOp U] (A B C : U) : (A ⟶ B ⊓ C) ⟶{λ F => distr F} (A ⟶ B) ⊓ (A ⟶ C) :=
   mergeFun (revCompFunFun A (fstFun B C)) (revCompFunFun A (sndFun B C))
   ◄ defCongrFun (defCongrArg (defIntroFunFun _ _) byDef) _ • defCongrArg (defIntroFun _ _) byDef
 
@@ -180,20 +199,20 @@ namespace HasInternalProducts
   def invDistrFun [HasFullFunOp U] {A B C : U} (P : (A ⟶ B) ⊓ (A ⟶ C)) : A ⟶ B ⊓ C :=
   mergeFun (fst P) (snd P)
 
-  def defInvDistrFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⊓ (A ⟶ C) ⟶[λ P => invDistrFun P] (A ⟶ B ⊓ C) :=
+  def defInvDistrFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⊓ (A ⟶ C) ⟶{λ P => invDistrFun P} (A ⟶ B ⊓ C) :=
   elimFun (mergeFunFunFun A B C)
   ◄ byDef₂
 
   @[reducible] def invDistrFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⊓ (A ⟶ C) ⟶ (A ⟶ B ⊓ C) :=
   defInvDistrFunFun A B C
 
-  def defProdTopIntroFun [HasInternalTop U] (A : U) : A ⟶[λ a => intro (top U) a] Top U ⊓ A :=
+  def defProdTopIntroFun [HasInternalTop U] (A : U) : A ⟶{λ a => intro (top U) a} Top U ⊓ A :=
   defIntroFun (top U) A
 
   @[reducible] def prodTopIntroFun [HasInternalTop U] (A : U) : A ⟶ Top U ⊓ A :=
   defProdTopIntroFun A
 
-  def defProdTopElimFun [HasLinearFunOp U] [HasInternalTop U] (A : U) : Top U ⊓ A ⟶[λ P => snd P] A :=
+  def defProdTopElimFun [HasLinearFunOp U] [HasInternalTop U] (A : U) : Top U ⊓ A ⟶{λ P => snd P} A :=
   elimFun (HasInternalTop.elimFun (idFun A))
   ◄ byDef₂
 

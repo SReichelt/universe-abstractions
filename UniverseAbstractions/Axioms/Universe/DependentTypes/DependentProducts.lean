@@ -60,13 +60,13 @@ class HasInternalDependentProducts (U : Universe.{u}) (V : Universe.{v}) [HasDep
                                    [HasInternalFunctors V] [HasFunProp U V V V]
   extends HasDependentProducts.{u, v, w, v} U V V where
 (defIntroFun   {A : U} (φ : A ⟿ V) (a : A)                                   :
-   φ a ⟶[λ b => HasDependentProducts.intro a b] (Σ φ))
+   φ a ⟶{λ b => HasDependentProducts.intro a b} (Σ φ))
 (defIntroFunPi {A : U} (φ : A ⟿ V)                                           :
-   Π[λ a => HasFunctors.fromDefFun (defIntroFun φ a)] {φ ⟶ A{Σ φ}})
+   Π{λ a => HasFunctors.fromDefFun (defIntroFun φ a)} {φ ⟶ A{Σ φ}})
 (defElimFun    {A : U} {φ : A ⟿ V} {C : V} (F : Π {φ ⟶ A{C}}) :
-   (Σ φ) ⟶[λ P => HasFunctors.funCoe (F (HasDependentProducts.fst P)) (HasDependentProducts.snd P)] C)
+   (Σ φ) ⟶{λ P => HasFunctors.funCoe (F (HasDependentProducts.fst P)) (HasDependentProducts.snd P)} C)
 (defElimFunFun {A : U} (φ : A ⟿ V) (C : V)                                   :
-   (Π {φ ⟶ A{C}}) ⟶[λ F => defElimFun F] ((Σ φ) ⟶ C))
+   (Π {φ ⟶ A{C}}) ⟶{λ F => defElimFun F} ((Σ φ) ⟶ C))
 
 namespace HasInternalDependentProducts
 

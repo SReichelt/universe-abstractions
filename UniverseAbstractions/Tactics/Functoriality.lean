@@ -375,7 +375,7 @@ namespace Lean
     replaceMkFun f
 
   -- The `functoriality` tactic, which constructs instances of `DefFun`.
-  -- Essentially, when asked to construct an instance of `A ⟶[f] B`, it outputs
+  -- Essentially, when asked to construct an instance of `A ⟶{f} B`, it outputs
   -- `(by makeFunctor f) ◄ λ _ => by simp`.
 
   def functoriality (mvarId : MVarId) : TacticM Expr := do

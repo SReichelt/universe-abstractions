@@ -19,7 +19,9 @@ namespace HasInstanceEquivalences
 
   variable {U IU : Universe} [h : HasInstanceEquivalences U IU]
 
-  instance hasEquivalence (A : U) : HasEquivalence ⌈A⌉ ⌈A⌉ := ⟨(h.Eq A).R⟩
+  @[reducible] def Rel (A : U) : MetaRelation ⌈A⌉ IU := (h.Eq A).R
+
+  instance hasEquivalence (A : U) : HasEquivalence ⌈A⌉ ⌈A⌉ := ⟨Rel A⟩
   instance hasInstances (A : U) : HasInstances (HasEquivalence.γ ⌈A⌉ ⌈A⌉) := Universe.instInst IU
 
   instance isEquivalence (A : U) : MetaRelation.IsEquivalence (HasEquivalence.Equiv (α := ⌈A⌉) (β := ⌈A⌉)) :=

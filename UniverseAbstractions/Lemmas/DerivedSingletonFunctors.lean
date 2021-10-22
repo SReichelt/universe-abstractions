@@ -20,14 +20,14 @@ namespace HasInternalTop
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalTop U]
 
-  def defIntroFun [HasConstFun U U] (A : U) : A ⟶[λ _ => top U] Top U :=
+  def defIntroFun [HasConstFun U U] (A : U) : A ⟶{λ _ => top U} Top U :=
   HasConstFun.defConstFun A (top U)
 
   @[reducible] def introFun [HasConstFun U U] (A : U) : A ⟶ Top U := defIntroFun A
 
   def HasTopExt.introFunEq [HasConstFun U U] [HasSubsingletonExt U U] [HasTopEq U]
                            {A : U} (F : A ⟶ Top U) :
-    F ≃[λ a => byDef⁻¹ • topEq (F a)] introFun A :=
+    F ≃{λ a => topEq (F a) ◅} introFun A :=
   eqExt F (introFun A)
 
   def HasTopExt.elimFunConstEq [HasConstFun U U] [HasTopExt U] {A : U} (a : A) :
@@ -35,13 +35,19 @@ namespace HasInternalTop
   (elimFunEq byDef)⁻¹
 
   def defElimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
-    A ⟶[λ a => elimFun a] (Top U ⟶ A) :=
+    A ⟶{λ a => elimFun a} (Top U ⟶ A) :=
   swapFunFun (elimFun (idFun A))
   ◄ elimFunEq (F := swapFun (elimFun (idFun A)) _) (byDef • byFunDef • byDef)
 
   @[reducible] def elimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
     A ⟶ Top U ⟶ A :=
   defElimFunFun A
+
+  instance elimFun.isFunApp [HasLinearFunOp U] [HasTopExt U] {A : U} {a : A} :
+    IsFunApp A (elimFun a) :=
+  { F := elimFunFun A,
+    a := a,
+    e := byDef }
 
   def HasTopExt.elimFunEqExt [HasLinearFunOp U] [HasLinearFunExt U] [HasTopExt U] {A : U}
                              {F : A ⟶ Top U ⟶ A} (h : swapFun F (top U) ≃ idFun A) :
@@ -52,7 +58,7 @@ namespace HasInternalTop
     elimFunFun A ≃ constFunFun (Top U) A :=
   (elimFunEqExt (swapConstFun (top U) A))⁻¹
 
-  def defInvElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶[λ F => F (top U)] A :=
+  def defInvElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶{λ F => F (top U)} A :=
   defAppFun (top U) A
 
   @[reducible] def invElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶ A := defInvElimFun A

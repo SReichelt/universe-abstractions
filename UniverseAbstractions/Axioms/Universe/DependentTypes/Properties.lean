@@ -23,8 +23,10 @@ namespace HasFunctors
 
   variable {A : U} (φ : A ⟶ ⌊V⌋)
 
-  def Pi    : Sort (imax u v)  := ∀  a, φ a
-  def Sigma : Sort (max 1 u v) := Σ' a, φ a
+  def propType (a : A) : V := φ a
+
+  def Pi    : Sort (imax u v)  := ∀  a, propType φ a
+  def Sigma : Sort (max 1 u v) := Σ' a, propType φ a
 
   class IsUniversal where
   (h : Pi φ)
@@ -36,10 +38,25 @@ end HasFunctors
 
 
 
+namespace HasCongrArg
+
+  open HasFunctors
+
+  variable {U V UpV : Universe} [HasFunctors U {V} UpV] [HasIdentity U]
+           [HasTypeIdentity V] [HasCongrArg U {V}]
+
+  def propCongrArg {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ : A} :
+    a₁ ≃ a₂ → (propType φ a₁ ⟷ propType φ a₂) :=
+  congrArg φ
+
+end HasCongrArg
+
+
+
 class HasFunProp (U V W : Universe) {UpV UpW VW UpVW : Universe}
                  [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasFunctors V W VW]
                  [HasIdentity {VW}] [HasFunctors U {VW} UpVW] where
-(defFunProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶[λ a => φ a ⟶ ψ a] ⌊VW⌋)
+(defFunProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶{λ a => φ a ⟶ ψ a} ⌊VW⌋)
 
 namespace HasFunProp
 
@@ -57,7 +74,7 @@ end HasFunProp
 class HasProdProp (U V W : Universe) {UpV UpW VxW UpVxW : Universe}
                   [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasProducts V W VxW]
                   [HasIdentity {VxW}] [HasFunctors U {VxW} UpVxW] where
-(defProdProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶[λ a => φ a ⊓ ψ a] ⌊VxW⌋)
+(defProdProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶{λ a => φ a ⊓ ψ a} ⌊VxW⌋)
 
 namespace HasProdProp
 
@@ -77,7 +94,7 @@ class HasEquivProp (U V W : Universe) {UpV UpW VW WV V_W UpV_W : Universe}
                    [HasFunctors U {V} UpV] [HasFunctors U {W} UpW]
                    [HasFunctors V W VW] [HasFunctors W V WV] [HasEquivalences V W V_W]
                    [HasIdentity {V_W}] [HasFunctors U {V_W} UpV_W] where
-(defEquivProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶[λ a => φ a ⟷ ψ a] ⌊V_W⌋)
+(defEquivProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶{λ a => φ a ⟷ ψ a} ⌊V_W⌋)
 
 namespace HasEquivProp
 

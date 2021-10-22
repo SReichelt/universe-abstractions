@@ -37,7 +37,7 @@ namespace unit
 
   instance hasInstanceEquivalences : HasInstanceEquivalences unit unit := unitInstanceEquivalences unit
 
-  instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨λ _ _ => unit.inst⟩
+  instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨λ _ _ => inst⟩
 
   -- Functors into `unit` are trivial.
 
@@ -51,8 +51,8 @@ namespace unit
   -- Functors from `unit` to `V` are the same as instances of `V`.
 
   instance hasOutFunctors (V : Universe.{v}) : HasFunctors unit V V :=
-  { Fun   := λ _ A => A,
-    apply := λ a _ => a }
+  { Fun   := λ _ B => B,
+    apply := λ b _ => b }
 
   instance hasTrivialOutFunctoriality (V : Universe.{v}) [HasIdentity V] :
     HasTrivialFunctoriality unit V :=
@@ -91,6 +91,8 @@ namespace unit
     fst   := λ _ => inst,
     snd   := id }
 
+  -- Type equivalence is trivial.
+
   instance hasEquivalences : HasEquivalences unit unit unit :=
   { Equiv    := λ _ _ => Inst,
     toFun    := λ _   => inst,
@@ -101,45 +103,33 @@ namespace unit
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit :=
   ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
 
---  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit := ⟨⟩
---
---  def dependentUnitFunctor {U : Universe.{u}} {A : U} {φ : A ⟿ unit} : Π' φ :=
---  ⟨λ _ => inst, HasTrivialDependentFunctoriality.defPi⟩
---
---  @[simp] theorem dependentUnitFunctor.unique {U : Universe.{u}} {A : U} {φ : A ⟿ unit} (F : Π' φ) :
---    F = dependentUnitFunctor :=
---  by induction F; rfl
---
---  def inPiEquiv {U : Universe.{u}} {A : U} (φ : A ⟿ unit) : ⌈Inst⌉ ≃ (Π' φ) :=
---  { toFun    := λ _ => dependentUnitFunctor,
---    invFun   := λ _ => inst,
---    leftInv  := inst.unique,
---    rightInv := λ F => Eq.symm (dependentUnitFunctor.unique F) }
---
---  instance hasInternalDependentInFunctorType {U : Universe.{u}} {A : U} (φ : A ⟿ unit) :
---    HasEmbeddedType unit (Π' φ) :=
---  ⟨inPiEquiv φ⟩
---
---  instance hasTrivialDependentInFunctors (U : Universe.{u}) :
---    HasTrivialDependentFunctoriality.HasTrivialDependentFunctors U unit unit :=
---  ⟨⟩
---
---  instance hasTrivialDependentOutFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality unit U := ⟨⟩
---
---  def outPiEquiv {A : unit} {U : Universe.{u}} (φ : A ⟿ U) : ⌈φ inst⌉ ≃ (Π' φ) :=
---  { toFun    := λ b => ⟨λ _ => b, HasTrivialDependentFunctoriality.defPi⟩,
---    invFun   := λ F => F inst,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalDependentOutFunctorType {A : unit} {U : Universe.{u}} (φ : A ⟿ U) :
---    HasEmbeddedType U (Π' φ) :=
---  ⟨outPiEquiv φ⟩
---
---  instance hasTrivialDependentOutFunctors (U : Universe.{u}) :
---    HasTrivialDependentFunctoriality.HasTrivialDependentFunctors unit U U :=
---  ⟨⟩
---
+  -- Dependent functors to and from `unit` are not really dependent.
+
+  instance hasTrivialTypeIdentity : HasTrivialIdentity {unit} := ⟨λ _ _ => inst⟩
+
+  instance hasInProperties (U : Universe.{u}) : HasFunctors U {unit} unit :=
+  { Fun   := λ _ _ => Inst,
+    apply := λ _ _ => Inst }
+
+  instance hasTrivialInPropertyCondition (U : Universe.{u}) : HasTrivialFunctoriality U {unit} :=
+  ⟨λ _ => HasTrivialIdentity.defFun inst⟩
+
+  instance (priority := high) hasDependentInFunctors (U : Universe.{u}) : HasDependentFunctors U unit unit :=
+  { Pi    := λ _   => Inst,
+    apply := λ _ _ => inst }
+
+  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit :=
+  ⟨λ _ => HasTrivialIdentity.defPi inst⟩
+
+  instance hasDependentOutFunctors (V : Universe.{v}) : HasDependentFunctors unit V V :=
+  { Pi    := λ φ   => φ inst,
+    apply := λ b _ => b }
+
+  instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasIdentity V] :
+    HasTrivialDependentFunctoriality unit V :=
+  ⟨λ f => { F   := f inst,
+            eff := λ _ => HasRefl.refl (f inst) }⟩
+
 --  def rightSigmaEquiv {U : Universe.{u}} {A : U} (φ : A ⟿ unit) : ⌈A⌉ ≃ (Σ' φ) :=
 --  { toFun    := λ a => ⟨a, inst⟩,
 --    invFun   := λ P => P.fst,
@@ -255,7 +245,7 @@ end boolean
 
 namespace sort
 
-  open MetaRelation
+  open MetaRelation HasFunctors HasDependentFunctors
 
   -- Functors from `sort` to any universe are just functions: Instance equivalence
   -- in `sort` is given by equality, so functors do not need to respect anything else
@@ -265,10 +255,14 @@ namespace sort
   { Fun   := λ α B => α → B,
     apply := id }
 
+  def defFun {A : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V} (f : A → B) :
+    DefFun A B f :=
+  { F   := f,
+    eff := λ a => HasRefl.refl (f a) }
+
   instance hasTrivialFunctoriality (V : Universe.{v}) [HasIdentity V] :
     HasTrivialFunctoriality sort.{u} V :=
-  ⟨λ f => { F   := f,
-            eff := λ a => HasRefl.refl (f a) }⟩
+  ⟨defFun⟩
 
   instance hasInstanceEquivalences : HasInstanceEquivalences sort.{u} prop :=
   ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
@@ -283,21 +277,22 @@ namespace sort
 
   instance hasStandardFunctors : HasStandardFunctors sort.{u} := ⟨⟩
 
---  instance hasTrivialDependentFunctoriality (V : Universe.{v}) : HasTrivialDependentFunctoriality sort V := ⟨⟩
---
---  def piEquiv {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) : HasProperties.Pi φ ≃ (Π' φ) :=
---  { toFun    := λ f => ⟨f, trivial⟩,
---    invFun   := λ F => F.f,
---    leftInv  := λ _ => rfl,
---    rightInv := λ ⟨_, _⟩ => rfl }
---
---  instance hasInternalDependentFunctorType {α : sort.{u}} {V : Universe.{v}} (φ : α ⟿ V) :
---    HasEmbeddedType sort.{imax u v} (Π' φ) :=
---  ⟨piEquiv φ⟩
---
---  instance hasTrivialDependentFunctors (V : Universe.{v}) :
---    HasTrivialDependentFunctoriality.HasTrivialDependentFunctors sort.{u} V sort.{imax u v} :=
---  ⟨⟩
+  -- The same is true for dependent functors.
+
+  instance hasDependentFunctors (V : Universe.{v}) :
+    HasDependentFunctors sort.{u} V sort.{imax u v} :=
+  { Pi    := HasFunctors.Pi,
+    apply := id }
+
+  def defPi {A : sort.{u}} {V : Universe.{v}} [HasIdentity V] {φ : ⌈A ⟶ ⌊V⌋⌉}
+            (f : HasFunctors.Pi φ) :
+    DefPi φ f :=
+  { F   := f,
+    eff := λ a => HasRefl.refl (f a) }
+
+  instance hasTrivialDependentFunctoriality (V : Universe.{v}) [HasIdentity V] :
+    HasTrivialDependentFunctoriality sort.{u} V :=
+  ⟨defPi⟩
 
 end sort
 

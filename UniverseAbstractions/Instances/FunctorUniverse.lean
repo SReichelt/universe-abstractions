@@ -91,7 +91,7 @@ namespace functorUniverse
 
       variable [HasLinearFunExt U]
 
-      def defInstFun (B : U) : (A ⟶ B) ⟶[λ F => inst F] (A !⟶ B) :=
+      def defInstFun (B : U) : (A ⟶ B) ⟶{λ F => inst F} (A !⟶ B) :=
       HasFunctors.toDefFun' (dependentFunctor A (appFunFun A B)) (λ F => swapApp F)
 
       @[reducible] def instFun (B : U) : (A ⟶ B) ⟶ (A !⟶ B) := defInstFun A B
@@ -138,7 +138,7 @@ namespace functorUniverse
 
         variable [HasAffineFunExt U]
 
-        def defEmbedFun (B : U) : B ⟶[λ b => embed A b] (A !⟶ B) :=
+        def defEmbedFun (B : U) : B ⟶{λ b => embed A b} (A !⟶ B) :=
         HasFunctors.toDefFun' (dependentFunctor A (constFun A (idFun B)))
                               (λ b => defCongrArg (defConstFunFun A B) byDef • swapConst A (idFun B) b)
 
