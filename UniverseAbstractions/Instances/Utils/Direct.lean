@@ -16,12 +16,12 @@ variable (U : Universe) [HasIdentity U] [HasInternalFunctors U]
 
 
 class HasDirectLinearFunOp where
-(idFun   (A : U)                                     : A ⟶ A)
-(idEq    {A : U} (a : A)                             : (idFun A) a ≃ a)
-(appFun  (A B : U)                                   : A ⟶ (A ⟶ B) ⟶ B)
-(appEq   {A B : U} (a : A) (F : A ⟶ B)               : (appFun A B) a F ≃ F a)
-(compFun (A B C : U)                                 : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C))
-(compEq  {A B C : U} (F : A ⟶ B) (G : B ⟶ C) (a : A) : (compFun A B C) F G a ≃ G (F a))
+(idFun     (A : U)                                     : A ⟶ A)
+(idEq      {A : U} (a : A)                             : (idFun A) a ≃ a)
+(revAppFun (A B : U)                                   : A ⟶ (A ⟶ B) ⟶ B)
+(appEq     {A B : U} (a : A) (F : A ⟶ B)               : (revAppFun A B) a F ≃ F a)
+(compFun   (A B C : U)                                 : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C))
+(compEq    {A B C : U} (F : A ⟶ B) (G : B ⟶ C) (a : A) : (compFun A B C) F G a ≃ G (F a))
 
 namespace HasDirectLinearFunOp
 
@@ -29,19 +29,19 @@ namespace HasDirectLinearFunOp
 
   instance hasLinearFunOp [HasDirectLinearFunOp U] : HasLinearFunOp U :=
   { defIdFun         := λ A           => ⟨idFun A,             idEq⟩,
-    defAppFun        := λ {A} a B     => ⟨(appFun A B) a,      appEq a⟩,
-    defAppFunFun     := λ A B         => ⟨appFun A B,          λ a => refl ((appFun A B) a)⟩,
+    defRevAppFun     := λ {A} a B     => ⟨(revAppFun A B) a,   appEq a⟩,
+    defRevAppFunFun  := λ A B         => ⟨revAppFun A B,       λ a => refl ((revAppFun A B) a)⟩,
     defCompFun       := λ {A B C} F G => ⟨(compFun A B C) F G, compEq F G⟩,
     defCompFunFun    := λ {A B} F {C} => ⟨(compFun A B C) F,   λ G => refl ((compFun A B C) F G)⟩,
     defCompFunFunFun := λ A B C       => ⟨compFun A B C,       λ F => refl ((compFun A B C) F)⟩ }
 
   def fromLinearFunOp [HasLinearFunOp U] : HasDirectLinearFunOp U :=
-  { idFun   := HasLinearFunOp.idFun,
-    idEq    := λ _ => byDef,
-    appFun  := HasLinearFunOp.appFunFun,
-    appEq   := λ _ _ => byDef₂,
-    compFun := HasLinearFunOp.compFunFunFun,
-    compEq  := λ _ _ _ => byDef₃ }
+  { idFun     := HasLinearFunOp.idFun,
+    idEq      := λ _ => byDef,
+    revAppFun := HasLinearFunOp.revAppFunFun,
+    appEq     := λ _ _ => byDef₂,
+    compFun   := HasLinearFunOp.compFunFunFun,
+    compEq    := λ _ _ _ => byDef₃ }
 
 end HasDirectLinearFunOp
 
@@ -92,13 +92,13 @@ namespace HasLinearFunOp
   class HasDirectLinearFunExt where
   (rightId (A B : U) : compFunFun (idFun A) B ≃ idFun (A ⟶ B))
   (leftId  (A B : U) : revCompFunFun A (idFun B) ≃ idFun (A ⟶ B))
-  (swapApp (A B : U) : swapFunFun (appFunFun A B) ≃ idFun (A ⟶ B))
+  (swapRevApp (A B : U) : swapFunFun (revAppFunFun A B) ≃ appFunFun A B)
   (swapCompFun (A B C : U) :
      swapFunFunFun (B ⟶ C) A C • compFunFunFun A B C ≃
-     revCompFunFun A (appFunFun B C))
+     revCompFunFun A (revAppFunFun B C))
   (swapRevCompFun (A B C : U) :
      swapFunFunFun (A ⟶ B) A C • revCompFunFunFun A B C ≃
-     compFunFun (appFunFun A B) ((A ⟶ B) ⟶ C) • revCompFunFunFun (A ⟶ B) B C)
+     compFunFun (revAppFunFun A B) ((A ⟶ B) ⟶ C) • revCompFunFunFun (A ⟶ B) B C)
   (compAssoc (A B C D : U) :
      compFunFun (compFunFunFun B C D) ((C ⟶ D) ⟶ (A ⟶ D)) •
      revCompFunFunFun (C ⟶ D) (B ⟶ D) (A ⟶ D) •
@@ -110,7 +110,7 @@ namespace HasLinearFunOp
     def fromLinearFunExt [HasLinearFunExt U] : HasDirectLinearFunExt U :=
     { rightId        := HasLinearFunExt.rightIdExt,
       leftId         := HasLinearFunExt.leftIdExt,
-      swapApp        := HasLinearFunExt.swapAppExt,
+      swapRevApp     := HasLinearFunExt.swapRevAppExt,
       swapCompFun    := HasLinearFunExt.swapCompFunExtExt,
       swapRevCompFun := HasLinearFunExt.swapRevCompFunExtExt,
       compAssoc      := HasLinearFunExt.compAssocExtExtExt }
@@ -125,28 +125,28 @@ namespace HasLinearFunOp
       idFun B • F ≃ F :=
     byDef • congrFun (leftId A B) F • (byDef (F := defRevCompFunFun _ _))⁻¹
 
-    def swapAppCongr {A B : U} (F : A ⟶ B) :
-      swapFun (appFunFun A B) F ≃ F :=
-    byDef • congrFun (swapApp A B) F • byDef⁻¹
+    def swapRevAppCongr {A B : U} (F : A ⟶ B) :
+      swapFun (revAppFunFun A B) F ≃ F :=
+    byDef • congrFun (swapRevApp A B) F • byDef⁻¹
 
     def swapCompFunCongr {A B : U} (F : A ⟶ B) (C : U) :
-      swapFunFun (compFunFun F C) ≃ appFunFun B C • F :=
+      swapFunFun (compFunFun F C) ≃ revAppFunFun B C • F :=
     byDef •
     congrFun (swapCompFun A B C) F •
     (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
 
     def swapCompFunCongrCongr {A B : U} (F : A ⟶ B) (a : A) (C : U) :
-      swapFun (compFunFun F C) a ≃ appFun (F a) C :=
+      swapFun (compFunFun F C) a ≃ revAppFun (F a) C :=
     (byDef • byDef) • congrFun (swapCompFunCongr U F C) a • byDef⁻¹
 
     def swapRevCompFunCongr (A : U) {B C : U} (F : B ⟶ C) :
-      swapFunFun (revCompFunFun A F) ≃ revCompFunFun (A ⟶ B) F • appFunFun A B :=
+      swapFunFun (revCompFunFun A F) ≃ revCompFunFun (A ⟶ B) F • revAppFunFun A B :=
     (byDef • byArgDef • byDef) •
     congrFun (swapRevCompFun A B C) F •
     (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
 
     def swapRevCompFunCongrCongr {A B C : U} (F : B ⟶ C) (a : A) :
-      swapFun (revCompFunFun A F) a ≃ F • appFun a B :=
+      swapFun (revCompFunFun A F) a ≃ F • revAppFun a B :=
     (byDef • byArgDef • byDef) • congrFun (swapRevCompFunCongr U A F) a • byDef⁻¹
 
     def compAssocCongr {A B : U} (F : A ⟶ B) (C D : U) :
@@ -172,8 +172,8 @@ namespace HasLinearFunOp
       rightIdExt           := rightId,
       leftId               := leftIdCongr U,
       leftIdExt            := leftId,
-      swapApp              := swapAppCongr U,
-      swapAppExt           := swapApp,
+      swapRevApp           := swapRevAppCongr U,
+      swapRevAppExt        := swapRevApp,
       swapCompFun          := swapCompFunCongrCongr U,
       swapCompFunExt       := swapCompFunCongr U,
       swapCompFunExtExt    := swapCompFun,
@@ -198,7 +198,7 @@ namespace HasAffineFunOp
   class HasDirectSubLinearFunExt where
   (rightConst (A B C : U) :
      compFunFunFun A B C • constFunFun A B ≃
-     revCompFunFun (B ⟶ C) (constFunFun A C) • appFunFun B C)
+     revCompFunFun (B ⟶ C) (constFunFun A C) • revAppFunFun B C)
   (leftConst (A B C : U) :
      compFunFun (constFunFun B C) (A ⟶ C) • compFunFunFun A B C ≃
      constFun (A ⟶ B) (constFunFun A C))
@@ -212,7 +212,7 @@ namespace HasAffineFunOp
     variable [HasLinearFunExt U] [HasDirectSubLinearFunExt U]
 
     def rightConstCongr (A : U) {B : U} (b : B) (C : U) :
-      compFunFun (constFun A b) C ≃ constFunFun A C • appFun b C :=
+      compFunFun (constFun A b) C ≃ constFunFun A C • revAppFun b C :=
     (byDef • byArgDef • byDef) •
     congrFun (rightConst A B C) b •
     (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹

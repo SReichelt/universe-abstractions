@@ -92,7 +92,7 @@ namespace functorUniverse
       variable [HasLinearFunExt U]
 
       def defInstFun (B : U) : (A ⟶ B) ⟶{λ F => inst F} (A !⟶ B) :=
-      HasFunctors.toDefFun' (dependentFunctor A (appFunFun A B)) (λ F => swapApp F)
+      HasFunctors.toDefFun' (dependentFunctor A (revAppFunFun A B)) (λ F => swapRevApp F)
 
       @[reducible] def instFun (B : U) : (A ⟶ B) ⟶ (A !⟶ B) := defInstFun A B
 
@@ -123,7 +123,7 @@ namespace functorUniverse
       def dependentIndependentCompFun {B C D : U} (G : A ⟶ B ⟶ C) (H : C ⟶ D) : A ⟶ B ⟶ D := revCompFunFun B H • G
       def dependentIndependentCompFun.eff {B C D : U} (G : A ⟶ B ⟶ C) (H : C ⟶ D) (b : B) :
         swapFun (dependentIndependentCompFun A G H) b ≃ H • swapFun G b :=
-      compAssoc G (appFun b C) H •
+      compAssoc G (revAppFun b C) H •
       defCongrArg (defCompFunFun G D) (swapRevCompFun H b) •
       swapComp G (revCompFunFun B H) b
 
@@ -185,15 +185,15 @@ namespace functorUniverse
       substFun F (baseIdFun A B) ≃ F :=
     leftId F • substConstFun F (idFun B)
 
-    def baseAppFun {B : U} (F : A ⟶ B) (C : U) : A ⟶ (B ⟶ C) ⟶ C := appFunFun B C • F
+    def baseAppFun {B : U} (F : A ⟶ B) (C : U) : A ⟶ (B ⟶ C) ⟶ C := revAppFunFun B C • F
     def baseAppFun.eff {B : U} (F : A ⟶ B) (C : U) (G : A ⟶ B ⟶ C) :
       substFun G (baseAppFun A F C) ≃ substFun F G :=
     substApp F G
 
-    def baseAppFunFun (B C : U) : A ⟶ B ⟶ (B ⟶ C) ⟶ C := embedFunctor A (appFunFun B C)
+    def baseAppFunFun (B C : U) : A ⟶ B ⟶ (B ⟶ C) ⟶ C := embedFunctor A (revAppFunFun B C)
     def baseAppFunFun.eff (B C : U) (F : A ⟶ B) :
       substFun F (baseAppFunFun A B C) ≃ baseAppFun A F C :=
-    substConstFun F (appFunFun B C)
+    substConstFun F (revAppFunFun B C)
 
     def baseCompFun {B C D : U} (G : A ⟶ B ⟶ C) (H : A ⟶ C ⟶ D) : A ⟶ B ⟶ D := substFun G (revCompFunFunFun B C D • H)
     def baseCompFun.eff {B C D : U} (G : A ⟶ B ⟶ C) (H : A ⟶ C ⟶ D) (F : A ⟶ B) :
@@ -218,8 +218,8 @@ namespace functorUniverse
 
     instance hasLinearFunOp : HasLinearFunOp ({A ⟶} U) :=
     { defIdFun         := λ B     => ⟨baseIdFun         A B,     baseIdFun.eff         A B⟩,
-      defAppFun        := λ F C   => ⟨baseAppFun        A F C,   baseAppFun.eff        A F C⟩,
-      defAppFunFun     := λ B C   => ⟨baseAppFunFun     A B C,   baseAppFunFun.eff     A B C⟩,
+      defRevAppFun        := λ F C   => ⟨baseAppFun        A F C,   baseAppFun.eff        A F C⟩,
+      defRevAppFunFun     := λ B C   => ⟨baseAppFunFun     A B C,   baseAppFunFun.eff     A B C⟩,
       defCompFun       := λ G H   => ⟨baseCompFun       A G H,   baseCompFun.eff       A G H⟩,
       defCompFunFun    := λ G D   => ⟨baseCompFunFun    A G D,   baseCompFunFun.eff    A G D⟩,
       defCompFunFunFun := λ B C D => ⟨baseCompFunFunFun A B C D, baseCompFunFunFun.eff A B C D⟩ }
@@ -284,8 +284,8 @@ namespace functorUniverse
       hF.e⁻¹
 
       instance embedAppFun {B C : U} {b : B} [hb : HasSimpEmbed A b] :
-        HasSimpEmbed A (appFun b C) :=
-      ⟨appFun (U := {A ⟶} U) hb.simpEmbed C,
+        HasSimpEmbed A (revAppFun b C) :=
+      ⟨revAppFun (U := {A ⟶} U) hb.simpEmbed C,
        byFunApp A (HasRefl.refl _) hb.simpEmbedEq⟩
 
       instance embedCompFunFun {B C D : U} {G : B ⟶ C} [hG : HasSimpEmbed A G] :
@@ -371,7 +371,7 @@ namespace functorUniverse
     instance hasDirectLinearFunExt : HasDirectLinearFunExt ({A ⟶} U) :=
     { rightId        := λ B C     : U => HasSimpEmbed.bySimp A (rightIdExt B C),
       leftId         := λ B C     : U => HasSimpEmbed.bySimp A (leftIdExt B C),
-      swapApp        := λ B C     : U => HasSimpEmbed.bySimp A (swapAppExt B C),
+      swapRevApp        := λ B C     : U => HasSimpEmbed.bySimp A (swapRevAppExt B C),
       swapCompFun    := λ B C D   : U => HasSimpEmbed.bySimp A (swapCompFunExtExt B C D),
       swapRevCompFun := λ B C D   : U => HasSimpEmbed.bySimp A (swapRevCompFunExtExt B C D),
       compAssoc      := λ B C D E : U => HasSimpEmbed.bySimp A (compAssocExtExtExt B C D E) }

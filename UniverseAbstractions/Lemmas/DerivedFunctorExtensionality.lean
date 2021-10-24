@@ -18,39 +18,39 @@ namespace HasLinearFunOp.HasLinearFunExt
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
 
-  def swapId {A : U} (a : A) (B : U) :
-    swapFun (idFun (A ⟶ B)) a ≃{byFunDef ▻-◅} appFun a B :=
-  rightId (appFun a B)
+  def swapApp {A : U} (a : A) (B : U) :
+    swapFun (appFunFun A B) a ≃{byFunDef ▻-◅} revAppFun a B :=
+  rightId (revAppFun a B)
 
-  def swapIdExt (A B : U) :
-    swapFunFun (idFun (A ⟶ B)) ≃{▻ λ a => swapId a B ◅} appFunFun A B :=
-  leftId (appFunFun A B) •
-  defCongrArg (defCompFunFun (appFunFun A B) ((A ⟶ B) ⟶ B)) (rightIdExt (A ⟶ B) B)
+  def swapAppExt (A B : U) :
+    swapFunFun (appFunFun A B) ≃{▻ λ a => swapApp a B ◅} revAppFunFun A B :=
+  leftId (revAppFunFun A B) •
+  defCongrArg (defCompFunFun (revAppFunFun A B) ((A ⟶ B) ⟶ B)) (rightIdExt (A ⟶ B) B)
 
   def swapComp {A B C D : U} (F : A ⟶ B) (G : B ⟶ C ⟶ D) (c : C) :
     swapFun (G • F) c ≃{byFunDef ▻-◅ byDef} swapFun G c • F :=
-  (compAssoc F G (appFun c D))⁻¹
+  (compAssoc F G (revAppFun c D))⁻¹
 
   def swapCompExt {A B C D : U} (F : A ⟶ B) (G : B ⟶ C ⟶ D) :
     swapFunFun (G • F)
     ≃{▻ λ c => swapComp F G c ◅ byDef • byArgDef}
     compFunFun F D • swapFunFun G :=
-  compAssoc (appFunFun C D) (compFunFun G D) (compFunFun F D) •
-  defCongrArg (defCompFunFun (appFunFun C D) (A ⟶ D)) (compAssocExt F G D)⁻¹
+  compAssoc (revAppFunFun C D) (compFunFun G D) (compFunFun F D) •
+  defCongrArg (defCompFunFun (revAppFunFun C D) (A ⟶ D)) (compAssocExt F G D)⁻¹
 
   def swapSwap {A B C : U} (F : A ⟶ B ⟶ C) (a : A) :
     swapFun (swapFunFun F) a ≃{byDef₂ ▻|} F a :=
-  swapApp (F a) •
-  defCongrArg (defCompFunFun (appFunFun B C) C) (swapCompFun F a C) •
-  swapComp (appFunFun B C) (compFunFun F C) a
+  swapRevApp (F a) •
+  defCongrArg (defCompFunFun (revAppFunFun B C) C) (swapCompFun F a C) •
+  swapComp (revAppFunFun B C) (compFunFun F C) a
 
   def swapSwapExt {A B C : U} (F : A ⟶ B ⟶ C) :
     swapFunFun (swapFunFun F) ≃{▻ λ a => swapSwap F a} F :=
   leftId F •
-  defCongrArg (defCompFunFun F (B ⟶ C)) (swapAppExt B C) •
-  (compAssoc F (appFunFun (B ⟶ C) C) (compFunFun (appFunFun B C) C))⁻¹ •
-  defCongrArg (defRevCompFunFun A (compFunFun (appFunFun B C) C)) (swapCompFunExt F C) •
-  swapCompExt (appFunFun B C) (compFunFun F C)
+  defCongrArg (defCompFunFun F (B ⟶ C)) (swapRevAppExt B C) •
+  (compAssoc F (revAppFunFun (B ⟶ C) C) (compFunFun (revAppFunFun B C) C))⁻¹ •
+  defCongrArg (defRevCompFunFun A (compFunFun (revAppFunFun B C) C)) (swapCompFunExt F C) •
+  swapCompExt (revAppFunFun B C) (compFunFun F C)
 
   def reverseSwap {A B C : U} {F : A ⟶ B ⟶ C} {G : B ⟶ A ⟶ C} : swapFunFun F ≃ G → swapFunFun G ≃ F :=
   λ e => swapSwapExt F • (defCongrArg (defSwapFunFunFun B A C) e)⁻¹
@@ -62,9 +62,9 @@ namespace HasLinearFunOp.HasLinearFunExt
     compFunFun F D • revCompFunFun B H
     ≃{byDef • byArgDef ▻ λ G => compAssoc F G H ◅ byDef • byArgDef}
     revCompFunFun A H • compFunFun F C :=
-  (compAssoc (compFunFun F C) (compFunFunFun A C D) (appFun H (A ⟶ D)))⁻¹ •
+  (compAssoc (compFunFun F C) (compFunFunFun A C D) (revAppFun H (A ⟶ D)))⁻¹ •
   defCongrArg (defRevSwapFunFun (B ⟶ C) H (A ⟶ D)) (compAssocExtExt F C D) •
-  (compAssoc (compFunFunFun B C D) (appFun H (B ⟶ D)) (compFunFun F D) •
+  (compAssoc (compFunFunFun B C D) (revAppFun H (B ⟶ D)) (compFunFun F D) •
    defCongrArg (defCompFunFun (compFunFunFun B C D) (A ⟶ D)) (swapRevCompFun (compFunFun F D) H) •
    swapComp (compFunFunFun B C D) (revCompFunFun (C ⟶ D) (compFunFun F D)) H)⁻¹
 
@@ -77,12 +77,12 @@ namespace HasLinearFunOp.HasLinearFunExt
   (swapCompExt (compFunFunFun B C D) (revCompFunFun (C ⟶ D) (compFunFun F D)))⁻¹ •
   defCongrArg (defRevCompFunFun (C ⟶ D) (compFunFun (compFunFunFun B C D) (A ⟶ D)))
               (swapRevCompFunExt (C ⟶ D) (compFunFun F D))⁻¹ •
-  compAssoc (appFunFun (C ⟶ D) (B ⟶ D))
+  compAssoc (revAppFunFun (C ⟶ D) (B ⟶ D))
             (revCompFunFun ((C ⟶ D) ⟶ B ⟶ D) (compFunFun F D))
             (compFunFun (compFunFunFun B C D) (A ⟶ D)) •
-  defCongrArg (defCompFunFun (appFunFun (C ⟶ D) (B ⟶ D)) ((B ⟶ C) ⟶ (A ⟶ D)))
+  defCongrArg (defCompFunFun (revAppFunFun (C ⟶ D) (B ⟶ D)) ((B ⟶ C) ⟶ (A ⟶ D)))
               (compAssocMidExt (compFunFunFun B C D) (compFunFun F D))⁻¹ •
-  (compAssoc (appFunFun (C ⟶ D) (B ⟶ D))
+  (compAssoc (revAppFunFun (C ⟶ D) (B ⟶ D))
              (compFunFun (compFunFunFun B C D) (B ⟶ D))
              (revCompFunFun (B ⟶ C) (compFunFun F D)))⁻¹
 
@@ -102,15 +102,15 @@ namespace HasAffineFunOp.HasAffineFunExt
 
   def swapConst (A : U) {B C : U} (F : B ⟶ C) (b : B) :
     swapFun (constFun A F) b ≃{byFunDef ▻-◅} constFun A (F b) :=
-  defCongrArg (defConstFunFun A C) byDef • rightConst A F (appFun b C)
+  defCongrArg (defConstFunFun A C) byDef • rightConst A F (revAppFun b C)
 
   def swapConstExt (A : U) {B C : U} (F : B ⟶ C) :
     swapFunFun (constFun A F)
     ≃{▻ λ b => swapConst A F b ◅ byDef}
     constFunFun A C • F :=
-  defCongrArg (defRevCompFunFun B (constFunFun A C)) (swapApp F) •
-  compAssoc (appFunFun B C) (appFun F C) (constFunFun A C) •
-  defCongrArg (defCompFunFun (appFunFun B C) (A ⟶ C)) (rightConstExt A F C)
+  defCongrArg (defRevCompFunFun B (constFunFun A C)) (swapRevApp F) •
+  compAssoc (revAppFunFun B C) (revAppFun F C) (constFunFun A C) •
+  defCongrArg (defCompFunFun (revAppFunFun B C) (A ⟶ C)) (rightConstExt A F C)
 
   def swapConstFunExt' (A B : U) : swapFunFun (constFunFun A B) ≃ constFun A (idFun B) :=
   reverseSwap (rightId (constFunFun A B) • swapConstExt A (idFun B))
@@ -165,9 +165,9 @@ namespace HasFullFunOp.HasFullFunExt
   rightConst A b G • substConstFun (constFun A b) G
 
   def substApp {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) :
-    substFun G (appFunFun B C • F) ≃{byDef₂ • byFunDef ▻-◅} substFun F G :=
+    substFun G (revAppFunFun B C • F) ≃{byDef₂ • byFunDef ▻-◅} substFun F G :=
   substAltDef F G •
-  defCongrArg (defDupFunFun A C) (compAssoc F (appFunFun B C) (compFunFun G C))⁻¹
+  defCongrArg (defDupFunFun A C) (compAssoc F (revAppFunFun B C) (compFunFun G C))⁻¹
 
   def substComp {A B C D : U} (F : A ⟶ B) (G : B ⟶ C) (H : A ⟶ C ⟶ D) :
     substFun F (compFunFun G D • H) ≃{byDef₂ • byFunDef ▻-◅ byArgDef} substFun (G • F) H :=

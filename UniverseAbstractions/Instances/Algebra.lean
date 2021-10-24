@@ -79,8 +79,8 @@ namespace CommSemigroup
   -- TODO: Can we make everything `by simp` again?
   instance hasLinearFunOp : HasLinearFunOp univ :=
   { defIdFun         := λ A     => defFun ⟨λ a₁ a₂ => rfl⟩,
-    defAppFun        := λ a B   => defFun ⟨λ F₁ F₂ => rfl⟩,
-    defAppFunFun     := λ A B   => defFun ⟨λ a₁ a₂ => funExt λ F => simp_op_arg F a₁ a₂⟩,
+    defRevAppFun     := λ a B   => defFun ⟨λ F₁ F₂ => rfl⟩,
+    defRevAppFunFun  := λ A B   => defFun ⟨λ a₁ a₂ => funExt λ F => simp_op_arg F a₁ a₂⟩,
     defCompFun       := λ F G   => defFun ⟨λ a₁ a₂ => by simp⟩,
     defCompFunFun    := λ F C   => defFun ⟨λ G₁ G₂ => funExt λ a => rfl⟩,
     defCompFunFunFun := λ A B C => defFun ⟨λ F₁ F₂ => funExt λ G => funExt λ a => simp_op_arg G (F₁ a) (F₂ a)⟩ }

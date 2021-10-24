@@ -30,7 +30,7 @@ namespace HasLinearFunOp
   -- order.
 
   def defSwapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶{λ a => F a b} C :=
-  appFun b C • F
+  revAppFun b C • F
   ◄ byDef
 
   @[reducible] def swapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := defSwapFun F b
@@ -40,7 +40,7 @@ namespace HasLinearFunOp
   compFun.isFunApp
 
   def defSwapFunFun {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶{λ b => swapFun F b} (A ⟶ C) :=
-  compFunFun F C • appFunFun B C
+  compFunFun F C • revAppFunFun B C
   ◄ byDef • byArgDef
 
   @[reducible] def swapFunFun {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := defSwapFunFun F
@@ -50,7 +50,7 @@ namespace HasLinearFunOp
   compFun.isFunApp
 
   def defSwapFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶{λ F => swapFunFun F} (B ⟶ A ⟶ C) :=
-  compFunFun (appFunFun B C) (A ⟶ C) • compFunFunFun A (B ⟶ C) C
+  compFunFun (revAppFunFun B C) (A ⟶ C) • compFunFunFun A (B ⟶ C) C
   ◄ byDef • byArgDef
 
   @[reducible] def swapFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := defSwapFunFunFun A B C

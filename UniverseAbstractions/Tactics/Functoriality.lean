@@ -22,9 +22,9 @@ set_option autoBoundImplicitLocal false
 -- -----------------------+----------------+-------------------------------------------------------
 --  `Λ a => t`            | `a` not in `t` | `constFun _ t`
 --  `Λ a => a`            |                | `idFun _`
---  `Λ a => T a`          | `a` not in `T` | `T`
+--  `Λ a => T a`          | `a` not in `T` | `appFun T`, i.e. just `T`
 --  `Λ a => T t`          | `a` not in `T` | `compFun (Λ a => t) T`
---  `Λ F => F t`          | `F` not in `t` | `appFun t _`
+--  `Λ F => F t`          | `F` not in `t` | `revAppFun t _`
 --  `Λ a => T t`          | `a` not in `t` | `swapFun (Λ a => T) t`
 --  `Λ a => T a`          |                | `dupFun (Λ a => T)`
 --  `Λ a => T t`          |                | `substFun (Λ a => t) (Λ a => T)`
@@ -34,7 +34,7 @@ set_option autoBoundImplicitLocal false
 --
 -- Although all cases of functor application inside the lambda body can be handled generically by
 -- `substFun` (matching SKI combinator calculus), `substFun` requires `FullFunOp`, whereas
--- `compFun`, `appFun`, and `swapFun` only require `LinearFunOp` (corresponding to linear logic,
+-- `compFun`, `revAppFun`, and `swapFun` only require `LinearFunOp` (corresponding to linear logic,
 -- where each variable is used exactly once). So the special cases are not merely optimizations.
 
 
@@ -166,7 +166,7 @@ namespace Lean
           match ← f_b.asConstant with
           | some b => do
             if ← f_G.isId then
-              return mkApp4 (φ.getDecl ``HasLinearFunOp.appFun) hHasLinearFunOp B_b b f.B
+              return mkApp4 (φ.getDecl ``HasLinearFunOp.revAppFun) hHasLinearFunOp B_b b f.B
             let F_G ← constructLambdaFunctor φ f_G
             return mkApp6 (φ.getDecl ``HasLinearFunOp.swapFun) hHasLinearFunOp f.A B_b f.B F_G b
           | none => do
@@ -194,6 +194,8 @@ namespace Lean
     -- algorithm fails. Also, we would need to make sure that the derived functors that we use as
     -- building blocks are not reduced.
 
+    -- TODO: Use `IsFunApp` type class instead, or a variant thereof.
+
     partial def constructLambdaDefFunFunctor (φ : FunUniv) (f : LambdaAbstr) (A_G B_G g G' : Expr) : MetaM Expr := do
       let G ← φ.mkFreshInstMVar (φ.mkFunType A_G B_G)
       if ← isDefEq G' (mkApp3 (φ.getDecl ``HasInternalFunctors.Helpers.toDefFun) A_G B_G G) then
@@ -209,9 +211,9 @@ namespace Lean
         let hHasLinearFunOp ← φ.mkFreshDeclMVar ``HasLinearFunOp
         let A₁ ← φ.mkFreshTypeMVar
         let a₁ ← φ.mkFreshInstMVar A₁
-        if ← isDefEq G' (mkApp4 (φ.getDecl ``HasLinearFunOp.defAppFun) hHasLinearFunOp A₁ a₁ B_G) then
+        if ← isDefEq G' (mkApp4 (φ.getDecl ``HasLinearFunOp.defRevAppFun) hHasLinearFunOp A₁ a₁ B_G) then
           let a₁ ← instantiateMVars a₁
-          let app := mkApp3 (φ.getDecl ``HasLinearFunOp.appFunFun) hHasLinearFunOp A₁ B_G
+          let app := mkApp3 (φ.getDecl ``HasLinearFunOp.revAppFunFun) hHasLinearFunOp A₁ B_G
           return ← constructLambdaAppFunctor φ f A₁ app a₁
         let A_F₁ := φ.mkFunType A_G A₁
         let A_F₂ := φ.mkFunType A₁ B_G

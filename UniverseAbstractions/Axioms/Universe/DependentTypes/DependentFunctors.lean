@@ -261,41 +261,41 @@ end HasConstFunPi
 
 
 
-class HasPiAppFun (U V : Universe) {UpV UV UVV : Universe} [HasIdentity V]
-                  [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
-                  [HasFunctors UV V UVV] where
-(defAppFun {A : U} (a : A) (φ : A ⟶ ⌊V⌋) : (Π φ) ⟶{λ F => F a} (φ a))
+class HasPiRevAppFun (U V : Universe) {UpV UV UVV : Universe} [HasIdentity V]
+                     [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
+                     [HasFunctors UV V UVV] where
+(defRevAppFun {A : U} (a : A) (φ : A ⟶ ⌊V⌋) : (Π φ) ⟶{λ F => F a} (φ a))
 
-namespace HasPiAppFun
+namespace HasPiRevAppFun
 
   open HasCongrArg
 
   variable {U V UpV UV UVV : Universe} [HasIdentity V] [HasFunctors U {V} UpV]
-           [HasDependentFunctors U V UV] [HasFunctors UV V UVV] [HasPiAppFun U V]
+           [HasDependentFunctors U V UV] [HasFunctors UV V UVV] [HasPiRevAppFun U V]
 
-  @[reducible] def appFun {A : U} (a : A) (φ : A ⟶ ⌊V⌋) : (Π φ) ⟶ φ a := defAppFun a φ
+  @[reducible] def revAppFun {A : U} (a : A) (φ : A ⟶ ⌊V⌋) : (Π φ) ⟶ φ a := defRevAppFun a φ
 
   instance hasDependentCongrFun [HasIdentity UV] [HasCongrArg UV V] : HasDependentCongrFun U V :=
-  ⟨λ {A φ F₁ F₂} h a => defCongrArg (defAppFun a φ) h⟩
+  ⟨λ {A φ F₁ F₂} h a => defCongrArg (defRevAppFun a φ) h⟩
 
-end HasPiAppFun
+end HasPiRevAppFun
 
-class HasPiAppFunPi (U V : Universe) {UpV : Universe} [HasTypeIdentity V] [HasFunctors U {V} UpV]
-                    [HasDependentFunctors U V V] [HasFunProp U V V] [HasConstFun U {V}] extends
-  HasPiAppFun U V where
-(defAppFunPi {A : U} (φ : A ⟶ ⌊V⌋) :
-   Π{λ a => HasPiAppFun.appFun a φ • HasConstFun.constProp.toFun a (Π φ) ◅}
+class HasPiRevAppFunPi (U V : Universe) {UpV : Universe} [HasTypeIdentity V] [HasFunctors U {V} UpV]
+                       [HasDependentFunctors U V V] [HasFunProp U V V] [HasConstFun U {V}] extends
+  HasPiRevAppFun U V where
+(defRevAppFunPi {A : U} (φ : A ⟶ ⌊V⌋) :
+   Π{λ a => HasPiRevAppFun.revAppFun a φ • HasConstFun.constProp.toFun a (Π φ) ◅}
     ({[A] Π φ} {⟶} φ))
 
-namespace HasPiAppFunPi
+namespace HasPiRevAppFunPi
 
   variable {U V UpV : Universe} [HasTypeIdentity V] [HasFunctors U {V} UpV]
            [HasDependentFunctors U V V] [HasFunProp U V V] [HasConstFun U {V}]
-           [HasPiAppFunPi U V]
+           [HasPiRevAppFunPi U V]
 
-  @[reducible] def appFunPi {A : U} (φ : A ⟶ ⌊V⌋) : Π ({[A] Π φ} {⟶} φ) := defAppFunPi φ
+  @[reducible] def revAppFunPi {A : U} (φ : A ⟶ ⌊V⌋) : Π ({[A] Π φ} {⟶} φ) := defRevAppFunPi φ
 
-end HasPiAppFunPi
+end HasPiRevAppFunPi
 
 
 

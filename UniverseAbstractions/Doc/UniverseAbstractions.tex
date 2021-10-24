@@ -54,7 +54,7 @@
 
 \newcommand{\combinator}{\nm}
 \newcommand{\idFun}{\combinator{I}}
-\newcommand{\appFun}{\combinator{T}}
+\newcommand{\revAppFun}{\combinator{T}}
 \newcommand{\constFun}{\combinator{K}}
 \newcommand{\compFun}{\combinator{B'}}
 \newcommand{\revCompFun}{\combinator{B}}
@@ -425,8 +425,8 @@ axiomatically.
                  a &\mapsto a
     \end{aligned}\\[1em]
     \begin{aligned}
-      \appFun_{AB} : A \to (A \to B) &\to     B\\
-                     (a,F)           &\mapsto F(a)
+      \revAppFun_{AB} : A \to (A \to B) &\to     B\\
+                        (a,F)           &\mapsto F(a)
     \end{aligned}\\[1em]
     \begin{aligned}
       \compFun_{ABC} : (A \to B) \to (B \to C) \to A &\to     C\\
@@ -434,7 +434,7 @@ axiomatically.
     \end{aligned}
   \end{gather*}
 
-  Before stating the required equivalences, we derive two additional functors from $\appFun$
+  Before stating the required equivalences, we derive two additional functors from $\revAppFun$
   and $\compFun.$
   To improve readability, we want to use the symbol ``$\circ$'' when $\compFun$ is applied to
   two arguments, and indeed the functor arrow $(\to)$ is a $\U$-valued meta-relation on the
@@ -447,7 +447,7 @@ axiomatically.
 
   Now we define
   \begin{align*}
-    \swapFun_{ABC} &:= \compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\appFun_{BC}) \circ \compFun_{A(B{\to}C)C}\\
+    \swapFun_{ABC} &:= \compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\revAppFun_{BC}) \circ \compFun_{A(B{\to}C)C}\\
                    &: \begin{aligned}[t]
                         (A \to B \to C) \to B \to A &\to     C\\
                         (F,b,a)                     &\mapsto F(a,b)
@@ -467,9 +467,9 @@ axiomatically.
   \begin{align*}
     \nm{rightId}_{AB} &: \compFun_{AAB}(\idFun_A) \equiv \idFun_{A{\to}B}\\
     \nm{leftId}_{AB}  &: \revCompFun_{ABB}(\idFun_B) \equiv \idFun_{A{\to}B}\\
-    \nm{swapT}_{AB}   &: \swapFun(\appFun_{AB}) \equiv \idFun_{A{\to}B}\\
-    \nm{swapB'}_{ABC} &: \swapFun_{(B{\to}C)AC} \circ \compFun_{ABC} \equiv \revCompFun_{AB((B{\to}C){\to}C)}(\appFun_{BC})\\
-    \nm{swapB}_{ABC}  &: \swapFun_{(A{\to}B)AC} \circ \revCompFun_{ABC} \equiv \revCompFun_{A((A{\to}B){\to}B)((A{\to}B){\to}C)}(\appFun_{AB}) \circ \revCompFun_{(A{\to}B)BC}\\
+    \nm{swapT}_{AB}   &: \swapFun(\revAppFun_{AB}) \equiv \idFun_{A{\to}B}\\
+    \nm{swapB'}_{ABC} &: \swapFun_{(B{\to}C)AC} \circ \compFun_{ABC} \equiv \revCompFun_{AB((B{\to}C){\to}C)}(\revAppFun_{BC})\\
+    \nm{swapB}_{ABC}  &: \swapFun_{(A{\to}B)AC} \circ \revCompFun_{ABC} \equiv \revCompFun_{A((A{\to}B){\to}B)((A{\to}B){\to}C)}(\revAppFun_{AB}) \circ \revCompFun_{(A{\to}B)BC}\\
     \nm{assoc}_{ABCD} &: \compFun_{(B{\to}C)((C{\to}D){\to}(B{\to}D))((C{\to}D){\to}(A{\to}D))}(\compFun_{BCD}) \circ \revCompFun_{(C{\to}D)(B{\to}D)(A{\to}D)} \circ \compFun_{ABD} \equiv\\
                       &\:\ \ \revCompFun_{(B{\to}C)}(\compFun_{ACD}) \circ \compFun_{ABC}
   \end{align*}
@@ -493,11 +493,11 @@ axiomatically.
 \end{proposition}
 \vspace{-1ex}
 \begin{proof}
-  The functor $\appFun_{AB}(a)$ must respect instance equivalences, so we have an equivalence
-  \[\appFun_{AB}(a)(e) : \appFun_{AB}(a,F) \equiv \appFun_{AB}(a,G).\]
-  Applying the definition of $\appFun_{AB}$ yields an equivalence of the desired type:
+  The functor $\revAppFun_{AB}(a)$ must respect instance equivalences, so we have an equivalence
+  \[\revAppFun_{AB}(a)(e) : \revAppFun_{AB}(a,F) \equiv \revAppFun_{AB}(a,G).\]
+  Applying the definition of $\revAppFun_{AB}$ yields an equivalence of the desired type:
   \begin{align*}
-    e(a) &:= \fndef{\appFun_{AB}}(a,G) \circ \appFun_{AB}(a)(e) \circ (\fndef{\appFun_{AB}}(a,F))^{-1}\\
+    e(a) &:= \fndef{\revAppFun_{AB}}(a,G) \circ \revAppFun_{AB}(a)(e) \circ (\fndef{\revAppFun_{AB}}(a,F))^{-1}\\
          &: F(a) \equiv G(a).
     \qedhere
   \end{align*}
@@ -515,32 +515,32 @@ demonstration purposes we will explicitly construct $\fndef{\swapFun}$ now.
 
 Recall that ``$\circ$'' is just a shorthand for $\compFun$ in reverse order. So for a given
 $F : A \to B \to C,$ the term
-$\swapFun(F) = (\compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\appFun_{BC}) \circ \compFun_{A(B{\to}C)C})(F)$
+$\swapFun(F) = (\compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\revAppFun_{BC}) \circ \compFun_{A(B{\to}C)C})(F)$
 is exactly the left side of an equivalence given by $\fndef{\compFun}$:
 \begin{align*}
-  e &:= \fndef{\compFun}(\compFun_{A(B{\to}C)C},\compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\appFun_{BC}),F)\\
-    &: \swapFun(F) \equiv \compFun_{A(B{\to}C)C}(F) \circ \appFun_{BC}.
+  e &:= \fndef{\compFun}(\compFun_{A(B{\to}C)C},\compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\revAppFun_{BC}),F)\\
+    &: \swapFun(F) \equiv \compFun_{A(B{\to}C)C}(F) \circ \revAppFun_{BC}.
 \end{align*}
 Applying proposition \ref{prp:congrfun} to $e$ and an instance $b : B,$ we obtain
-\[e(b) : \swapFun(F,b) \equiv (\compFun_{A(B{\to}C)C}(F) \circ \appFun_{BC})(b).\]
+\[e(b) : \swapFun(F,b) \equiv (\compFun_{A(B{\to}C)C}(F) \circ \revAppFun_{BC})(b).\]
 The right side is again an application of $\compFun,$ so we have
 \begin{align*}
-  f &:= \fndef{\compFun}(\appFun_{BC},\compFun_{A(B{\to}C)C}(F),b)\\
-    &: (\compFun_{A(B{\to}C)C}(F) \circ \appFun_{BC})(b) \equiv \appFun_{BC}(b) \circ F,
+  f &:= \fndef{\compFun}(\revAppFun_{BC},\compFun_{A(B{\to}C)C}(F),b)\\
+    &: (\compFun_{A(B{\to}C)C}(F) \circ \revAppFun_{BC})(b) \equiv \revAppFun_{BC}(b) \circ F,
 \end{align*}
 and, applying transitivity of $(\equiv),$
 \begin{align*}
   g &:= f \circ e(b)\\
-    &: \swapFun(F,b) \equiv \appFun_{BC}(b) \circ F.
+    &: \swapFun(F,b) \equiv \revAppFun_{BC}(b) \circ F.
 \end{align*}
 Apply proposition \ref{prp:congrfun} to $g$ and an instance $a : A$ to obtain
-\[g(a) : \swapFun(F,b,a) \equiv (\appFun_{BC}(b) \circ F)(a).\]
+\[g(a) : \swapFun(F,b,a) \equiv (\revAppFun_{BC}(b) \circ F)(a).\]
 This time we have two relevant definitions
 \begin{align*}
-  h &:= \fndef{\compFun}(F,\appFun_{BC}(b))\\
-    &: (\appFun_{BC}(b) \circ F)(a) \equiv \appFun_{BC}(b,F(a)),\\[1ex]
-  i &:= \fndef{\appFun}(b,F(a))\\
-    &: \appFun_{BC}(b,F(a)) \equiv F(a,b).
+  h &:= \fndef{\compFun}(F,\revAppFun_{BC}(b))\\
+    &: (\revAppFun_{BC}(b) \circ F)(a) \equiv \revAppFun_{BC}(b,F(a)),\\[1ex]
+  i &:= \fndef{\revAppFun}(b,F(a))\\
+    &: \revAppFun_{BC}(b,F(a)) \equiv F(a,b).
 \end{align*}
 Finally, we can apply transitivity twice to arrive at
 \begin{align*}
@@ -561,7 +561,7 @@ Finally, we can apply transitivity twice to arrive at
   from it instead.\footnote{Due to a minor technical detail, $\compFun$ leads to a slightly
   more convenient definition of $\swapFun.$}
 
-  Similarly $\appFun$ says that for each $a : A,$ the application of $a$ to an
+  Similarly $\revAppFun$ says that for each $a : A,$ the application of $a$ to an
   $F : A \to B$ is functorial, and also that this application functor is functorial in
   $a.$
 
@@ -894,7 +894,7 @@ in the following proposition is sufficient.
           G         &\mapsto G(b)
     \end{aligned}$ &
     for $b : B$ &
-    $\appFun_{BC}(b)$\\
+    $\revAppFun_{BC}(b)$\\
     \hline
     \rule{0pt}{2em}
     $\begin{aligned}
@@ -1109,7 +1109,7 @@ functors and full functor operations, and a type $A \in \U.$
 \begin{proposition}
   \label{prp:fun-univ-full-funop}
   $\U^A$ has full functor operations, defined by $\idFun_{B^A} := (\idFun_B)^A,$
-  $\appFun_{(B^A)(C^A)} := (\appFun_{BC})^A, \ldots$ for $B,C \in \U.$
+  $\revAppFun_{(B^A)(C^A)} := (\revAppFun_{BC})^A, \ldots$ for $B,C \in \U.$
 \end{proposition}
 \vspace{-1ex}
 \begin{proof}
@@ -1424,7 +1424,7 @@ axioms that we have defined generically on universe-based structures.)
     \end{aligned}$ &
     for $b : B$ &
     $\begin{array}{@{}l@{}}
-      \appFun_{BC}(b)\\
+      \revAppFun_{BC}(b)\\
       \swapFun_{(B{\to}C)BC}(\idFun_{B{\to}C},b)\\
       \left[\substFun_{(B{\to}C)BC}(\constFun_{(B{\to}C)B}(b),\idFun_{B{\to}C})\right]
     \end{array}$\\

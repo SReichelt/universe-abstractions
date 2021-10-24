@@ -59,7 +59,7 @@ namespace HasInternalTop
   (elimFunEqExt (swapConstFun (top U) A))⁻¹
 
   def defInvElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶{λ F => F (top U)} A :=
-  defAppFun (top U) A
+  defRevAppFun (top U) A
 
   @[reducible] def invElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶ A := defInvElimFun A
 
@@ -74,7 +74,7 @@ namespace HasInternalBot
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalBot U]
 
   def contraIntroFun [HasLinearFunOp U] (A : U) : A ⟶ Not A ⟶ Bot U :=
-  appFunFun A (Bot U)
+  revAppFunFun A (Bot U)
 
   def notNotFun [HasLinearFunOp U] (A : U) : A ⟶ Not (Not A) := contraIntroFun A
 

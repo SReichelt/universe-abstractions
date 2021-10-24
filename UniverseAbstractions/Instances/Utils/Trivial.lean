@@ -113,13 +113,13 @@ namespace HasTrivialFunctoriality
 
   instance hasCompFunFun (U V : Universe) {UV : Universe} [HasFunctors U V UV]
                          [HasFunctors V UV UV] [HasFunctors V V V] [HasIdentity V]
-                         [HasIdentity UV] [HasCompFun U V V] [HasTrivialFunctoriality V V] :
+                         [HasIdentity UV] [HasCompFun U V V] [HasTrivialFunctoriality V UV] :
     HasCompFunFun U V :=
   ⟨λ _ _ => defFun⟩
 
   instance hasRevCompFunFun (U V : Universe) {UV : Universe} [HasFunctors U U U]
                             [HasFunctors U V UV] [HasFunctors U UV UV] [HasIdentity V]
-                            [HasIdentity UV] [HasCompFun U U V] [HasTrivialFunctoriality U U] :
+                            [HasIdentity UV] [HasCompFun U U V] [HasTrivialFunctoriality U UV] :
     HasRevCompFunFun U V :=
   ⟨λ _ {_ _} _ => defFun⟩
 
@@ -150,8 +150,8 @@ namespace HasTrivialFunctoriality
 
   instance hasLinearFunOp : HasLinearFunOp U :=
   { defIdFun         := λ _     => defFun,
-    defAppFun        := λ _ _   => defFun,
-    defAppFunFun     := λ _ _   => defFun,
+    defRevAppFun     := λ _ _   => defFun,
+    defRevAppFunFun  := λ _ _   => defFun,
     defCompFun       := λ _ _   => defFun,
     defCompFunFun    := λ _ _   => defFun,
     defCompFunFunFun := λ _ _ _ => defFun }
@@ -205,7 +205,7 @@ namespace HasTrivialExtensionality
   h.mkFunEq e
 
   instance hasSubsingletonExt (U V : Universe) [HasIdentity V] {UV : Universe}
-                              [HasIdentity UV] [HasTrivialIdentity UV] [HasFunctors U V UV] :
+                              [HasIdentity UV] [HasFunctors U V UV] [HasTrivialExtensionality U V] :
     HasSubsingletonExt U V :=
   { eqExt := λ _ _ => funEq }
 
@@ -216,8 +216,8 @@ namespace HasTrivialExtensionality
     rightIdExt           := λ _ _       => funEq,
     leftId               := λ _         => funEq,
     leftIdExt            := λ _ _       => funEq,
-    swapApp              := λ _         => funEq,
-    swapAppExt           := λ _ _       => funEq,
+    swapRevApp           := λ _         => funEq,
+    swapRevAppExt        := λ _ _       => funEq,
     swapCompFun          := λ _ _ _     => funEq,
     swapCompFunExt       := λ _ _       => funEq,
     swapCompFunExtExt    := λ _ _ _     => funEq,
