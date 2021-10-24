@@ -1,6 +1,7 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
 
@@ -51,38 +52,57 @@ class HasInternalProducts (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInterna
 
 namespace HasInternalProducts
 
-  open HasFunctors HasProducts
+  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasProducts HasProductEq
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalProducts U]
+  section
 
-  @[reducible] def introFun {A : U} (a : A) (B : U) : B ⟶ A ⊓ B := defIntroFun a B
-  @[reducible] def introFunFun (A B : U) : A ⟶ B ⟶ A ⊓ B := defIntroFunFun A B
+    variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalProducts U]
 
-  instance intro.isFunApp {A B : U} {a : A} {b : B} : IsFunApp B (intro a b) :=
-  { F := introFun a B,
-    a := b,
-    e := byDef }
+    @[reducible] def introFun {A : U} (a : A) (B : U) : B ⟶ A ⊓ B := defIntroFun a B
+    @[reducible] def introFunFun (A B : U) : A ⟶ B ⟶ A ⊓ B := defIntroFunFun A B
 
-  instance introFun.isFunApp {A B : U} {a : A} : IsFunApp A (introFun a B) :=
-  { F := introFunFun A B,
-    a := a,
-    e := byDef }
+    instance intro.isFunApp {A B : U} {a : A} {b : B} : IsFunApp B (intro a b) :=
+    { F := introFun a B,
+      a := b,
+      e := byDef }
 
-  @[reducible] def elimFun {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶ C := defElimFun F
-  @[reducible] def elimFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⊓ B ⟶ C) := defElimFunFun A B C
+    instance introFun.isFunApp {A B : U} {a : A} : IsFunApp A (introFun a B) :=
+    { F := introFunFun A B,
+      a := a,
+      e := byDef }
 
-  instance elimFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} : IsFunApp (A ⟶ B ⟶ C) (elimFun F) :=
-  { F := elimFunFun A B C,
-    a := F,
-    e := byDef }
+    @[reducible] def elimFun {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶ C := defElimFun F
+    @[reducible] def elimFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⊓ B ⟶ C) := defElimFunFun A B C
+
+    instance elimFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} : IsFunApp (A ⟶ B ⟶ C) (elimFun F) :=
+    { F := elimFunFun A B C,
+      a := F,
+      e := byDef }
+
+    def elimEq [HasCongrFun U U] [HasProductEq U U] {A B C : U} (F : A ⟶ B ⟶ C) (a : A) (b : B) :
+      (elimFun F) (intro a b) ≃ F a b :=
+    congrArg (F a) (sndEq a b) • congrFun (congrArg F (fstEq a b)) (snd (intro a b)) • byDef
+
+  end
+
+  class HasProductExt (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U]
+                      [HasLinearFunOp U] [HasInternalProducts U] extends
+    HasProductEq U U where
+  (introEqExt (A B : U) :
+     elimFun (introFunFun A B)
+     ≃{byDef₂ ▻ λ P => introEq P ◅}
+     idFun (A ⊓ B))
+  (elimEqExt {A B C : U} (F : A ⟶ B ⟶ C) (a : A) :
+     elimFun F • introFun a B
+     ≃{byArgDef ▻ λ b => elimEq F a b}
+     F a)
+  (elimEqExtExt {A B C : U} (F : A ⟶ B ⟶ C) :
+     revCompFunFun B (elimFun F) • introFunFun A B
+     ≃{byDef • byArgDef ▻ λ a => elimEqExt F a}
+     F)
+  (elimEqExtExtExt (A B C : U) :
+     compFunFun (introFunFun A B) (B ⟶ C) • revCompFunFunFun B (A ⊓ B) C • elimFunFun A B C
+     ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻ λ F => elimEqExtExt F ◅}
+     idFun (A ⟶ B ⟶ C))
 
 end HasInternalProducts
-
-class HasInternalProducts.HasProductExt (U : Universe.{u}) [HasIdentity.{u, iu} U]
-                                        [HasInternalFunctors U] [HasLinearFunOp U]
-                                        [HasInternalProducts U] extends
-  HasProducts.HasProductEq U U where
-(introEqExt (A B : U) :
-   elimFun (introFunFun A B)
-   ≃{HasLinearFunOp.byDef₂ ▻ λ P => introEq P ◅}
-   HasLinearFunOp.idFun (A ⊓ B))

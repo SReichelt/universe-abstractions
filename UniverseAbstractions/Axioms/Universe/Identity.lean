@@ -27,6 +27,10 @@ namespace HasInstanceEquivalences
   instance isEquivalence (A : U) : MetaRelation.IsEquivalence (HasEquivalence.Equiv (α := ⌈A⌉) (β := ⌈A⌉)) :=
   EquivalenceRelation.isEquivalence (h.Eq A)
 
+  @[reducible] def refl  {A : U} (a : A) : a ≃ a := MetaRelation.HasRefl.refl a
+  @[reducible] def symm  {A : U} {a b : A} (e : a ≃ b) : b ≃ a := e⁻¹
+  @[reducible] def trans {A : U} {a b c : A} (e : a ≃ b) (f : b ≃ c) : a ≃ c := f • e
+
   class IsSubsingleton (A : U) where
   (eq (a b : A) : a ≃ b)
 

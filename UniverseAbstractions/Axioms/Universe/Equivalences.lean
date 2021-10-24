@@ -38,6 +38,9 @@ namespace HasEquivalences
   @[reducible] def Equiv' (A : U) (B : V) : U_V := Equiv (UV := UV) (VU := VU) A B
   infix:20 " ⟷ " => HasEquivalences.Equiv'
 
+  def to  {A : U} {B : V} (E : A ⟷ B) (a : A) : B := (toFun  E) a
+  def inv {A : U} {B : V} (E : A ⟷ B) (b : B) : A := (invFun E) b
+
 end HasEquivalences
 
 
@@ -169,11 +172,11 @@ namespace HasInternalEquivalences
   E.invFunEq
 
   def byToDef  {desc : EquivDesc A B} {E : A ⟷{desc} B} {a : A} :
-    (toFun  (fromDefEquiv E)) a ≃ desc.toFun  a :=
+    to  (fromDefEquiv E) a ≃ desc.toFun  a :=
   congrFun byToFunDef  a
 
   def byInvDef {desc : EquivDesc A B} {E : A ⟷{desc} B} {b : B} :
-    (invFun (fromDefEquiv E)) b ≃ desc.invFun b :=
+    inv (fromDefEquiv E) b ≃ desc.invFun b :=
   congrFun byInvFunDef b
 
 end HasInternalEquivalences
@@ -267,7 +270,7 @@ def DependentEquivalence {U : Universe} [HasIdentity U] [HasInternalFunctors U]
                          [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
                          [HasInternalProducts U] [HasInternalEquivalences U]
                          {A B : U} (E : A ⟷ B) (a : A) (b : B) :=
-(HasEquivalences.toFun E) a ≃ b
+HasEquivalences.to E a ≃ b
 notation:25 a:26 " ≃[" E:0 "] " b:26 => (HasEquivalences.toFun E) a ≃ b
 
 namespace DependentEquivalence
@@ -279,11 +282,19 @@ namespace DependentEquivalence
            [HasLinearFunOp U] [HasLinearFunExt U]
            [HasInternalProducts U] [HasInternalEquivalences U] [HasEquivOp U]
 
-  def toInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃[E] b) : a ≃ (invFun E) b :=
+  def toInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃[E] b) : a ≃ inv E b :=
   congrArg (invFun E) e • (leftInv E a)⁻¹
 
-  def fromInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃ (invFun E) b) : a ≃[E] b :=
+  def fromInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃ inv E b) : a ≃[E] b :=
   rightInv E b • congrArg (toFun E) e
+
+  def compDepInd {A B : U} {E : A ⟷ B} {a : A} {b₁ b₂ : B} (e : a ≃[E] b₁) (f : b₁ ≃ b₂) :
+    a ≃[E] b₂ :=
+  f • e
+
+  def compIndDep {A B : U} {E : A ⟷ B} {a₁ a₂ : A} {b : B} (f : a₁ ≃ a₂) (e : a₂ ≃[E] b) :
+    a₁ ≃[E] b :=
+  e • congrArg (toFun E) f
 
   def refl {A : U} (a : A) :
     a ≃[HasEquivOp.refl A] a :=
@@ -295,7 +306,7 @@ namespace DependentEquivalence
 
   def trans {A B C : U} {E : A ⟷ B} {F : B ⟷ C} {a : A} {b : B} {c : C} (e : a ≃[E] b) (f : b ≃[F] c) :
     a ≃[HasEquivOp.trans E F] c :=
-  f • congrArg (toFun F) e • byDef • byToDef
+  compIndDep e f • byDef • byToDef
 
   instance isDependentEquivalence : IsDependentEquivalence (U := U) (R := Equiv') DependentEquivalence :=
   { refl  := refl,
@@ -317,7 +328,7 @@ class HasTypeIdentity (U : Universe.{u}) where
 
 namespace HasTypeIdentity
 
-  open HasLinearFunOp HasEquivOp
+  open HasFunctors HasLinearFunOp HasEquivalences HasEquivOp
 
   variable {U : Universe} [HasTypeIdentity U]
 
@@ -330,5 +341,13 @@ namespace HasTypeIdentity
   instance : HasEquivOp              U := hasEquivOp
 
   instance typeEquivalences : HasInstanceEquivalences {U} U := ⟨λ _ => equivRelation⟩
+
+  def castTo  {A B : ⌊U⌋} (E : A ≃ B) (a : A) : B := to  E a
+  def castInv {A B : ⌊U⌋} (E : A ≃ B) (b : B) : A := inv E b
+
+  def castToDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → ⌊U⌋}
+                {φ : B ⟶{f} ⌊U⌋} {b : B} (a : ⌈⸥(fromDefFun φ) b⸤⌉) :
+    f b :=
+  castTo byDef a
 
 end HasTypeIdentity

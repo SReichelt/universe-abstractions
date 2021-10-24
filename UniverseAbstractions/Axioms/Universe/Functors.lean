@@ -72,7 +72,7 @@ namespace HasFunctors
 
   def byDef {f : A → B} {F : A ⟶{f} B} {a : A} : (fromDefFun F) a ≃ f a := F.eff a
 
-  notation:60 F:61 " ◄ " h:61 => HasFunctors.toDefFun' F (λ _ => h • HasFunctors.byDef)
+  notation:60 F:61 " ◄ " h:61 => HasFunctors.toDefFun' F (λ _ => HasInstanceEquivalences.trans HasFunctors.byDef h)
 
   @[simp] theorem fromToDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) :
     fromDefFun (toDefFun' F h) = F :=
@@ -102,7 +102,7 @@ class HasCongrArg (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [Ha
 
 namespace HasCongrArg
 
-  open MetaRelation.HasTrans HasFunctors
+  open HasFunctors
 
   variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity U] [HasIdentity V] [HasCongrArg U V]
 
@@ -199,8 +199,8 @@ namespace HasConstFun
 
 end HasConstFun
 
-class HasCompFun (U V W : Universe) {UV VW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW] [HasFunctors U W UW]
-                 [HasIdentity W] where
+class HasCompFun (U V W : Universe) {UV VW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW]
+                 [HasFunctors U W UW] [HasIdentity W] where
 (defCompFun {A : U} {B : V} {C : W} (F : A ⟶ B) (G : B ⟶ C) : A ⟶{λ a => G (F a)} C)
 
 namespace HasCompFun
@@ -212,6 +212,34 @@ namespace HasCompFun
   notation:90 G:91 " ⊙ " F:90 => HasCompFun.compFun F G
 
 end HasCompFun
+
+class HasCompFunFun (U V : Universe) {UV : Universe} [HasFunctors U V UV] [HasFunctors V UV UV]
+                    [HasFunctors V V V] [HasIdentity V] [HasIdentity UV] extends
+  HasCompFun U V V where
+(defCompFunFun {A : U} {B : V} (F : A ⟶ B) (C : V) : (B ⟶ C) ⟶{λ G => defCompFun F G} (A ⟶ C))
+
+namespace HasCompFunFun
+
+  variable {U V : Universe} {UV : Universe} [HasFunctors U V UV] [HasFunctors V UV UV]
+           [HasFunctors V V V] [HasIdentity V] [HasIdentity UV] [HasCompFunFun U V]
+
+  @[reducible] def compFunFun {A : U} {B : V} (F : A ⟶ B) (C : V) : (B ⟶ C) ⟶ (A ⟶ C) := defCompFunFun F C
+
+end HasCompFunFun
+
+class HasRevCompFunFun (U V : Universe) {UV : Universe} [HasFunctors U U U] [HasFunctors U V UV]
+                       [HasFunctors U UV UV] [HasIdentity V] [HasIdentity UV] extends
+  HasCompFun U U V where
+(defRevCompFunFun (A : U) {B : U} {C : V} (G : B ⟶ C) : (A ⟶ B) ⟶{λ F => defCompFun F G} (A ⟶ C))
+
+namespace HasRevCompFunFun
+
+  variable {U V : Universe} {UV : Universe} [HasFunctors U U U] [HasFunctors U V UV]
+           [HasFunctors U UV UV] [HasIdentity V] [HasIdentity UV] [HasRevCompFunFun U V]
+
+  @[reducible] def revCompFunFun (A : U) {B : U} {C : V} (G : B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) := defRevCompFunFun A G
+
+end HasRevCompFunFun
 
 
 
@@ -287,7 +315,8 @@ namespace HasLinearFunOp
     a := a,
     e := byDef }
 
-  instance hasCompFun : HasCompFun U U U := ⟨defCompFun⟩
+  instance hasCompFun    : HasCompFun U U U  := ⟨defCompFun⟩
+  instance hasCompFunFun : HasCompFunFun U U := ⟨defCompFunFun⟩
 
   @[reducible] def compFun {A B C : U} (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := defCompFun F G
   @[reducible] def compFunFun {A B : U} (F : A ⟶ B) (C : U) : (B ⟶ C) ⟶ (A ⟶ C) := defCompFunFun F C

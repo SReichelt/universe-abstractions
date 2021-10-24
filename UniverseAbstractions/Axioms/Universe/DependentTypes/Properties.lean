@@ -15,19 +15,18 @@ universe u v uv
 
 namespace HasFunctors
 
+  open HasTypeIdentity
+
   variable {U : Universe.{u}} {V : Universe.{v}} {UpV : Universe} [HasFunctors U {V} UpV]
+           {A : U} (φ : A ⟶ ⌊V⌋)
 
-  def constProp [HasIdentity {V}] [HasConstFun U {V}] (A : U) (B : V) : A ⟶ ⌊V⌋ :=
-  HasConstFun.constFun A B
-  notation "{[" A:0 "] " B:0 "}" => HasFunctors.constProp A B
+  def Pi    : Sort (imax u v)  := ∀  a, ⌈⸥φ a⸤⌉
+  def Sigma : Sort (max 1 u v) := Σ' a, ⌈⸥φ a⸤⌉
 
-  variable {A : U} (φ : A ⟶ ⌊V⌋)
-
-  def propType (a : A) : V := φ a
-  notation "⌋" φ "⌊" => HasFunctors.propType φ
-
-  def Pi    : Sort (imax u v)  := ∀  a, ⌋φ⌊ a
-  def Sigma : Sort (max 1 u v) := Σ' a, ⌋φ⌊ a
+  def castPiTo  [HasTypeIdentity V] {C : A → V} (f : ∀ a, C a) (h : ∀ a, ⸤C a⸥ ≃ φ a) : Pi φ :=
+  λ a => castTo  (h a) (f a)
+  def castPiInv [HasTypeIdentity V] {C : A → V} (f : ∀ a, C a) (h : ∀ a, φ a ≃ ⸤C a⸥) : Pi φ :=
+  λ a => castInv (h a) (f a)
 
   class IsUniversal where
   (h : Pi φ)
@@ -46,11 +45,37 @@ namespace HasCongrArg
   variable {U V UpV : Universe} [HasFunctors U {V} UpV] [HasIdentity U]
            [HasTypeIdentity V] [HasCongrArg U {V}]
 
-  def propCongrArg {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ : A} :
-    a₁ ≃ a₂ → (⌋φ⌊ a₁ ⟷ ⌋φ⌊ a₂) :=
-  congrArg φ
+  def propCongrArg {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ : A} (e : a₁ ≃ a₂) : ⸥φ a₁⸤ ⟷ ⸥φ a₂⸤ :=
+  congrArg φ e
 
 end HasCongrArg
+
+
+
+namespace HasConstFun
+
+  variable {U : Universe.{u}} {V : Universe.{v}} {UpV : Universe} [HasFunctors U {V} UpV]
+
+  def constProp [HasIdentity {V}] [HasConstFun U {V}] (A : U) (B : V) : A ⟶ ⌊V⌋ :=
+  constFun A ⸤B⸥
+  notation "{[" A:0 "] " B:0 "}" => HasConstFun.constProp A B
+
+  def constProp.eff [HasIdentity {V}] [HasConstFun U {V}] {A : U} (a : A) (B : V) :
+    {[A] B} a ≃ ⸤B⸥ :=
+  (defConstFun A ⸤B⸥).eff a
+
+  variable [HasTypeIdentity V] [HasConstFun U {V}]
+
+  def constProp.toFun  {A : U} (a : A) (B : V) : {[A] B} a ⟶ B :=
+  HasEquivalences.toFun  (constProp.eff a B)
+  def constProp.invFun {A : U} (a : A) (B : V) : B ⟶ {[A] B} a :=
+  HasEquivalences.invFun (constProp.eff a B)
+
+end HasConstFun
+
+
+
+-- TODO: Replace these with functoriality of type constructors (and construct the properties via composition of functors).
 
 
 
@@ -66,7 +91,7 @@ namespace HasFunProp
            [HasFunProp U V W]
 
   @[reducible] def funProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶ ⌊VW⌋ := defFunProp φ ψ
-  notation "{" φ:50 " ⟶ " ψ:50 "}" => HasFunProp.funProp φ ψ
+  infixr:20 " {⟶} " => HasFunProp.funProp
 
 end HasFunProp
 
@@ -84,7 +109,7 @@ namespace HasProdProp
            [HasProdProp U V W]
 
   @[reducible] def prodProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶ ⌊VxW⌋ := defProdProp φ ψ
-  notation "{" φ:50 " ⊓ " ψ:50 "}" =>  HasProdProp.prodProp φ ψ
+  infixr:35 " {⊓} " => HasProdProp.prodProp
 
 end HasProdProp
 
@@ -105,6 +130,6 @@ namespace HasEquivProp
            [HasIdentity {V_W}] [HasFunctors U {V_W} UpV_W] [HasEquivProp U V W]
 
   @[reducible] def equivProp {A : U} (φ : A ⟶ ⌊V⌋) (ψ : A ⟶ ⌊W⌋) : A ⟶ ⌊V_W⌋ := defEquivProp φ ψ
-  notation "{" φ:50 " ⟷ " ψ:50 "}" => HasEquivProp.equivProp φ ψ
+  infixr:20 " {⟷} " => HasEquivProp.equivProp
 
 end HasEquivProp

@@ -105,6 +105,8 @@ namespace HasLinearFunOp
     IsFunApp ((((B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) ⟶ ((A ⟶ B) ⟶ (A ⟶ C))) (revCompFunFunFun A B C) :=
   swapFunFun.isFunApp
 
+  instance hasRevCompFunFun : HasRevCompFunFun U U := ⟨defRevCompFunFun⟩
+
 end HasLinearFunOp
 
 

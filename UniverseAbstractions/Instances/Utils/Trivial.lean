@@ -111,6 +111,18 @@ namespace HasTrivialFunctoriality
     HasCompFun U V W :=
   ⟨λ _ _ => defFun⟩
 
+  instance hasCompFunFun (U V : Universe) {UV : Universe} [HasFunctors U V UV]
+                         [HasFunctors V UV UV] [HasFunctors V V V] [HasIdentity V]
+                         [HasIdentity UV] [HasCompFun U V V] [HasTrivialFunctoriality V V] :
+    HasCompFunFun U V :=
+  ⟨λ _ _ => defFun⟩
+
+  instance hasRevCompFunFun (U V : Universe) {UV : Universe} [HasFunctors U U U]
+                            [HasFunctors U V UV] [HasFunctors U UV UV] [HasIdentity V]
+                            [HasIdentity UV] [HasCompFun U U V] [HasTrivialFunctoriality U U] :
+    HasRevCompFunFun U V :=
+  ⟨λ _ {_ _} _ => defFun⟩
+
   instance hasFunProp (U V W : Universe) {UpV UpW VW UpVW : Universe}
                       [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasFunctors V W VW]
                       [HasIdentity {VW}] [HasFunctors U {VW} UpVW]
@@ -245,7 +257,10 @@ namespace HasTrivialExtensionality
 
   instance hasProductExt [HasLinearFunOp U] [HasInternalProducts U] [HasProducts.HasProductEq U U] :
     HasInternalProducts.HasProductExt U :=
-  { introEqExt := λ _ _ => funEq }
+  { introEqExt      := λ _ _   => funEq,
+    elimEqExt       := λ _ _   => funEq,
+    elimEqExtExt    := λ _     => funEq,
+    elimEqExtExtExt := λ _ _ _ => funEq }
 
   instance hasInternalEquivalences [HasTrivialFunctoriality U U] [HasInternalProducts U]
                                    [HasEquivalences U U U] :
@@ -300,5 +315,7 @@ namespace HasTrivialDependentFunctoriality
             {A : U} {φ : A ⟶ ⌊V⌋} {f : HasFunctors.Pi φ} :
     Π{f} φ :=
   h.mkDefPi f
+
+  -- TODO
 
 end HasTrivialDependentFunctoriality

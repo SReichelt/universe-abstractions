@@ -16,6 +16,7 @@ import mathlib4_experiments.Data.Equiv.Basic
 
 
 set_option autoBoundImplicitLocal false
+set_option synthInstance.maxHeartbeats 10000
 --set_option pp.universes true
 
 universe u v w iu upv
@@ -271,8 +272,8 @@ end boolean
 -- isomorphism invariance.
 
 structure PropositionalFunctor {U : Universe.{u}} {V : Universe.{v}}
-                                [HasIdentity.{u, iu} U] [HasIdentity.{v, 0} V]
-                                (A : U) (B : V) :
+                               [HasIdentity.{u, iu} U] [HasIdentity.{v, 0} V]
+                               (A : U) (B : V) :
   Sort (max 1 u v) where
 (f                    : A → B)
 (congrArg {a₁ a₂ : A} : a₁ ≃ a₂ → f a₁ ≃ f a₂)
@@ -360,22 +361,22 @@ namespace sort
 
   -- There are top and bottom types that work generically for `sort`.
 
-  instance hasTop : HasTop sort.{u} :=
+  instance (priority := low) hasTop : HasTop sort.{u} :=
   { T := PUnit,
     t := PUnit.unit }
   
-  instance hasTopEq : HasTop.HasTopEq sort.{u} :=
+  instance (priority := low) hasTopEq : HasTop.HasTopEq sort.{u} :=
   ⟨λ ⟨⟩ => rfl⟩
 
   -- TODO: Remove `noncomputable` if problem with `PEmpty.elim` can be solved.
-  noncomputable instance hasBot : HasBot sort.{u} :=
+  noncomputable instance (priority := low) hasBot : HasBot sort.{u} :=
   { B    := PEmpty,
     elim := PEmpty.elim }
 
   noncomputable def byContradiction (α : sort.{u}) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
   Classical.choice (Classical.byContradiction (λ h => PEmpty.elim (f (λ a => False.elim (h ⟨a⟩)))))
 
-  noncomputable instance hasClassicalLogic : HasClassicalLogic sort.{u} :=
+  noncomputable instance (priority := low) hasClassicalLogic : HasClassicalLogic sort.{u} :=
   { byContradictionFun := byContradiction }
 
   -- Same for products, but usually the specialized versions for `prop` and `type`
@@ -394,7 +395,7 @@ namespace sort
 
   -- `Equiv` also works for general `sort`, but is overridden for `prop`.
 
-  instance hasEquivalences : HasEquivalences sort.{u} sort.{v} sort.{max 1 u v} :=
+  instance (priority := low) hasEquivalences : HasEquivalences sort.{u} sort.{v} sort.{max 1 u v} :=
   { Equiv    := Equiv,
     toFun    := Equiv.toFun,
     invFun   := Equiv.invFun,
@@ -426,22 +427,22 @@ namespace prop
 
   -- In `prop`, `Top` is `True` and `Bot` is `False`.
 
-  instance (priority := high) hasTop : HasTop prop :=
+  instance hasTop : HasTop prop :=
   { T := True,
     t := trivial }
 
-  instance (priority := high) hasBot : HasBot prop :=
+  instance hasBot : HasBot prop :=
   { B    := False,
     elim := False.elim }
 
   -- `prop` has classical logic if we want.
 
-  instance (priority := high) hasClassicalLogic : HasClassicalLogic prop :=
+  instance hasClassicalLogic : HasClassicalLogic prop :=
   { byContradictionFun := @Classical.byContradiction }
 
   -- Products are given by `And`.
 
-  instance (priority := high) hasProducts : HasProducts prop prop prop :=
+  instance hasProducts : HasProducts prop prop prop :=
   { Prod  := And,
     intro := And.intro,
     fst   := And.left,
@@ -449,7 +450,7 @@ namespace prop
 
   -- Equivalences are given by `Iff`.
 
-  instance (priority := high) hasEquivalences : HasEquivalences prop prop prop :=
+  instance hasEquivalences : HasEquivalences prop prop prop :=
   { Equiv    := Iff,
     toFun    := Iff.mp,
     invFun   := Iff.mpr,
@@ -467,7 +468,7 @@ namespace prop
   -- Dependent products are given by `∃`, requiring choice to obtain a witness
   -- unless the witness is in `prop`.
 
-  instance (priority := high) hasDependentProducts : HasDependentProducts prop prop prop :=
+  instance hasDependentProducts : HasDependentProducts prop prop prop :=
   { Sigma := λ φ => ∃ h₁, φ h₁,
     intro := λ h₁ h₂ => ⟨h₁, h₂⟩,
     fst   := λ ⟨h₁, _⟩ => h₁,
@@ -485,23 +486,23 @@ end prop
 
 namespace type
 
-  -- Use specialized types for `type.{0}` if possible.
+  -- Use specialized types for `type.{0}`.
 
-  instance (priority := high) hasTop : HasTop type.{0} :=
+  instance hasTop : HasTop type.{0} :=
   { T := Unit,
     t := Unit.unit }
   
-  instance (priority := high) hasTopEq : HasTop.HasTopEq type.{0} :=
+  instance hasTopEq : HasTop.HasTopEq type.{0} :=
   ⟨λ ⟨⟩ => rfl⟩
 
-  instance (priority := high) hasBot : HasBot type.{0} :=
+  instance hasBot : HasBot type.{0} :=
   { B    := Empty,
     elim := Empty.elim }
 
   noncomputable def byContradiction (α : type.{0}) (f : HasInternalBot.Not (HasInternalBot.Not α)) : α :=
   Classical.choice (Classical.byContradiction (λ h => Empty.elim (f (λ a => False.elim (h ⟨a⟩)))))
 
-  noncomputable instance (priority := high) hasClassicalLogic : HasClassicalLogic type.{0} :=
+  noncomputable instance hasClassicalLogic : HasClassicalLogic type.{0} :=
   { byContradictionFun := byContradiction }
 
   -- Products are given by `Prod`.
@@ -556,13 +557,15 @@ namespace type
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => rfl }
 
-  instance hasSubtypes : HasDependentProducts type.{u} prop type.{u} :=
+  instance (priority := low) hasSubtypes :
+    HasDependentProducts sort.{u} prop sort.{max 1 u} :=
   { Sigma := Subtype,
     intro := Subtype.mk,
     fst   := Subtype.val,
     snd   := Subtype.property }
 
-  instance hasSubtypeEq : HasDependentProducts.HasDependentProductEq type.{u} prop :=
+  instance (priority := low) hasSubtypeEq :
+    HasDependentProducts.HasDependentProductEq sort.{u} prop :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => proofIrrel _ _ }

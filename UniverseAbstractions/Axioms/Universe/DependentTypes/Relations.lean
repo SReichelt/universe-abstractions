@@ -48,7 +48,7 @@ namespace HasRelations
   A ⊓ A ⟿[propMap r] V
   notation:20 A:21 " ⤐[" r:0 "] " V:21 => HasRelations.DefRel A V r
 
-  def Relation (A : U) (V : Universe.{v}) [HasRelations.{u, v, w, w', w''} U V] := A ⊓ A ⟿ V
+  def Relation (A : U) (V : Universe.{v}) [HasRelations.{u, v, w, w', w''} U V] := A ⊓ A ⟶ ⌊V⌋
   infixr:20 " ⤐ " => HasRelations.Relation
 
   variable {V : Universe} [HasRelations U V] {A : U}
@@ -127,34 +127,34 @@ namespace HasRelations
 
   class IsEquivalence extends IsPreorder θ, HasSymm θ, HasTransEquiv θ
 
-  def substRel (φ : A ⟿ V) : A ⤐ V :=
+  def substRel (φ : A ⟶ ⌊V⌋) : A ⤐ V :=
   {compProp (fstFun' A A) φ ⟷ compProp (sndFun' A A) φ}
 
-  @[simp] theorem simp_subst_refl (φ : A ⟿ V) :
+  @[simp] theorem simp_subst_refl (φ : A ⟶ ⌊V⌋) :
     compProp (dupIntroFun' A) (substRel φ) = {φ ⟷ φ} :=
   sorry
 
-  class HasIdEquivPi (φ : A ⟿ V) where
+  class HasIdEquivPi (φ : A ⟶ ⌊V⌋) where
   [hasIdFun   : HasIdFun V]
   [hasIdEquiv : HasIdEquiv V V]
   (F          : Π{λ a => HasIdEquiv.idEquiv (φ a)} {φ ⟷ φ})
 
-  instance substRel.hasRefl (φ : A ⟿ V) [h : HasIdEquivPi φ] :
+  instance substRel.hasRefl (φ : A ⟶ ⌊V⌋) [h : HasIdEquivPi φ] :
     HasRefl (substRel φ) :=
   ⟨simp_subst_refl φ ▸ h.F⟩
 
   class IsSubstitution extends HasRefl θ where
-  (substPi (φ : A ⟿ V) [HasIdEquivPi φ] : Π {θ ⟶ substRel φ})
+  (substPi (φ : A ⟶ ⌊V⌋) [HasIdEquivPi φ] : Π {θ ⟶ substRel φ})
 
-  @[simp] theorem simp_apply_fst (φ : A ⟿ V) (a b : A) :
+  @[simp] theorem simp_apply_fst (φ : A ⟶ ⌊V⌋) (a b : A) :
     φ (fst (intro a b)) = φ a :=
   by simp
 
-  @[simp] theorem simp_apply_snd (φ : A ⟿ V) (a b : A) :
+  @[simp] theorem simp_apply_snd (φ : A ⟶ ⌊V⌋) (a b : A) :
     φ (snd (intro a b)) = φ b :=
   by simp
 
-  def IsSubstitution.subst [IsSubstitution θ] (φ : A ⟿ V) [HasIdEquivPi φ] (a b : A) :
+  def IsSubstitution.subst [IsSubstitution θ] (φ : A ⟶ ⌊V⌋) [HasIdEquivPi φ] (a b : A) :
     θ a b ⟶ (φ a ⟷ φ b) :=
   simp_apply_fst φ a b ▸ simp_apply_snd φ a b ▸ substPi φ (intro a b)
 
