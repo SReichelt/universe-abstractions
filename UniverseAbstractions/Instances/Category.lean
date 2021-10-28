@@ -14,6 +14,7 @@ import mathlib4_experiments.CoreExt
 
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
+set_option synthInstance.maxHeartbeats 10000
 
 universe u u' v iv
 

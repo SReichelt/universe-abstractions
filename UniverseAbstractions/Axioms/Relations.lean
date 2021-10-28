@@ -96,7 +96,4 @@ namespace DependentMetaRelation
   class IsDependentPreorder [h : IsPreorder R] extends HasDependentRefl S, HasDependentTrans S
   class IsDependentEquivalence [h : IsEquivalence R] extends IsDependentPreorder S, HasDependentSymm S
 
-  notation:90 g:91 " [•] " f:90 => DependentMetaRelation.HasDependentTrans.trans f g
-  postfix:max "[⁻¹]" => DependentMetaRelation.HasDependentSymm.symm
-
 end DependentMetaRelation

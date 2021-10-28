@@ -102,10 +102,6 @@ namespace HasLinearFunOp
   -- The axioms for composition and identity imply that types and functors form a (potentially
   -- higher) category.
 
-  instance hasTransFun : HasTransFun (α := U) Fun :=
-  { defTransFun    := defCompFunFun,
-    defTransFunFun := defCompFunFunFun }
-
   instance isCategoricalPreorder [h : HasLinearFunExt U] : IsCategoricalPreorder (α := U) Fun :=
   { assoc          := h.compAssoc,
     rightId        := h.rightId,

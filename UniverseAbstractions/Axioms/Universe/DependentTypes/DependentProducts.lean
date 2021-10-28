@@ -39,83 +39,75 @@ end HasDependentProducts
 
 
 
-class HasFunctorialSigmaConstructor (U V : Universe) {UpV UV UpVpUV : Universe}
-                                    [HasFunctors U {V} UpV] [HasDependentProducts U V UV]
-                                    [HasFunctors UpV {UV} UpVpUV] [HasIdentity {UV}] where
-(defSigmaFun (A : U) : (A ⟶ ⌊V⌋) ⟶{λ φ => Σ φ} ⌊UV⌋)
+namespace HasDependentProducts
 
-namespace HasFunctorialSigmaConstructor
-
-  open HasFunctors HasCongrArg HasTypeIdentity
-
-  section
-
-    variable {U V UpV UV UpVpUV : Universe} [HasFunctors U {V} UpV] [HasDependentProducts U V UV]
-             [HasFunctors UpV {UV} UpVpUV]
-
-    @[reducible] def sigmaFun [HasIdentity {UV}] [HasFunctorialSigmaConstructor U V] (A : U) :
-      (A ⟶ ⌊V⌋) ⟶ ⌊UV⌋ :=
-    fromDefFun (defSigmaFun A)
-
-    variable [HasIdentity UpV] [HasTypeIdentity UV] [HasFunctorialSigmaConstructor U V]
-             [HasCongrArg UpV {UV}]
-
-    def castSigmaTo  {A : U} {φ₁ φ₂ : A ⟶ ⌊V⌋} (E : φ₁ ≃ φ₂) (F : Σ φ₁) : Σ φ₂ :=
-    castTo  (defCongrArg (defSigmaFun A) E) F
-    def castSigmaInv {A : U} {φ₁ φ₂ : A ⟶ ⌊V⌋} (E : φ₁ ≃ φ₂) (F : Σ φ₂) : Σ φ₁ :=
-    castInv (defCongrArg (defSigmaFun A) E) F
-
-  end
+  open HasFunctors HasCongrArg HasDependentTypeFun
 
   section
 
     variable {U V W VpW UVpW VW UpVW VpWpVW : Universe} [HasFunctors V {W} VpW]
-             [HasFunctors U VpW UVpW] [HasDependentProducts V W VW] [HasIdentity {VW}]
+             [HasFunctors U VpW UVpW] [h : HasDependentProducts V W VW] [HasIdentity {VW}]
              [HasFunctors U {VW} UpVW] [HasFunctors VpW {VW} VpWpVW]
-             [HasFunctorialSigmaConstructor V W] [HasCompFun U VpW {VW}]
+             [HasDependentTypeFun h.Sigma] [HasCompFun U VpW {VW}]
 
     def defSigmaProp {A : U} {B : V} (φ : A ⟶ B ⟶ ⌊W⌋) : A ⟶{λ a => Σ (φ a)} ⌊VW⌋ :=
-    sigmaFun B ⊙ φ
+    typeFun h.Sigma B ⊙ φ
     ◄ byDef
 
     @[reducible] def sigmaProp {A : U} {B : V} (φ : A ⟶ B ⟶ ⌊W⌋) : A ⟶ ⌊VW⌋ := defSigmaProp φ
-    notation:20 "{Σ} " φ:21 => HasFunctorialSigmaConstructor.sigmaProp φ
+    notation:20 "{Σ} " φ:21 => HasDependentProducts.sigmaProp φ
 
   end
 
-end HasFunctorialSigmaConstructor
+  section
+
+    variable {U W : Universe} {UpW UpWpW : Universe} [HasFunctors U U U] [HasFunctors U {W} UpW]
+             [h : HasDependentProducts U W W] [HasIdentity {W}] [HasFunctors U UpW UpW]
+             [HasFunctors UpW {W} UpWpW] [HasIdentity UpW] [HasCongrArg UpW {W}]
+             [HasDependentTypeFun h.Sigma] [HasRevCompFunFun U {W}] [HasCompFun U UpW {W}]
+
+    def defSigmaCompFunProp (A : U) {B : U} (φ : B ⟶ ⌊W⌋) : (A ⟶ B) ⟶{λ F => Σ (φ ⊙ F)} ⌊W⌋ :=
+    typeFun h.Sigma A ⊙ HasRevCompFunFun.revCompFunFun A φ
+    ◄ HasInstanceEquivalences.trans byArgDef byDef
+
+    @[reducible] def sigmaCompFunProp (A : U) {B : U} (φ : B ⟶ ⌊W⌋) : (A ⟶ B) ⟶ ⌊W⌋ := defSigmaCompFunProp A φ
+
+  end
+
+end HasDependentProducts
 
 
 
-class HasInternalDependentProducts (U : Universe.{u}) (V : Universe.{v}) {UpV : Universe.{upv}}
-                                   [HasTypeIdentity V] [HasFunctors U {V} UpV] [HasConstFun U {V}]
-                                   [HasDependentFunctors U V V] [HasFunProp U V V]
+class HasInternalDependentProducts (U : Universe.{u}) (V : Universe.{v}) {UpV VtV : Universe}
+                                   [h : HasTypeIdentity V] [HasFunctors U {V} UpV]
+                                   [HasDependentFunctors U V V] [HasFunctors {V} {V} VtV]
+                                   [HasLeftTypeFun h.hasInternalFunctors.Fun] [HasCompFun U {V} {V}]
   extends HasDependentProducts U V V where
 (defIntroFun   {A : U} (φ : A ⟶ ⌊V⌋) (a : A) :
    φ a ⟶{λ b => HasDependentProducts.intro a b} (Σ φ))
 (defIntroFunPi {A : U} (φ : A ⟶ ⌊V⌋) :
-   Π{λ a => HasConstFun.constProp.invFun a (Σ φ) • HasFunctors.fromDefFun (defIntroFun φ a) ◅}
-    (φ {⟶} {[A] Σ φ}))
-(defElimFun    {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶} {[A] C})) :
+   Π{λ a => HasFunctors.fromDefFun (defIntroFun φ a)} (HasFunctors.defLeftFunProp φ (Σ φ)))
+(defElimFun    {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶ C})) :
    (Σ φ)
-   ⟶{λ P => HasFunctors.apply (HasConstFun.constProp.toFun (HasDependentProducts.fst P) C •
-                               HasTypeIdentity.castTo (A := (φ {⟶} {[A] C}) (HasDependentProducts.fst P))
+   ⟶{λ P => HasFunctors.apply (HasTypeIdentity.castTo (A := (φ {⟶ C}) (HasDependentProducts.fst P))
                                                       HasFunctors.byDef
                                                       (F (HasDependentProducts.fst P)))
                               (HasDependentProducts.snd P)}
    C)
 (defElimFunFun {A : U} (φ : A ⟶ ⌊V⌋) (C : V) :
-   (Π (φ {⟶} {[A] C})) ⟶{λ F => defElimFun F} ((Σ φ) ⟶ C))
+   (Π (φ {⟶ C})) ⟶{λ F => defElimFun F} ((Σ φ) ⟶ C))
 
 namespace HasInternalDependentProducts
 
-  variable {U V UpV : Universe} [HasTypeIdentity V] [HasFunctors U {V} UpV] [HasConstFun U {V}]
-           [HasDependentFunctors U V V] [HasFunProp U V V] [HasInternalDependentProducts U V]
+  variable {U V UpV VtV : Universe} [h : HasTypeIdentity V] [HasFunctors U {V} UpV]
+           [HasDependentFunctors U V V] [HasFunctors {V} {V} VtV]
+           [HasLeftTypeFun h.hasInternalFunctors.Fun] [HasCompFun U {V} {V}]
+           [HasInternalDependentProducts U V]
 
   @[reducible] def introFun {A : U} (φ : A ⟶ ⌊V⌋) (a : A) : φ a ⟶ Σ φ := defIntroFun φ a
-  @[reducible] def introFunPi {A : U} (φ : A ⟶ ⌊V⌋) : Π (φ {⟶} {[A] Σ φ}) := defIntroFunPi φ
-  @[reducible] def elimFun {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶} {[A] C})) : (Σ φ) ⟶ C := defElimFun F
-  @[reducible] def elimFunFun {A : U} (φ : A ⟶ ⌊V⌋) (C : V) : (Π (φ {⟶} {[A] C})) ⟶ ((Σ φ) ⟶ C) := defElimFunFun φ C
+  @[reducible] def introFunPi {A : U} (φ : A ⟶ ⌊V⌋) : Π (φ {⟶ Σ φ}) := defIntroFunPi φ
+  @[reducible] def elimFun {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶ C})) : (Σ φ) ⟶ C := defElimFun F
+  @[reducible] def elimFunFun {A : U} (φ : A ⟶ ⌊V⌋) (C : V) : (Π (φ {⟶ C})) ⟶ ((Σ φ) ⟶ C) := defElimFunFun φ C
 
 end HasInternalDependentProducts
 

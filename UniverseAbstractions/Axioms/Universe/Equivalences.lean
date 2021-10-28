@@ -271,7 +271,7 @@ def DependentEquivalence {U : Universe} [HasIdentity U] [HasInternalFunctors U]
                          [HasInternalProducts U] [HasInternalEquivalences U]
                          {A B : U} (E : A ⟷ B) (a : A) (b : B) :=
 HasEquivalences.to E a ≃ b
-notation:25 a:26 " ≃[" E:0 "] " b:26 => (HasEquivalences.toFun E) a ≃ b
+notation:25 a:26 " ≃[" E:0 "] " b:26 => DependentEquivalence E a b
 
 namespace DependentEquivalence
 
@@ -297,21 +297,30 @@ namespace DependentEquivalence
   e • congrArg (toFun E) f
 
   def refl {A : U} (a : A) :
-    a ≃[HasEquivOp.refl A] a :=
-  byDef • byToDef
+    a ≃[HasRefl.refl A] a :=
+  HasInstanceEquivalences.trans byToDef byDef
 
   def symm {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃[E] b) :
-    b ≃[HasEquivOp.symm E] a :=
+    b ≃[E⁻¹] a :=
   leftInv E a • congrArg (invFun E) e⁻¹ • byToDef
 
   def trans {A B C : U} {E : A ⟷ B} {F : B ⟷ C} {a : A} {b : B} {c : C} (e : a ≃[E] b) (f : b ≃[F] c) :
-    a ≃[HasEquivOp.trans E F] c :=
+    a ≃[F • E] c :=
   compIndDep e f • byDef • byToDef
+
+  def fromEq {A : U} {a₁ a₂ : A} (e : a₁ ≃ a₂) : a₁ ≃[HasRefl.refl A] a₂ :=
+  HasInstanceEquivalences.trans (refl a₁) e
+
+  def toEq {A : U} {a₁ a₂ : A} (e : a₁ ≃[HasRefl.refl A] a₂) : a₁ ≃ a₂ :=
+  HasInstanceEquivalences.trans (refl a₁)⁻¹ e
 
   instance isDependentEquivalence : IsDependentEquivalence (U := U) (R := Equiv') DependentEquivalence :=
   { refl  := refl,
     symm  := symm
     trans := trans }
+
+  notation:90 g:91 " [•] " f:90 => DependentEquivalence.trans f g
+  postfix:max "[⁻¹]" => DependentEquivalence.symm
 
 end DependentEquivalence
 
@@ -345,9 +354,14 @@ namespace HasTypeIdentity
   def castTo  {A B : ⌊U⌋} (E : A ≃ B) (a : A) : B := to  E a
   def castInv {A B : ⌊U⌋} (E : A ≃ B) (b : B) : A := inv E b
 
-  def castToDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → ⌊U⌋}
-                {φ : B ⟶{f} ⌊U⌋} {b : B} (a : ⌈⸥(fromDefFun φ) b⸤⌉) :
+  def castToDef  {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → ⌊U⌋}
+                 {φ : B ⟶{f} ⌊U⌋} {b : B} (a : ⌈⸥(fromDefFun φ) b⸤⌉) :
     f b :=
-  castTo byDef a
+  castTo  byDef a
+
+  def castInvDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → ⌊U⌋}
+                 {φ : B ⟶{f} ⌊U⌋} {b : B} (a : f b) :
+    ⌈⸥(fromDefFun φ) b⸤⌉ :=
+  castInv byDef a
 
 end HasTypeIdentity

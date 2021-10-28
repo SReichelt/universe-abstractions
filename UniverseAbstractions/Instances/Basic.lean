@@ -16,7 +16,7 @@ import mathlib4_experiments.Data.Equiv.Basic
 
 
 set_option autoBoundImplicitLocal false
-set_option synthInstance.maxHeartbeats 10000
+set_option synthInstance.maxHeartbeats 100000
 --set_option pp.universes true
 
 universe u v w iu upv
@@ -141,13 +141,13 @@ namespace unit
   { Pi    := λ φ   => φ inst,
     apply := λ b _ => b }
 
-  instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasIdentity V] :
+  instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasTypeIdentity V] :
     HasTrivialDependentFunctoriality unit V :=
-  ⟨λ f => { F   := f inst,
-            eff := λ _ => HasRefl.refl (f inst) }⟩
+  ⟨λ {_ _ φ} f => { F   := HasEquivalences.invFun (φ.eff inst) (f inst),
+                    eff := λ _ => HasEquivalences.rightInv (φ.eff inst) (f inst) }⟩
 
   instance hasDependentOutCongrArg (V : Universe.{v}) [HasTypeIdentity V] : HasDependentCongrArg unit V :=
-  ⟨λ {_ _} _ {_ _} _ => byDef • byToDef⟩
+  ⟨λ {_ _} f {_ _} _ => DependentEquivalence.refl (f inst)⟩
 
   -- Same for dependent products.
 
@@ -173,7 +173,7 @@ namespace unit
     HasDependentProducts.HasDependentProductEq unit V :=
   { introEq := λ b   => HasRefl.refl b,
     fstEq   := λ _ _ => inst,
-    sndEq   := λ _ _ => byDef • byToDef }
+    sndEq   := λ _ b => DependentEquivalence.refl b }
 
 end unit
 
@@ -266,7 +266,7 @@ end boolean
 
 
 
--- We can define functors from any universe with propositional identities, i.e. a
+-- We can define functors to any universe with propositional identities, i.e. a
 -- universe where identities of identities are trivial (such as `sort`). Such functors
 -- just need to map equivalent values to equivalent values. In general this captures
 -- isomorphism invariance.
@@ -297,8 +297,8 @@ structure PropositionalDependentFunctor {U : Universe.{u}} {V : Universe.{v}}
                                         {UpV : Universe.{upv}} [HasFunctors U {V} UpV]
                                         [HasCongrArg U {V}] {A : U} (φ : A ⟶ ⌊V⌋) :
   Sort (max 1 u v) where
-(f                                  : HasFunctors.Pi φ)
-(congrArg {a₁ a₂ : A} (e : a₁ ≃ a₂) : f a₁ ≃[HasCongrArg.propCongrArg φ e] f a₂)
+(f                                    : HasFunctors.Pi φ)
+(piCongrArg {a₁ a₂ : A} (e : a₁ ≃ a₂) : f a₁ ≃[HasCongrArg.propCongrArg φ e] f a₂)
 
 namespace PropositionalDependentFunctor
 
@@ -310,7 +310,7 @@ namespace PropositionalDependentFunctor
     apply := PropositionalDependentFunctor.f }
 
   instance (priority := low) hasPropositionalCongrArg : HasDependentCongrArg U V :=
-  ⟨PropositionalDependentFunctor.congrArg⟩
+  ⟨PropositionalDependentFunctor.piCongrArg⟩
 
 end PropositionalDependentFunctor
 
@@ -352,6 +352,13 @@ namespace sort
     HasCongrArg sort.{u} V :=
   ⟨λ {_ _} f {_ _} e => e ▸ HasRefl.refl _⟩
 
+  instance hasCongrFun : HasCongrFun sort.{u} sort.{v} :=
+  ⟨congrFun⟩
+
+  instance (priority := low) hasOutCongrFun (V : Universe.{v}) [HasIdentity V] :
+    HasCongrFun sort.{u} V :=
+  ⟨λ e _ => e ▸ HasRefl.refl _⟩
+
   instance hasInternalFunctors : HasInternalFunctors sort.{u} := ⟨⟩
 
   instance hasTrivialExtensionality : HasTrivialExtensionality sort.{u} sort.{v} :=
@@ -368,8 +375,7 @@ namespace sort
   instance (priority := low) hasTopEq : HasTop.HasTopEq sort.{u} :=
   ⟨λ ⟨⟩ => rfl⟩
 
-  -- TODO: Remove `noncomputable` if problem with `PEmpty.elim` can be solved.
-  noncomputable instance (priority := low) hasBot : HasBot sort.{u} :=
+  instance (priority := low) hasBot : HasBot sort.{u} :=
   { B    := PEmpty,
     elim := PEmpty.elim }
 
@@ -404,20 +410,27 @@ namespace sort
 
   -- Dependent functors are analogous to independent functors.
 
-  instance hasDependentFunctors (V : Universe.{v}) :
+  instance hasDependentOutFunctors (V : Universe.{v}) :
     HasDependentFunctors sort.{u} V sort.{imax u v} :=
   { Pi    := HasFunctors.Pi,
     apply := id }
 
-  def defPi {A : sort.{u}} {V : Universe.{v}} [HasIdentity V] {φ : ⌈A ⟶ ⌊V⌋⌉}
-            (f : HasFunctors.Pi φ) :
+  def defPi {α : sort.{u}} {V : Universe.{v}} [HasTypeIdentity V] {p : α → V} {φ : α ⟶{p} ⌊V⌋}
+            (f : ∀ a, p a) :
     DefPi φ f :=
-  { F   := f,
-    eff := λ a => HasRefl.refl (f a) }
+  { F   := λ a => HasEquivalences.invFun (φ.eff a) (f a),
+    eff := λ a => HasEquivalences.rightInv (φ.eff a) (f a) }
 
-  instance hasTrivialDependentFunctoriality (V : Universe.{v}) [HasIdentity V] :
+  instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasTypeIdentity V] :
     HasTrivialDependentFunctoriality sort.{u} V :=
   ⟨defPi⟩
+
+  instance hasDependentCongrFun : HasDependentCongrFun sort.{u} sort.{v} :=
+  ⟨congrFun⟩
+
+  instance (priority := low) hasDependentOutCongrFun (V : Universe.{v}) [HasIdentity V] :
+    HasDependentCongrFun sort.{u} V :=
+  ⟨λ e _ => e ▸ HasRefl.refl _⟩
 
 end sort
 
@@ -463,7 +476,7 @@ namespace prop
   -- Dependent functors into `prop` are straightforward.
 
   instance hasDependentCongrArg : HasDependentCongrArg sort.{u} prop :=
-  ⟨λ {_ _} f {_ _} e => proofIrrel _ _⟩
+  ⟨λ {_ _} _ {_ _} _ => proofIrrel _ _⟩
 
   -- Dependent products are given by `∃`, requiring choice to obtain a witness
   -- unless the witness is in `prop`.

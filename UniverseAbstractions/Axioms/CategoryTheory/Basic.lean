@@ -15,69 +15,11 @@ universe u v iv
 
 namespace MetaRelation
 
-  open HasFunctors HasLinearFunOp
+  open HasRefl HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasFullFunOp
+       HasTransFun HasSymmFun
 
   variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
            (R : MetaRelation α V)
-
-  class HasSymmFun [HasSymm R] where
-  (defSymmFun (a b : α) : R a b ⟶{λ f => f⁻¹} R b a)
-
-  namespace HasSymmFun
-
-    variable [HasSymm R] [h : HasSymmFun R]
-
-    @[reducible] def symmFun (a b : α) : R a b ⟶ R b a := h.defSymmFun a b
-
-    instance symm.isFunApp {a b : α} {e : R a b} : IsFunApp (R a b) e⁻¹ :=
-    { F := symmFun R a b,
-      a := e,
-      e := byDef }
-
-  end HasSymmFun
-
-  class HasTransFun [HasTrans R] where
-  (defTransFun    {a b   : α} (f : R a b) (c : α) : R b c ⟶{λ g => g • f} R a c)
-  (defTransFunFun (a b c : α)                     : R a b ⟶{λ f => defTransFun f c} (R b c ⟶ R a c))
-
-  namespace HasTransFun
-
-    variable [HasTrans R] [h : HasTransFun R]
-
-    @[reducible] def transFun {a b : α} (f : R a b) (c : α) : R b c ⟶ R a c := h.defTransFun f c
-    @[reducible] def transFunFun (a b c : α) : R a b ⟶ R b c ⟶ R a c := h.defTransFunFun a b c
-
-    instance trans.isFunApp {a b c : α} {f : R a b} {g : R b c} : IsFunApp (R b c) (g • f) :=
-    { F := transFun R f c,
-      a := g,
-      e := byDef }
-
-    instance transFun.isFunApp {a b c : α} {f : R a b} : IsFunApp (R a b) (transFun R f c) :=
-    { F := transFunFun R a b c,
-      a := f,
-      e := byDef }
-
-    variable [HasLinearFunOp V]
-
-    def defRevTransFun (a : α) {b c : α} (g : R b c) : (R a b) ⟶{λ f => g • f} (R a c) :=
-    swapFun (transFunFun R a b c) g
-    ◄ byDef₂
-
-    @[reducible] def revTransFun (a : α) {b c : α} (g : R b c) : R a b ⟶ R a c := defRevTransFun R a g
-
-    def defRevTransFunFun (a b c : α) : R b c ⟶{λ g => revTransFun R a g} (R a b ⟶ R a c) :=
-    defSwapFunFun (transFunFun R a b c)
-
-    @[reducible] def revTransFunFun (a b c : α) : R b c ⟶ R a b ⟶ R a c := defRevTransFunFun R a b c
-
-    instance revTransFun.isFunApp {a b c : α} {g : R b c} : IsFunApp (R b c) (revTransFun R a g) :=
-    { F := revTransFunFun R a b c,
-      a := g,
-      e := byDef }
-
-  end HasTransFun
-
-  open HasRefl HasCongrArg HasTransFun HasSymmFun HasSubLinearFunOp HasFullFunOp
 
   class IsAssociative [HasTrans R] where
   (assoc {a b c d : α} (f : R a b) (g : R b c) (h : R c d) : (h • g) • f ≃ h • (g • f))

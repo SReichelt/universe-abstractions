@@ -371,7 +371,7 @@ namespace functorUniverse
     instance hasDirectLinearFunExt : HasDirectLinearFunExt ({A ⟶} U) :=
     { rightId        := λ B C     : U => HasSimpEmbed.bySimp A (rightIdExt B C),
       leftId         := λ B C     : U => HasSimpEmbed.bySimp A (leftIdExt B C),
-      swapRevApp        := λ B C     : U => HasSimpEmbed.bySimp A (swapRevAppExt B C),
+      swapRevApp     := λ B C     : U => HasSimpEmbed.bySimp A (swapRevAppExt B C),
       swapCompFun    := λ B C D   : U => HasSimpEmbed.bySimp A (swapCompFunExtExt B C D),
       swapRevCompFun := λ B C D   : U => HasSimpEmbed.bySimp A (swapRevCompFunExtExt B C D),
       compAssoc      := λ B C D E : U => HasSimpEmbed.bySimp A (compAssocExtExtExt B C D E) }
@@ -476,8 +476,7 @@ namespace optionalFunctorUniverse
   variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasInternalFunctors U] [HasLinearFunOp U]
            [HasTop (HasIdentity.univ U)]
 
-  -- TODO: This is noncomputable only due a technicality regarding `PEmpty.elim` that can hopefully be solved.
-  noncomputable instance hasFunctors : HasFunctors ({A ⟶}? U) ({A ⟶}? U) ({A ⟶}? U) :=
+  instance hasFunctors : HasFunctors ({A ⟶}? U) ({A ⟶}? U) ({A ⟶}? U) :=
   { Fun   := λ β γ => match β, γ with
                       | const B, const C => const (B ⟶ C)
                       | const B, fn AC   => fn (B ⟶ AC)
@@ -496,7 +495,7 @@ namespace optionalFunctorUniverse
                         | fn _,    empty   => PEmpty.elim
                         | empty,   _       => PEmpty.elim }
 
-  noncomputable instance hasCongrArg : HasCongrArg ({A ⟶}? U) ({A ⟶}? U) :=
+  instance hasCongrArg : HasCongrArg ({A ⟶}? U) ({A ⟶}? U) :=
   ⟨λ {β γ} => match β, γ with
               | const B, const C => λ (G : B ⟶ C)   {_ _} h => congrArg G h
               | const B, fn AC   => λ (G : B ⟶ AC)  {_ _} h => congrArg G h
@@ -509,6 +508,6 @@ namespace optionalFunctorUniverse
               | fn _,    empty   => λ G => PEmpty.elim G
               | empty,   _       => λ G => PEmpty.elim G⟩
 
-  noncomputable instance hasInternalFunctors : HasInternalFunctors ({A ⟶}? U) := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors ({A ⟶}? U) := ⟨⟩
 
 end optionalFunctorUniverse

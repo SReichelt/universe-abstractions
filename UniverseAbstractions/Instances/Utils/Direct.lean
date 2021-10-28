@@ -25,7 +25,7 @@ class HasDirectLinearFunOp where
 
 namespace HasDirectLinearFunOp
 
-  open MetaRelation.HasRefl HasFunctors HasLinearFunOp
+  open MetaRelation.HasRefl HasFunctors HasCongrFun
 
   instance hasLinearFunOp [HasDirectLinearFunOp U] : HasLinearFunOp U :=
   { defIdFun         := λ A           => ⟨idFun A,             idEq⟩,
@@ -51,7 +51,7 @@ class HasDirectSubLinearFunOp where
 
 namespace HasDirectSubLinearFunOp
 
-  open MetaRelation.HasRefl HasFunctors HasLinearFunOp
+  open MetaRelation.HasRefl HasFunctors HasCongrFun
 
   instance hasSubLinearFunOp [HasDirectSubLinearFunOp U] : HasSubLinearFunOp U :=
   { defConstFun    := λ A {B} b => ⟨(constFun A B) b, constEq b⟩,
@@ -69,7 +69,7 @@ class HasDirectNonLinearFunOp where
 
 namespace HasDirectNonLinearFunOp
 
-  open MetaRelation.HasRefl HasFunctors HasLinearFunOp
+  open MetaRelation.HasRefl HasFunctors HasCongrFun
 
   instance hasNonLinearFunOp [HasDirectNonLinearFunOp U] : HasNonLinearFunOp U :=
   { defDupFun    := λ {A B} F => ⟨(dupFun A B) F, dupEq F⟩,

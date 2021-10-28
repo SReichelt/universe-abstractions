@@ -211,7 +211,7 @@ namespace HasFullFunOp.HasFullFunExt
                rightDup (compFunFun G (B ⟶ D) • revCompFunFunFun B C D • H) (compFunFun F D))
 
   def leftDup {A B C : U} (F : A ⟶ B) (G : B ⟶ B ⟶ C) :
-    dupFun G • F ≃{byDef ▻-◅ byFunDef} substFun F (G • F) :=
+    dupFun G • F ≃{byDef ▻-◅} biCompFun F F G :=
   defCongrArg (defSubstFunFun F C) (substConstFun F G) •
   substDup F (constFun A G) •
   defCongrArg (defSubstFunFun F C) (defCongrArg (defConstFunFun A (B ⟶ C)) byDef •

@@ -15,7 +15,7 @@ set_option autoBoundImplicitLocal false
 
 namespace HasInternalTop
 
-  open HasFunctors HasCongrArg HasLinearFunOp HasSubLinearFunOp HasAffineFunOp
+  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasAffineFunOp
        HasSubsingletonExt HasLinearFunExt HasAffineFunExt HasTop HasTopEq HasTopExt
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalTop U]

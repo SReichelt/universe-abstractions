@@ -19,7 +19,7 @@ set_option autoBoundImplicitLocal false
 
 namespace HasLinearFunOp
 
-  open HasFunctors HasCongrArg
+  open HasFunctors HasCongrArg HasCongrFun
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
 
@@ -82,6 +82,9 @@ namespace HasLinearFunOp
     IsFunApp (((B ⟶ A ⟶ C) ⟶ (A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (revSwapFunFunFun A B C) :=
   swapFunFun.isFunApp
 
+  instance hasSwapFun : HasSwapFun U U U := ⟨defSwapFun⟩
+  instance hasSwapFunFun : HasSwapFunFun U U U := ⟨defSwapFunFun⟩
+
   -- Same for composition.
 
   @[reducible] def revCompFun {A B C : U} (G : B ⟶ C) (F : A ⟶ B) : A ⟶ C := compFun F G
@@ -113,7 +116,7 @@ end HasLinearFunOp
 
 namespace HasFullFunOp
 
-  open HasFunctors HasCongrArg HasLinearFunOp HasNonLinearFunOp
+  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasNonLinearFunOp
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U]
 
@@ -155,6 +158,8 @@ namespace HasFullFunOp
     IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (substFunFunFun A B C) :=
   compFun.isFunApp
 
+  instance hasSubstFun : HasSubstFun U U U := ⟨defSubstFun⟩
+
   -- Substitution with reverse argument order.
 
   @[reducible] def revSubstFun {A B C : U} (G : A ⟶ B ⟶ C) (F : A ⟶ B) := substFun F G
@@ -178,5 +183,52 @@ namespace HasFullFunOp
   instance revSubstFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) ⟶ ((A ⟶ B) ⟶ (A ⟶ C))) (revSubstFunFunFun A B C) :=
   swapFunFun.isFunApp
+
+  instance hasRevSubstFunFun : HasRevSubstFunFun U U := ⟨defRevSubstFunFun⟩
+
+  -- A version of reverse composition where the functor has two arguments.
+
+  def defBiCompFun {A B C D : U} (F : A ⟶ B) (G : A ⟶ C) (H : B ⟶ C ⟶ D) :
+    A ⟶{λ a => H (F a) (G a)} D :=
+  substFun G (H • F)
+  ◄ byFunDef
+
+  @[reducible] def biCompFun {A B C D : U} (F : A ⟶ B) (G : A ⟶ C) (H : B ⟶ C ⟶ D) :
+    A ⟶ D :=
+  defBiCompFun F G H
+
+  @[reducible] def revBiCompFun {A B C D : U} (H : B ⟶ C ⟶ D) (F : A ⟶ B) (G : A ⟶ C) :
+    A ⟶ D :=
+  biCompFun F G H
+
+  def defRevBiCompFunFun {A B C D : U} (H : B ⟶ C ⟶ D) (F : A ⟶ B) :
+    (A ⟶ C) ⟶{λ G => revBiCompFun H F G} (A ⟶ D) :=
+  defRevSubstFunFun (H • F)
+
+  @[reducible] def revBiCompFunFun {A B C D : U} (H : B ⟶ C ⟶ D) (F : A ⟶ B) :
+    (A ⟶ C) ⟶ (A ⟶ D) :=
+  defRevBiCompFunFun H F
+
+  def defRevBiCompFunFunFun (A : U) {B C D : U} (H : B ⟶ C ⟶ D) :
+    (A ⟶ B) ⟶{λ F => revBiCompFunFun H F} ((A ⟶ C) ⟶ (A ⟶ D)) :=
+  revSubstFunFunFun A C D • revCompFunFun A H
+  ◄ byDef • byArgDef
+
+  @[reducible] def revBiCompFunFunFun (A : U) {B C D : U} (H : B ⟶ C ⟶ D) :
+    (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ D) :=
+  defRevBiCompFunFunFun A H
+
+  def defRevBiCompFunFunFunFun (A B C D : U) :
+    (B ⟶ C ⟶ D) ⟶{λ H => revBiCompFunFunFun A H} ((A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ D)) :=
+  revCompFunFun (A ⟶ B) (revSubstFunFunFun A C D) • revCompFunFunFun A B (C ⟶ D)
+  ◄ byDef • byArgDef
+
+  @[reducible] def revBiCompFunFunFunFun (A B C D : U) :
+    (B ⟶ C ⟶ D) ⟶ (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ D) :=
+  defRevBiCompFunFunFunFun A B C D
+
+  instance hasBiCompFun : HasBiCompFun U U U U := ⟨defBiCompFun⟩
+  instance hasRevBiCompFunFun : HasRevBiCompFunFun U U U := ⟨defRevBiCompFunFun⟩
+  instance hasRevBiCompFunFunFun : HasRevBiCompFunFunFun U U := ⟨defRevBiCompFunFunFun⟩
 
 end HasFullFunOp

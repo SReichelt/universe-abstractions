@@ -41,10 +41,9 @@ namespace HasTrivialIdentity
     HasTop.HasTopEq U :=
   ⟨λ _ => eq⟩
 
-  instance hasProductEq (U V : Universe) [HasIdentity U] [HasTrivialIdentity U]
-                        [HasIdentity V] [HasTrivialIdentity V]
-                        {UxV : Universe} [HasIdentity UxV] [HasTrivialIdentity UxV]
-                        [HasProducts U V UxV] :
+  instance hasProductEq (U V : Universe) {UxV : Universe} [HasIdentity U]
+                        [HasTrivialIdentity U] [HasIdentity V] [HasTrivialIdentity V]
+                        [HasIdentity UxV] [HasTrivialIdentity UxV] [HasProducts U V UxV] :
     HasProducts.HasProductEq U V :=
   { introEq := λ _   => eq,
     fstEq   := λ _ _ => eq,
@@ -53,12 +52,15 @@ namespace HasTrivialIdentity
   def defEquiv {U : Universe} [HasIdentity U] [HasTrivialIdentity U]
                [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
                [HasInternalProducts U] [HasInternalEquivalences U]
-               {A B : U} (E : A ⟷ B) {e : EquivDesc A B} : A ⟷{e} B :=
+               {A B : U} (E : A ⟷ B) {e : EquivDesc A B} :
+    A ⟷{e} B :=
   ⟨E, eq, eq⟩
 
-  def defPi {U V : Universe} [HasIdentity V] [HasTrivialIdentity V]
-            {UpV UV : Universe} [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
-            {A : U} {φ : A ⟶ ⌊V⌋} (F : Π φ) {f : HasFunctors.Pi φ} : Π{f} φ := 
+  def defPi {U V UpV UV : Universe} [HasTypeIdentity V] [HasTrivialIdentity V]
+            [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
+            {A : U} {p : A → V} {φ : A ⟶{p} ⌊V⌋} (F : Π (HasFunctors.fromDefFun φ))
+            {f : ∀ a, p a} :
+    Π{f} φ := 
   ⟨F, λ _ => eq⟩
 
   instance hasDependentCongrArg (U V : Universe) {UpV UV : Universe}
@@ -82,7 +84,7 @@ end HasTrivialIdentity
 
 
 
-class HasTrivialFunctoriality (U V : Universe) [HasIdentity V] {UV : Universe}
+class HasTrivialFunctoriality (U V : Universe) {UV : Universe} [HasIdentity V]
                               [HasFunctors U V UV] where
 (mkDefFun {A : U} {B : V} (f : A → B) : A ⟶{f} B)
 
@@ -90,7 +92,7 @@ namespace HasTrivialFunctoriality
 
   open MetaRelation HasLinearFunOp
 
-  def defFun {U V : Universe} [HasIdentity V] {UV : Universe} [HasFunctors U V UV]
+  def defFun {U V UV : Universe} [HasIdentity V] [HasFunctors U V UV]
              [h : HasTrivialFunctoriality U V] {A : U} {B : V} {f : A → B} :
     A ⟶{f} B :=
   h.mkDefFun f
@@ -123,28 +125,47 @@ namespace HasTrivialFunctoriality
     HasRevCompFunFun U V :=
   ⟨λ _ {_ _} _ => defFun⟩
 
-  instance hasFunProp (U V W : Universe) {UpV UpW VW UpVW : Universe}
-                      [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasFunctors V W VW]
-                      [HasIdentity {VW}] [HasFunctors U {VW} UpVW]
-                      [HasTrivialFunctoriality U {VW}] :
-    HasFunProp U V W :=
+  instance hasSwapFun (U V W : Universe) {VW UVW UW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
+                      [HasFunctors U W UW] [HasIdentity W] [HasTrivialFunctoriality U W] :
+    HasSwapFun U V W :=
   ⟨λ _ _ => defFun⟩
 
-  instance hasProdProp (U V W : Universe) {UpV UpW VxW UpVxW : Universe}
-                       [HasFunctors U {V} UpV] [HasFunctors U {W} UpW] [HasProducts V W VxW]
-                       [HasIdentity {VxW}] [HasFunctors U {VxW} UpVxW]
-                       [HasTrivialFunctoriality U {VxW}] :
-    HasProdProp U V W :=
+  instance hasSwapFunFun (U V W : Universe) {VW UVW UW VUW : Universe} [HasFunctors V W VW]
+                         [HasFunctors U VW UVW] [HasFunctors U W UW] [HasFunctors V UW VUW]
+                         [HasIdentity W] [HasIdentity UW] [HasTrivialFunctoriality U W]
+                         [HasTrivialFunctoriality V UW] :
+    HasSwapFunFun U V W :=
+  ⟨λ _ => defFun⟩
+
+  instance hasDupFun (U V : Universe) {UV UUV : Universe} [HasFunctors U V UV] [HasFunctors U UV UUV]
+                     [HasIdentity V] [HasTrivialFunctoriality U V] :
+    HasDupFun U V :=
+  ⟨λ _ => defFun⟩
+
+  instance hasSubstFun (U V W : Universe) {UV VW UVW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW]
+                       [HasFunctors U VW UVW] [HasFunctors U W UW] [HasIdentity W]
+                       [HasTrivialFunctoriality U W] :
+    HasSubstFun U V W :=
   ⟨λ _ _ => defFun⟩
 
-  instance hasEquivProp (U V W : Universe) {UpV UpW VW WV V_W UpV_W : Universe}
-                        [HasIdentity V] [HasIdentity W]
-                        [HasFunctors U {V} UpV] [HasFunctors U {W} UpW]
-                        [HasFunctors V W VW] [HasFunctors W V WV] [HasEquivalences V W V_W]
-                        [HasIdentity {V_W}] [HasFunctors U {V_W} UpV_W]
-                        [HasTrivialFunctoriality U {V_W}] :
-    HasEquivProp U V W :=
+  instance hasBiCompFun (U V W X : Universe) {UV UW WX VWX UX : Universe} [HasFunctors U V UV]
+                        [HasFunctors U W UW] [HasFunctors W X WX] [HasFunctors V WX VWX]
+                        [HasFunctors U X UX] [HasIdentity X] [HasTrivialFunctoriality U X] :
+    HasBiCompFun U V W X :=
+  ⟨λ _ _ _ => defFun⟩
+
+  instance hasRevBiCompFunFun (U V X : Universe) {UV UX VUX UUX : Universe} [HasFunctors U U U]
+                              [HasFunctors U V UV] [HasFunctors U X UX] [HasFunctors V UX VUX]
+                              [HasFunctors U UX UUX] [HasIdentity X] [HasIdentity UX]
+                              [HasTrivialFunctoriality U X] [HasTrivialFunctoriality U UX] :
+    HasRevBiCompFunFun U V X :=
   ⟨λ _ _ => defFun⟩
+
+  instance hasRevBiCompFunFunFun (U X : Universe) {UX : Universe} [HasFunctors U U U] [HasFunctors U X UX]
+                                 [HasFunctors U UX UX] [HasIdentity X] [HasIdentity UX]
+                                 [HasTrivialFunctoriality U X] [HasTrivialFunctoriality U UX] :
+    HasRevBiCompFunFunFun U X :=
+  ⟨λ _ {_ _ _} _ => defFun⟩
 
   variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialFunctoriality U U]
 
@@ -187,19 +208,19 @@ end HasTrivialFunctoriality
 
 
 
-class HasTrivialExtensionality (U V : Universe) [HasIdentity V] {UV : Universe} [HasIdentity UV]
+class HasTrivialExtensionality (U V : Universe) {UV : Universe} [HasIdentity V] [HasIdentity UV]
                                [HasFunctors U V UV] where
 (mkFunEq {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : ∀ a, F₁ a ≃ F₂ a) : F₁ ≃{e} F₂)
 
 namespace HasTrivialExtensionality
 
-  instance fromTrivialIdentity (U V : Universe) [HasIdentity V] {UV : Universe}
+  instance fromTrivialIdentity (U V : Universe) {UV : Universe} [HasIdentity V]
                                [HasIdentity UV] [HasTrivialIdentity UV] [HasFunctors U V UV] :
     HasTrivialExtensionality U V :=
   ⟨λ _ => HasTrivialIdentity.eq⟩
 
-  def funEq {U V : Universe} [HasIdentity V] {UV : Universe} [HasIdentity UV]
-            [HasFunctors U V UV] [h : HasTrivialExtensionality U V]
+  def funEq {U V UV : Universe} [HasIdentity V] [HasIdentity UV] [HasFunctors U V UV]
+            [h : HasTrivialExtensionality U V]
             {A : U} {B : V} {F₁ F₂ : A ⟶ B} {e : ∀ a, F₁ a ≃ F₂ a} :
     F₁ ≃{e} F₂ :=
   h.mkFunEq e
@@ -304,15 +325,15 @@ end HasTrivialEquivalenceCondition
 
 
 
-class HasTrivialDependentFunctoriality (U V : Universe) [HasIdentity V] {UV UpV : Universe}
+class HasTrivialDependentFunctoriality (U V : Universe) {UV UpV : Universe} [HasTypeIdentity V]
                                        [HasFunctors U {V} UpV] [HasDependentFunctors U V UV] where
-(mkDefPi {A : U} {φ : A ⟶ ⌊V⌋} (f : HasFunctors.Pi φ) : Π{f} φ)
+(mkDefPi {A : U} {p : A → V} {φ : A ⟶{p} ⌊V⌋} (f : ∀ a, p a) : Π{f} φ)
 
 namespace HasTrivialDependentFunctoriality
 
-  def defPi {U V : Universe} [HasIdentity V] {UV UpV : Universe} [HasFunctors U {V} UpV]
+  def defPi {U V UV UpV : Universe} [HasTypeIdentity V] [HasFunctors U {V} UpV]
             [HasDependentFunctors U V UV] [h : HasTrivialDependentFunctoriality U V]
-            {A : U} {φ : A ⟶ ⌊V⌋} {f : HasFunctors.Pi φ} :
+            {A : U} {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f : ∀ a, p a} :
     Π{f} φ :=
   h.mkDefPi f
 
