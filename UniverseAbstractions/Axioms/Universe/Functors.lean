@@ -46,12 +46,6 @@ namespace HasFunctors
 
   variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V] 
 
-  structure DefFun (A : U) (B : V) (f : A → B) where
-  (F           : A ⟶ B)
-  (eff (a : A) : F a ≃ f a)
-
-  notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
-
   class IsFunApp (A : outParam ⌈U⌉) {B : V} (b : B) where
   (F : A ⟶ B)
   (a : A)
@@ -61,6 +55,12 @@ namespace HasFunctors
   { F := F,
     a := a,
     e := HasRefl.refl (F a) }
+
+  structure DefFun (A : U) (B : V) (f : A → B) where
+  (F           : A ⟶ B)
+  (eff (a : A) : F a ≃ f a)
+
+  notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
 
   variable {A : U} {B : V}
   
@@ -418,6 +418,86 @@ namespace HasRevBiCompFunFunFun
   defRevBiCompFunFunFun A H
 
 end HasRevBiCompFunFunFun
+
+
+
+class IsFunctorial {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
+                   {A : U} {B : V} (f : A → B) where
+(defFun : A ⟶{f} B)
+
+namespace IsFunctorial
+
+  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V] {A : U} {B : V}
+           (f : A → B) [h : IsFunctorial f]
+
+  @[reducible] def functor : A ⟶ B := h.defFun
+
+  -- TODO: Does it make sense to define an instance of `IsFunApp`?
+
+end IsFunctorial
+
+class IsRightFunctorial {U V W VW : Universe} [HasFunctors V W VW] [HasIdentity W]
+                        {A : U} {B : V} {C : W} (f : A → B → C) where
+(defRightFun (a : A) : B ⟶{λ b => f a b} C)
+
+namespace IsRightFunctorial
+
+  variable {U V W VW : Universe} [HasFunctors V W VW] [HasIdentity W] {A : U} {B : V} {C : W}
+           (f : A → B → C) [h : IsRightFunctorial f]
+
+  @[reducible] def rightFun (a : A) : B ⟶ C := h.defRightFun a
+
+end IsRightFunctorial
+
+class IsLeftFunctorial {U V W UW : Universe} [HasFunctors U W UW] [HasIdentity W]
+                       {A : U} {B : V} {C : W} (f : A → B → C) where
+(defLeftFun (b : B) : A ⟶{λ a => f a b} C)
+
+namespace IsLeftFunctorial
+
+  variable {U V W UW : Universe} [HasFunctors U W UW] [HasIdentity W] {A : U} {B : V} {C : W}
+           (f : A → B → C) [h : IsLeftFunctorial f]
+
+  @[reducible] def leftFun (b : B) : A ⟶ C := h.defLeftFun b
+
+end IsLeftFunctorial
+
+class IsBiFunctorial {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
+                     [HasIdentity W] [HasIdentity VW]
+                     {A : U} {B : V} {C : W} (f : A → B → C) extends
+  IsRightFunctorial f where
+(defRightFunFun : A ⟶{λ a => defRightFun a} (B ⟶ C))
+
+namespace IsBiFunctorial
+
+  open HasCongrFun HasSwapFun HasSwapFunFun
+
+  variable {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
+           [HasIdentity W] [HasIdentity VW] {A : U} {B : V} {C : W} (f : A → B → C)
+           [h : IsBiFunctorial f]
+
+  @[reducible] def rightFunFun : A ⟶ B ⟶ C := h.defRightFunFun
+
+  variable {UW : Universe} [HasFunctors U W UW] [HasCongrFun V W]
+
+  def defLeftFun [HasSwapFun U V W] (b : B) :
+    A ⟶{λ a => f a b} C :=
+  swapFun (rightFunFun f) b
+  ◄ byDef₂
+
+  instance [HasSwapFun U V W] : IsLeftFunctorial f := ⟨defLeftFun f⟩
+
+  def defLeftFunFun {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW]
+                    [HasSwapFunFun U V W] :
+    B ⟶{λ b => defLeftFun f b} (A ⟶ C) :=
+  defSwapFunFun (rightFunFun f)
+
+  @[reducible] def leftFunFun {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW]
+                              [HasSwapFunFun U V W] :
+    B ⟶ A ⟶ C :=
+  defLeftFunFun f
+
+end IsBiFunctorial
 
 
 

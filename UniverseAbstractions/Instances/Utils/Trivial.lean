@@ -14,6 +14,8 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
+universe u v
+
 
 
 class HasTrivialIdentity (U : Universe) [HasIdentity U] where
@@ -97,17 +99,41 @@ namespace HasTrivialFunctoriality
     A ⟶{f} B :=
   h.mkDefFun f
 
-  instance hasIdFun (U : Universe) [HasIdentity U] {UU : Universe} [HasFunctors U U UU]
+  instance isFunctorial {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
+                        {A : U} {B : V} (f : A → B) [HasTrivialFunctoriality U V] :
+    IsFunctorial f :=
+  ⟨defFun⟩
+
+  instance isRightFunctorial {U V W VW : Universe} [HasFunctors V W VW] [HasIdentity W]
+                             {A : U} {B : V} {C : W} (f : A → B → C)
+                             [HasTrivialFunctoriality V W] :
+    IsRightFunctorial f :=
+  ⟨λ _ => defFun⟩
+
+  instance isLeftFunctorial {U V W UW : Universe} [HasFunctors U W UW] [HasIdentity W]
+                            {A : U} {B : V} {C : W} (f : A → B → C)
+                            [HasTrivialFunctoriality U W] :
+    IsLeftFunctorial f :=
+  ⟨λ _ => defFun⟩
+
+  instance isBiFunctorial {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
+                          [HasIdentity W] [HasIdentity VW]
+                          {A : U} {B : V} {C : W} (f : A → B → C)
+                          [HasTrivialFunctoriality V W] [HasTrivialFunctoriality U VW] :
+    IsBiFunctorial f :=
+  ⟨defFun⟩
+
+  instance hasIdFun (U : Universe) {UU : Universe} [HasFunctors U U UU] [HasIdentity U]
                     [HasTrivialFunctoriality U U] :
     HasIdFun U :=
   ⟨λ _ => defFun⟩
 
-  instance hasConstFun (U V : Universe) [HasIdentity V] {UV : Universe} [HasFunctors U V UV]
+  instance hasConstFun (U V : Universe) {UV : Universe} [HasFunctors U V UV] [HasIdentity V]
                        [HasTrivialFunctoriality U V] :
     HasConstFun U V :=
   ⟨λ _ {_} _ => defFun⟩
 
-  instance hasCompFun (U V W : Universe) [HasIdentity W] {UV VW UW : Universe}
+  instance hasCompFun (U V W : Universe) {UV VW UW : Universe} [HasIdentity W]
                       [HasFunctors U V UV] [HasFunctors V W VW] [HasFunctors U W UW]
                       [HasTrivialFunctoriality U W] :
     HasCompFun U V W :=
@@ -166,6 +192,20 @@ namespace HasTrivialFunctoriality
                                  [HasTrivialFunctoriality U X] [HasTrivialFunctoriality U UX] :
     HasRevBiCompFunFunFun U X :=
   ⟨λ _ {_ _ _} _ => defFun⟩
+
+  section MetaRelation
+
+    variable {α : Sort u} {V : Universe.{v}} [HasIdentity V] [HasInternalFunctors V]
+             [HasTrivialFunctoriality V V] (R : MetaRelation α V)
+
+    instance hasTransFun [HasTrans R] : HasTransFun R :=
+    { defTransFun    := λ _ _   => defFun,
+      defTransFunFun := λ _ _ _ => defFun }
+
+    instance hasSymmFun [HasSymm R] : HasSymmFun R :=
+    { defSymmFun := λ _ _ => defFun }
+
+  end MetaRelation
 
   variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialFunctoriality U U]
 

@@ -336,10 +336,9 @@ namespace sort
   { Fun   := λ α B => α → B,
     apply := id }
 
-  def defOutFun {α : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V} (f : α → B) :
-    DefFun α B f :=
-  { F   := f,
-    eff := λ a => HasRefl.refl (f a) }
+  def defOutFun {α : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V} (f : ⌈α ⟶ B⌉) :
+    α ⟶{f} B :=
+  toDefFun f
 
   instance hasTrivialOutFunctoriality (V : Universe.{v}) [HasIdentity V] :
     HasTrivialFunctoriality sort.{u} V :=
@@ -418,7 +417,7 @@ namespace sort
   def defPi {α : sort.{u}} {V : Universe.{v}} [HasTypeIdentity V] {p : α → V} {φ : α ⟶{p} ⌊V⌋}
             (f : ∀ a, p a) :
     DefPi φ f :=
-  { F   := λ a => HasEquivalences.invFun (φ.eff a) (f a),
+  { F   := λ a => HasEquivalences.inv (φ.eff a) (f a),
     eff := λ a => HasEquivalences.rightInv (φ.eff a) (f a) }
 
   instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasTypeIdentity V] :

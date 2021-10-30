@@ -5,6 +5,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
+set_option synthInstance.maxHeartbeats 10000
 
 universe u v
 
@@ -32,21 +33,6 @@ namespace MetaRelation
       rightInv := λ _ => eq }
 
   end HasTrivialIdentity
-
-  section HasTrivialFunctoriality
-
-    open HasTrivialFunctoriality
-
-    variable [HasInternalFunctors V] [HasTrivialFunctoriality V V]
-
-    instance hasTransFun [HasTrans R] : HasTransFun R :=
-    { defTransFun    := λ _ _   => defFun,
-      defTransFunFun := λ _ _ _ => defFun }
-
-    instance hasSymmFun [HasSymm R] : HasSymmFun R :=
-    { defSymmFun := λ _ _ => defFun }
-
-  end HasTrivialFunctoriality
 
   section HasTrivialExtensionality
 

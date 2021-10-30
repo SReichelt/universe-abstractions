@@ -128,6 +128,12 @@ namespace HasInternalEquivalences
       EquivDesc A B :=
     ⟨toFun, invFun, equiv⟩
 
+    def fromHalfEquivDescs {A B : U} {toFun : A ⟶ B} {invFun : B ⟶ A}
+                           (left : HalfEquivDesc toFun invFun)
+                           (right : HalfEquivDesc invFun toFun) :
+      EquivDesc A B :=
+    fromFullEquivDesc ⟨left, right⟩
+
     def refl (A : U) : EquivDesc A A :=
     fromFullEquivDesc (FullEquivDesc.refl A)
 
@@ -145,15 +151,19 @@ namespace HasInternalEquivalences
   (invFunEq : invFun E ≃ desc.invFun)
 
   notation:20 A:21 " ⟷{" desc:0 "} " B:21 => HasInternalEquivalences.DefEquiv A B desc
+  notation:20 A:21 " ⟷{" left:0 "," right:0 "} " B:21 =>
+  HasInternalEquivalences.DefEquiv A B (HasInternalEquivalences.EquivDesc.fromHalfEquivDescs left right)
 
   variable {A B : U}
 
   def toDesc  (E : A ⟷ B) : HalfEquivDesc (toFun E) (invFun E) := ⟨leftInv  E, leftInvExt  E⟩
   def invDesc (E : A ⟷ B) : HalfEquivDesc (invFun E) (toFun E) := ⟨rightInv E, rightInvExt E⟩
 
-  def fullDesc (E : A ⟷ B) : FullEquivDesc (toFun E) (invFun E) := ⟨toDesc E, invDesc E⟩
+  def fullDesc     (E : A ⟷ B) : FullEquivDesc (toFun E) (invFun E) := ⟨toDesc E, invDesc E⟩
+  def fullSymmDesc (E : A ⟷ B) : FullEquivDesc (invFun E) (toFun E) := ⟨invDesc E, toDesc E⟩
 
-  def desc (E : A ⟷ B) : EquivDesc A B := ⟨toFun E, invFun E, fullDesc E⟩
+  def desc     (E : A ⟷ B) : EquivDesc A B := ⟨toFun E, invFun E, fullDesc     E⟩
+  def symmDesc (E : A ⟷ B) : EquivDesc B A := ⟨invFun E, toFun E, fullSymmDesc E⟩
 
   def toDefEquiv (E : A ⟷ B) : A ⟷{desc E} B := ⟨E, HasRefl.refl (toFun E), HasRefl.refl (invFun E)⟩
   def fromDefEquiv {desc : EquivDesc A B} (E : A ⟷{desc} B) : A ⟷ B := E.E
@@ -319,12 +329,18 @@ namespace DependentEquivalence
     symm  := symm
     trans := trans }
 
+  -- It would be nice to move these to `DependentMetaRelation`, but currently the dependent
+  -- meta-relation isn't found automatically at all, so for now we define the notation
+  -- specifically for `DependentEquivalence`.
   notation:90 g:91 " [•] " f:90 => DependentEquivalence.trans f g
   postfix:max "[⁻¹]" => DependentEquivalence.symm
 
 end DependentEquivalence
 
 
+
+-- A helper type class that summarizes everything we need for type equivalences to act as instance
+-- equivalences in a universe of universes.
 
 class HasTypeIdentity (U : Universe.{u}) where
 [hasIdentity             : HasIdentity.{u, iu}            U]

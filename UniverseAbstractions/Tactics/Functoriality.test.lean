@@ -118,13 +118,7 @@ theorem testTestCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶
   (testTestCompComp A B C D F G H) a = H (G (F a)) :=
 by simp [testTestCompComp]
 
--- TODO: This currently does not work because `functoriality` would need to output
--- `by simp [testCompComp]` but only outputs `by simp`. Maybe we could solve this by giving `simp`
--- a slightly different target type. E.g. we could let `constructFunctor` produce an unfolded
--- version of the function that we are constructing a functor for.
---def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => testCompComp A B C D F G H} (A ⟶ D) :=
---by functoriality
-def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => Λ a => H (G (F a))} (A ⟶ D) :=
+def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => testCompComp A B C D F G H} (A ⟶ D) :=
 by functoriality
 
 def testComp₂ (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) : A ⟶ B ⟶ D := Λ a b => G (F a b)

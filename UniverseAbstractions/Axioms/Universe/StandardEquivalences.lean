@@ -1,8 +1,3 @@
--- TODO
-#exit
-
-
-
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
@@ -15,7 +10,7 @@ import UniverseAbstractions.Lemmas.DerivedProductFunctors
 
 
 
---  instance hasLinearCommonEquivalences : HasLinearCommonEquivalences type.{u} :=
+--  instance hasLinearStandardEquivalences : HasLinearStandardEquivalences type.{u} :=
 --  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext λ b => congrArg f (e.rightInv b),
 --                                          λ f => funext λ a => congrArg f (e.leftInv  a)⟩,
 --    defFunDomainEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
@@ -40,7 +35,7 @@ import UniverseAbstractions.Lemmas.DerivedProductFunctors
 --    defCompEquivEquivFun   := λ _ _ _ => HasTrivialFunctoriality.defFun,
 --    defInvEquivEquiv       := λ _ _   => ⟨Equiv.symm_symm, Equiv.symm_symm⟩ }
 --
---  instance hasNonLinearCommonEquivalences : HasNonLinearCommonEquivalences type.{u} :=
+--  instance hasNonLinearStandardEquivalences : HasNonLinearStandardEquivalences type.{u} :=
 --  { defProdDistrEquiv := λ _ _ _ => ⟨λ _ => funext λ _ => prodExt rfl rfl,
 --                                     λ _ => prodExt (funext λ _ => rfl) (funext λ _ => rfl)⟩ }
 --
@@ -49,132 +44,174 @@ import UniverseAbstractions.Lemmas.DerivedProductFunctors
 --    defProdBotEquiv   := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim p.fst⟩,
 --    defBotContraEquiv := λ _ => ⟨λ e => Empty.elim e, λ p => Empty.elim (p.snd p.fst)⟩ }
 
+namespace HasLinearFunOp
 
+  open HasFunctors HasCongrArg HasLinearFunExt HasEquivalences HasInternalEquivalences
 
-class HasLinearCommonEquivalences (U : Universe) [HasInternalFunctors U] [HasLinearFunOp U]
-                                  [HasInternalTop U] [HasInternalProducts U] [HasEquivOp U] where
-(defFunDomainEquiv      {A B : U} (E : A ⟷ B) (C : U) :
-   (B ⟶ C) ⟷[HasLinearFunOp.compFunFun (HasEquivalences.toFun  E) C,
-             HasLinearFunOp.compFunFun (HasEquivalences.invFun E) C] (A ⟶ C))
-(defFunDomainEquivFun   (A B C : U)                   :
-   (A ⟷ B) ⟶{λ E => defFunDomainEquiv E C} ((B ⟶ C) ⟷ (A ⟶ C)))
-(defFunCodomainEquiv    {A B : U} (E : A ⟷ B) (C : U) :
-   (C ⟶ A) ⟷[HasLinearFunOp.revCompFunFun C (HasEquivalences.toFun  E),
-             HasLinearFunOp.revCompFunFun C (HasEquivalences.invFun E)] (C ⟶ B))
-(defFunCodomainEquivFun (A B C : U)                   :
-   (A ⟷ B) ⟶{λ E => defFunCodomainEquiv E C} ((C ⟶ A) ⟷ (C ⟶ B)))
-(defSwapFunFunEquiv     (A B C : U)                   :
-   (A ⟶ B ⟶ C) ⟷{HasLinearFunOp.swapFunFunFun A B C, HasLinearFunOp.swapFunFunFun B A C} (B ⟶ A ⟶ C))
-(defTopElimEquiv        (A : U)                       :
-   A ⟷[HasInternalTop.elimFunFun A,
-       HasInternalTop.invElimFun A] (HasTop.Top U ⟶ A))
-(defProdElimFunEquiv    (A B C : U)                   :
-   (A ⟶ B ⟶ C) ⟷[HasInternalProducts.elimFunFun A B C,
-                 HasInternalProducts.invElimFunFunFun A B C] (A ⊓ B ⟶ C))
-(defProdFstEquiv        {A B : U} (E : A ⟷ B) (C : U) :
-   A ⊓ C ⟷[HasInternalProducts.replaceFstFun (HasEquivalences.toFun  E) C,
-           HasInternalProducts.replaceFstFun (HasEquivalences.invFun E) C] B ⊓ C)
-(defProdFstEquivFun     (A B C : U)                   :
-   (A ⟷ B) ⟶{λ E => defProdFstEquiv E C} (A ⊓ C ⟷ B ⊓ C))
-(defProdSndEquiv        {A B : U} (E : A ⟷ B) (C : U) :
-   C ⊓ A ⟷[HasInternalProducts.replaceSndFun (HasEquivalences.toFun  E) C,
-           HasInternalProducts.replaceSndFun (HasEquivalences.invFun E) C] C ⊓ B)
-(defProdSndEquivFun     (A B C : U)                   :
-   (A ⟷ B) ⟶{λ E => defProdSndEquiv E C} (C ⊓ A ⟷ C ⊓ B))
-(defProdCommEquiv       (A B : U)                     :
-   A ⊓ B ⟷{HasInternalProducts.commFun A B, HasInternalProducts.commFun B A} B ⊓ A)
-(defProdAssocEquiv      (A B C : U)                   :
-   (A ⊓ B) ⊓ C ⟷{HasInternalProducts.assocLRFun A B C, HasInternalProducts.assocRLFun A B C} A ⊓ (B ⊓ C))
-(defProdTopEquiv        (A : U)                       :
-   A ⟷[HasInternalProducts.prodTopIntroFun A,
-       HasInternalProducts.prodTopElimFun A] HasTop.Top U ⊓ A)
-(defCompEquivEquiv      {A B : U} (E : A ⟷ B) (C : U) :
-   (B ⟷ C) ⟷{HasEquivOp.compEquivFun E C, HasEquivOp.compEquivFun (HasEquivOp.invEquiv E) C} (A ⟷ C))
-(defCompEquivEquivFun   (A B C : U)                   :
-   (A ⟷ B) ⟶{λ E => defCompEquivEquiv E C} ((B ⟷ C) ⟷ (A ⟷ C)))
-(defInvEquivEquiv       (A B : U)                     :
-   (A ⟷ B) ⟷{HasEquivOp.invEquivFun A B, HasEquivOp.invEquivFun B A} (B ⟷ A))
+  variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+           [HasLinearFunExt U] [HasInternalTop U] [HasInternalProducts U]
+           [HasInternalEquivalences U] [HasEquivOp U]
 
-namespace HasLinearCommonEquivalences
+  def funDomainDesc {A B : U} (E : EquivDesc A B) (C : U) :
+    HalfEquivDesc (compFunFun E.toFun C) (compFunFun E.invFun C) :=
+  { inv    := λ F => rightId F •
+                     defCongrArg (defRevCompFunFun B F) E.equiv.right.invExt •
+                     compAssoc E.invFun E.toFun F •
+                     byDef •
+                     byArgDef,
+    invExt := rightIdExt B C •
+              defCongrArg (defCompFunFunFun B B C) E.equiv.right.invExt •
+              compAssocExt E.invFun E.toFun C }
 
-  variable {U : Universe.{u}} [HasInternalFunctors U] [HasLinearFunOp U] [HasInternalTop U]
-           [HasInternalProducts U] [HasEquivOp U] [HasLinearCommonEquivalences U]
+  def funCodomainDesc {A B : U} (E : EquivDesc A B) (C : U) :
+    HalfEquivDesc (revCompFunFun C E.toFun) (revCompFunFun C E.invFun) :=
+  { inv    := λ F => leftId F •
+                     defCongrArg (defCompFunFun F A) E.equiv.left.invExt •
+                     (compAssoc F E.toFun E.invFun)⁻¹ •
+                     byDef •
+                     byArgDef,
+    invExt := leftIdExt C A •
+              defCongrArg (defRevCompFunFunFun C A A) E.equiv.left.invExt •
+              (compAssocRightExt C E.toFun E.invFun)⁻¹ }
 
-  @[reducible] def funDomainEquiv {A B : U} (E : A ⟷ B) (C : U) : (B ⟶ C) ⟷ (A ⟶ C) := defFunDomainEquiv E C
-  @[reducible] def funDomainEquivFun (A B C : U) : (A ⟷ B) ⟶ ((B ⟶ C) ⟷ (A ⟶ C)) := defFunDomainEquivFun A B C
-  @[reducible] def funCodomainEquiv {A B : U} (E : A ⟷ B) (C : U) : (C ⟶ A) ⟷ (C ⟶ B) := defFunCodomainEquiv E C
-  @[reducible] def funCodomainEquivFun (A B C : U) : (A ⟷ B) ⟶ ((C ⟶ A) ⟷ (C ⟶ B)) := defFunCodomainEquivFun A B C
-  @[reducible] def swapFunFunEquiv (A B C : U) : (A ⟶ B ⟶ C) ⟷ (B ⟶ A ⟶ C) := defSwapFunFunEquiv A B C
+  class HasLinearStandardEquivalences where
+  (defFunDomainEquiv      {A B : U} (E : A ⟷ B) (C : U) :
+     (B ⟶ C) ⟷{funDomainDesc U (desc E) C, funDomainDesc U (symmDesc E) C} (A ⟶ C))
+  (defFunDomainEquivFun   (A B C : U)                   :
+     (A ⟷ B) ⟶{λ E => defFunDomainEquiv E C} ((B ⟶ C) ⟷ (A ⟶ C)))
+  (defFunCodomainEquiv    {A B : U} (E : A ⟷ B) (C : U) :
+     (C ⟶ A) ⟷{funCodomainDesc U (desc E) C, funCodomainDesc U (symmDesc E) C} (C ⟶ B))
+  (defFunCodomainEquivFun (A B C : U)                   :
+     (A ⟷ B) ⟶{λ E => defFunCodomainEquiv E C} ((C ⟶ A) ⟷ (C ⟶ B)))
 
-  @[reducible] def topElimEquiv (A : U) : A ⟷ (HasTop.Top U ⟶ A) := defTopElimEquiv A
+#exit
 
-  @[reducible] def prodElimFunEquiv (A B C : U) : (A ⟶ B ⟶ C) ⟷ (A ⊓ B ⟶ C) := defProdElimFunEquiv A B C
-  @[reducible] def prodFstEquiv {A B : U} (E : A ⟷ B) (C : U) : A ⊓ C ⟷ B ⊓ C := defProdFstEquiv E C
-  @[reducible] def prodFstEquivFun (A B C : U) : (A ⟷ B) ⟶ (A ⊓ C ⟷ B ⊓ C) := defProdFstEquivFun A B C
-  @[reducible] def prodSndEquiv {A B : U} (E : A ⟷ B) (C : U) : C ⊓ A ⟷ C ⊓ B := defProdSndEquiv E C
-  @[reducible] def prodSndEquivFun (A B C : U) : (A ⟷ B) ⟶ (C ⊓ A ⟷ C ⊓ B) := defProdSndEquivFun A B C
-  @[reducible] def prodCommEquiv (A B : U) : A ⊓ B ⟷ B ⊓ A := defProdCommEquiv A B
-  @[reducible] def prodAssocEquiv (A B C : U) : (A ⊓ B) ⊓ C ⟷ A ⊓ (B ⊓ C) := defProdAssocEquiv A B C
-  @[reducible] def prodTopEquiv (A : U) : A ⟷ HasTop.Top U ⊓ A := defProdTopEquiv A
+  (defSwapFunFunEquiv     (A B C : U)                   :
+     (A ⟶ B ⟶ C) ⟷{swapFunFunFun A B C, swapFunFunFun B A C} (B ⟶ A ⟶ C))
+  (defTopElimEquiv        (A : U)                       :
+     A ⟷{HasInternalTop.elimFunFun A,
+         HasInternalTop.invElimFun A} (HasTop.Top U ⟶ A))
+  (defProdElimFunEquiv    (A B C : U)                   :
+     (A ⟶ B ⟶ C) ⟷{HasInternalProducts.elimFunFun A B C,
+                   HasInternalProducts.invElimFunFunFun A B C} (A ⊓ B ⟶ C))
+  (defProdFstEquiv        {A B : U} (E : A ⟷ B) (C : U) :
+     A ⊓ C ⟷{HasInternalProducts.replaceFstFun (toFun  E) C,
+             HasInternalProducts.replaceFstFun (invFun E) C} B ⊓ C)
+  (defProdFstEquivFun     (A B C : U)                   :
+     (A ⟷ B) ⟶{λ E => defProdFstEquiv E C} (A ⊓ C ⟷ B ⊓ C))
+  (defProdSndEquiv        {A B : U} (E : A ⟷ B) (C : U) :
+     C ⊓ A ⟷{HasInternalProducts.replaceSndFun (toFun  E) C,
+             HasInternalProducts.replaceSndFun (invFun E) C} C ⊓ B)
+  (defProdSndEquivFun     (A B C : U)                   :
+     (A ⟷ B) ⟶{λ E => defProdSndEquiv E C} (C ⊓ A ⟷ C ⊓ B))
+  (defProdCommEquiv       (A B : U)                     :
+     A ⊓ B ⟷{HasInternalProducts.commFun A B, HasInternalProducts.commFun B A} B ⊓ A)
+  (defProdAssocEquiv      (A B C : U)                   :
+     (A ⊓ B) ⊓ C ⟷{HasInternalProducts.assocLRFun A B C, HasInternalProducts.assocRLFun A B C} A ⊓ (B ⊓ C))
+  (defProdTopEquiv        (A : U)                       :
+     A ⟷{HasInternalProducts.prodTopIntroFun A,
+         HasInternalProducts.prodTopElimFun A} HasTop.Top U ⊓ A)
+  (defCompEquivEquiv      {A B : U} (E : A ⟷ B) (C : U) :
+     (B ⟷ C) ⟷{HasEquivOp.compEquivFun E C, HasEquivOp.compEquivFun (HasEquivOp.invEquiv E) C} (A ⟷ C))
+  (defCompEquivEquivFun   (A B C : U)                   :
+     (A ⟷ B) ⟶{λ E => defCompEquivEquiv E C} ((B ⟷ C) ⟷ (A ⟷ C)))
+  (defInvEquivEquiv       (A B : U)                     :
+     (A ⟷ B) ⟷{HasEquivOp.invEquivFun A B, HasEquivOp.invEquivFun B A} (B ⟷ A))
 
-  @[reducible] def compEquivEquiv {A B : U} (E : A ⟷ B) (C : U) : (B ⟷ C) ⟷ (A ⟷ C) := defCompEquivEquiv E C
-  @[reducible] def compEquivEquivFun (A B C : U) : (A ⟷ B) ⟶ ((B ⟷ C) ⟷ (A ⟷ C)) := defCompEquivEquivFun A B C
-  @[reducible] def invEquivEquiv (A B : U) : (A ⟷ B) ⟷ (B ⟷ A) := defInvEquivEquiv A B
+  namespace HasLinearStandardEquivalences
 
-end HasLinearCommonEquivalences
+    variable {U : Universe.{u}} [HasInternalFunctors U] [HasLinearFunOp U] [HasInternalTop U]
+             [HasInternalProducts U] [HasEquivOp U] [HasLinearStandardEquivalences U]
 
-class HasNonLinearCommonEquivalences (U : Universe) [HasFunOp U] [HasInternalTop U]
-                                     [HasInternalProducts U] [HasEquivOp U] where
-(defProdDistrEquiv (A B C : U) :
-   (A ⟶ B ⊓ C) ⟷[HasInternalProducts.distrFun A B C,
-                 HasInternalProducts.invDistrFunFun A B C] (A ⟶ B) ⊓ (A ⟶ C))
+    @[reducible] def funDomainEquiv {A B : U} (E : A ⟷ B) (C : U) : (B ⟶ C) ⟷ (A ⟶ C) := defFunDomainEquiv E C
+    @[reducible] def funDomainEquivFun (A B C : U) : (A ⟷ B) ⟶ ((B ⟶ C) ⟷ (A ⟶ C)) := defFunDomainEquivFun A B C
+    @[reducible] def funCodomainEquiv {A B : U} (E : A ⟷ B) (C : U) : (C ⟶ A) ⟷ (C ⟶ B) := defFunCodomainEquiv E C
+    @[reducible] def funCodomainEquivFun (A B C : U) : (A ⟷ B) ⟶ ((C ⟶ A) ⟷ (C ⟶ B)) := defFunCodomainEquivFun A B C
+    @[reducible] def swapFunFunEquiv (A B C : U) : (A ⟶ B ⟶ C) ⟷ (B ⟶ A ⟶ C) := defSwapFunFunEquiv A B C
 
-namespace HasNonLinearCommonEquivalences
+    @[reducible] def topElimEquiv (A : U) : A ⟷ (HasTop.Top U ⟶ A) := defTopElimEquiv A
 
-  variable {U : Universe} [HasFunOp U] [HasInternalTop U] [HasInternalProducts U]
-           [HasEquivOp U] [HasNonLinearCommonEquivalences U]
+    @[reducible] def prodElimFunEquiv (A B C : U) : (A ⟶ B ⟶ C) ⟷ (A ⊓ B ⟶ C) := defProdElimFunEquiv A B C
+    @[reducible] def prodFstEquiv {A B : U} (E : A ⟷ B) (C : U) : A ⊓ C ⟷ B ⊓ C := defProdFstEquiv E C
+    @[reducible] def prodFstEquivFun (A B C : U) : (A ⟷ B) ⟶ (A ⊓ C ⟷ B ⊓ C) := defProdFstEquivFun A B C
+    @[reducible] def prodSndEquiv {A B : U} (E : A ⟷ B) (C : U) : C ⊓ A ⟷ C ⊓ B := defProdSndEquiv E C
+    @[reducible] def prodSndEquivFun (A B C : U) : (A ⟷ B) ⟶ (C ⊓ A ⟷ C ⊓ B) := defProdSndEquivFun A B C
+    @[reducible] def prodCommEquiv (A B : U) : A ⊓ B ⟷ B ⊓ A := defProdCommEquiv A B
+    @[reducible] def prodAssocEquiv (A B C : U) : (A ⊓ B) ⊓ C ⟷ A ⊓ (B ⊓ C) := defProdAssocEquiv A B C
+    @[reducible] def prodTopEquiv (A : U) : A ⟷ HasTop.Top U ⊓ A := defProdTopEquiv A
 
-  @[reducible] def prodDistrEquiv (A B C : U) : (A ⟶ B ⊓ C) ⟷ (A ⟶ B) ⊓ (A ⟶ C):= defProdDistrEquiv A B C
+    @[reducible] def compEquivEquiv {A B : U} (E : A ⟷ B) (C : U) : (B ⟷ C) ⟷ (A ⟷ C) := defCompEquivEquiv E C
+    @[reducible] def compEquivEquivFun (A B C : U) : (A ⟷ B) ⟶ ((B ⟷ C) ⟷ (A ⟷ C)) := defCompEquivEquivFun A B C
+    @[reducible] def invEquivEquiv (A B : U) : (A ⟷ B) ⟷ (B ⟷ A) := defInvEquivEquiv A B
 
-end HasNonLinearCommonEquivalences
+  end HasLinearStandardEquivalences
 
-class HasBotEquivalences (U : Universe) [HasInternalFunctors U] [HasAffineFunOp U]
-                         [HasInternalTop U] [HasInternalBot U] [HasInternalProducts U]
-                         [HasEquivOp U] where
-(defBotNotTopEquiv         :
-   HasBot.Bot U ⟷[HasInternalBot.elimFun (HasInternalBot.Not (HasTop.Top U)),
-                  HasInternalBot.notTopIntroFun] HasInternalBot.Not (HasTop.Top U))
-(defProdBotEquiv   (A : U) :
-   HasBot.Bot U ⟷[HasInternalBot.elimFun (HasBot.Bot U ⊓ A),
-                  HasInternalProducts.fstFun (HasBot.Bot U) A] HasBot.Bot U ⊓ A)
-(defBotContraEquiv (A : U) :
-   HasBot.Bot U ⟷[HasInternalBot.elimFun (A ⊓ HasInternalBot.Not A),
-                  HasInternalProducts.elimFun (HasInternalBot.contraIntroFun A)] A ⊓ HasInternalBot.Not A)
+end HasLinearFunOp
 
-namespace HasBotEquivalences
+namespace HasFullFunOp
 
-  variable {U : Universe} [HasInternalFunctors U] [HasAffineFunOp U] [HasInternalTop U]
-           [HasInternalBot U] [HasInternalProducts U] [HasEquivOp U] [HasBotEquivalences U]
+  class HasNonLinearStandardEquivalences (U : Universe) [HasFunOp U] [HasInternalTop U]
+                                         [HasInternalProducts U] [HasEquivOp U] where
+  (defProdDistrEquiv (A B C : U) :
+     (A ⟶ B ⊓ C) ⟷{HasInternalProducts.distrFun A B C,
+                   HasInternalProducts.invDistrFunFun A B C} (A ⟶ B) ⊓ (A ⟶ C))
 
-  @[reducible] def botNotTopEquiv : HasBot.Bot U ⟷ HasInternalBot.Not (HasTop.Top U) := defBotNotTopEquiv (U := U)
-  @[reducible] def prodBotEquiv (A : U) : HasBot.Bot U ⟷ HasBot.Bot U ⊓ A := defProdBotEquiv A
-  @[reducible] def botContraEquiv (A : U) : HasBot.Bot U ⟷ A ⊓ HasInternalBot.Not A := defBotContraEquiv A
+  namespace HasNonLinearStandardEquivalences
 
-end HasBotEquivalences
+    variable {U : Universe} [HasFunOp U] [HasInternalTop U] [HasInternalProducts U]
+             [HasEquivOp U] [HasNonLinearStandardEquivalences U]
 
-class HasClassicalEquivalences (U : Universe) [HasInternalFunctors U] [HasLinearFunOp U]
-                               [HasInternalBot U] [HasClassicalLogic U]
-                               [HasInternalProducts U] [HasEquivOp U] where
-(defByContradictionEquiv (A : U) :
-   A ⟷[HasInternalBot.notNotFun A,
-       HasClassicalLogic.byContradictionFun A] HasInternalBot.Not (HasInternalBot.Not A))
+    @[reducible] def prodDistrEquiv (A B C : U) : (A ⟶ B ⊓ C) ⟷ (A ⟶ B) ⊓ (A ⟶ C):= defProdDistrEquiv A B C
 
-namespace HasClassicalEquivalences
+  end HasNonLinearStandardEquivalences
 
-  variable {U : Universe} [HasInternalFunctors U] [HasLinearFunOp U] [HasInternalBot U]
-           [HasClassicalLogic U] [HasInternalProducts U] [HasEquivOp U] [HasClassicalEquivalences U]
+end HasFullFunOp
 
-  @[reducible] def byContradictionEquiv (A : U) : A ⟷ HasInternalBot.Not (HasInternalBot.Not A) :=
-  defByContradictionEquiv A
+namespace HasInternalBot
 
-end HasClassicalEquivalences
+  class HasBotEquivalences (U : Universe) [HasInternalFunctors U] [HasAffineFunOp U]
+                           [HasInternalTop U] [HasInternalBot U] [HasInternalProducts U]
+                           [HasEquivOp U] where
+  (defBotNotTopEquiv         :
+     HasBot.Bot U ⟷{HasInternalBot.elimFun (HasInternalBot.Not (HasTop.Top U)),
+                    HasInternalBot.notTopIntroFun} HasInternalBot.Not (HasTop.Top U))
+  (defProdBotEquiv   (A : U) :
+     HasBot.Bot U ⟷{HasInternalBot.elimFun (HasBot.Bot U ⊓ A),
+                    HasInternalProducts.fstFun (HasBot.Bot U) A} HasBot.Bot U ⊓ A)
+  (defBotContraEquiv (A : U) :
+     HasBot.Bot U ⟷{HasInternalBot.elimFun (A ⊓ HasInternalBot.Not A),
+                    HasInternalProducts.elimFun (HasInternalBot.contraIntroFun A)} A ⊓ HasInternalBot.Not A)
+
+  namespace HasBotEquivalences
+
+    variable {U : Universe} [HasInternalFunctors U] [HasAffineFunOp U] [HasInternalTop U]
+             [HasInternalBot U] [HasInternalProducts U] [HasEquivOp U] [HasBotEquivalences U]
+
+    @[reducible] def botNotTopEquiv : HasBot.Bot U ⟷ HasInternalBot.Not (HasTop.Top U) := defBotNotTopEquiv (U := U)
+    @[reducible] def prodBotEquiv (A : U) : HasBot.Bot U ⟷ HasBot.Bot U ⊓ A := defProdBotEquiv A
+    @[reducible] def botContraEquiv (A : U) : HasBot.Bot U ⟷ A ⊓ HasInternalBot.Not A := defBotContraEquiv A
+
+  end HasBotEquivalences
+
+end HasInternalBot
+
+namespace HasClassicalLogic
+
+  class HasClassicalEquivalences (U : Universe) [HasInternalFunctors U] [HasLinearFunOp U]
+                                 [HasInternalBot U] [HasClassicalLogic U]
+                                 [HasInternalProducts U] [HasEquivOp U] where
+  (defByContradictionEquiv (A : U) :
+     A ⟷{HasInternalBot.notNotFun A,
+         HasClassicalLogic.byContradictionFun A} HasInternalBot.Not (HasInternalBot.Not A))
+
+  namespace HasClassicalEquivalences
+
+    variable {U : Universe} [HasInternalFunctors U] [HasLinearFunOp U] [HasInternalBot U]
+             [HasClassicalLogic U] [HasInternalProducts U] [HasEquivOp U] [HasClassicalEquivalences U]
+
+    @[reducible] def byContradictionEquiv (A : U) : A ⟷ HasInternalBot.Not (HasInternalBot.Not A) :=
+    defByContradictionEquiv A
+
+  end HasClassicalEquivalences
+
+end HasClassicalLogic

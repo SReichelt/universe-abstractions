@@ -190,12 +190,13 @@ namespace HasDependentTypeFunPi
            [h₁ : HasFunctors U {V} UpV] [h₂ : HasFunctors UpV {W} UpVtW]
            [HasFunctors {U} {UpVtW} UtUpVtW] [HasDependentFunctors {U} UpVtW UtUpVtW]
            [HasFunctors {UpV} {UpVtW} UpVtUpVtW] [HasTypeIdentity UpVtW]
-           [HasFunctors {U} {UpV} UtUpV] [HasIdentity {UpV}] [HasCongrArg {UpV} {UpVtW}]
+           [HasFunctors {U} {UpV} UtUpV] [HasTypeIdentity UpV] [HasCongrArg {UpV} {UpVtW}]
            [HasLeftTypeFun h₁.Fun] [HasLeftTypeFun h₂.Fun] [HasCompFun {U} {UpV} {UpVtW}]
            (T : ∀ {A : U}, (A ⟶ ⌊V⌋) → W)
 
   variable [HasTypeIdentity U] [HasIdentity {V}] [HasTypeIdentity W] [h : HasDependentTypeFunPi T]
-           [HasCompFun U U {V}] [HasCongrArg {U} {UpVtW}] [HasDependentCongrArg {U} UpVtW] [HasCongrFun UpV {W}]
+           [HasCompFun U U {V}] [HasCongrArg {U} {UpVtW}] [HasDependentCongrArg {U} UpVtW]
+           [HasCongrArg {U} {UpV}] [HasCongrFun UpV {W}]
 
   def baseEquiv {A₁ A₂ : U} {φ : A₁ ⟶ ⌊V⌋} (E : A₁ ⟷ A₂) : T φ ⟷ T (φ ⊙ invFun E) :=
   let H₁ : ((A₁ ⟶ ⌊V⌋) ⟶ ⌊W⌋) ⟷ ((A₂ ⟶ ⌊V⌋) ⟶ ⌊W⌋) := defPropCongrArg (defDependentTypeProp U ⌊V⌋ ⌊W⌋) E;
@@ -203,12 +204,14 @@ namespace HasDependentTypeFunPi
   let H₃ : typeFun T A₁ ≃ inv H₁ (typeFun T A₂) := DependentEquivalence.toInv H₂;
   let H₄ := congrFun H₃ φ • byDef⁻¹;
   let H₅ : T φ ⟷ (inv H₁ (typeFun T A₂)) φ := H₄;
-  let H₉ : T φ ⟷ T (φ ⊙ invFun E) := sorry; -- TODO: HasTypeCongrArg U UpVtW
+  -- TODO: To prove this, we need to construct type functors explicitly instead of asserting them as variables.
+  let H₆ : HasLeftTypeFun.castInstTo h₁.Fun E φ ≃ φ ⊙ invFun E := sorry;
+  let H₉ : T φ ⟷ T (φ ⊙ invFun E) := sorry;
   H₉
 
-  def castInstBaseTo  {A₁ A₂ : U} {φ : A₁ ⟶ ⌊V⌋} (E : A₁ ⟷ A₂) (F : T φ) : T (φ ⊙ invFun E) :=
+  def castInstBaseTo  {A₁ A₂ : U} {φ : A₁ ⟶ ⌊V⌋} (E : ⸤A₁⸥ ≃ ⸤A₂⸥) (F : T φ) : T (φ ⊙ invFun E) :=
   to (baseEquiv T E) F
-  def castInstBaseInv {A₁ A₂ : U} {φ : A₂ ⟶ ⌊V⌋} (E : A₁ ⟷ A₂) (F : T φ) : T (φ ⊙ toFun  E) :=
+  def castInstBaseInv {A₁ A₂ : U} {φ : A₂ ⟶ ⌊V⌋} (E : ⸤A₁⸥ ≃ ⸤A₂⸥) (F : T φ) : T (φ ⊙ toFun  E) :=
   sorry --to (baseEquiv T E⁻¹) F
 
 end HasDependentTypeFunPi

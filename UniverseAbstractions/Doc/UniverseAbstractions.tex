@@ -149,7 +149,7 @@ are a lot of examples of such universes. Fix a Grothendieck universe $U.$
 \begin{itemize}
   \item For every collection $\C \subseteq U$ of sets in $U,$ $\Set_\C := (\C, (S)_{S \in \C})$ is a
   universe for which ``$:$'' and ``$\in$'' coincide.
-  If $\C = U$, we just write ``$\Set$'' (again, ignoring all size issues).
+  If $\C = U,$ we just write ``$\Set$'' (again, ignoring all size issues).
   \item For every collection $\C$ of algebraic structures of the form $(S, t_S)$ with $S \in U,$
   $(\C, (S)_{(S, t_S) \in \C})$ is a universe.\\
   As an example, let $\C$ be the set of all $U$-small groups. Then each type $A$ is a group, and
@@ -164,7 +164,7 @@ are a lot of examples of such universes. Fix a Grothendieck universe $U.$
   \item For a universe $\U = (I, (S_A)_{A \in I}),$ any subset $J \subseteq I$ gives rise to a
   \defn{subuniverse} $(J, (S_A)_{A \in J}).$
   \item For any two universes $\U = (I, (S_A)_{A \in I})$ and $\V = (J, (T_B)_{B \in J}),$ we have a
-  product universe $\U \times \V := (I{\times}J,\,(S_A{\times}T_B)_{(A,B) \in I{\times}J})$, as well as a
+  product universe $\U \times \V := (I{\times}J,\,(S_A{\times}T_B)_{(A,B) \in I{\times}J}),$ as well as a
   sum universe $\U \uplus \V := (I \uplus J,\,(R_A)_{A \in I \uplus J})$ with $R_A := S_A$ for $A \in I$
   and $R_B := T_B$ for $B \in J$ (where $I \times J$ denotes the Cartesian product and $I \uplus J$
   denotes the disjoint union of $I$ and $J$).
@@ -172,7 +172,7 @@ are a lot of examples of such universes. Fix a Grothendieck universe $U.$
 
 Furthermore, we define two specific universes of interest:
 \begin{itemize}
-  \item $\Bool := \Set_{\{0, 1\}}$, where $0$ and $1$ are to be understood as von Neumann ordinals
+  \item $\Bool := \Set_{\{0, 1\}},$ where $0$ and $1$ are to be understood as von Neumann ordinals
   \cite{von-neumann-ordinals}, so that $0$ is an empty type and $1$ is a type with a single
   instance $\emptyset : 1.$\footnote{In the Lean formalization of this theory, we have two different universes
   corresponding to the Lean types \Lean{Bool} and \Lean{Prop}. Both of them map to $\Bool$ in this document.}
@@ -267,7 +267,7 @@ examples given in section \ref{sec:universes}.
   any internal structure that suggests a different definition of instance equivalence.
   This generalizes to structures built on universes other than $\Set.$
   \item In the universe of categories, we define $a \equiv b$ to be the set of
-  isomorphisms from $a$ to $b$, as described in the previous section. Therefore, the
+  isomorphisms from $a$ to $b,$ as described in the previous section. Therefore, the
   universe of categories has instance equivalences in $\Set$ instead of $\Bool.$\\
   (Similarly, higher categories generally have instance equivalences in some universe of
   categories or higher categories. We will not investigate this in detail, but it is likely
@@ -332,7 +332,7 @@ are much more rarer. Let us analyze a few examples.
 \begin{itemize}
   \item The functors of $\Set$ are just functions, which respect equality and are obviously
   in $\Set$.
-  \item The universe of categories has internal functors: For categories $\C$ and $\D$, the
+  \item The universe of categories has internal functors: For categories $\C$ and $\D,$ the
   (categorical) functors from $\C$ to $\D$ form a category $\D^\C,$ and we define the type
   $(\C \to \D)$ to be that category.\\
   We need to verify that functors respect instance equivalences. Recall that for objects
@@ -361,10 +361,10 @@ are much more rarer. Let us analyze a few examples.
     \item vector spaces over a field
   \end{itemize}
   % TODO: Do commutative rings without 1 work?
-  \item Continuous functions between topological spaces can be regarded as functors, by
-  fixing a topology on them.
-  \item The universe $\Unit$ only has a single type $1$, so we must set $(1 \to 1) := 1.$
-  The type $1$ has exactly one instance $\emptyset$, so $\apply$ is completely
+  \item Continuous functions between topological spaces can be regarded as internal
+  functors of a universe of topological spaces, by fixing a topology on them.
+  \item The universe $\Unit$ only has a single type $1,$ so we must set $(1 \to 1) := 1.$
+  The type $1$ has exactly one instance $\emptyset,$ so $\apply$ is completely
   defined by $\apply_{11\emptyset}(\emptyset) := \emptyset,$ and $\congrArg$ is completely
   defined by $\congrArg_{11\emptyset\emptyset\emptyset}(\emptyset) := \emptyset.$
   \item For $\Bool,$ we set
@@ -391,8 +391,10 @@ are much more rarer. Let us analyze a few examples.
         a &\mapsto t_a
   \end{align*}
   to mean that $F$ is a functor from $A$ to $B,$ and that for each $a : A$ we have an instance
-  equivalence $\fndef{F}(a) : F(a) \equiv t_a.$ We call $\fndef{F}$ the
-  \defn{definition of $F$}.
+  equivalence
+  \[\fndef{F}(a) : F(a) \equiv t_a.\]
+  We call $\fndef{F}$ the \defn{definition of $F$}. If $\fndef{F}(a) = \id_B$ for all $a : A,$
+  we call the definition \defn{strict}.
 
   We extend this notation to bifunctors: Given appropriate universes and types and a
   family $(t_{ab})_{a : A, b : B},$ we define
@@ -415,7 +417,7 @@ axiomatically.
 
 \begin{definition}
   We say that a universe $\U$ with internal functors has \defn{linear functor
-  operations}\footnote{The terms ``linear'' and ``affine'' refer to linear and affine logic.}
+  operations}\footnote{The words ``linear'' and ``affine'' refer to linear and affine logic.}
   if we have the following three functors and six instance equivalences for all types
   $A,B,C,D \in \U.$
   \vspace{1ex}
@@ -692,7 +694,7 @@ a universe with linear functor operations.)
 
     The definition of $\constFun_{\C\D}$ says that for objects $c$ of $\C$ and $d$ of
     $\D,$ $\constFun_{\C\D}(d,c)$ must be isomorphic to $d.$ In many cases, we do not
-    actually need this flexibility; we can construct a functor that maps exactly to
+    actually need this flexibility; we can construct a functor that maps strictly to
     $d.$ That is, we show that the expression defining the functor is indeed functorial
     in all arguments starting from the last.\footnote{In the Lean formalization, the
     axioms are already divided into such individual steps, which is often more useful.}
@@ -840,7 +842,7 @@ in the following proposition is sufficient.
          a_1 &\mapsto F_{a_1}.
   \end{align*}
   Finally set $F := F',$ apply proposition \ref{prp:congrfun} to $\fndef{F'}$ to obtain
-  an equivalence $\fndef{F'}(a_1)(a_2) : F(a_1,a_2) \equiv F_{a_1}(a_2)$, and set
+  an equivalence $\fndef{F'}(a_1)(a_2) : F(a_1,a_2) \equiv F_{a_1}(a_2),$ and set
   $\fndef{F}(a_1,a_2) := \fndef{F_{a_1}}(a_2) \circ \fndef{F'}(a_1)(a_2).$
 
   Due to this reduction, we can limit ourselves to the simple case
