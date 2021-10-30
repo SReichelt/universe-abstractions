@@ -171,8 +171,10 @@ namespace HasEquivalences
 
   open HasCongrFun HasRightTypeFun HasLeftTypeFun HasTypeBiFun HasBiCompFun
 
-  variable {U V W VW WV V_W : Universe} [HasIdentity V] [HasIdentity W]
-           [HasFunctors V W VW] [HasFunctors W V WV] [h : HasEquivalences V W V_W]
+  variable {U V W VV WW VW WV V_W : Universe} [HasIdentity V] [HasIdentity W]
+           [HasIdentity VV] [HasIdentity WW] [HasFunctors V W VW] [HasFunctors W V WV]
+           [HasFunctors V V VV] [HasFunctors W W WW] [HasIdFun V] [HasIdFun W]
+           [HasCompFun V W V] [HasCompFun W V W] [h : HasEquivalences V W V_W]
 
   -- TODO left, right
 

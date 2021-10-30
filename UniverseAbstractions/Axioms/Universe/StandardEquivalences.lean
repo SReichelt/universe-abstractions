@@ -48,39 +48,47 @@ namespace HasLinearFunOp
 
   open HasFunctors HasCongrArg HasLinearFunExt HasEquivalences HasInternalEquivalences
 
-  variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
            [HasLinearFunExt U] [HasInternalTop U] [HasInternalProducts U]
            [HasInternalEquivalences U] [HasEquivOp U]
 
-  def funDomainDesc {A B : U} (E : EquivDesc A B) (C : U) :
-    HalfEquivDesc (compFunFun E.toFun C) (compFunFun E.invFun C) :=
-  { inv    := λ F => rightId F •
-                     defCongrArg (defRevCompFunFun B F) E.equiv.right.invExt •
-                     compAssoc E.invFun E.toFun F •
-                     byDef •
-                     byArgDef,
-    invExt := rightIdExt B C •
-              defCongrArg (defCompFunFunFun B B C) E.equiv.right.invExt •
-              compAssocExt E.invFun E.toFun C }
+  def funDomainDesc {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] (C : U) :
+    HalfEquivDesc (compFunFun e.toFun C) (compFunFun e.invFun C) :=
+  ⟨λ F => rightId F •
+          defCongrArg (defRevCompFunFun B F) he.rightExt.invExt •
+          compAssoc e.invFun e.toFun F •
+          byDef •
+          byArgDef⟩
 
-  def funCodomainDesc {A B : U} (E : EquivDesc A B) (C : U) :
-    HalfEquivDesc (revCompFunFun C E.toFun) (revCompFunFun C E.invFun) :=
-  { inv    := λ F => leftId F •
-                     defCongrArg (defCompFunFun F A) E.equiv.left.invExt •
-                     (compAssoc F E.toFun E.invFun)⁻¹ •
-                     byDef •
-                     byArgDef,
-    invExt := leftIdExt C A •
-              defCongrArg (defRevCompFunFunFun C A A) E.equiv.left.invExt •
-              (compAssocRightExt C E.toFun E.invFun)⁻¹ }
+  instance funDomainDesc.isExt {A B : U} (e : EquivDesc A B)
+                               [he : EquivDesc.IsExtensional e] (C : U) :
+    HalfEquivDesc.IsExtensional (funDomainDesc e C) :=
+  ⟨rightIdExt B C •
+   defCongrArg (defCompFunFunFun B B C) he.rightExt.invExt •
+   compAssocExt e.invFun e.toFun C⟩
+
+  def funCodomainDesc {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] (C : U) :
+    HalfEquivDesc (revCompFunFun C e.toFun) (revCompFunFun C e.invFun) :=
+  ⟨λ F => leftId F •
+          defCongrArg (defCompFunFun F A) he.leftExt.invExt •
+          (compAssoc F e.toFun e.invFun)⁻¹ •
+          byDef •
+          byArgDef⟩
+
+  instance funCodomainDesc.isExt {A B : U} (e : EquivDesc A B)
+                                 [he : EquivDesc.IsExtensional e] (C : U) :
+    HalfEquivDesc.IsExtensional (funCodomainDesc e C) :=
+  ⟨leftIdExt C A •
+   defCongrArg (defRevCompFunFunFun C A A) he.leftExt.invExt •
+   (compAssocRightExt C e.toFun e.invFun)⁻¹⟩
 
   class HasLinearStandardEquivalences where
   (defFunDomainEquiv      {A B : U} (E : A ⟷ B) (C : U) :
-     (B ⟶ C) ⟷{funDomainDesc U (desc E) C, funDomainDesc U (symmDesc E) C} (A ⟶ C))
+     (B ⟶ C) ⟷{funDomainDesc (desc E) C, funDomainDesc (symmDesc E) C} (A ⟶ C))
   (defFunDomainEquivFun   (A B C : U)                   :
      (A ⟷ B) ⟶{λ E => defFunDomainEquiv E C} ((B ⟶ C) ⟷ (A ⟶ C)))
   (defFunCodomainEquiv    {A B : U} (E : A ⟷ B) (C : U) :
-     (C ⟶ A) ⟷{funCodomainDesc U (desc E) C, funCodomainDesc U (symmDesc E) C} (C ⟶ B))
+     (C ⟶ A) ⟷{funCodomainDesc (desc E) C, funCodomainDesc (symmDesc E) C} (C ⟶ B))
   (defFunCodomainEquivFun (A B C : U)                   :
      (A ⟷ B) ⟶{λ E => defFunCodomainEquiv E C} ((C ⟶ A) ⟷ (C ⟶ B)))
 

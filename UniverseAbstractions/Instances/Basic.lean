@@ -23,6 +23,8 @@ universe u v w iu upv
 
 
 
+-- A unit universe with a single type `Inst` with one instance `inst`.
+
 namespace unit
 
   open MetaRelation HasFunctors HasInternalEquivalences
@@ -81,7 +83,7 @@ namespace unit
   instance hasClassicalLogic : HasClassicalLogic unit :=
   { byContradictionFun := λ _ => inst }
 
-  -- A product with `unit` is equivalent to the type itself.
+  -- A product with `Inst` is equivalent to the type itself.
 
   instance hasRightProducts (U : Universe.{u}) : HasProducts U unit U :=
   { Prod  := λ A _ => A,
@@ -110,11 +112,8 @@ namespace unit
   -- Type equivalence is trivial.
 
   instance hasEquivalences : HasEquivalences unit unit unit :=
-  { Equiv    := λ _ _ => Inst,
-    toFun    := λ _   => inst,
-    invFun   := λ _   => inst,
-    leftInv  := λ _ _ => inst,
-    rightInv := λ _ _ => inst }
+  { Equiv := λ _ _ => Inst,
+    desc  := λ _   => HasTrivialIdentity.equivDesc inst inst }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit :=
   ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
@@ -179,6 +178,11 @@ end unit
 
 
 
+-- The `boolean` universe is essentially a decidable version of `prop`:
+-- Its types are the two instances of `Bool`, and the instances are given by coercion to `Prop`.
+-- So the operations on types are the `Bool` equivalents of the corresponding operations on
+-- propositions, and the universe axioms force us to prove that these operations really match.
+
 namespace boolean
 
   open MetaRelation
@@ -241,26 +245,35 @@ namespace boolean
 
   -- Equivalence is given by boolean equality.
 
+  def Equiv (a b : Bool) : boolean := a == b
+
+  def Equiv.toEq {a b : boolean} (h : Equiv a b) : a = b := match a, b with
+  | true,  false => False.elim h
+  | true,  true  => rfl
+  | false, false => rfl
+  | false, true  => False.elim h
+
+  def Equiv.symm {a b : boolean} (h : Equiv a b) : Equiv b a := toEq h ▸ h
+
+  def Equiv.toFun {a b : boolean} (h : Equiv a b) : a ⟶ b := match a, b with
+  | true,  false => h
+  | true,  true  => inst
+  | false, _     => inst
+
+  def Equiv.invFun {a b : boolean} (h : Equiv a b) : b ⟶ a := toFun (symm h)
+
   instance hasEquivalences : HasEquivalences boolean boolean boolean :=
-  { Equiv    := λ a b : Bool => a == b,
-    toFun    := λ {a b} h => match a, b with
-                             | true,  false => h
-                             | true,  true  => h
-                             | false, _     => inst,
-    invFun   := λ {a b} h => match b, a with
-                             | true,  false => h
-                             | true,  true  => h
-                             | false, _     => inst,
-    leftInv  := λ _ _ => inst,
-    rightInv := λ _ _ => inst }
+  { Equiv := Equiv,
+    desc  := λ h => HasTrivialIdentity.equivDesc (Equiv.toFun h) (Equiv.invFun h) }
+
+  def Equiv.fromDesc {a b : boolean} (e : EquivDesc a b) : a ⟷ b := match a, b with
+  | false, false => inst
+  | false, true  => False.elim e.invFun
+  | true,  false => False.elim e.toFun
+  | true,  true  => inst
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition boolean :=
-  ⟨λ {a b} e => have h : a ⟷ b := match a, b with
-                                  | false, false => inst
-                                  | false, true  => False.elim e.invFun
-                                  | true,  false => False.elim e.toFun
-                                  | true,  true  => inst;
-                HasTrivialIdentity.defEquiv h⟩
+  ⟨λ e => HasTrivialIdentity.defEquiv (Equiv.fromDesc e)⟩
 
 end boolean
 
@@ -315,6 +328,9 @@ namespace PropositionalDependentFunctor
 end PropositionalDependentFunctor
 
 
+
+-- Each Lean universe is also a universe according to our definition. Some definitions work
+-- generically for `sort.{u}`, others need to be split between `prop` and `type.{u}`.
 
 namespace sort
 
@@ -400,12 +416,15 @@ namespace sort
 
   -- `Equiv` also works for general `sort`, but is overridden for `prop`.
 
+  def equivDesc {α : sort.{u}} {β : sort.{v}} (e : Equiv α β) : EquivDesc α β :=
+  { toFun  := e.toFun,
+    invFun := e.invFun,
+    left   := ⟨e.leftInv⟩,
+    right  := ⟨e.rightInv⟩ }
+
   instance (priority := low) hasEquivalences : HasEquivalences sort.{u} sort.{v} sort.{max 1 u v} :=
-  { Equiv    := Equiv,
-    toFun    := Equiv.toFun,
-    invFun   := Equiv.invFun,
-    leftInv  := Equiv.leftInv,
-    rightInv := Equiv.rightInv }
+  { Equiv := Equiv,
+    desc  := equivDesc }
 
   -- Dependent functors are analogous to independent functors.
 
@@ -463,19 +482,11 @@ namespace prop
   -- Equivalences are given by `Iff`.
 
   instance hasEquivalences : HasEquivalences prop prop prop :=
-  { Equiv    := Iff,
-    toFun    := Iff.mp,
-    invFun   := Iff.mpr,
-    leftInv  := λ _ _ => proofIrrel _ _,
-    rightInv := λ _ _ => proofIrrel _ _ }
+  { Equiv := Iff,
+    desc  := λ h => HasTrivialIdentity.equivDesc h.mp h.mpr }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
   ⟨λ e => HasTrivialIdentity.defEquiv (U := prop) (Iff.intro e.toFun e.invFun)⟩
-
-  -- Dependent functors into `prop` are straightforward.
-
-  instance hasDependentCongrArg : HasDependentCongrArg sort.{u} prop :=
-  ⟨λ {_ _} _ {_ _} _ => proofIrrel _ _⟩
 
   -- Dependent products are given by `∃`, requiring choice to obtain a witness
   -- unless the witness is in `prop`.
@@ -534,7 +545,7 @@ namespace type
   -- individual `sort.{u}` does). These equivalences can be constructed automatically.
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
-  ⟨λ e => ⟨⟨e.toFun, e.invFun, e.equiv.left.inv, e.equiv.right.inv⟩, rfl, rfl⟩⟩
+  ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
 
   -- The target equality of dependent functors contains a cast, but we can eliminate
   -- it easily.
@@ -580,6 +591,6 @@ namespace type
     HasDependentProducts.HasDependentProductEq sort.{u} prop :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
-    sndEq   := λ _ _    => proofIrrel _ _ }
+    sndEq   := λ _ _    => HasTrivialIdentity.eq }
 
 end type
