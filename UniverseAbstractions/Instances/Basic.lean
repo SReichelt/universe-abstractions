@@ -279,10 +279,9 @@ end boolean
 
 
 
--- We can define functors to any universe with propositional identities, i.e. a
--- universe where identities of identities are trivial (such as `sort`). Such functors
--- just need to map equivalent values to equivalent values. In general this captures
--- isomorphism invariance.
+-- We can define functors to any universe with propositional identities, i.e. a universe where
+-- identities of identities are trivial (such as `sort`). Such functors just need to map equivalent
+-- values to equivalent values. In general this captures isomorphism invariance.
 
 structure PropositionalFunctor {U : Universe.{u}} {V : Universe.{v}}
                                [HasIdentity.{u, iu} U] [HasIdentity.{v, 0} V]
@@ -322,7 +321,7 @@ namespace PropositionalDependentFunctor
   { Pi    := PropositionalDependentFunctor,
     apply := PropositionalDependentFunctor.f }
 
-  instance (priority := low) hasPropositionalCongrArg : HasDependentCongrArg U V :=
+  instance (priority := low) hasPropositionalDependentCongrArg : HasDependentCongrArg U V :=
   ⟨PropositionalDependentFunctor.piCongrArg⟩
 
 end PropositionalDependentFunctor
@@ -337,16 +336,15 @@ namespace sort
   open MetaRelation HasFunctors HasInternalEquivalences HasDependentFunctors
 
   -- Instance equivalences of all `sort.{u}` are given by equality.
-  -- For `prop`, we could define instance equivalences to be in `unit` instead of
-  -- relying on proof irrelevance, but it's easier to generalize over `prop` and
-  -- `type` if we have a single definition.
+  -- For `prop`, we could define instance equivalences to be in `unit` instead of relying on proof
+  -- irrelevance, but it's easier to generalize over `prop` and `type` if we have a single
+  -- definition.
 
   instance hasInstanceEquivalences : HasInstanceEquivalences sort.{u} prop :=
   ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
 
-  -- Functors from `sort` to any universe are just functions: Instance equivalence
-  -- in `sort` is given by equality, so functors do not need to respect anything else
-  -- besides equality.
+  -- Functors from `sort` to any universe are just functions: Instance equivalence in `sort` is
+  -- given by equality, so functors do not need to respect anything else besides equality.
 
   instance hasOutFunctors (V : Universe.{v}) : HasFunctors sort.{u} V sort.{imax u v} :=
   { Fun   := λ α B => α → B,
@@ -400,8 +398,7 @@ namespace sort
   noncomputable instance (priority := low) hasClassicalLogic : HasClassicalLogic sort.{u} :=
   { byContradictionFun := byContradiction }
 
-  -- Same for products, but usually the specialized versions for `prop` and `type`
-  -- should be used.
+  -- Same for products, but usually the specialized versions for `prop` and `type` should be used.
 
   instance (priority := low) hasProducts : HasProducts sort.{u} sort.{v} sort.{max 1 u v} :=
   { Prod  := PProd,
@@ -488,8 +485,8 @@ namespace prop
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
   ⟨λ e => HasTrivialIdentity.defEquiv (U := prop) (Iff.intro e.toFun e.invFun)⟩
 
-  -- Dependent products are given by `∃`, requiring choice to obtain a witness
-  -- unless the witness is in `prop`.
+  -- Dependent products are given by `∃`, requiring choice to obtain a witness unless the witness
+  -- is in `prop`.
 
   instance hasDependentProducts : HasDependentProducts prop prop prop :=
   { Sigma := λ φ => ∃ h₁, φ h₁,
@@ -541,20 +538,19 @@ namespace type
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => rfl }
 
-  -- `type` has internal equivalences (but general `sort` does not, although each
-  -- individual `sort.{u}` does). These equivalences can be constructed automatically.
+  -- `type` has internal equivalences given by `Equiv`. An `Equiv` essentially matches our
+  -- `EquivDesc`, so we can directly use the equivalence proofs from generic code.
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
   ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
 
-  -- The target equality of dependent functors contains a cast, but we can eliminate
-  -- it easily.
+  -- The target equality of dependent functors contains a cast, but we can eliminate it easily.
 
   instance hasDependentCongrArg : HasDependentCongrArg sort.{u} type.{v} :=
   ⟨λ {_ _} _ {_ _} e => by subst e; rfl⟩
 
-  -- Dependent products are given by either `Sigma`, `PSigma`, or `Subtype`,
-  -- depending on the universe levels.
+  -- Dependent products are given by either `Sigma`, `PSigma`, or `Subtype`, depending on the
+  -- universe levels.
 
   instance hasDependentProducts : HasDependentProducts type.{u} type.{v} type.{max u v} :=
   { Sigma := Sigma,
