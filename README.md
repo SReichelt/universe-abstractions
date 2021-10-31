@@ -4,7 +4,7 @@ A Lean 4 project to automate proofs that follow from structural properties, base
 
 This is still work in progress and subject to frequent refactoring.
 
-For a mathematical description, see [UniverseAbstractions.pdf](Doc/UniverseAbstractions/UniverseAbstractions.pdf).
+For a mathematical description, see [UniverseAbstractions.pdf](UniverseAbstractions/Doc/UniverseAbstractions.pdf).
 
 ## Directory Structure
 
