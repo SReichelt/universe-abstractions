@@ -2,7 +2,6 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
-import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
 
 
@@ -40,7 +39,7 @@ namespace HalfEquivDesc
     HalfEquivDesc (fToFun ⊙ eToFun) (eInvFun ⊙ fInvFun) :=
   ⟨λ a => e.inv a • congrArg eInvFun (f.inv (eToFun a)) • byDef • byArgDef⟩
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U]
+  variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U]
            [HasLinearFunOp U] [HasLinearFunExt U]
 
   class IsExtensional {A B : U} {toFun : A ⟶ B} {invFun : B ⟶ A}
@@ -49,20 +48,19 @@ namespace HalfEquivDesc
 
   namespace IsExtensional
 
+    open MetaRelation
+
     instance reflExt (A : U) : IsExtensional (refl A) :=
-    ⟨rightId (idFun A)⟩
+    ⟨HalfInv.refl hFun.Fun A⟩
 
     instance transExt {A B C : U}
                       {eToFun : A ⟶ B} {eInvFun : B ⟶ A} (e : HalfEquivDesc eToFun eInvFun)
                       {fToFun : B ⟶ C} {fInvFun : C ⟶ B} (f : HalfEquivDesc fToFun fInvFun)
                       [he : IsExtensional e] [hf : IsExtensional f] :
       IsExtensional (trans e f) :=
-    ⟨he.invExt •
-     defCongrArg (defRevCompFunFun A eInvFun)
-                 (leftId eToFun •
-                  defCongrArg (defCompFunFun eToFun B) hf.invExt •
-                  (compAssoc eToFun fToFun fInvFun)⁻¹) •
-     compAssoc (fToFun • eToFun) fInvFun eInvFun⟩
+    let eExt : HalfInv hFun.Fun eToFun eInvFun := he.invExt;
+    let fExt : HalfInv hFun.Fun fToFun fInvFun := hf.invExt;
+    ⟨HalfInv.trans hFun.Fun eExt fExt⟩
 
   end IsExtensional
 
@@ -77,7 +75,7 @@ structure EquivDesc {U V UV VU : Universe} [HasIdentity U] [HasIdentity V]
 
 namespace EquivDesc
 
-  open HasLinearFunOp
+  open MetaRelation IsPreCategory HasLinearFunOp
 
   def fromHalfDescs {U V UV VU : Universe} [HasIdentity U] [HasIdentity V]
                     [HasFunctors U V UV] [HasFunctors V U VU] {A : U} {B : V}
@@ -110,8 +108,15 @@ namespace EquivDesc
   ⟨f.toFun ⊙ e.toFun, e.invFun ⊙ f.invFun,
    HalfEquivDesc.trans e.left f.left, HalfEquivDesc.trans f.right e.right⟩
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U]
+  variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U]
            [HasLinearFunOp U] [HasLinearFunExt U]
+
+  @[reducible] def rel : MetaRelation U sort := EquivDesc
+
+  instance isEquivalence : IsEquivalence (α := U) rel :=
+  { refl  := refl,
+    symm  := symm,
+    trans := trans }
 
   class IsExtensional {A B : U} (e : EquivDesc A B) where
   [leftExt  : HalfEquivDesc.IsExtensional e.left]
@@ -143,6 +148,13 @@ namespace EquivDesc
       rightExt := HalfEquivDesc.IsExtensional.transExt f.right e.right }
 
   end IsExtensional
+
+  def toIsoDesc {A B : U} (e : EquivDesc A B) [he : IsExtensional e] :
+    IsoDesc hFun.Fun A B :=
+  { f        := e.toFun,
+    g        := e.invFun,
+    leftInv  := he.leftExt.invExt,
+    rightInv := he.rightExt.invExt }
 
 end EquivDesc
 
@@ -225,23 +237,19 @@ end HasEquivalences
 
 
 class HasInternalEquivalences (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
-                              [HasLinearFunOp U] [HasInternalProducts U]
+                              [HasLinearFunOp U]
   extends HasEquivalences U U U where
-(defElimFun (A B : U) :
-   (A ⟷ B)
-   ⟶{λ E => HasProducts.intro (HasEquivalences.toFun E) (HasEquivalences.invFun E)}
-   (A ⟶ B) ⊓ (B ⟶ A))
+(defElimFun (A B : U) : (A ⟷ B) ⟶{λ E => HasEquivalences.toFun E} (A ⟶ B))
 [isExt {A B : U} (E : A ⟷ B) : EquivDesc.IsExtensional (desc E)]
 
 namespace HasInternalEquivalences
 
-  open HasLinearFunOp HasEquivalences
+  open MetaRelation IsPreCategory HasLinearFunOp HasEquivalences
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U]
-           [HasLinearFunOp U] [HasLinearFunExt U]
-           [HasInternalProducts U] [HasInternalEquivalences U]
+  variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U]
+           [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalEquivalences U]
 
-  @[reducible] def elimFun (A B : U) : (A ⟷ B) ⟶ (A ⟶ B) ⊓ (B ⟶ A) := defElimFun A B
+  @[reducible] def elimFun (A B : U) : (A ⟷ B) ⟶ (A ⟶ B) := defElimFun A B
 
   variable {A B : U} (E : A ⟷ B)
 
@@ -251,12 +259,14 @@ namespace HasInternalEquivalences
   def leftInvExt  : invFun E • toFun E ≃{▻ leftInv  E ◅} idFun A := (isExt E).leftExt.invExt
   def rightInvExt : toFun E • invFun E ≃{▻ rightInv E ◅} idFun B := (isExt E).rightExt.invExt
 
+  def isoDesc : IsoDesc hFun.Fun A B := EquivDesc.toIsoDesc (desc E)
+
 end HasInternalEquivalences
 
 
 
 class HasEquivOp (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
-                 [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U] [HasInternalProducts U]
+                 [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
                  [HasInternalEquivalences U] where
 (defRefl  (A : U)                             :
    A ⟷{EquivDesc.refl A} A)
@@ -267,79 +277,68 @@ class HasEquivOp (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
 
 namespace HasEquivOp
 
-  open Universe MetaRelation HasEquivalences
+  open Universe MetaRelation IsGroupoidEquivalence HasIsomorphisms HasIsoEq HasLinearFunOp
+       HasEquivalences HasInternalEquivalences
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
-           [HasLinearFunOp.HasLinearFunExt U] [HasInternalProducts U] [HasInternalEquivalences U]
-           [HasEquivOp U]
+  section
 
-  @[reducible] def refl (A : U) : A ⟷ A := defRefl A
-  @[reducible] def symm {A B : U} (E : A ⟷ B) : B ⟷ A := defSymm E
-  @[reducible] def trans {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷ C := defTrans E F
+    variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+             [HasLinearFunExt U] [hEquiv : HasInternalEquivalences U] [HasEquivOp U]
 
-  instance isEquivalence : IsEquivalence (α := U) Equiv' :=
-  { refl  := refl,
-    symm  := symm
-    trans := trans }
+    @[reducible] def refl (A : U) : A ⟷ A := defRefl A
+    @[reducible] def symm {A B : U} (E : A ⟷ B) : B ⟷ A := defSymm E
+    @[reducible] def trans {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷ C := defTrans E F
 
-  def equivRelation : EquivalenceRelation U U := ⟨Equiv'⟩
+    instance isEquivalence : IsEquivalence hEquiv.Equiv :=
+    { refl  := refl,
+      symm  := symm
+      trans := trans }
+
+    instance hasEquivalenceRelation : HasEquivalenceRelation U U := ⟨hEquiv.Equiv⟩
+
+  end
+
+  class HasEquivOpFun (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
+                      [HasLinearFunOp U] [HasLinearFunExt U]
+                      [hEquiv : HasInternalEquivalences U] [HasEquivOp U] extends
+    HasTransFun hEquiv.Equiv, HasSymmFun hEquiv.Equiv
+
+  namespace HasEquivOpFun
+
+    variable (U : Universe.{u}) [HasIdentity U] [hFun : HasStandardFunctors U]
+             [hEquiv : HasInternalEquivalences U] [HasEquivOp U] [HasEquivOpFun U]
+
+    -- TODO: Add descriptor-based variants
+    class HasEquivOpFunExt extends
+      IsGroupoidEquivalence hEquiv.Equiv, IsGroupoidEquivalenceExt hEquiv.Equiv
+
+    namespace HasEquivOpFunExt
+
+      variable [HasEquivOpFunExt U]
+
+      instance isGroupoid : IsGroupoid hEquiv.Equiv := ⟨⟩
+
+      instance funHasIsomorphisms : HasIsomorphisms hFun.Fun :=
+      { Iso           := hEquiv.Equiv,
+        isoGroupoid   := isGroupoid U,
+        isoDesc       := isoDesc,
+        defIsoElimFun := defElimFun }
+
+      class HasEquivOpEq extends HasIsoEq hFun.Fun, HasIsoEqExt hFun.Fun
+
+      instance funIsCategory [HasEquivOpEq U] : IsCategory hFun.Fun := ⟨⟩
+
+    end HasEquivOpFunExt
+
+  end HasEquivOpFun
 
 end HasEquivOp
-
-class HasEquivOpFun (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
-                    [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U] [HasInternalProducts U]
-                    [HasInternalEquivalences U] [HasEquivOp U] where
-(defSymmFun     (A B : U)                           :
-   (A ⟷ B) ⟶{λ E => HasEquivOp.symm E} (B ⟷ A))
-(defTransFun    {A B : U} (E : A ⟷ B) (C : U)       :
-   (B ⟷ C) ⟶{λ F => HasEquivOp.trans E F} (A ⟷ C))
-(defTransFunFun (A B C : U)                         :
-   (A ⟷ B) ⟶{λ E => defTransFun E C} ((B ⟷ C) ⟶ (A ⟷ C)))
-
-namespace HasEquivOpFun
-
-  open MetaRelation HasFunctors HasEquivalences
-
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
-           [HasLinearFunOp.HasLinearFunExt U] [HasInternalProducts U] [HasInternalEquivalences U]
-           [HasEquivOp U] [HasEquivOpFun U]
-
-  @[reducible] def symmFun (A B : U) : (A ⟷ B) ⟶ (B ⟷ A) := defSymmFun A B
-
-  instance symm.isFunApp {A B : U} {E : A ⟷ B} : IsFunApp (A ⟷ B) (HasEquivOp.symm E) :=
-  { F := symmFun A B,
-    a := E,
-    e := byDef }
-
-  instance hasSymmFun : HasSymmFun (α := U) Equiv' :=
-  { defSymmFun := defSymmFun }
-
-  @[reducible] def transFun {A B : U} (E : A ⟷ B) (C : U) : (B ⟷ C) ⟶ (A ⟷ C) := defTransFun E C
-  @[reducible] def transFunFun (A B C : U) : (A ⟷ B) ⟶ (B ⟷ C) ⟶ (A ⟷ C) := defTransFunFun A B C
-
-  instance trans.isFunApp {A B C : U} {E : A ⟷ B} {F : B ⟷ C} : IsFunApp (B ⟷ C) (HasEquivOp.trans E F) :=
-  { F := transFun E C,
-    a := F,
-    e := byDef }
-
-  instance transFun.isFunApp {A B C : U} {E : A ⟷ B} : IsFunApp (A ⟷ B) (transFun E C) :=
-  { F := transFunFun A B C,
-    a := E,
-    e := byDef }
-
-  instance hasTransFun : HasTransFun (α := U) Equiv' :=
-  { defTransFun    := defTransFun,
-    defTransFunFun := defTransFunFun }
-
-  -- TODO: groupoid
-
-end HasEquivOpFun
 
 
 
 def DependentEquivalence {U : Universe} [HasIdentity U] [HasInternalFunctors U]
                          [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
-                         [HasInternalProducts U] [HasInternalEquivalences U]
+                         [HasInternalEquivalences U]
                          {A B : U} (E : A ⟷ B) (a : A) (b : B) :=
 HasEquivalences.to E a ≃ b
 notation:25 a:26 " ≃[" E:0 "] " b:26 => DependentEquivalence E a b
@@ -349,9 +348,8 @@ namespace DependentEquivalence
   open MetaRelation DependentMetaRelation HasFunctors HasCongrArg HasLinearFunOp
        HasEquivalences HasInternalEquivalences
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U]
-           [HasLinearFunOp U] [HasLinearFunExt U]
-           [HasInternalProducts U] [HasInternalEquivalences U] [HasEquivOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+           [HasLinearFunExt U] [HasInternalEquivalences U] [HasEquivOp U]
 
   def toInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃[E] b) : a ≃ inv E b :=
   congrArg (invFun E) e • (leftInv E a)⁻¹
@@ -408,7 +406,6 @@ class HasTypeIdentity (U : Universe.{u}) where
 [hasInternalFunctors     : HasInternalFunctors            U]
 [hasLinearFunOp          : HasLinearFunOp                 U]
 [hasLinearFunExt         : HasLinearFunOp.HasLinearFunExt U]
-[hasInternalProducts     : HasInternalProducts            U]
 [hasInternalEquivalences : HasInternalEquivalences        U]
 [hasEquivOp              : HasEquivOp                     U]
 
@@ -422,21 +419,20 @@ namespace HasTypeIdentity
   instance : HasInternalFunctors     U := hasInternalFunctors
   instance : HasLinearFunOp          U := hasLinearFunOp
   instance : HasLinearFunExt         U := hasLinearFunExt
-  instance : HasInternalProducts     U := hasInternalProducts
   instance : HasInternalEquivalences U := hasInternalEquivalences
   instance : HasEquivOp              U := hasEquivOp
 
-  instance typeEquivalences : HasInstanceEquivalences {U} U := ⟨λ _ => equivRelation⟩
+  instance typeEquivalences : HasInstanceEquivalences {U} U := ⟨λ _ => hasEquivalenceRelation⟩
 
-  def castTo  {A B : ⌊U⌋} (E : A ≃ B) (a : A) : B := to  E a
-  def castInv {A B : ⌊U⌋} (E : A ≃ B) (b : B) : A := inv E b
+  def castTo  {A B : U} (E : A ≃ B) (a : A) : B := to  E a
+  def castInv {A B : U} (E : A ≃ B) (b : B) : A := inv E b
 
-  def castToDef  {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → ⌊U⌋}
+  def castToDef  {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → U}
                  {φ : B ⟶{f} ⌊U⌋} {b : B} (a : ⌈⸥(fromDefFun φ) b⸤⌉) :
     f b :=
   castTo  byDef a
 
-  def castInvDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → ⌊U⌋}
+  def castInvDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → U}
                  {φ : B ⟶{f} ⌊U⌋} {b : B} (a : f b) :
     ⌈⸥(fromDefFun φ) b⸤⌉ :=
   castInv byDef a

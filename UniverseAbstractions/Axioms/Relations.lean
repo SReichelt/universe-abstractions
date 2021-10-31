@@ -1,5 +1,7 @@
 import UniverseAbstractions.Axioms.Universes
 
+import UniverseAbstractions.MathlibFragments.Data.Notation
+
 
 
 set_option autoBoundImplicitLocal false
@@ -30,6 +32,21 @@ namespace MetaRelation
   notation:90 g:91 " • " f:90 => MetaRelation.HasTrans.trans f g
   postfix:max "⁻¹" => MetaRelation.HasSymm.symm
 
+  def lift {ω : Sort w} (l : ω → α) : MetaRelation ω V := λ a b => R (l a) (l b)
+
+  namespace lift
+
+    variable {ω : Sort w} (l : ω → α)
+
+    instance hasRefl  [h : HasRefl  R] : HasRefl  (lift R l) := ⟨λ a => h.refl (l a)⟩
+    instance hasSymm  [h : HasSymm  R] : HasSymm  (lift R l) := ⟨h.symm⟩
+    instance hasTrans [h : HasTrans R] : HasTrans (lift R l) := ⟨h.trans⟩
+
+    instance isPreorder    [IsPreorder    R] : IsPreorder    (lift R l) := ⟨⟩
+    instance isEquivalence [IsEquivalence R] : IsEquivalence (lift R l) := ⟨⟩
+
+  end lift
+
 end MetaRelation
 
 def MetaRelation.nativeRelation {α : Sort u} (r : α → α → Prop) : MetaRelation α prop := r
@@ -52,20 +69,31 @@ def MetaRelation.unitEquivalence (α : Sort u) {V : Universe.{v}} {B : V} (b : B
 
 
 
-structure EquivalenceRelation (α : Sort u) (V : Universe.{v}) : Sort (max u (v + 1)) where
+class HasEquivalenceRelation (α : Sort u) (V : outParam Universe.{v}) :
+  Sort (max u (v + 1)) where
 (R : MetaRelation α V)
 [h : MetaRelation.IsEquivalence R]
 
-namespace EquivalenceRelation
+namespace HasEquivalenceRelation
 
-  variable {α : Sort u} {V : Universe} (E : EquivalenceRelation α V)
+  open MetaRelation
 
-  instance isEquivalence : MetaRelation.IsEquivalence E.R := E.h
+  variable {α : Sort u} {V : Universe} [h : HasEquivalenceRelation α V]
 
-end EquivalenceRelation
+  instance isEquivalence : IsEquivalence h.R := h.h
 
-instance EquivalenceRelation.coeNativeEquivalence {α : Sort u} {r : α → α → Prop} :
-  Coe (Equivalence r) (EquivalenceRelation α prop) :=
+  instance hasEquivalence : HasEquivalence α α := ⟨h.R⟩
+  instance : IsEquivalence (HasEquivalence.Equiv (α := α) (β := α)) := isEquivalence
+  instance : HasInstances (HasEquivalence.γ α α) := Universe.instInst V
+
+  @[reducible] def refl  (a     : α)                         : a ≃ a := HasRefl.refl a
+  @[reducible] def symm  {a b   : α} (e : a ≃ b)             : b ≃ a := e⁻¹
+  @[reducible] def trans {a b c : α} (e : a ≃ b) (f : b ≃ c) : a ≃ c := f • e
+
+end HasEquivalenceRelation
+
+instance HasEquivalenceRelation.coeNativeEquivalence {α : Sort u} {r : α → α → Prop} :
+  Coe (Equivalence r) (HasEquivalenceRelation α prop) :=
 ⟨λ e => { R := r,
           h := MetaRelation.nativeEquivalence e }⟩
 

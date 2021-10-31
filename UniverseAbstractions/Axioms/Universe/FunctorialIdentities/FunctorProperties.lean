@@ -20,9 +20,11 @@ namespace FunctorProperties
   open HasSubLinearFunOp HasInternalProducts HasTypeIdentity
 
   variable {U UI : Universe} [HasInstanceEquivalences U UI] [HasInternalFunctors U]
-           [HasAffineFunOp U] [HasInternalProducts U] [HasTypeIdentity UI]
-           [HasFunctors U {UI} {UI}] [HasDependentFunctors U UI UI] [HasFunProp U UI UI]
-           [HasFunEqProp U U] {A B : U} (F : A ⟶ B)
+           [HasAffineFunOp U] [HasInternalProducts U] [hUI : HasTypeIdentity UI]
+           [HasInternalProducts UI] [HasFunctors U {UI} {UI}] [HasDependentFunctors U UI UI]
+           [HasInternalFunctors {UI}] [HasTypeBiFun hUI.hasInternalFunctors.Fun]
+           [HasCongrFun {UI} {UI}] [HasBiCompFun U {UI} {UI} {UI}] [HasFunEqProp U U]
+           {A B : U} (F : A ⟶ B)
 
   def InjectiveAt (a₁ a₂ : A) : UI := F a₁ ≃ F a₂ ⟶ a₁ ≃ a₂
 
@@ -31,8 +33,8 @@ namespace FunctorProperties
 
   @[reducible] def Injective : UI := Π (injectiveProp F)
 
-  variable [HasDependentProducts U UI UI] [HasInternalFunctors {UI}]
-           [HasFunctorialSigmaConstructor U UI] [HasCompFun U {UI} {UI}]
+  variable [hSigma : HasDependentProducts U UI UI] [HasDependentTypeFun hSigma.Sigma]
+           [HasCompFun U {UI} {UI}]
 
   def SurjectiveAt (b : B) : UI := Σ (F {≃} constFun A b)
 
@@ -41,8 +43,7 @@ namespace FunctorProperties
   @[reducible] def Surjective : UI := Π ({Σ} (surjectiveProp F))
 
   def preimage (h : Surjective F) (b : B) : A :=
-  let P := castToDef (h b);
-  HasDependentProducts.fst P
+  HasDependentProducts.fst (castToDef (h b) : _)
 
   -- TODO: preimage functor ...
 

@@ -49,8 +49,7 @@ namespace HasLinearFunOp
   open HasFunctors HasCongrArg HasLinearFunExt HasEquivalences HasInternalEquivalences
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
-           [HasLinearFunExt U] [HasInternalTop U] [HasInternalProducts U]
-           [HasInternalEquivalences U] [HasEquivOp U]
+           [HasLinearFunExt U] [HasInternalEquivalences U]
 
   def funDomainDesc {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc (compFunFun e.toFun C) (compFunFun e.invFun C) :=

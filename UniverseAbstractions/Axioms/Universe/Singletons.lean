@@ -25,7 +25,8 @@ namespace HasTop
 
 end HasTop
 
-def HasTop.topEquivalence (α : Sort u) (V : Universe.{v}) [HasTop V] : EquivalenceRelation α V :=
+def HasTop.topEquivalence (α : Sort u) (V : Universe.{v}) [HasTop V] :
+  HasEquivalenceRelation α V :=
 { R := MetaRelation.unitRelation    α (HasTop.Top V),
   h := MetaRelation.unitEquivalence α (HasTop.top V) }
 

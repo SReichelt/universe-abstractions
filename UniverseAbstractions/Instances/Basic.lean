@@ -1,20 +1,20 @@
---
--- Instances of `Universe` that correspond to basic Lean types and universes, with structure such
--- as functors, products, ...
---
--- The actual universes are already defined in `Universes.lean` because they are occasionally
--- referenced without importing this file. They are:
--- * `unit     := ⟨Unit⟩`
--- * `boolean  := ⟨Bool⟩`
--- * `sort.{u} := ⟨Sort u⟩`
--- * `prop     := sort.{0}`
--- * `type.{u} := sort.{u + 1}`
---
--- The structure on all of these universes is "trivial" to varying degrees, compared to what is
--- allowed in principle. Therefore, in this file there is often an instance of a class that is
--- defined in `Utils/Trivial.lean`, and which indirectly generates instances of classes in
--- `Axioms/Universe`.
---
+/-
+Instances of `Universe` that correspond to basic Lean types and universes, with structure such
+as functors, products, ...
+
+The actual universes are already defined in `Universes.lean` because they are occasionally
+referenced without importing this file. They are:
+* `unit     := ⟨Unit⟩`
+* `boolean  := ⟨Bool⟩`
+* `sort.{u} := ⟨Sort u⟩`
+* `prop     := sort.{0}`
+* `type.{u} := sort.{u + 1}`
+
+The structure on all of these universes is "trivial" to varying degrees, compared to what is
+allowed in principle. Therefore, in this file there is often an instance of a class that is
+defined in `Utils/Trivial.lean`, and which indirectly generates instances of classes in
+`Axioms/Universe`.
+-/
 
 
 
@@ -51,7 +51,7 @@ namespace unit
 
   -- `unit` has instance equivalences in `unit`.
 
-  def unitEq (α : Sort u) : EquivalenceRelation α unit :=
+  def unitEq (α : Sort u) : HasEquivalenceRelation α unit :=
   { R := unitRelation α Inst,
     h := unitEquivalence α inst }
 
@@ -503,7 +503,7 @@ namespace prop
     desc  := λ h => HasTrivialIdentity.equivDesc h.mp h.mpr }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
-  ⟨λ e => HasTrivialIdentity.defEquiv (U := prop) (Iff.intro e.toFun e.invFun)⟩
+  ⟨λ e => HasTrivialIdentity.defEquiv (Iff.intro e.toFun e.invFun)⟩
 
   -- Dependent products are given by `∃`, requiring choice to obtain a witness unless the witness
   -- is in `prop`.

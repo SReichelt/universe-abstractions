@@ -48,7 +48,7 @@ namespace functorUniverse
   instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
                         (IUV : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} UV IUV] :
     HasInstanceEquivalences.{v, iv} ({A ⟶} V) IUV :=
-  ⟨λ (B : V) => h.Eq (A ⟶ B)⟩
+  ⟨λ (B : V) => h.hasEq (A ⟶ B)⟩
 
   section Functors
 
@@ -468,8 +468,8 @@ namespace optionalFunctorUniverse
                         [hFn : HasInstanceEquivalences.{v, iv} ({A ⟶} V) IV] [HasTop IV] :
     HasInstanceEquivalences.{v, iv} ({A ⟶}? V) IV :=
   ⟨λ β => match β with
-          | const B => hConst.Eq B
-          | fn AB   => hFn.Eq AB
+          | const B => hConst.hasEq B
+          | fn AB   => hFn.hasEq AB
           | idFn    => topEquivalence PUnit.{v} IV
           | empty   => topEquivalence PEmpty.{v} IV⟩
 

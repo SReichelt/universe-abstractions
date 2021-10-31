@@ -64,10 +64,11 @@ namespace HasTrivialIdentity
     EquivDesc A B :=
   ⟨toFun, invFun, halfEquivDesc, halfEquivDesc⟩
 
-  def defEquiv {U : Universe} [HasIdentity U] [HasTrivialIdentity U]
-               [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
-               [HasInternalProducts U] [HasInternalEquivalences U]
-               {A B : U} (E : A ⟷ B) {e : EquivDesc A B} :
+  def defEquiv {U V UV VU U_V : Universe} [HasIdentity U] [HasIdentity V]
+               [HasIdentity UV] [HasIdentity VU]
+               [HasTrivialIdentity UV] [HasTrivialIdentity VU]
+               [HasFunctors U V UV] [HasFunctors V U VU] [HasEquivalences U V U_V]
+               {A : U} {B : V} (E : A ⟷ B) {e : EquivDesc A B} :
     A ⟷{e} B :=
   ⟨E, eq, eq⟩
 
@@ -105,7 +106,7 @@ class HasTrivialFunctoriality (U V : Universe) {UV : Universe} [HasIdentity V]
 
 namespace HasTrivialFunctoriality
 
-  open MetaRelation HasLinearFunOp
+  open MetaRelation HasLinearFunOp HasEquivOp
 
   def defFun {U V UV : Universe} [HasIdentity V] [HasFunctors U V UV]
              [h : HasTrivialFunctoriality U V] {A : U} {B : V} {f : A → B} :
@@ -250,12 +251,9 @@ namespace HasTrivialFunctoriality
     defElimFun     := λ _     => defFun,
     defElimFunFun  := λ _ _ _ => defFun }
 
-  instance hasEquivOpFun [HasLinearFunExt U] [HasInternalProducts U]
-                         [HasInternalEquivalences U] [HasEquivOp U] :
+  instance hasEquivOpFun [HasLinearFunExt U] [HasInternalEquivalences U] [HasEquivOp U] :
     HasEquivOpFun U :=
-  { defSymmFun     := λ _ _   => defFun,
-    defTransFun    := λ _ _   => defFun,
-    defTransFunFun := λ _ _ _ => defFun }
+  ⟨⟩
 
 end HasTrivialFunctoriality
 
@@ -357,7 +355,7 @@ end HasTrivialExtensionality
 
 class HasTrivialEquivalenceCondition (U : Universe) [HasIdentity U] [HasInternalFunctors U]
                                      [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
-                                     [HasInternalProducts U] [HasInternalEquivalences U] where
+                                     [HasInternalEquivalences U] where
 (mkEquiv {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] : A ⟷{e} B)
 
 namespace HasTrivialEquivalenceCondition
@@ -365,15 +363,15 @@ namespace HasTrivialEquivalenceCondition
   open HasLinearFunOp HasInternalEquivalences
 
   def defEquiv {U : Universe} [HasIdentity U] [HasInternalFunctors U]
-               [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalProducts U]
-               [HasInternalEquivalences U] [HasTrivialEquivalenceCondition U]
+               [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalEquivalences U]
+               [HasTrivialEquivalenceCondition U]
                {A B : U} {e : EquivDesc A B} [he : EquivDesc.IsExtensional e] :
     A ⟷{e} B :=
   mkEquiv e
 
   variable (U : Universe) [HasIdentity U] [HasInternalFunctors U]
-           [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalProducts U]
-           [HasInternalEquivalences U] [HasTrivialEquivalenceCondition U]
+           [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalEquivalences U]
+           [HasTrivialEquivalenceCondition U]
 
   instance hasEquivOp : HasEquivOp U :=
   { defRefl  := λ _   => defEquiv,

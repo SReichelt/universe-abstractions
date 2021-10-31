@@ -138,12 +138,19 @@ namespace HasCongrFun
       f₁ a ≃ f₂ a :=
     byDef • congrFun h a • byDef⁻¹
 
+    -- This definition might seem a little silly: it includes a hypothesis that isn't actually used
+    -- in the definition. However, this is quite useful when `IsExtensional` is used as the type of
+    -- an axiom. When implementing the axiom, the hypothesis is then accessible in a generic way,
+    -- so the implementation shrinks to a proof of `F₁ ≃ F₂` given `∀ a, F₁ a ≃ F₂ a`. If functors
+    -- are extensional, then this proof is completely generic (see `Trivial.lean`). In general it
+    -- can be regarded as a naturality proof.
+
     def IsExtensional {A : U} {B : V} (F₁ F₂ : A ⟶ B) (h : ∀ a, F₁ a ≃ F₂ a) := F₁ ≃ F₂
     notation:25 F₁:26 " ≃{" h:0 "} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ h
     notation:25 F₁:26 " ≃{" h:0 " ▻|} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ (λ _ => h • HasFunctors.byDef)
 
     def IsExtensional' {A : U} {B : V} (F₁ F₂ : A ⟶ B) {f : A → B}
-                      (hf₁ : ∀ a, F₁ a ≃ f a) (hf₂ : ∀ a, f a ≃ F₂ a) :=
+                       (hf₁ : ∀ a, F₁ a ≃ f a) (hf₂ : ∀ a, f a ≃ F₂ a) :=
     IsExtensional F₁ F₂ (λ a => hf₂ a • hf₁ a)
     notation:25 F₁:26 " ≃{▻ " h:0 "} " F₂:26 => HasCongrFun.IsExtensional' F₁ F₂ (λ _ => HasFunctors.byDef) h
     notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 "} " F₂:26 => HasCongrFun.IsExtensional' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) h
@@ -158,7 +165,7 @@ namespace HasCongrFun
     notation:25 F₁:26 " ≃{" hf₁:0 " ▻-◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
 
     def IsExtensional''' {A : U} {B : V} (F₁ F₂ : A ⟶ B) {f₁ f₂ : A → B} (h : ∀ a, f₁ a ≃ f₂ a)
-                        (hf₁ : ∀ a, F₁ a ≃ f₁ a) (hf₂ : ∀ a, F₂ a ≃ f₂ a) :=
+                         (hf₁ : ∀ a, F₁ a ≃ f₁ a) (hf₂ : ∀ a, F₂ a ≃ f₂ a) :=
     IsExtensional F₁ F₂ (λ a => (hf₂ a)⁻¹ • h a • hf₁ a)
     notation:25 F₁:26 " ≃{▻ " h:0 " ◅}" F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
     notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 " ◅} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => hf₁ • HasFunctors.byDef) (λ _ => HasFunctors.byDef)
@@ -633,7 +640,7 @@ namespace HasLinearFunOp
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+  variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
 
   instance hasIdFun : HasIdFun U := ⟨defIdFun⟩
 
@@ -669,11 +676,11 @@ namespace HasLinearFunOp
     a := F,
     e := byDef }
 
-  instance isPreorder : IsPreorder (α := U) Fun :=
+  instance isPreorder : IsPreorder hFun.Fun :=
   { refl  := idFun,
     trans := compFun }
 
-  instance hasTransFun : HasTransFun (α := U) Fun :=
+  instance hasTransFun : HasTransFun hFun.Fun :=
   { defTransFun    := defCompFunFun,
     defTransFunFun := defCompFunFunFun }
 

@@ -53,7 +53,7 @@ namespace HasLinearFunOp
 
   open MetaRelation HasFunctors HasCongrArg HasCongrFun
 
-  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasLinearFunOp U]
+  variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
 
   class HasLinearFunExt where
   (rightId {A B : U} (F : A ⟶ B) : F • idFun A ≃{byArgDef ▻|} F)
@@ -102,12 +102,12 @@ namespace HasLinearFunOp
   -- The axioms for composition and identity imply that types and functors form a (potentially
   -- higher) category.
 
-  instance isCategoricalPreorder [h : HasLinearFunExt U] : IsCategoricalPreorder (α := U) Fun :=
+  instance isCategoricalPreorder [h : HasLinearFunExt U] : IsCategoricalPreorder hFun.Fun :=
   { assoc          := h.compAssoc,
     rightId        := h.rightId,
     leftId         := h.leftId }
 
-  instance isCategory [h : HasLinearFunExt U] : IsCategory (α := U) Fun :=
+  instance isPreCategory [h : HasLinearFunExt U] : IsPreCategory hFun.Fun :=
   { assocExt       := h.compAssocExt,
     assocExtExt    := h.compAssocExtExt,
     assocExtExtExt := h.compAssocExtExtExt,

@@ -1,8 +1,6 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Relations
 
-import UniverseAbstractions.MathlibFragments.Data.Notation
-
 
 
 set_option autoBoundImplicitLocal false
@@ -13,23 +11,23 @@ universe u v iu iv
 
 
 class HasInstanceEquivalences (U : Universe.{u}) (IU : outParam Universe.{iu}) : Type (max u iu) where
-(Eq (A : U) : EquivalenceRelation ⌈A⌉ IU)
+(hasEq (A : U) : HasEquivalenceRelation ⌈A⌉ IU)
 
 namespace HasInstanceEquivalences
 
+  open MetaRelation
+
   variable {U IU : Universe} [h : HasInstanceEquivalences U IU]
 
-  @[reducible] def Rel (A : U) : MetaRelation ⌈A⌉ IU := (h.Eq A).R
+  instance hasEquivalenceRelation (A : U) : HasEquivalenceRelation ⌈A⌉ IU := h.hasEq A
 
-  instance hasEquivalence (A : U) : HasEquivalence ⌈A⌉ ⌈A⌉ := ⟨Rel A⟩
-  instance hasInstances (A : U) : HasInstances (HasEquivalence.γ ⌈A⌉ ⌈A⌉) := Universe.instInst IU
+  @[reducible] def Rel (A : U) : MetaRelation ⌈A⌉ IU := (hasEquivalenceRelation A).R
 
-  instance isEquivalence (A : U) : MetaRelation.IsEquivalence (HasEquivalence.Equiv (α := ⌈A⌉) (β := ⌈A⌉)) :=
-  EquivalenceRelation.isEquivalence (h.Eq A)
+  instance isEquivalence (A : U) : IsEquivalence (Rel A) := HasEquivalenceRelation.isEquivalence
 
-  @[reducible] def refl  {A : U} (a : A) : a ≃ a := MetaRelation.HasRefl.refl a
-  @[reducible] def symm  {A : U} {a b : A} (e : a ≃ b) : b ≃ a := e⁻¹
-  @[reducible] def trans {A : U} {a b c : A} (e : a ≃ b) (f : b ≃ c) : a ≃ c := f • e
+  @[reducible] def refl  {A : U} (a     : A)                         : a ≃ a := HasEquivalenceRelation.refl a
+  @[reducible] def symm  {A : U} {a b   : A} (e : a ≃ b)             : b ≃ a := HasEquivalenceRelation.symm e
+  @[reducible] def trans {A : U} {a b c : A} (e : a ≃ b) (f : b ≃ c) : a ≃ c := HasEquivalenceRelation.trans e f
 
   class IsSubsingleton (A : U) where
   (eq (a b : A) : a ≃ b)
