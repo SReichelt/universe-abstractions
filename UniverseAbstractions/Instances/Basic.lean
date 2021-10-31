@@ -10,6 +10,11 @@
 -- * `prop     := sort.{0}`
 -- * `type.{u} := sort.{u + 1}`
 --
+-- The structure on all of these universes is "trivial" to varying degrees, compared to what is
+-- allowed in principle. Therefore, in this file there is often an instance of a class that is
+-- defined in `Utils/Trivial.lean`, and which indirectly generates instances of classes in
+-- `Axioms/Universe`.
+--
 
 
 
