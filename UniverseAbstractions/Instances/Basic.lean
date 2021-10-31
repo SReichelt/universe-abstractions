@@ -1,3 +1,18 @@
+--
+-- Instances of `Universe` that correspond to basic Lean types and universes, with structure such
+-- as functors, products, ...
+--
+-- The actual universes are already defined in `Universes.lean` because they are occasionally
+-- referenced without importing this file. They are:
+-- * `unit     := ⟨Unit⟩`
+-- * `boolean  := ⟨Bool⟩`
+-- * `sort.{u} := ⟨Sort u⟩`
+-- * `prop     := sort.{0}`
+-- * `type.{u} := sort.{u + 1}`
+--
+
+
+
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
@@ -10,8 +25,8 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 import UniverseAbstractions.Instances.Utils.Trivial
 
-import mathlib4_experiments.CoreExt
-import mathlib4_experiments.Data.Equiv.Basic
+import UniverseAbstractions.MathlibFragments.CoreExt
+import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
 
 
 

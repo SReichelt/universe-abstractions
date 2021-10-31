@@ -1,7 +1,7 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Relations
 
-import mathlib4_experiments.Data.Notation
+import UniverseAbstractions.MathlibFragments.Data.Notation
 
 
 

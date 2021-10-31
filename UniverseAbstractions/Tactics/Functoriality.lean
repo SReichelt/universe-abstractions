@@ -367,9 +367,9 @@ namespace Lean
       let f ← replaceMkFun f
       `(by makeFunctor $f)
     | f => match f with
-           | Syntax.node kind args => do
+           | Syntax.node info kind args => do
              let args ← args.sequenceMap replaceMkFun
-             Syntax.node kind args
+             Syntax.node info kind args
            | _ => f
 
   macro "Λ" xs:explicitBinders " => " b:term : term => do

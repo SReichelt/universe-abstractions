@@ -164,10 +164,10 @@ are a lot of examples of such universes. Fix a Grothendieck universe $U.$
   \item For a universe $\U = (I, (S_A)_{A \in I}),$ any subset $J \subseteq I$ gives rise to a
   \defn{subuniverse} $(J, (S_A)_{A \in J}).$
   \item For any two universes $\U = (I, (S_A)_{A \in I})$ and $\V = (J, (T_B)_{B \in J}),$ we have a
-  product universe $\U \times \V := (I{\times}J,\,(S_A{\times}T_B)_{(A,B) \in I{\times}J}),$ as well as a
-  sum universe $\U \uplus \V := (I \uplus J,\,(R_A)_{A \in I \uplus J})$ with $R_A := S_A$ for $A \in I$
-  and $R_B := T_B$ for $B \in J$ (where $I \times J$ denotes the Cartesian product and $I \uplus J$
-  denotes the disjoint union of $I$ and $J$).
+  \defn{product universe} $\U \times \V := (I{\times}J,\,(S_A{\times}T_B)_{(A,B) \in I{\times}J}),$ as
+  well as a \defn{sum universe} $\U \uplus \V := (I \uplus J,\,(R_A)_{A \in I \uplus J})$ with
+  $R_A := S_A$ for $A \in I$ and $R_B := T_B$ for $B \in J$ (where $I \times J$ denotes the Cartesian
+  product and $I \uplus J$ denotes the disjoint union of $I$ and $J$).
 \end{itemize}
 
 Furthermore, we define two specific universes of interest:
@@ -1051,8 +1051,8 @@ actually defined by a family of sets that are indexed by types.
   \[\V^A := (I, (T_{A \to B})_{B \in I}).\]
   That is,
   \begin{itemize}
-    \item the types (or type indices, to be explicit) of $\V^A$ are the same as the types
-    of $\V,$ but
+    \item the types (or type indices, to be explicit) of $\V^A$ are the same as those of
+    $\V,$ but
     \item the instances in $\V^A$ of a type $B \in \V$ are actually functors from $A$ to $B.$
   \end{itemize}
   We let $\V^A$ inherit instance equivalences from $\W.$

@@ -8,7 +8,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Instances.Basic
 import UniverseAbstractions.Instances.Utils.Bundled
 
-import mathlib4_experiments.CoreExt
+import UniverseAbstractions.MathlibFragment.CoreExt
 
 
 

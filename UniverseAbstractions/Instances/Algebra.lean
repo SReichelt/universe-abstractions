@@ -6,7 +6,7 @@ import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Instances.Utils.Bundled
 
-import mathlib4_experiments.CoreExt
+import UniverseAbstractions.MathlibFragments.CoreExt
 
 
 
