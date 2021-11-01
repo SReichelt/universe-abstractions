@@ -17,6 +17,7 @@ import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.UniversalExtens
 import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.FunctorProperties
 
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
+import UniverseAbstractions.Axioms.CategoryTheory.Functors
 
 import UniverseAbstractions.Lemmas.DerivedFunctors
 import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality

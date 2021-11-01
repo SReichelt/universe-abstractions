@@ -13,7 +13,6 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Relations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
-import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
@@ -94,9 +93,15 @@ namespace MetaRelation
 
   end HalfInv
 
+  -- Although the last three equivalences can be derived from the first two, we redundantly assert
+  -- them as axioms to reduce the complexity of terms. In particular, they hold definitionally for
+  -- `IsoDesc`.
   class IsGroupoidEquivalence [IsEquivalence R] extends IsCategoricalPreorder R where
-  (leftInv  {a b : α} (f : R a b) : HalfInv R f f⁻¹)
-  (rightInv {a b : α} (f : R a b) : HalfInv R f⁻¹ f)
+  (leftInv  {a b   : α} (f : R a b)             : HalfInv R f f⁻¹)
+  (rightInv {a b   : α} (f : R a b)             : HalfInv R f⁻¹ f)
+  (reflInv  (a     : α)                         : (HasRefl.refl (R := R) a)⁻¹ ≃ HasRefl.refl (R := R) a)
+  (symmInv  {a b   : α} (f : R a b)             : (f⁻¹)⁻¹ ≃ f)
+  (transInv {a b c : α} (f : R a b) (g : R b c) : (g • f)⁻¹ ≃ f⁻¹ • g⁻¹)
 
   class IsGroupoidEquivalence.IsGroupoidEquivalenceExt [IsEquivalence R] [IsGroupoidEquivalence R]
                                                        [HasTransFun R] [HasSymmFun R]
@@ -108,6 +113,17 @@ namespace MetaRelation
   (rightInvExt (a b : α) : substFun (symmFun R a b) (revTransFunFun R b a b)
                            ≃{byDef • byArgDef • byFunDef ▻ λ f => rightInv f ◅}
                            constFun (R a b) (HasRefl.refl b))
+  (symmInvExt  (a b : α) : symmFun R b a • symmFun R a b
+                           ≃{byDef • byArgDef ▻ λ f => symmInv f ◅}
+                           idFun (R a b))
+  (transInvExt {a b : α} (f : R a b) (c : α) :
+     symmFun R a c • transFun R f c
+     ≃{byDef • byArgDef ▻ λ g => transInv f g ◅ byDef • byArgDef}
+     revTransFun R c f⁻¹ • symmFun R b c)
+  (transInvExtExt (a b c : α) :
+     revCompFunFun (R b c) (symmFun R a c) • transFunFun R a b c
+     ≃{byDef • byArgDef ▻ λ f => transInvExt f c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
+     compFunFun (symmFun R b c) (R c a) • revTransFunFun R c b a • symmFun R a b)
 
 
 
@@ -228,7 +244,10 @@ namespace MetaRelation
         rightId  := λ e     => rightId e.f,
         leftId   := λ e     => leftId e.f,
         leftInv  := λ e     => e.leftInv,
-        rightInv := λ e     => e.rightInv }
+        rightInv := λ e     => e.rightInv,
+        reflInv  := λ a     => HasInstanceEquivalences.refl (HasRefl.refl (R := R) a),
+        symmInv  := λ e     => HasInstanceEquivalences.refl e,
+        transInv := λ f g   => HasInstanceEquivalences.refl (f⁻¹ • g⁻¹) }
 
     end IsoDesc
 
@@ -275,25 +294,21 @@ namespace MetaRelation
 
       variable [HasLinearFunOp V] [IsPreCategory R] [h : HasIsomorphisms R]
 
-      -- Enable writing `Iso R a b` as `a ≃ b`.
       instance isoIsEquivalence : IsEquivalence h.Iso := h.isoEquivalence
-      instance hasEquivalenceRelation : HasEquivalenceRelation α V := ⟨h.Iso⟩
-      instance (a b : α) : HasEquivalenceRelation (a ≃ b) (HasIdentity.univ V) :=
-      HasInstanceEquivalences.hasEquivalenceRelation (a ≃ b)
 
       class HasIsoDescEq where
       (isoDescReflEq  (a     : α)                         :
-         isoDesc (HasEquivalenceRelation.refl a) ≃ IsoDesc.refl R a)
-      (isoDescSymmEq  {a b   : α} (e : a ≃ b)             :
-         isoDesc e⁻¹                             ≃ (isoDesc e)⁻¹)
-      (isoDescTransEq {a b c : α} (e : a ≃ b) (f : b ≃ c) :
-         isoDesc (f • e)                         ≃ isoDesc f • isoDesc e)
+         isoDesc (HasRefl.refl (R := Iso R) a) ≃ IsoDesc.refl R a)
+      (isoDescSymmEq  {a b   : α} (e : Iso R a b)             :
+         isoDesc e⁻¹                           ≃ (isoDesc e)⁻¹)
+      (isoDescTransEq {a b c : α} (e : Iso R a b) (f : Iso R b c) :
+         isoDesc (f • e)                       ≃ isoDesc f • isoDesc e)
 
       namespace HasIsoDescEq
 
         variable [HasIsoDescEq R]
 
-        def isoAssoc {a b c d : α} (e : a ≃ b) (f : b ≃ c) (g : c ≃ d) :
+        def isoAssoc {a b c d : α} (e : Iso R a b) (f : Iso R b c) (g : Iso R c d) :
           (g • f) • e ≃ g • (f • e) :=
         isoDescInj ((leftTransEquiv R (isoDescTransEq e f) (isoDesc g) •
                      isoDescTransEq (f • e) g)⁻¹ •
@@ -301,41 +316,59 @@ namespace MetaRelation
                     (rightTransEquiv R (isoDesc e) (isoDescTransEq f g) •
                      isoDescTransEq e (g • f)))
 
-        def isoRightId {a b : α} (e : a ≃ b) : e • HasRefl.refl a ≃ e :=
+        def isoRightId {a b : α} (e : Iso R a b) : e • HasRefl.refl a ≃ e :=
         isoDescInj (rightId (isoDesc e) •
                     (leftTransEquiv R (isoDescReflEq a) (isoDesc e) •
                      isoDescTransEq (HasRefl.refl a) e))
 
-        def isoLeftId {a b : α} (e : a ≃ b) : HasRefl.refl b • e ≃ e :=
+        def isoLeftId {a b : α} (e : Iso R a b) : HasRefl.refl b • e ≃ e :=
         isoDescInj (leftId (isoDesc e) •
                     (rightTransEquiv R (isoDesc e) (isoDescReflEq b) •
                      isoDescTransEq e (HasRefl.refl b)))
 
-        def isoLeftInv {a b : α} (e : a ≃ b) : e⁻¹ • e ≃ HasEquivalenceRelation.refl a :=
+        def isoLeftInv {a b : α} (e : Iso R a b) : e⁻¹ • e ≃ HasRefl.refl (R := Iso R) a :=
         isoDescInj ((isoDescReflEq a)⁻¹ •
                     leftInv (isoDesc e) •
                     (rightTransEquiv R (isoDesc e) (isoDescSymmEq e) •
                      isoDescTransEq e e⁻¹))
 
-        def isoRightInv {a b : α} (e : a ≃ b) : e • e⁻¹ ≃ HasEquivalenceRelation.refl b :=
+        def isoRightInv {a b : α} (e : Iso R a b) : e • e⁻¹ ≃ HasRefl.refl (R := Iso R) b :=
         isoDescInj ((isoDescReflEq b)⁻¹ •
                     rightInv (isoDesc e) •
                     (leftTransEquiv R (isoDescSymmEq e) (isoDesc e) •
                      isoDescTransEq e⁻¹ e))
+
+        def isoReflInv (a : α) : (HasRefl.refl (R := Iso R) a)⁻¹ ≃ HasRefl.refl (R := Iso R) a :=
+        isoDescInj ((symmEquiv R (isoDescReflEq a) •
+                     isoDescReflEq a)⁻¹ •
+                    isoDescSymmEq (HasRefl.refl a))
+
+        def isoSymmInv {a b : α} (e : Iso R a b) : (e⁻¹)⁻¹ ≃ e :=
+        isoDescInj ((symmEquiv R (isoDescSymmEq e))⁻¹ •
+                    isoDescSymmEq e⁻¹)
+
+        def isoTransInv {a b c : α} (e : Iso R a b) (f : Iso R b c) : (f • e)⁻¹ ≃ e⁻¹ • f⁻¹ :=
+        isoDescInj ((symmEquiv R (isoDescTransEq e f) •
+                     transEquiv R (isoDescSymmEq f) (isoDescSymmEq e) •
+                     isoDescTransEq f⁻¹ e⁻¹)⁻¹ •
+                    isoDescSymmEq (f • e))
 
         instance isoIsGroupoidEquivalence : IsGroupoidEquivalence h.Iso :=
         { assoc    := isoAssoc    R,
           rightId  := isoRightId  R,
           leftId   := isoLeftId   R,
           leftInv  := isoLeftInv  R,
-          rightInv := isoRightInv R }
+          rightInv := isoRightInv R,
+          reflInv  := isoReflInv  R,
+          symmInv  := isoSymmInv  R,
+          transInv := isoTransInv R }
 
       end HasIsoDescEq
 
       class HasIsoElimFun where
       [isoSymmFun              : HasSymmFun  h.Iso]
       [isoTransFun             : HasTransFun h.Iso]
-      (defIsoElimFun (a b : α) : a ≃ b ⟶{λ e => (isoDesc e).f} R a b)
+      (defIsoElimFun (a b : α) : Iso R a b ⟶{λ e => (isoDesc e).f} R a b)
 
       namespace HasIsoElimFun
 
@@ -344,7 +377,7 @@ namespace MetaRelation
         instance isoHasSymmFun  : HasSymmFun  h.Iso := isoSymmFun
         instance isoHasTransFun : HasTransFun h.Iso := isoTransFun
 
-        @[reducible] def isoElimFun (a b : α) : a ≃ b ⟶ R a b := fromDefFun (defIsoElimFun a b)
+        @[reducible] def isoElimFun (a b : α) : Iso R a b ⟶ R a b := fromDefFun (defIsoElimFun a b)
 
       end HasIsoElimFun
 
@@ -358,17 +391,18 @@ namespace MetaRelation
                [HasIsoDescEq R] [HasIsoElimFun R]
 
       -- Note: There is no `isoSymmEqExt` because `IsoDesc.symm` is not functorial in the way
-      -- `IsoDesc.trans` is.
+      -- `IsoDesc.trans` is: Functoriality of `IsoDesc.trans` really refers specifically to
+      -- `IsoDesc.f`, whereas we do not say anything about `IsoDesc.g`.
       class HasIsoDescEq.HasIsoDescEqExt where
-      [isoGroupoidExt : IsGroupoidEquivalence.IsGroupoidEquivalenceExt h.Iso]
-      (isoDescTransEqExt {a b : α} (e : a ≃ b) (c : α) :
+      (isoDescTransEqExt {a b : α} (e : Iso R a b) (c : α) :
          isoElimFun R a c • transFun h.Iso e c
          ≃{byDef • byArgDef ▻ λ f => isoDescTransEq e f ◅ byDef • byArgDef}
          transFun R (isoDesc e).f c • isoElimFun R b c)
       (isoDescTransEqExtExt (a b c : α) :
-         revCompFunFun (b ≃ c) (isoElimFun R a c) • transFunFun h.Iso a b c
+         revCompFunFun (Iso R b c) (isoElimFun R a c) • transFunFun h.Iso a b c
          ≃{byDef • byArgDef ▻ λ e => isoDescTransEqExt e c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
          compFunFun (isoElimFun R b c) (R a c) • transFunFun R a b c • isoElimFun R a b)
+      [isoGroupoidExt : IsGroupoidEquivalence.IsGroupoidEquivalenceExt h.Iso]
 
       namespace HasIsoDescEq.HasIsoDescEqExt
 
