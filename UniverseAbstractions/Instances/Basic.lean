@@ -49,7 +49,7 @@ universe u v w iu upv
 
 namespace unit
 
-  open MetaRelation HasFunctors HasInternalEquivalences
+  open MetaRelation HasFunctors HasInternalEquivalences HasEquivOp HasEquivOpFun
 
   -- `unit` has instance equivalences in `unit`.
 
@@ -139,6 +139,10 @@ namespace unit
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit :=
   ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
 
+  -- Verify that `unit` satisfies `IsCategory` according to our generalized definition.
+  instance isCategory : IsCategory hasInternalFunctors.Fun :=
+  HasEquivOpFunExt.funIsCategory unit
+
   -- Dependent functors to and from `unit` are not really dependent.
 
   instance hasTrivialTypeIdentity : HasTrivialIdentity {unit} := ⟨λ _ _ => inst⟩
@@ -206,7 +210,7 @@ end unit
 
 namespace boolean
 
-  open MetaRelation
+  open MetaRelation HasEquivOp HasEquivOpFun
 
   -- `boolean` has instance equivalences in `unit`.
 
@@ -294,6 +298,10 @@ namespace boolean
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition boolean :=
   ⟨λ e => HasTrivialIdentity.defEquiv (Equiv.fromDesc e)⟩
+
+  -- Verify that `boolean` satisfies `IsCategory` according to our generalized definition.
+  instance isCategory : IsCategory hasInternalFunctors.Fun :=
+  HasEquivOpFunExt.funIsCategory boolean
 
 end boolean
 
