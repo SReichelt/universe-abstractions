@@ -323,6 +323,8 @@ namespace HasTrivialExtensionality
     substDupExt    := λ _ _   => funEq,
     substDupExtExt := λ _ _ _ => funEq }
 
+  instance hasStandardFunctors [HasFullFunOp U] : HasStandardFunctors U := ⟨⟩
+
   instance hasInternalTopExt [HasLinearFunOp U] [HasInternalTop U] [HasTop.HasTopEq U] :
     HasInternalTop.HasTopExt U :=
   { elimFunEq := λ _ => funEq }
@@ -343,11 +345,12 @@ namespace HasTrivialExtensionality
     EquivDesc.IsExtensional e :=
   ⟨⟩
 
-  instance hasInternalEquivalences [HasTrivialFunctoriality U U] [HasInternalProducts U]
+  instance hasInternalEquivalences [HasTrivialIdentity U] [HasTrivialFunctoriality U U]
                                    [HasEquivalences U U U] :
     HasInternalEquivalences U :=
-  { defElimFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    isExt      := λ E => equivDescExt U (HasEquivalences.desc E) }
+  { defElimFun   := λ _ _ => HasTrivialFunctoriality.defFun,
+    isExt        := λ E => equivDescExt U (HasEquivalences.desc E),
+    equivDescInj := λ _ => HasTrivialIdentity.eq }
 
 end HasTrivialExtensionality
 

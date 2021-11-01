@@ -29,6 +29,7 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 import UniverseAbstractions.Instances.Utils.Trivial
+import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory
 
 import UniverseAbstractions.MathlibFragments.CoreExt
 import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
@@ -36,6 +37,7 @@ import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
 
 
 set_option autoBoundImplicitLocal false
+set_option maxHeartbeats 100000
 set_option synthInstance.maxHeartbeats 100000
 --set_option pp.universes true
 
@@ -88,7 +90,6 @@ namespace unit
   -- Internal functors are given by `hasInFunctors` due to its priority.
 
   instance hasInternalFunctors : HasInternalFunctors unit := ⟨⟩
-  instance hasStandardFunctors : HasStandardFunctors unit := ⟨⟩
 
   -- `Inst` can serve as both top and bottom.
 
@@ -230,7 +231,6 @@ namespace boolean
                 HasTrivialIdentity.defFun h⟩
 
   instance hasInternalFunctors : HasInternalFunctors boolean := ⟨⟩
-  instance hasStandardFunctors : HasStandardFunctors boolean := ⟨⟩
 
   -- `Top` is `true` and `Bot` is `false`.
 
@@ -397,8 +397,6 @@ namespace sort
   instance hasTrivialExtensionality : HasTrivialExtensionality sort.{u} sort.{v} :=
   ⟨funext⟩
 
-  instance hasStandardFunctors : HasStandardFunctors sort.{u} := ⟨⟩
-
   -- There are top and bottom types that work generically for `sort`.
 
   instance (priority := low) hasTop : HasTop sort.{u} :=
@@ -471,6 +469,8 @@ end sort
 
 namespace prop
 
+  open MetaRelation HasEquivOp HasEquivOpFun
+
   instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
 
   -- In `prop`, `Top` is `True` and `Bot` is `False`.
@@ -505,6 +505,10 @@ namespace prop
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
   ⟨λ e => HasTrivialIdentity.defEquiv (Iff.intro e.toFun e.invFun)⟩
 
+  -- Verify that `prop` satisfies `IsCategory` according to our generalized definition.
+  instance isCategory : IsCategory sort.hasInternalFunctors.Fun :=
+  HasEquivOpFunExt.funIsCategory prop
+
   -- Dependent products are given by `∃`, requiring choice to obtain a witness unless the witness
   -- is in `prop`.
 
@@ -525,6 +529,8 @@ namespace prop
 end prop
 
 namespace type
+
+  open MetaRelation IsPreCategory HasEquivOp HasEquivOpFun
 
   -- Use specialized types for `type.{0}`.
 
@@ -561,10 +567,25 @@ namespace type
   -- `type` has internal equivalences given by `Equiv`. An `Equiv` essentially matches our
   -- `EquivDesc`, so we can directly use the equivalence proofs from generic code.
 
+  instance hasInternalEquivalences : HasInternalEquivalences type.{u} :=
+  { defElimFun   := λ _ _ => HasTrivialFunctoriality.defFun,
+    isExt        := λ E => HasTrivialExtensionality.equivDescExt type.{u} (HasEquivalences.desc E),
+    equivDescInj := λ h => Equiv.ext ⟨h, Eq.symm (IsoDesc.Equiv.invEquiv sort.hasInternalFunctors.Fun h)⟩ }
+
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
   ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
 
-  -- The target equality of dependent functors contains a cast, but we can eliminate it easily.
+  instance hasEquivOpEq : HasEquivOpEq type.{u} :=
+  { isoDescReflEq  := λ _   => rfl,
+    isoDescSymmEq  := λ _   => rfl,
+    isoDescTransEq := λ _ _ => rfl }
+
+  -- Verify that `type` satisfies `IsCategory` according to our generalized definition.
+  instance isCategory : IsCategory sort.hasInternalFunctors.Fun :=
+  HasEquivOpFunExt.funIsCategory type.{u}
+
+  -- The target equality of dependent functors contains a cast (from `sort.hasOutCongrArg`),
+  -- but we can eliminate it easily.
 
   instance hasDependentCongrArg : HasDependentCongrArg sort.{u} type.{v} :=
   ⟨λ {_ _} _ {_ _} e => by subst e; rfl⟩
