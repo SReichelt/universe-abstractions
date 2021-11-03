@@ -348,7 +348,7 @@ namespace HasTrivialExtensionality
   instance hasInternalEquivalences [HasTrivialIdentity U] [HasTrivialFunctoriality U U]
                                    [HasEquivalences U U U] :
     HasInternalEquivalences U :=
-  { defElimFun   := λ _ _ => HasTrivialFunctoriality.defFun,
+  { defToFunFun  := λ _ _ => HasTrivialFunctoriality.defFun,
     isExt        := λ E => equivDescExt U (HasEquivalences.desc E),
     equivDescInj := λ _ => HasTrivialIdentity.eq }
 

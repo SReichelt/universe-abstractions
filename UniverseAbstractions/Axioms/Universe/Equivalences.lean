@@ -75,7 +75,7 @@ structure EquivDesc {U V UV VU : Universe} [HasIdentity U] [HasIdentity V]
 
 namespace EquivDesc
 
-  open MetaRelation IsPreCategory HasLinearFunOp
+  open MetaRelation CategoryTheory IsPreCategory HasLinearFunOp
 
   def fromHalfDescs {U V UV VU : Universe} [HasIdentity U] [HasIdentity V]
                     [HasFunctors U V UV] [HasFunctors V U VU] {A : U} {B : V}
@@ -119,8 +119,8 @@ namespace EquivDesc
     symm  := symm,
     trans := trans }
 
-  variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U]
-           [HasLinearFunOp U] [HasLinearFunExt U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+           [HasLinearFunExt U]
 
   class IsExtensional {A B : U} (e : EquivDesc A B) where
   [leftExt  : HalfEquivDesc.IsExtensional e.left]
@@ -153,10 +153,9 @@ namespace EquivDesc
 
   end IsExtensional
 
-  def toIsoDesc {A B : U} (e : EquivDesc A B) [he : IsExtensional e] :
-    (IsoDesc.rel hFun.Fun) A B :=
-  { f        := e.toFun,
-    g        := e.invFun,
+  def toIsoDesc {A B : U} (e : EquivDesc A B) [he : IsExtensional e] : IsoDesc.rel A B :=
+  { toHom    := e.toFun,
+    invHom   := e.invFun,
     leftInv  := he.leftExt.invExt,
     rightInv := he.rightExt.invExt }
 
@@ -243,19 +242,19 @@ end HasEquivalences
 class HasInternalEquivalences (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
                               [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
   extends HasEquivalences U U U where
-(defElimFun (A B : U) : (A ⟷ B) ⟶{λ E => HasEquivalences.toFun E} (A ⟶ B))
+(defToFunFun (A B : U) : (A ⟷ B) ⟶{λ E => HasEquivalences.toFun E} (A ⟶ B))
 [isExt {A B : U} (E : A ⟷ B) : EquivDesc.IsExtensional (desc E)]
 (equivDescInj {A B : U} {E₁ E₂ : A ⟷ B} :
    EquivDesc.toIsoDesc (desc E₁) ≃ EquivDesc.toIsoDesc (desc E₂) → E₁ ≃ E₂)
 
 namespace HasInternalEquivalences
 
-  open MetaRelation IsPreCategory HasLinearFunOp HasEquivalences
+  open MetaRelation CategoryTheory IsPreCategory HasLinearFunOp HasEquivalences
 
-  variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U]
-           [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalEquivalences U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+           [HasLinearFunExt U] [HasInternalEquivalences U]
 
-  @[reducible] def elimFun (A B : U) : (A ⟷ B) ⟶ (A ⟶ B) := defElimFun A B
+  @[reducible] def toFunFun (A B : U) : (A ⟷ B) ⟶ (A ⟶ B) := defToFunFun A B
 
   variable {A B : U}
 
@@ -265,7 +264,7 @@ namespace HasInternalEquivalences
   def leftInvExt  (E : A ⟷ B) : invFun E • toFun E ≃{▻ leftInv  E ◅} idFun A := (isExt E).leftExt.invExt
   def rightInvExt (E : A ⟷ B) : toFun E • invFun E ≃{▻ rightInv E ◅} idFun B := (isExt E).rightExt.invExt
 
-  def isoDesc (E : A ⟷ B) : (IsoDesc.rel hFun.Fun) A B := EquivDesc.toIsoDesc (desc E)
+  def isoDesc (E : A ⟷ B) : IsoDesc.rel A B := EquivDesc.toIsoDesc (desc E)
 
 end HasInternalEquivalences
 
@@ -284,12 +283,12 @@ class HasEquivOp (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
 namespace HasEquivOp
 
   open MetaRelation IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
-       HasIsomorphisms HasIsoDescEq HasIsoDescEqExt HasLinearFunOp HasEquivalences
-       HasInternalEquivalences
+       CategoryTheory HasIsomorphisms HasIsoDescEq IsCategory
+       HasFunctors HasLinearFunOp HasEquivalences HasInternalEquivalences
 
   section
 
-    variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
+    variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
              [HasLinearFunExt U] [hEquiv : HasInternalEquivalences U] [HasEquivOp U]
 
     @[reducible] def refl (A : U) : A ⟷ A := defRefl A
@@ -303,7 +302,7 @@ namespace HasEquivOp
 
     instance hasEquivalenceRelation : HasEquivalenceRelation U U := ⟨hEquiv.Equiv⟩
 
-    instance funHasIsomorphisms : HasIsomorphisms hFun.Fun :=
+    instance funHasIsomorphisms : HasIsomorphisms U :=
     { Iso            := hEquiv.Equiv,
       isoEquivalence := isEquivalence,
       isoDesc        := isoDesc,
@@ -311,10 +310,10 @@ namespace HasEquivOp
 
   end
 
-  class HasEquivOpEq (U : Universe.{u}) [HasIdentity U] [hFun : HasInternalFunctors U]
+  class HasEquivOpEq (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
                      [HasLinearFunOp U] [HasLinearFunExt U]
                      [hEquiv : HasInternalEquivalences U] [HasEquivOp U] extends
-    HasIsoDescEq hFun.Fun
+    HasIsoDescEq U
 
   namespace HasEquivOpEq
 
@@ -323,7 +322,7 @@ namespace HasEquivOp
              [HasEquivOp U] [HasEquivOpEq U]
 
     instance isGroupoidEquivalence [HasEquivOpEq U] : IsGroupoidEquivalence hEquiv.Equiv :=
-    isoIsGroupoidEquivalence hFun.Fun
+    isoIsGroupoidEquivalence (α := U)
 
   end HasEquivOpEq
 
@@ -340,10 +339,17 @@ namespace HasEquivOp
                [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalEquivalences U]
                [HasEquivOp U] [h : HasEquivOpFun U]
 
-      instance hasIsoElimFun : HasIsoElimFun hFun.Fun :=
-      { isoSymmFun    := h.toHasSymmFun,
-        isoTransFun   := h.toHasTransFun,
-        defIsoElimFun := defElimFun }
+      instance hasIsoToHomFun : HasIsoToHomFun U :=
+      { isoSymmFun  := h.toHasSymmFun,
+        isoTransFun := h.toHasTransFun,
+        defToHomFun := defToFunFun }
+
+      def defInvFunFun [HasEquivOpEq U] (A B : U) :
+        (A ⟷ B) ⟶{λ E => HasEquivalences.invFun E} (B ⟶ A) :=
+      hasIsoToHomFun.defInvHomFun A B
+
+      @[reducible] def invFunFun [HasEquivOpEq U] (A B : U) : (A ⟷ B) ⟶ (B ⟶ A) :=
+      defInvFunFun A B
 
     end
 
@@ -351,16 +357,15 @@ namespace HasEquivOp
              [hEquiv : HasInternalEquivalences U] [HasEquivOp U] [HasEquivOpFun U]
              [HasEquivOpEq U]
 
-    class HasEquivOpFunExt extends
-      HasIsoDescEqExt hFun.Fun, IsGroupoidEquivalenceExt hEquiv.Equiv
+    class HasEquivOpFunExt extends HasIsoDescEqExt (M := ⟨⟨U⟩⟩) U
 
     namespace HasEquivOpFunExt
 
       variable [HasEquivOpFunExt U]
 
-      instance isGroupoid : IsGroupoid hEquiv.Equiv := isoIsGroupoid hFun.Fun
+      instance isCategory : IsCategory ⟨⟨U⟩⟩ U := ⟨⟩
 
-      instance funIsCategory : IsCategory hFun.Fun := ⟨⟩
+      instance isGroupoid : IsGroupoid ⟨⟨U⟩⟩ U := isoGroupoid U
 
     end HasEquivOpFunExt
 

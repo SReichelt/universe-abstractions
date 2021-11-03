@@ -49,7 +49,7 @@ universe u v w iu upv
 
 namespace unit
 
-  open MetaRelation HasFunctors HasInternalEquivalences HasEquivOp HasEquivOpFun
+  open MetaRelation CategoryTheory HasFunctors HasInternalEquivalences HasEquivOp HasEquivOpFun
 
   -- `unit` has instance equivalences in `unit`.
 
@@ -140,8 +140,7 @@ namespace unit
   ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
 
   -- Verify that `unit` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory hasInternalFunctors.Fun :=
-  HasEquivOpFunExt.funIsCategory unit
+  instance isCategory : IsCategory ⟨⟨unit⟩⟩ unit := HasEquivOpFunExt.isCategory unit
 
   -- Dependent functors to and from `unit` are not really dependent.
 
@@ -210,7 +209,7 @@ end unit
 
 namespace boolean
 
-  open MetaRelation HasEquivOp HasEquivOpFun
+  open MetaRelation CategoryTheory HasEquivOp HasEquivOpFun
 
   -- `boolean` has instance equivalences in `unit`.
 
@@ -300,8 +299,7 @@ namespace boolean
   ⟨λ e => HasTrivialIdentity.defEquiv (Equiv.fromDesc e)⟩
 
   -- Verify that `boolean` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory hasInternalFunctors.Fun :=
-  HasEquivOpFunExt.funIsCategory boolean
+  instance isCategory : IsCategory ⟨⟨boolean⟩⟩ boolean := HasEquivOpFunExt.isCategory boolean
 
 end boolean
 
@@ -477,7 +475,7 @@ end sort
 
 namespace prop
 
-  open MetaRelation HasEquivOp HasEquivOpFun
+  open MetaRelation CategoryTheory HasEquivOp HasEquivOpFun
 
   instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
 
@@ -514,8 +512,7 @@ namespace prop
   ⟨λ e => HasTrivialIdentity.defEquiv (Iff.intro e.toFun e.invFun)⟩
 
   -- Verify that `prop` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory sort.hasInternalFunctors.Fun :=
-  HasEquivOpFunExt.funIsCategory prop
+  instance isCategory : IsCategory ⟨⟨prop⟩⟩ prop := HasEquivOpFunExt.isCategory prop
 
   -- Dependent products are given by `∃`, requiring choice to obtain a witness unless the witness
   -- is in `prop`.
@@ -538,7 +535,7 @@ end prop
 
 namespace type
 
-  open MetaRelation IsPreCategory HasEquivOp HasEquivOpFun
+  open MetaRelation CategoryTheory IsPreCategory HasEquivOp HasEquivOpFun
 
   -- Use specialized types for `type.{0}`.
 
@@ -576,9 +573,9 @@ namespace type
   -- `EquivDesc`, so we can directly use the equivalence proofs from generic code.
 
   instance hasInternalEquivalences : HasInternalEquivalences type.{u} :=
-  { defElimFun   := λ _ _ => HasTrivialFunctoriality.defFun,
+  { defToFunFun  := λ _ _ => HasTrivialFunctoriality.defFun,
     isExt        := λ E => HasTrivialExtensionality.equivDescExt type.{u} (HasEquivalences.desc E),
-    equivDescInj := λ h => Equiv.ext ⟨h, Eq.symm (IsoDesc.Equiv.invEquiv sort.hasInternalFunctors.Fun h)⟩ }
+    equivDescInj := λ h => Equiv.ext ⟨h, Eq.symm (IsoDesc.Equiv.invEquiv h)⟩ }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
   ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
@@ -589,8 +586,7 @@ namespace type
     isoDescTransEq := λ _ _ => rfl }
 
   -- Verify that `type` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory sort.hasInternalFunctors.Fun :=
-  HasEquivOpFunExt.funIsCategory type.{u}
+  instance isCategory : IsCategory ⟨⟨type.{u}⟩⟩ type.{u} := HasEquivOpFunExt.isCategory type.{u}
 
   -- The target equality of dependent functors contains a cast (from `sort.hasOutCongrArg`),
   -- but we can eliminate it easily.

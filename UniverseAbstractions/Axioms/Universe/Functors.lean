@@ -578,6 +578,21 @@ namespace MetaRelation
 
   end HasTransFun
 
+  namespace lift
+
+    variable {ω : Sort w} (l : ω → α)
+
+    instance hasSymmFun [HasSymm R] [h : HasSymmFun R] :
+      HasSymmFun (lift R l) :=
+    { defSymmFun := λ a b => h.defSymmFun (l a) (l b) }
+
+    instance hasTransFun [HasIdentity VV] [HasFunctors V VV VV] [HasTrans R] [h : HasTransFun R] :
+      HasTransFun (lift R l) :=
+    { defTransFun    := λ f   c => h.defTransFun f (l c),
+      defTransFunFun := λ a b c => h.defTransFunFun (l a) (l b) (l c) }
+
+  end lift
+
 end MetaRelation
 
 

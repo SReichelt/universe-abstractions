@@ -21,8 +21,7 @@ class MetaFunctor {α : Sort u} {V : Universe.{v}} {W : Universe.{w}} {VW : Univ
 
 namespace MetaFunctor
 
-  open MetaRelation IsPreCategory IsoDesc.Equiv HasIsomorphisms HasIsoDescEq HasIsoElimFun
-       HasFunctors HasCongrArg HasLinearFunOp
+  open MetaRelation HasSymmFun HasTransFun HasFunctors HasCongrArg HasLinearFunOp
 
   section
 
@@ -54,7 +53,7 @@ namespace MetaFunctor
 
   section
 
-    variable {α : Sort u} {V : Universe} [HasIdentity V] [HasInternalFunctors V]
+    variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
              {R S : MetaRelation α V} (F : MetaFunctor R S)
 
     class IsSymmFunctor.IsSymmFunctorExt [HasLinearFunOp V]
@@ -62,138 +61,186 @@ namespace MetaFunctor
                                          [HasSymm S] [HasSymmFun S]
                                          [IsSymmFunctor F] where
     (symmEqExt (a b : α) :
-       F.baseFun b a • HasSymmFun.symmFun R a b
+       F.baseFun b a • symmFun R a b
        ≃{byArgDef ▻ λ f => symmEq f ◅ byDef}
-       HasSymmFun.symmFun S a b • F.baseFun a b)
+       symmFun S a b • F.baseFun a b)
 
     class IsTransFunctor.IsTransFunctorExt [HasLinearFunOp V]
                                            [HasTrans R] [HasTransFun R]
                                            [HasTrans S] [HasTransFun S]
                                            [IsTransFunctor F] where
     (transEqExt {a b : α} (f : R a b) (c : α) :
-       F.baseFun a c • HasTransFun.transFun R f c
+       F.baseFun a c • transFun R f c
        ≃{byArgDef ▻ λ g => transEq f g ◅ byDef}
-       HasTransFun.transFun S (F f) c • F.baseFun b c)
+       transFun S (F f) c • F.baseFun b c)
     (transEqExtExt (a b c : α) :
-       revCompFunFun (R b c) (F.baseFun a c) • HasTransFun.transFunFun R a b c
+       revCompFunFun (R b c) (F.baseFun a c) • transFunFun R a b c
        ≃{byDef • byArgDef ▻ λ f => transEqExt f c ◅ byDef • byArgDef • byArgDef}
-       compFunFun (F.baseFun b c) (S a c) • HasTransFun.transFunFun S a b c • F.baseFun a b)
-
-    class IsSemigroupoidFunctor [HasLinearFunOp V] [IsSemigroupoid R] [IsSemigroupoid S] extends
-      IsTransFunctor F, IsTransFunctor.IsTransFunctorExt F
-
-    class IsPreCategoryFunctor [HasLinearFunOp V] [IsPreCategory R] [IsPreCategory S] extends
-      IsSemigroupoidFunctor F, IsReflFunctor F
-
-    namespace IsPreCategoryFunctor
-
-      variable [HasLinearFunOp V] [IsPreCategory R] [IsPreCategory S] [IsPreCategoryFunctor F]
-
-      def mapHalfInv {a b : α} {f : R a b} {g : R b a} (h : HalfInv R f g) :
-        HalfInv S (F f) (F g) :=
-      IsReflFunctor.reflEq a • congrArg (F.baseFun a a) h • (IsTransFunctor.transEq f g)⁻¹
-
-      def mapIsoDesc {a b : α} (e : (IsoDesc.rel R) a b) : (IsoDesc.rel S) a b :=
-      { f        := F e.f,
-        g        := F e.g,
-        leftInv  := mapHalfInv F e.leftInv,
-        rightInv := mapHalfInv F e.rightInv }
-
-      def mapIsoDescReflEq (a : α) :
-        mapIsoDesc F (IsoDesc.refl R a) ≃ IsoDesc.refl S a :=
-      IsReflFunctor.reflEq a
-
-      def mapIsoDescSymmEq {a b : α} (e : (IsoDesc.rel R) a b) :
-        mapIsoDesc F e⁻¹ ≃ (mapIsoDesc F e)⁻¹ :=
-      HasEquivalenceRelation.refl (mapIsoDesc F e)⁻¹
-
-      def mapIsoDescTransEq {a b c : α} (e : (IsoDesc.rel R) a b) (f : (IsoDesc.rel R) b c) :
-        mapIsoDesc F (f • e) ≃ mapIsoDesc F f • mapIsoDesc F e :=
-      IsTransFunctor.transEq e.f f.f
-
-      def congrArgIsoDesc {a b : α} {e₁ e₂ : (IsoDesc.rel R) a b} (h : e₁ ≃ e₂) :
-        mapIsoDesc F e₁ ≃ mapIsoDesc F e₂ :=
-      congrArg (F.baseFun a b) h
-
-    end IsPreCategoryFunctor
-
-    class IsGroupoidFunctor [HasFullFunOp V] [IsGroupoid R] [IsGroupoid S] extends
-      IsPreCategoryFunctor F, IsSymmFunctor F
-
-    open IsPreCategoryFunctor
-
-    class HasIsoFunctor [HasLinearFunOp V]
-                        [IsPreCategory R] [HasIsomorphisms R]
-                        [IsPreCategory S] [HasIsomorphisms S] extends
-      IsPreCategoryFunctor F where
-    (isoFun : MetaFunctor (Iso R) (Iso S))
-    (isoFunEq {a b : α} (e : Iso R a b) : isoDesc (isoFun e) ≃ (mapIsoDesc F) (isoDesc e))
-
-    namespace HasIsoFunctor
-
-      variable [HasLinearFunOp V] [IsPreCategory R] [HasIsomorphisms R] [HasIsoDescEq R]
-               [IsPreCategory S] [HasIsomorphisms S] [HasIsoDescEq S] [HasIsoFunctor F]
-
-      def isoReflEq (a : α) :
-        (isoFun F) (HasRefl.refl a) ≃ HasRefl.refl (R := Iso S) a :=
-      isoDescInj ((isoDescReflEq a)⁻¹ •
-                  mapIsoDescReflEq F a •
-                  congrArgIsoDesc F (isoDescReflEq a) •
-                  isoFunEq (HasRefl.refl a))
-
-      def isoSymmEq {a b : α} (e : Iso R a b) :
-        (isoFun F) e⁻¹ ≃ ((isoFun F) e)⁻¹ :=
-      isoDescInj ((isoDescSymmEq ((isoFun F) e))⁻¹ •
-                  symmEquiv S (isoFunEq e) •
-                  congrArgIsoDesc F (isoDescSymmEq e) •
-                  isoFunEq e⁻¹)
-
-      def isoTransEq {a b c : α} (e : Iso R a b) (f : Iso R b c) :
-        (isoFun F) (f • e) ≃ (isoFun F) f • (isoFun F) e :=
-      isoDescInj ((transEquiv S (isoFunEq e) (isoFunEq f) •
-                  isoDescTransEq ((isoFun F) e) ((isoFun F) f))⁻¹ •
-                  mapIsoDescTransEq F (isoDesc e) (isoDesc f) •
-                  congrArgIsoDesc F (isoDescTransEq e f) •
-                  isoFunEq (f • e))
-
-      instance isEquivalenceFunctor : IsEquivalenceFunctor (isoFun F) :=
-      { reflEq  := isoReflEq  F,
-        symmEq  := isoSymmEq  F,
-        transEq := isoTransEq F }
-
-      class HasIsoFunctorExt [HasIsoElimFun R] [HasIsoElimFun S] where
-      (isoFunEqExt (a b : α) : isoElimFun S a b • (isoFun F).baseFun a b
-                               ≃{byDef ▻ λ e => isoFunEq e ◅ byArgDef}
-                               F.baseFun a b • isoElimFun R a b)
-      [symmFunExt  : IsSymmFunctor.IsSymmFunctorExt   (isoFun F)]
-      [transFunExt : IsTransFunctor.IsTransFunctorExt (isoFun F)]
-
-      namespace HasIsoFunctorExt
-
-        variable [HasIsoElimFun R] [HasIsoElimFun S] [HasIsoFunctorExt F]
-
-        instance isSymmFunctorExt  : IsSymmFunctor.IsSymmFunctorExt   (isoFun F) := symmFunExt
-        instance isTransFunctorExt : IsTransFunctor.IsTransFunctorExt (isoFun F) := transFunExt
-
-      end HasIsoFunctorExt
-
-    end HasIsoFunctor
-
-    class IsCategoryFunctor [HasFullFunOp V] [IsCategory R] [IsCategory S] extends
-      HasIsoFunctor F, HasIsoFunctor.HasIsoFunctorExt F
-
-    namespace IsCategoryFunctor
-
-      open HasIsoFunctor
-
-      variable [HasFullFunOp V] [IsCategory R] [IsCategory S] [IsCategoryFunctor F]
-
-      instance isSemigroupoidFunctor : IsSemigroupoidFunctor (isoFun F) := ⟨⟩
-      instance isPreCategoryFunctor  : IsPreCategoryFunctor  (isoFun F) := ⟨⟩
-      instance isGroupoidFunctor     : IsGroupoidFunctor     (isoFun F) := ⟨⟩
-
-    end IsCategoryFunctor
+       compFunFun (F.baseFun b c) (S a c) • transFunFun S a b c • F.baseFun a b)
 
   end
 
+  @[reducible] def PreFunctor {α : Sort u} {β : Sort v} {W : Universe.{w}}
+                              [HasIdentity.{w, iw} W] [HasInternalFunctors W]
+                              (R : MetaRelation α W) (S : MetaRelation β W) (φ : α → β) :=
+  MetaFunctor R (lift S φ)
+
 end MetaFunctor
+
+
+
+namespace CategoryTheory
+
+  open MetaRelation MetaFunctor IsPreCategory IsoDesc.Equiv HasIsomorphisms HasIsoDescEq HasIsoToHomFun
+       HasFunctors HasCongrArg HasLinearFunOp
+
+  class IsSemigroupoidFunctor {M : HomUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+                              [hα : IsSemigroupoid M α] [hβ : IsSemigroupoid M β]
+                              (φ : α → β) where
+  (F         : PreFunctor hα.Hom hβ.Hom φ)
+  [hTrans    : IsTransFunctor F]
+  [hTransExt : IsTransFunctor.IsTransFunctorExt F]
+
+  namespace IsSemigroupoidFunctor
+
+    variable {M : HomUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+             [IsSemigroupoid M α] [IsSemigroupoid M β]
+             (φ : α → β) [hφ : IsSemigroupoidFunctor φ]
+
+    instance : IsTransFunctor hφ.F := hφ.hTrans
+    instance : IsTransFunctor.IsTransFunctorExt hφ.F := hφ.hTransExt
+
+  end IsSemigroupoidFunctor
+
+  class IsPreCategoryFunctor {M : HomUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+                             [hα : IsPreCategory M α] [hβ : IsPreCategory M β]
+                             (φ : α → β) extends
+    IsSemigroupoidFunctor φ where
+  [hRefl : IsReflFunctor F]
+
+  namespace IsPreCategoryFunctor
+
+    variable {M : HomUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+             [IsPreCategory M α] [IsPreCategory M β]
+             (φ : α → β) [hφ : IsPreCategoryFunctor φ]
+
+    instance : IsReflFunctor hφ.F := hφ.hRefl
+
+    def mapHalfInv {a b : α} {f : Hom a b} {g : Hom b a} (h : HalfInv Hom f g) :
+      HalfInv Hom (hφ.F f) (hφ.F g) :=
+    hφ.hRefl.reflEq a • congrArg (hφ.F.baseFun a a) h • (hφ.hTrans.transEq f g)⁻¹
+
+    def mapIsoDesc {a b : α} (e : IsoDesc.rel a b) : IsoDesc.rel (φ a) (φ b) :=
+    { toHom    := hφ.F e.toHom,
+      invHom   := hφ.F e.invHom,
+      leftInv  := mapHalfInv φ e.leftInv,
+      rightInv := mapHalfInv φ e.rightInv }
+
+    def mapIsoDescReflEq (a : α) :
+      mapIsoDesc φ (IsoDesc.refl a) ≃ IsoDesc.refl (φ a) :=
+    hφ.hRefl.reflEq a
+
+    def mapIsoDescSymmEq {a b : α} (e : IsoDesc.rel a b) :
+      mapIsoDesc φ e⁻¹ ≃ (mapIsoDesc φ e)⁻¹ :=
+    HasEquivalenceRelation.refl (mapIsoDesc φ e)⁻¹
+
+    def mapIsoDescTransEq {a b c : α} (e : IsoDesc.rel a b) (f : IsoDesc.rel b c) :
+      mapIsoDesc φ (f • e) ≃ mapIsoDesc φ f • mapIsoDesc φ e :=
+    hφ.hTrans.transEq e.toHom f.toHom
+
+    def congrArgIsoDesc {a b : α} {e₁ e₂ : IsoDesc.rel a b} (h : e₁ ≃ e₂) :
+      mapIsoDesc φ e₁ ≃ mapIsoDesc φ e₂ :=
+    congrArg (hφ.F.baseFun a b) h
+
+  end IsPreCategoryFunctor
+
+  class IsGroupoidFunctor {M : IsoUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+                          [hα : IsGroupoid M α] [hβ : IsGroupoid M β]
+                          (φ : α → β) extends
+    IsPreCategoryFunctor φ where
+  [hSymm    : IsSymmFunctor F]
+  [hSymmExt : IsSymmFunctor.IsSymmFunctorExt F]
+
+  namespace IsGroupoidFunctor
+
+    variable {M : IsoUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+             [IsGroupoid M α] [IsGroupoid M β]
+             (φ : α → β) [hφ : IsGroupoidFunctor φ]
+
+    instance : IsSymmFunctor hφ.F := hφ.hSymm
+    instance : IsSymmFunctor.IsSymmFunctorExt hφ.F := hφ.hSymmExt
+
+  end IsGroupoidFunctor
+
+
+
+  open IsPreCategoryFunctor
+
+  class IsIsoFunctor {M : HomUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+                     [IsPreCategory M α] [IsPreCategory M β]
+                     [iα : HasIsomorphisms α] [iβ : HasIsomorphisms β]
+                     (φ : α → β) [IsPreCategoryFunctor φ] where
+  (E : PreFunctor iα.Iso iβ.Iso φ)
+  (isoFunEq {a b : α} (e : Iso a b) : isoDesc (E e) ≃ mapIsoDesc φ (isoDesc e))
+
+  namespace IsIsoFunctor
+
+    variable {M : HomUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+             [hα : IsPreCategory M α] [hβ : IsPreCategory M β]
+             [iα : HasIsomorphisms α] [iβ : HasIsomorphisms β]
+             [HasIsoDescEq α] [HasIsoDescEq β]
+             (φ : α → β) [hφ : IsPreCategoryFunctor φ] [iφ : IsIsoFunctor φ]
+
+    def isoReflEq (a : α) :
+      iφ.E (HasRefl.refl a) ≃ HasRefl.refl (R := iβ.Iso) (φ a) :=
+    isoDescInj ((isoDescReflEq (φ a))⁻¹ •
+                mapIsoDescReflEq φ a •
+                congrArgIsoDesc φ (isoDescReflEq a) •
+                isoFunEq (HasRefl.refl a))
+
+    def isoSymmEq {a b : α} (e : Iso a b) :
+      iφ.E e⁻¹ ≃ (iφ.E e)⁻¹ :=
+    isoDescInj ((isoDescSymmEq (iφ.E e))⁻¹ •
+                symmEquiv (isoFunEq e) •
+                congrArgIsoDesc φ (isoDescSymmEq e) •
+                isoFunEq e⁻¹)
+
+    def isoTransEq {a b c : α} (e : Iso a b) (f : Iso b c) :
+      iφ.E (f • e) ≃ iφ.E f • iφ.E e :=
+    isoDescInj ((transEquiv (isoFunEq e) (isoFunEq f) •
+                isoDescTransEq (iφ.E e) (iφ.E f))⁻¹ •
+                mapIsoDescTransEq φ (isoDesc e) (isoDesc f) •
+                congrArgIsoDesc φ (isoDescTransEq e f) •
+                isoFunEq (f • e))
+
+    instance isEquivalenceFunctor : IsEquivalenceFunctor iφ.E :=
+    { reflEq  := isoReflEq  φ,
+      symmEq  := isoSymmEq  φ,
+      transEq := isoTransEq φ }
+
+    class IsIsoFunctorExt [HasIsoToHomFun α] [HasIsoToHomFun β] where
+    (isoFunEqExt (a b : α) : toHomFun (φ a) (φ b) • iφ.E.baseFun a b
+                             ≃{byDef ▻ λ e => isoFunEq e ◅ byArgDef}
+                             hφ.F.baseFun a b • toHomFun a b)
+    [symmFunExt  : IsSymmFunctor.IsSymmFunctorExt   iφ.E]
+    [transFunExt : IsTransFunctor.IsTransFunctorExt iφ.E]
+
+    namespace IsIsoFunctorExt
+
+      variable [HasIsoToHomFun α] [HasIsoToHomFun β] [IsIsoFunctorExt φ]
+
+      instance isSymmFunctorExt  : IsSymmFunctor.IsSymmFunctorExt   iφ.E := symmFunExt
+      instance isTransFunctorExt : IsTransFunctor.IsTransFunctorExt iφ.E := transFunExt
+
+    end IsIsoFunctorExt
+
+  end IsIsoFunctor
+
+  class IsCategoryFunctor {M : IsoUniverse.{w, iw}} {α : Sort u} {β : Sort v}
+                          [IsCategory M α] [IsCategory M β]
+                          (φ : α → β) extends
+    IsPreCategoryFunctor φ, IsIsoFunctor φ, IsIsoFunctor.IsIsoFunctorExt φ
+
+  -- TODO: Show that this is also a groupoid functor with respect to `IsCategory.isoGroupoid`.
+
+end CategoryTheory

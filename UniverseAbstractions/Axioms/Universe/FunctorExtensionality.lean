@@ -51,7 +51,7 @@ end HasSubsingletonExt
 
 namespace HasLinearFunOp
 
-  open MetaRelation HasFunctors HasCongrArg HasCongrFun
+  open MetaRelation IsCategoricalPreorder CategoryTheory HasFunctors HasCongrArg HasCongrFun
 
   variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
 
@@ -102,17 +102,21 @@ namespace HasLinearFunOp
   -- The axioms for composition and identity imply that types and functors form a (potentially
   -- higher) category.
 
-  instance isCategoricalPreorder [h : HasLinearFunExt U] : IsCategoricalPreorder hFun.Fun :=
+  variable [h : HasLinearFunExt U]
+
+  instance isCategoricalPreorder : IsCategoricalPreorder hFun.Fun :=
   { assoc          := h.compAssoc,
     rightId        := h.rightId,
     leftId         := h.leftId }
 
-  instance isPreCategory [h : HasLinearFunExt U] : IsPreCategory hFun.Fun :=
+  instance isCategoricalPreorderExt : IsCategoricalPreorderExt hFun.Fun :=
   { assocExt       := h.compAssocExt,
     assocExtExt    := h.compAssocExtExt,
     assocExtExtExt := h.compAssocExtExtExt,
     rightIdExt     := h.rightIdExt,
     leftIdExt      := h.leftIdExt }
+
+  instance isPreCategory : IsPreCategory ⟨U⟩ U := ⟨hFun.Fun⟩
 
 end HasLinearFunOp
 
