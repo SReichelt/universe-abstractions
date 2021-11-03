@@ -126,11 +126,11 @@ namespace CategoryTheory
 
     instance : IsReflFunctor hφ.F := hφ.hRefl
 
-    def mapHalfInv {a b : α} {f : Hom a b} {g : Hom b a} (h : HalfInv Hom f g) :
+    def mapHalfInv {a b : α} {f : a ⇾ b} {g : b ⇾ a} (h : HalfInv Hom f g) :
       HalfInv Hom (hφ.F f) (hφ.F g) :=
     hφ.hRefl.reflEq a • congrArg (hφ.F.baseFun a a) h • (hφ.hTrans.transEq f g)⁻¹
 
-    def mapIsoDesc {a b : α} (e : IsoDesc.rel a b) : IsoDesc.rel (φ a) (φ b) :=
+    def mapIsoDesc {a b : α} (e : a ⇽⇾ b) : φ a ⇽⇾ φ b :=
     { toHom    := hφ.F e.toHom,
       invHom   := hφ.F e.invHom,
       leftInv  := mapHalfInv φ e.leftInv,
@@ -140,15 +140,15 @@ namespace CategoryTheory
       mapIsoDesc φ (IsoDesc.refl a) ≃ IsoDesc.refl (φ a) :=
     hφ.hRefl.reflEq a
 
-    def mapIsoDescSymmEq {a b : α} (e : IsoDesc.rel a b) :
+    def mapIsoDescSymmEq {a b : α} (e : a ⇽⇾ b) :
       mapIsoDesc φ e⁻¹ ≃ (mapIsoDesc φ e)⁻¹ :=
     HasEquivalenceRelation.refl (mapIsoDesc φ e)⁻¹
 
-    def mapIsoDescTransEq {a b c : α} (e : IsoDesc.rel a b) (f : IsoDesc.rel b c) :
+    def mapIsoDescTransEq {a b c : α} (e : a ⇽⇾ b) (f : b ⇽⇾ c) :
       mapIsoDesc φ (f • e) ≃ mapIsoDesc φ f • mapIsoDesc φ e :=
     hφ.hTrans.transEq e.toHom f.toHom
 
-    def congrArgIsoDesc {a b : α} {e₁ e₂ : IsoDesc.rel a b} (h : e₁ ≃ e₂) :
+    def congrArgIsoDesc {a b : α} {e₁ e₂ : a ⇽⇾ b} (h : e₁ ≃ e₂) :
       mapIsoDesc φ e₁ ≃ mapIsoDesc φ e₂ :=
     congrArg (hφ.F.baseFun a b) h
 
@@ -181,7 +181,7 @@ namespace CategoryTheory
                      [iα : HasIsomorphisms α] [iβ : HasIsomorphisms β]
                      (φ : α → β) [IsPreCategoryFunctor φ] where
   (E : PreFunctor iα.Iso iβ.Iso φ)
-  (isoFunEq {a b : α} (e : Iso a b) : isoDesc (E e) ≃ mapIsoDesc φ (isoDesc e))
+  (isoFunEq {a b : α} (e : a ⇿ b) : isoDesc (E e) ≃ mapIsoDesc φ (isoDesc e))
 
   namespace IsIsoFunctor
 
@@ -192,20 +192,20 @@ namespace CategoryTheory
              (φ : α → β) [hφ : IsPreCategoryFunctor φ] [iφ : IsIsoFunctor φ]
 
     def isoReflEq (a : α) :
-      iφ.E (HasRefl.refl a) ≃ HasRefl.refl (R := iβ.Iso) (φ a) :=
+      iφ.E (idIso a) ≃ idIso (φ a) :=
     isoDescInj ((isoDescReflEq (φ a))⁻¹ •
                 mapIsoDescReflEq φ a •
                 congrArgIsoDesc φ (isoDescReflEq a) •
-                isoFunEq (HasRefl.refl a))
+                isoFunEq (idIso a))
 
-    def isoSymmEq {a b : α} (e : Iso a b) :
+    def isoSymmEq {a b : α} (e : a ⇿ b) :
       iφ.E e⁻¹ ≃ (iφ.E e)⁻¹ :=
     isoDescInj ((isoDescSymmEq (iφ.E e))⁻¹ •
                 symmEquiv (isoFunEq e) •
                 congrArgIsoDesc φ (isoDescSymmEq e) •
                 isoFunEq e⁻¹)
 
-    def isoTransEq {a b c : α} (e : Iso a b) (f : Iso b c) :
+    def isoTransEq {a b c : α} (e : a ⇿ b) (f : b ⇿ c) :
       iφ.E (f • e) ≃ iφ.E f • iφ.E e :=
     isoDescInj ((transEquiv (isoFunEq e) (isoFunEq f) •
                 isoDescTransEq (iφ.E e) (iφ.E f))⁻¹ •

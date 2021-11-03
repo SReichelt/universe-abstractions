@@ -51,7 +51,7 @@ namespace HasLinearFunOp
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
            [HasLinearFunExt U] [HasInternalEquivalences U]
 
-  def funDomainDesc {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] (C : U) :
+  def funDomainDesc {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc (compFunFun e.toFun C) (compFunFun e.invFun C) :=
   ⟨λ F => rightId F •
           defCongrArg (defRevCompFunFun B F) he.rightExt.invExt •
@@ -59,14 +59,14 @@ namespace HasLinearFunOp
           byDef •
           byArgDef⟩
 
-  instance funDomainDesc.isExt {A B : U} (e : EquivDesc A B)
+  instance funDomainDesc.isExt {A B : U} (e : A ⮂ B)
                                [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc.IsExtensional (funDomainDesc e C) :=
   ⟨rightIdExt B C •
    defCongrArg (defCompFunFunFun B B C) he.rightExt.invExt •
    compAssocExt e.invFun e.toFun C⟩
 
-  def funCodomainDesc {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] (C : U) :
+  def funCodomainDesc {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc (revCompFunFun C e.toFun) (revCompFunFun C e.invFun) :=
   ⟨λ F => leftId F •
           defCongrArg (defCompFunFun F A) he.leftExt.invExt •
@@ -74,7 +74,7 @@ namespace HasLinearFunOp
           byDef •
           byArgDef⟩
 
-  instance funCodomainDesc.isExt {A B : U} (e : EquivDesc A B)
+  instance funCodomainDesc.isExt {A B : U} (e : A ⮂ B)
                                  [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc.IsExtensional (funCodomainDesc e C) :=
   ⟨leftIdExt C A •

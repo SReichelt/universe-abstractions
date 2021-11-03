@@ -226,7 +226,8 @@ namespace CategoryTheory
 
   end IsoUniverse
 
-  class IsSemigroupoid (M : outParam HomUniverse.{v, iv}) (α : Sort u) where
+  class IsSemigroupoid (M : outParam HomUniverse.{v, iv}) (α : Sort u) :
+    Sort (max u (v + 1) iv) where
   (Hom                 : MetaRelation α M.V)
   [homHasTrans         : HasTrans         Hom]
   [homHasTransFun      : HasTransFun      Hom]
@@ -234,6 +235,8 @@ namespace CategoryTheory
   [homIsAssociativeExt : IsAssociativeExt Hom]
 
   namespace IsSemigroupoid
+
+    infix:20 " ⇾ " => CategoryTheory.IsSemigroupoid.Hom
 
     variable {M : HomUniverse.{v, iv}} {α : Sort u} [h : IsSemigroupoid M α]
 
@@ -244,7 +247,8 @@ namespace CategoryTheory
 
   end IsSemigroupoid
 
-  class IsPreCategory (M : outParam HomUniverse.{v, iv}) (α : Sort u) where
+  class IsPreCategory (M : outParam HomUniverse.{v, iv}) (α : Sort u) :
+    Sort (max u (v + 1) iv) where
   (Hom                         : MetaRelation α M.V)
   [homIsPreorder               : IsPreorder               Hom]
   [homHasTransFun              : HasTransFun              Hom]
@@ -269,13 +273,15 @@ namespace CategoryTheory
     instance : IsCategoricalPreorder    (IsSemigroupoid.Hom (α := α)) := h.homIsCategoricalPreorder
     instance : IsCategoricalPreorderExt (IsSemigroupoid.Hom (α := α)) := h.homIsCategoricalPreorderExt
 
+    def idHom (a : α) : a ⇾ a := HasRefl.refl a
+
     -- A "descriptor" of a potential isomorphism. In a 1-category, each `IsoDesc` is really an
     -- isomorphism, but in higher categories, there may be additional conditions encoded in
     -- `HasIsomorphisms.Iso`.
 
     structure IsoDesc (a b : α) : Sort (max 1 u v iv) where
-    (toHom    : Hom a b)
-    (invHom   : Hom b a)
+    (toHom    : a ⇾ b)
+    (invHom   : b ⇾ a)
     (leftInv  : HalfInv Hom toHom invHom)
     (rightInv : HalfInv Hom invHom toHom)
 
@@ -292,13 +298,15 @@ namespace CategoryTheory
 
       @[reducible] def rel : MetaRelation α (univ (α := α)) := IsoIndex.mk
 
-      def refl (a : α) : rel a a :=
-      ⟨HasRefl.refl a, HasRefl.refl a, HalfInv.refl Hom a, HalfInv.refl Hom a⟩
+      infix:20 " ⇽⇾ " => CategoryTheory.IsPreCategory.IsoDesc.rel
 
-      def symm {a b : α} (e : rel a b) : rel b a :=
+      def refl (a : α) : a ⇽⇾ a :=
+      ⟨idHom a, idHom a, HalfInv.refl Hom a, HalfInv.refl Hom a⟩
+
+      def symm {a b : α} (e : a ⇽⇾ b) : b ⇽⇾ a :=
       ⟨e.invHom, e.toHom, e.rightInv, e.leftInv⟩
 
-      def trans {a b c : α} (e : rel a b) (f : rel b c) : rel a c :=
+      def trans {a b c : α} (e : a ⇽⇾ b) (f : b ⇽⇾ c) : a ⇽⇾ c :=
       ⟨f.toHom • e.toHom, e.invHom • f.invHom,
        HalfInv.trans Hom e.leftInv f.leftInv, HalfInv.trans Hom f.rightInv e.rightInv⟩
 
@@ -338,29 +346,29 @@ namespace CategoryTheory
         leftCompEquiv he f₂ • rightCompEquiv e₁ hf
 
         instance hasEquivalenceRelation (a b : α) :
-          HasEquivalenceRelation (rel a b) (HomUniverse.homEqUniv M) :=
-        ⟨lift (HasInstanceEquivalences.Rel (Hom a b)) IsoDesc.toHom⟩
+          HasEquivalenceRelation (a ⇽⇾ b) (HomUniverse.homEqUniv M) :=
+        ⟨lift (HasInstanceEquivalences.Rel (a ⇾ b)) IsoDesc.toHom⟩
 
         instance hasInstanceEquivalences :
           HasInstanceEquivalences (univ (α := α)) (HomUniverse.homEqUniv M) :=
         ⟨λ i => hasEquivalenceRelation i.a i.b⟩
 
-        def symmEquiv {a b : α} {e₁ e₂ : rel a b} (he : e₁ ≃ e₂) :
+        def symmEquiv {a b : α} {e₁ e₂ : a ⇽⇾ b} (he : e₁ ≃ e₂) :
           e₂⁻¹ ≃ e₁⁻¹ :=
         invEquiv he
 
-        def rightTransEquiv {a b c : α} (e : rel a b)
-                                        {f₁ f₂ : rel b c} (hf : f₁ ≃ f₂) :
+        def rightTransEquiv {a b c : α} (e : a ⇽⇾ b)
+                                        {f₁ f₂ : b ⇽⇾ c} (hf : f₁ ≃ f₂) :
           f₁ • e ≃ f₂ • e :=
         rightCompEquiv e hf
 
-        def leftTransEquiv {a b c : α} {e₁ e₂ : rel a b} (he : e₁ ≃ e₂)
-                                       (f : rel b c) :
+        def leftTransEquiv {a b c : α} {e₁ e₂ : a ⇽⇾ b} (he : e₁ ≃ e₂)
+                                       (f : b ⇽⇾ c) :
           f • e₁ ≃ f • e₂ :=
         leftCompEquiv he f
 
-        def transEquiv {a b c : α} {e₁ e₂ : rel a b} (he : e₁ ≃ e₂)
-                                   {f₁ f₂ : rel b c} (hf : f₁ ≃ f₂) :
+        def transEquiv {a b c : α} {e₁ e₂ : a ⇽⇾ b} (he : e₁ ≃ e₂)
+                                   {f₁ f₂ : b ⇽⇾ c} (hf : f₁ ≃ f₂) :
           f₁ • e₁ ≃ f₂ • e₂ :=
         compEquiv he hf
 
@@ -372,7 +380,7 @@ namespace CategoryTheory
         leftId   := λ e     => leftId e.toHom,
         leftInv  := λ e     => e.leftInv,
         rightInv := λ e     => e.rightInv,
-        reflInv  := λ a     => HasInstanceEquivalences.refl (HasRefl.refl a),
+        reflInv  := λ a     => HasInstanceEquivalences.refl (idHom a),
         symmInv  := λ e     => HasInstanceEquivalences.refl e,
         transInv := λ f g   => HasInstanceEquivalences.refl (f⁻¹ • g⁻¹) }
 
@@ -380,7 +388,8 @@ namespace CategoryTheory
 
   end IsPreCategory
 
-  class IsGroupoid (M : outParam IsoUniverse.{v, iv}) (α : Sort u) where
+  class IsGroupoid (M : outParam IsoUniverse.{v, iv}) (α : Sort u) :
+    Sort (max u (v + 1) iv) where
   (Iso                         : MetaRelation α M.V)
   [isoIsEquivalence            : IsEquivalence            Iso]
   [isoHasTransFun              : HasTransFun              Iso]
@@ -412,17 +421,17 @@ namespace CategoryTheory
     instance : IsGroupoidEquivalence    (IsSemigroupoid.Hom (α := α)) := h.isoIsGroupoidEquivalence
     instance : IsGroupoidEquivalenceExt (IsSemigroupoid.Hom (α := α)) := h.isoIsGroupoidEquivalenceExt
 
-    def isoDesc {a b : α} (f : Iso a b) : IsoDesc.rel a b := ⟨f, f⁻¹, leftInv f, rightInv f⟩
+    def isoDesc {a b : α} (e : a ⇾ b) : a ⇽⇾ b := ⟨e, e⁻¹, leftInv e, rightInv e⟩
 
     def isoDescReflEq (a : α) :
-      isoDesc (HasRefl.refl a) ≃ IsoDesc.refl a :=
-    HasEquivalenceRelation.refl (HasRefl.refl a)
+      isoDesc (idHom a) ≃ IsoDesc.refl a :=
+    HasEquivalenceRelation.refl (idHom a)
 
-    def isoDescSymmEq {a b : α} (e : Iso a b) :
+    def isoDescSymmEq {a b : α} (e : a ⇾ b) :
       isoDesc e⁻¹ ≃ (isoDesc e)⁻¹ :=
     HasEquivalenceRelation.refl e⁻¹
 
-    def isoDescTransEq {a b c : α} (e : Iso a b) (f : Iso b c) :
+    def isoDescTransEq {a b c : α} (e : a ⇾ b) (f : b ⇾ c) :
       isoDesc (f • e) ≃ isoDesc f • isoDesc e :=
     HasEquivalenceRelation.refl (f • e)
 
@@ -451,19 +460,24 @@ namespace CategoryTheory
   -- The definition is split into several parts because some parts are trivial in simple
   -- categories, and to reduce redundancies in nontrivial parts. In particular, the groupoid laws
   -- of isomorphisms follow from injectivity and functoriality of `isoDesc`; however the
-  -- extensionality of these laws needs to be specified separately.
+  -- extensionality of these laws needs to be specified separately. (Note that instead of mapping
+  -- to `IsoDesc`, we could also just map to `Hom`, but then only the category laws would follow
+  -- in this way, and the other laws would need to be added explicitly -- which is essentially the
+  -- same as mapping to `IsoDesc`.)
 
   open IsPreCategory
 
   class HasIsomorphisms {M : HomUniverse.{v, iv}} (α : Sort u) [IsPreCategory M α] where
   (Iso                                    : MetaRelation α M.V)
   [isoEquivalence                         : IsEquivalence Iso]
-  (isoDesc {a b : α}                      : Iso a b → IsoDesc.rel a b)
+  (isoDesc {a b : α}                      : Iso a b → (a ⇽⇾ b))
   (isoDescInj {a b : α} {e₁ e₂ : Iso a b} : isoDesc e₁ ≃ isoDesc e₂ → e₁ ≃ e₂)
 
   namespace HasIsomorphisms
 
     open HasFunctors IsAssociative IsCategoricalPreorder IsGroupoidEquivalence IsoDesc.Equiv
+
+    infix:20 " ⇿ " => CategoryTheory.HasIsomorphisms.Iso
 
     section
 
@@ -472,26 +486,28 @@ namespace CategoryTheory
 
       instance isoIsEquivalence : IsEquivalence h.Iso := h.isoEquivalence
 
-      def toHom  {a b : α} (e : Iso a b) : Hom a b := (isoDesc e).toHom
-      def invHom {a b : α} (e : Iso a b) : Hom b a := (isoDesc e).invHom
+      def idIso (a : α) : a ⇿ a := HasRefl.refl a
+
+      def toHom  {a b : α} (e : a ⇿ b) : a ⇾ b := (isoDesc e).toHom
+      def invHom {a b : α} (e : a ⇿ b) : b ⇾ a := (isoDesc e).invHom
 
     end
 
     class HasIsoDescEq {M : HomUniverse.{v, iv}} (α : Sort u) [IsPreCategory M α]
                        [HasIsomorphisms α] where
-    (isoDescReflEq  (a     : α)                             :
-       isoDesc (HasRefl.refl a) ≃ IsoDesc.refl a)
-    (isoDescSymmEq  {a b   : α} (e : Iso a b)               :
-       isoDesc e⁻¹              ≃ (isoDesc e)⁻¹)
-    (isoDescTransEq {a b c : α} (e : Iso a b) (f : Iso b c) :
-       isoDesc (f • e)          ≃ isoDesc f • isoDesc e)
+    (isoDescReflEq  (a     : α)                         :
+       isoDesc (idIso a) ≃ IsoDesc.refl a)
+    (isoDescSymmEq  {a b   : α} (e : a ⇿ b)             :
+       isoDesc e⁻¹       ≃ (isoDesc e)⁻¹)
+    (isoDescTransEq {a b c : α} (e : a ⇿ b) (f : b ⇿ c) :
+       isoDesc (f • e)   ≃ isoDesc f • isoDesc e)
 
     namespace HasIsoDescEq
 
       variable {M : HomUniverse.{v, iv}} {α : Sort u} [IsPreCategory M α]
                [hIso : HasIsomorphisms α] [h : HasIsoDescEq α]
 
-      def isoAssoc {a b c d : α} (e : Iso a b) (f : Iso b c) (g : Iso c d) :
+      def isoAssoc {a b c d : α} (e : a ⇿ b) (f : b ⇿ c) (g : c ⇿ d) :
         (g • f) • e ≃ g • (f • e) :=
       isoDescInj ((leftTransEquiv (isoDescTransEq e f) (isoDesc g) •
                    isoDescTransEq (f • e) g)⁻¹ •
@@ -499,38 +515,38 @@ namespace CategoryTheory
                   (rightTransEquiv (isoDesc e) (isoDescTransEq f g) •
                    isoDescTransEq e (g • f)))
 
-      def isoRightId {a b : α} (e : Iso a b) : e • HasRefl.refl a ≃ e :=
+      def isoRightId {a b : α} (e : a ⇿ b) : e • idIso a ≃ e :=
       isoDescInj (rightId (isoDesc e) •
                   (leftTransEquiv (isoDescReflEq a) (isoDesc e) •
-                   isoDescTransEq (HasRefl.refl a) e))
+                   isoDescTransEq (idIso a) e))
 
-      def isoLeftId {a b : α} (e : Iso a b) : HasRefl.refl b • e ≃ e :=
+      def isoLeftId {a b : α} (e : a ⇿ b) : idIso b • e ≃ e :=
       isoDescInj (leftId (isoDesc e) •
                   (rightTransEquiv (isoDesc e) (isoDescReflEq b) •
-                   isoDescTransEq e (HasRefl.refl b)))
+                   isoDescTransEq e (idIso b)))
 
-      def isoLeftInv {a b : α} (e : Iso a b) : e⁻¹ • e ≃ HasRefl.refl (R := hIso.Iso) a :=
+      def isoLeftInv {a b : α} (e : a ⇿ b) : e⁻¹ • e ≃ idIso a :=
       isoDescInj ((isoDescReflEq a)⁻¹ •
                   leftInv (isoDesc e) •
                   (rightTransEquiv (isoDesc e) (isoDescSymmEq e) •
                    isoDescTransEq e e⁻¹))
 
-      def isoRightInv {a b : α} (e : Iso a b) : e • e⁻¹ ≃ HasRefl.refl (R := hIso.Iso) b :=
+      def isoRightInv {a b : α} (e : a ⇿ b) : e • e⁻¹ ≃ idIso b :=
       isoDescInj ((isoDescReflEq b)⁻¹ •
                   rightInv (isoDesc e) •
                   (leftTransEquiv (isoDescSymmEq e) (isoDesc e) •
                    isoDescTransEq e⁻¹ e))
 
-      def isoReflInv (a : α) : (HasRefl.refl (R := hIso.Iso) a)⁻¹ ≃ HasRefl.refl (R := hIso.Iso) a :=
+      def isoReflInv (a : α) : (idIso a)⁻¹ ≃ idIso a :=
       isoDescInj ((symmEquiv (isoDescReflEq a) •
                    isoDescReflEq a)⁻¹ •
-                  isoDescSymmEq (HasRefl.refl a))
+                  isoDescSymmEq (idIso a))
 
-      def isoSymmInv {a b : α} (e : Iso a b) : (e⁻¹)⁻¹ ≃ e :=
+      def isoSymmInv {a b : α} (e : a ⇿ b) : (e⁻¹)⁻¹ ≃ e :=
       isoDescInj ((symmEquiv (isoDescSymmEq e))⁻¹ •
                   isoDescSymmEq e⁻¹)
 
-      def isoTransInv {a b c : α} (e : Iso a b) (f : Iso b c) : (f • e)⁻¹ ≃ e⁻¹ • f⁻¹ :=
+      def isoTransInv {a b c : α} (e : a ⇿ b) (f : b ⇿ c) : (f • e)⁻¹ ≃ e⁻¹ • f⁻¹ :=
       isoDescInj ((symmEquiv (isoDescTransEq e f) •
                    transEquiv (isoDescSymmEq f) (isoDescSymmEq e) •
                    isoDescTransEq f⁻¹ e⁻¹)⁻¹ •
@@ -552,7 +568,7 @@ namespace CategoryTheory
                          [hIso : HasIsomorphisms α] where
     [isoSymmFun            : HasSymmFun  hIso.Iso]
     [isoTransFun           : HasTransFun hIso.Iso]
-    (defToHomFun (a b : α) : Iso a b ⟶{λ e => toHom e} Hom a b)
+    (defToHomFun (a b : α) : (a ⇿ b) ⟶{λ e => toHom e} (a ⇾ b))
 
     namespace HasIsoToHomFun
 
@@ -564,13 +580,13 @@ namespace CategoryTheory
       instance isoHasSymmFun  : HasSymmFun  hIso.Iso := h.isoSymmFun
       instance isoHasTransFun : HasTransFun hIso.Iso := h.isoTransFun
 
-      @[reducible] def toHomFun (a b : α) : Iso a b ⟶ Hom a b := defToHomFun a b
+      @[reducible] def toHomFun (a b : α) : (a ⇿ b) ⟶ (a ⇾ b) := defToHomFun a b
 
-      def defInvHomFun [HasIsoDescEq α] (a b : α) : Iso a b ⟶{λ e => invHom e} Hom b a :=
+      def defInvHomFun [HasIsoDescEq α] (a b : α) : (a ⇿ b) ⟶{λ e => invHom e} (b ⇾ a) :=
       toDefFun' (toHomFun b a • symmFun hIso.Iso a b)
                 (λ e => isoDescSymmEq e • byDef • byArgDef • byDef)
 
-      @[reducible] def invHomFun [HasIsoDescEq α] (a b : α) : Iso a b ⟶ Hom b a :=
+      @[reducible] def invHomFun [HasIsoDescEq α] (a b : α) : (a ⇿ b) ⟶ (b ⇾ a) :=
       defInvHomFun a b
 
     end HasIsoToHomFun
@@ -587,14 +603,14 @@ namespace CategoryTheory
                                          [IsPreCategory M.toHomUniverse α]
                                          [hIso : HasIsomorphisms α] [HasIsoDescEq α]
                                          [HasIsoToHomFun α] where
-      (isoDescTransEqExt {a b : α} (e : Iso a b) (c : α) :
+      (isoDescTransEqExt {a b : α} (e : a ⇿ b) (c : α) :
          toHomFun a c • transFun Iso e c
          ≃{byDef • byArgDef ▻ λ f => isoDescTransEq e f ◅ byDef • byArgDef}
          transFun Hom (toHom e) c • toHomFun b c)
       (isoDescTransEqExtExt (a b c : α) :
-         revCompFunFun (Iso b c) (toHomFun a c) • transFunFun Iso a b c
+         revCompFunFun (b ⇿ c) (toHomFun a c) • transFunFun Iso a b c
          ≃{byDef • byArgDef ▻ λ e => isoDescTransEqExt e c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
-         compFunFun (toHomFun b c) (Hom a c) • transFunFun Hom a b c • toHomFun a b)
+         compFunFun (toHomFun b c) (a ⇾ c) • transFunFun Hom a b c • toHomFun a b)
       [isoGroupoidExt : IsGroupoidEquivalence.IsGroupoidEquivalenceExt hIso.Iso]
 
       namespace HasIsoDescEq.HasIsoDescEqExt
@@ -616,7 +632,8 @@ namespace CategoryTheory
 
   class IsCategory (M : outParam IsoUniverse.{v, iv}) (α : Sort u) extends
     IsPreCategory M.toHomUniverse α,
-    HasIsomorphisms α, HasIsoDescEq α, HasIsoToHomFun α, HasIsoDescEqExt α
+    HasIsomorphisms α, HasIsoDescEq α, HasIsoToHomFun α, HasIsoDescEqExt α :
+    Sort (max u (v + 1) iv)
 
   namespace IsCategory
 
@@ -639,7 +656,7 @@ namespace CategoryTheory
     instance hasIsoToHomFun : HasIsoToHomFun α :=
     { isoSymmFun  := h.isoHasSymmFun,
       isoTransFun := h.isoHasTransFun,
-      defToHomFun := λ a b => defIdFun (Iso a b) }
+      defToHomFun := λ a b => defIdFun (a ⇿ b) }
 
     instance hasIsoDescEq : HasIsoDescEq α :=
     { isoDescReflEq  := isoDescReflEq,
@@ -651,17 +668,17 @@ namespace CategoryTheory
     IsGroupoidEquivalenceExt.translate h.Iso
 
     instance hasIsoDescEqExt : HasIsoDescEqExt α :=
-    { isoDescTransEqExt    := λ e c => (HasLinearFunExt.rightId (transFun Iso e c))⁻¹ •
-                                       HasLinearFunExt.leftId (transFun Iso e c),
-      isoDescTransEqExtExt := λ a b c => (HasLinearFunExt.rightId (transFunFun Iso a b c) •
-                                          HasLinearFunExt.leftId (transFunFun Iso a b c • idFun (Iso a b)) •
-                                          defCongrArg (defCompFunFun (transFunFun Iso a b c • idFun (Iso a b))
-                                                                     (Iso b c ⟶ Iso a c))
-                                                      (HasLinearFunExt.rightIdExt (Iso b c) (Iso a c)))⁻¹ •
-                                         (HasLinearFunExt.leftId (transFunFun Iso a b c) •
-                                          defCongrArg (defCompFunFun (transFunFun Iso a b c)
-                                                                     (Iso b c ⟶ Iso a c))
-                                                      (HasLinearFunExt.leftIdExt (Iso b c) (Iso a c))),
+    { isoDescTransEqExt    := λ e c => (HasLinearFunExt.rightId (transFun h.Iso e c))⁻¹ •
+                                       HasLinearFunExt.leftId (transFun h.Iso e c),
+      isoDescTransEqExtExt := λ a b c => (HasLinearFunExt.rightId (transFunFun h.Iso a b c) •
+                                          HasLinearFunExt.leftId (transFunFun h.Iso a b c • idFun (a ⇿ b)) •
+                                          defCongrArg (defCompFunFun (transFunFun h.Iso a b c • idFun (a ⇿ b))
+                                                                     ((b ⇿ c) ⟶ (a ⇿ c)))
+                                                      (HasLinearFunExt.rightIdExt (b ⇿ c) (a ⇿ c)))⁻¹ •
+                                         (HasLinearFunExt.leftId (transFunFun h.Iso a b c) •
+                                          defCongrArg (defCompFunFun (transFunFun h.Iso a b c)
+                                                                     ((b ⇿ c) ⟶ (a ⇿ c)))
+                                                      (HasLinearFunExt.leftIdExt (b ⇿ c) (a ⇿ c))),
       isoGroupoidExt       := isGroupoidEquivalenceExt α }
 
     instance isCategory : IsCategory M α := ⟨⟩

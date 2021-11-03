@@ -61,14 +61,14 @@ namespace HasTrivialIdentity
                 [HasTrivialIdentity U] [HasTrivialIdentity V]
                 [HasFunctors U V UV] [HasFunctors V U VU]
                 {A : U} {B : V} (toFun : A ⟶ B) (invFun : B ⟶ A) :
-    EquivDesc A B :=
+    A ⮂ B :=
   ⟨toFun, invFun, halfEquivDesc, halfEquivDesc⟩
 
   def defEquiv {U V UV VU U_V : Universe} [HasIdentity U] [HasIdentity V]
                [HasIdentity UV] [HasIdentity VU]
                [HasTrivialIdentity UV] [HasTrivialIdentity VU]
                [HasFunctors U V UV] [HasFunctors V U VU] [HasEquivalences U V U_V]
-               {A : U} {B : V} (E : A ⟷ B) {e : EquivDesc A B} :
+               {A : U} {B : V} (E : A ⟷ B) {e : A ⮂ B} :
     A ⟷{e} B :=
   ⟨E, eq, eq⟩
 
@@ -341,7 +341,7 @@ namespace HasTrivialExtensionality
     HalfEquivDesc.IsExtensional e :=
   ⟨funEq⟩
 
-  instance equivDescExt [HasLinearFunOp U] {A B : U} (e : EquivDesc A B) :
+  instance equivDescExt [HasLinearFunOp U] {A B : U} (e : A ⮂ B) :
     EquivDesc.IsExtensional e :=
   ⟨⟩
 
@@ -359,7 +359,7 @@ end HasTrivialExtensionality
 class HasTrivialEquivalenceCondition (U : Universe) [HasIdentity U] [HasInternalFunctors U]
                                      [HasLinearFunOp U] [HasLinearFunOp.HasLinearFunExt U]
                                      [HasInternalEquivalences U] where
-(mkEquiv {A B : U} (e : EquivDesc A B) [he : EquivDesc.IsExtensional e] : A ⟷{e} B)
+(mkEquiv {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] : A ⟷{e} B)
 
 namespace HasTrivialEquivalenceCondition
 
@@ -368,7 +368,7 @@ namespace HasTrivialEquivalenceCondition
   def defEquiv {U : Universe} [HasIdentity U] [HasInternalFunctors U]
                [HasLinearFunOp U] [HasLinearFunExt U] [HasInternalEquivalences U]
                [HasTrivialEquivalenceCondition U]
-               {A B : U} {e : EquivDesc A B} [he : EquivDesc.IsExtensional e] :
+               {A B : U} {e : A ⮂ B} [he : EquivDesc.IsExtensional e] :
     A ⟷{e} B :=
   mkEquiv e
 

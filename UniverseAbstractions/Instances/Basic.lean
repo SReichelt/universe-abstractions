@@ -289,7 +289,7 @@ namespace boolean
   { Equiv := Equiv,
     desc  := λ h => HasTrivialIdentity.equivDesc (Equiv.toFun h) (Equiv.invFun h) }
 
-  def Equiv.fromDesc {a b : boolean} (e : EquivDesc a b) : a ⟷ b := match a, b with
+  def Equiv.fromDesc {a b : boolean} (e : a ⮂ b) : a ⟷ b := match a, b with
   | false, false => inst
   | false, true  => False.elim e.invFun
   | true,  false => False.elim e.toFun
@@ -437,7 +437,7 @@ namespace sort
 
   -- `Equiv` also works for general `sort`, but is overridden for `prop`.
 
-  def equivDesc {α : sort.{u}} {β : sort.{v}} (e : Equiv α β) : EquivDesc α β :=
+  def equivDesc {α : sort.{u}} {β : sort.{v}} (e : Equiv α β) : α ⮂ β :=
   { toFun  := e.toFun,
     invFun := e.invFun,
     left   := ⟨e.leftInv⟩,
