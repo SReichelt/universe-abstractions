@@ -171,7 +171,7 @@ namespace CategoryTheory
                              [HasIsoToHomFun α] [HasIsoToHomFun β]
                              (φ : α → β) [IsPreCategoryFunctor φ] [iφ : IsIsoFunctor φ] :
       IsIsoFunctorExt φ :=
-    { isoFunEqExt := λ _ _   => funEq,
+    { isoFunEqExt := λ _ _ => funEq,
       symmFunExt  := isSymmFunctorExt iφ.E,
       transFunExt := isTransFunctorExt iφ.E }
 

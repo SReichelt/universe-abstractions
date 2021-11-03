@@ -241,6 +241,7 @@ namespace CategoryTheory
                           (φ : α → β) extends
     IsPreCategoryFunctor φ, IsIsoFunctor φ, IsIsoFunctor.IsIsoFunctorExt φ
 
-  -- TODO: Show that this is also a groupoid functor with respect to `IsCategory.isoGroupoid`.
+  -- TODO: Show that this is also a groupoid functor with respect to `IsCategory.isoGroupoid`,
+  --       and vice versa, that a groupoid functor is a category functor.
 
 end CategoryTheory

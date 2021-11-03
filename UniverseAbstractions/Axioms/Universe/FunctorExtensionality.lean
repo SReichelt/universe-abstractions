@@ -2,7 +2,6 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Relations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
@@ -51,7 +50,7 @@ end HasSubsingletonExt
 
 namespace HasLinearFunOp
 
-  open MetaRelation IsCategoricalPreorder CategoryTheory HasFunctors HasCongrArg HasCongrFun
+  open HasFunctors HasCongrArg HasCongrFun
 
   variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
 
@@ -98,25 +97,6 @@ namespace HasLinearFunOp
        λ F => compAssocExtExt F C D
        ◅ byDef • byArgDef}
      revCompFunFun (B ⟶ C) (compFunFunFun A C D) • compFunFunFun A B C)
-
-  -- The axioms for composition and identity imply that types and functors form a (potentially
-  -- higher) category.
-
-  variable [h : HasLinearFunExt U]
-
-  instance isCategoricalPreorder : IsCategoricalPreorder hFun.Fun :=
-  { assoc          := h.compAssoc,
-    rightId        := h.rightId,
-    leftId         := h.leftId }
-
-  instance isCategoricalPreorderExt : IsCategoricalPreorderExt hFun.Fun :=
-  { assocExt       := h.compAssocExt,
-    assocExtExt    := h.compAssocExtExt,
-    assocExtExtExt := h.compAssocExtExtExt,
-    rightIdExt     := h.rightIdExt,
-    leftIdExt      := h.leftIdExt }
-
-  instance isPreCategory : IsPreCategory ⟨U⟩ U := ⟨hFun.Fun⟩
 
 end HasLinearFunOp
 

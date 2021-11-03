@@ -14,9 +14,14 @@ set_option autoBoundImplicitLocal false
 
 namespace HasLinearFunOp.HasLinearFunExt
 
-  open MetaRelation HasFunctors HasCongrArg HasCongrFun
+  open HasFunctors HasCongrArg HasCongrFun
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+           [HasLinearFunExt U]
+
+  def idId (A : U) :
+    idFun A • idFun A ≃{byDef • byArgDef ▻-◅} idFun A :=
+  rightId (idFun A)
 
   def swapApp {A : U} (a : A) (B : U) :
     swapFun (appFunFun A B) a ≃{byFunDef ▻-◅} revAppFun a B :=

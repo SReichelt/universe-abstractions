@@ -13,6 +13,7 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Relations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
@@ -38,34 +39,72 @@ namespace MetaRelation
   class IsAssociative [HasTrans R] where
   (assoc {a b c d : α} (f : R a b) (g : R b c) (h : R c d) : (h • g) • f ≃ h • (g • f))
 
-  class IsAssociative.IsAssociativeExt [HasTrans R] [IsAssociative R] [HasTransFun R]
-                                       [HasLinearFunOp V] where
-  (assocExt {a b c : α} (f : R a b) (g : R b c) (d : α) :
-     transFun R f d • transFun R g d
-     ≃{byDef • byArgDef ▻ λ h => assoc f g h ◅}
-     transFun R (g • f) d)
-  (assocExtExt {a b : α} (f : R a b) (c d : α) :
-     revCompFunFun (R c d) (transFun R f d) • transFunFun R b c d
-     ≃{byDef • byArgDef ▻ λ g => assocExt f g d ◅ byDef • byArgDef}
-     transFunFun R a c d • transFun R f c)
-  (assocExtExtExt (a b c d : α) :
-     compFunFun (transFunFun R b c d) (R c d ⟶ R a d) •
-     revCompFunFunFun (R c d) (R b d) (R a d) •
-     transFunFun R a b d
-     ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻
-       λ f => assocExtExt f c d
-       ◅ byDef • byArgDef}
-     revCompFunFun (R b c) (transFunFun R a c d) • transFunFun R a b c)
+  namespace IsAssociative
+
+    section
+
+      variable [HasTrans R] [h : IsAssociative R]
+
+      class IsAssociativeExt [HasLinearFunOp V] [HasTransFun R] where
+      (assocExt {a b c : α} (f : R a b) (g : R b c) (d : α) :
+         transFun R f d • transFun R g d
+         ≃{byDef • byArgDef ▻ λ h => assoc f g h ◅}
+         transFun R (g • f) d)
+      (assocExtExt {a b : α} (f : R a b) (c d : α) :
+         revCompFunFun (R c d) (transFun R f d) • transFunFun R b c d
+         ≃{byDef • byArgDef ▻ λ g => assocExt f g d ◅ byDef • byArgDef}
+         transFunFun R a c d • transFun R f c)
+      (assocExtExtExt (a b c d : α) :
+         compFunFun (transFunFun R b c d) (R c d ⟶ R a d) •
+         revCompFunFunFun (R c d) (R b d) (R a d) •
+         transFunFun R a b d
+         ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻
+           λ f => assocExtExt f c d
+           ◅ byDef • byArgDef}
+         revCompFunFun (R b c) (transFunFun R a c d) • transFunFun R a b c)
+
+    end
+
+    def IsAssociativeExt.translate [HasLinearFunOp V] [HasTrans R] [HasTransFun R]
+                                   {h₁ h₂ : IsAssociative R} [IsAssociativeExt R (h := h₁)] :
+      IsAssociativeExt R (h := h₂) :=
+    { assocExt       := assocExt       (h := h₁),
+      assocExtExt    := assocExtExt    (h := h₁),
+      assocExtExtExt := assocExtExtExt (h := h₁) }
+
+  end IsAssociative
 
   class IsCategoricalPreorder [IsPreorder R] extends IsAssociative R where
   (rightId {a b : α} (f : R a b) : f • HasRefl.refl a ≃ f)
   (leftId  {a b : α} (f : R a b) : HasRefl.refl b • f ≃ f)
 
-  class IsCategoricalPreorder.IsCategoricalPreorderExt [IsPreorder R] [IsCategoricalPreorder R]
-                                                       [HasTransFun R] [HasLinearFunOp V] extends
-    IsAssociative.IsAssociativeExt R where
-  (rightIdExt (a b : α) : transFun    R (HasRefl.refl a) b ≃{▻ λ f => rightId f ◅} idFun (R a b))
-  (leftIdExt  (a b : α) : revTransFun R a (HasRefl.refl b) ≃{▻ λ f => leftId  f ◅} idFun (R a b))
+  namespace IsCategoricalPreorder
+
+    section
+
+      variable [IsPreorder R] [h : IsCategoricalPreorder R]
+
+      def idId (a : α) :
+        HasRefl.refl (R := R) a • HasRefl.refl (R := R) a ≃ HasRefl.refl (R := R) a :=
+      rightId (HasRefl.refl a)
+
+      class IsCategoricalPreorderExt [HasLinearFunOp V] [IsPreorder R] [HasTransFun R]
+                                     [h : IsCategoricalPreorder R] extends
+        IsAssociative.IsAssociativeExt R where
+      (rightIdExt (a b : α) : transFun    R (HasRefl.refl a) b ≃{▻ λ f => h.rightId f ◅} idFun (R a b))
+      (leftIdExt  (a b : α) : revTransFun R a (HasRefl.refl b) ≃{▻ λ f => h.leftId  f ◅} idFun (R a b))
+
+    end
+
+    def IsCategoricalPreorderExt.translate [HasLinearFunOp V] [IsPreorder R] [HasTransFun R]
+                                           {h₁ h₂ : IsCategoricalPreorder R}
+                                           [IsCategoricalPreorderExt R (h := h₁)] :
+      IsCategoricalPreorderExt R (h := h₂) :=
+    { toIsAssociativeExt := IsAssociative.IsAssociativeExt.translate R (h₁ := h₁.toIsAssociative),
+      rightIdExt := rightIdExt (h := h₁),
+      leftIdExt  := leftIdExt  (h := h₁) }
+
+  end IsCategoricalPreorder
 
   def HalfInv [IsPreorder R] {a b : α} (f : R a b) (g : R b a) := g • f ≃ HasRefl.refl (R := R) a
 
@@ -75,8 +114,7 @@ namespace MetaRelation
 
     variable [IsPreorder R] [IsCategoricalPreorder R]
 
-    def refl (a : α) : HalfInv R (HasRefl.refl a) (HasRefl.refl a) :=
-    rightId (HasRefl.refl a)
+    def refl (a : α) : HalfInv R (HasRefl.refl a) (HasRefl.refl a) := idId R a
 
     variable [HasTransFun R] [HasLinearFunOp V]
 
@@ -101,27 +139,47 @@ namespace MetaRelation
   (symmInv  {a b   : α} (f : R a b)             : (f⁻¹)⁻¹ ≃ f)
   (transInv {a b c : α} (f : R a b) (g : R b c) : (g • f)⁻¹ ≃ f⁻¹ • g⁻¹)
 
-  class IsGroupoidEquivalence.IsGroupoidEquivalenceExt [IsEquivalence R] [IsGroupoidEquivalence R]
-                                                       [HasTransFun R] [HasSymmFun R]
-                                                       [HasFullFunOp V] extends
-    IsCategoricalPreorder.IsCategoricalPreorderExt R where
-  (leftInvExt  (a b : α) : substFun (symmFun R a b) (transFunFun    R a b a)
-                           ≃{byDef • byArgDef • byFunDef ▻ λ f => leftInv  f ◅}
-                           constFun (R a b) (HasRefl.refl a))
-  (rightInvExt (a b : α) : substFun (symmFun R a b) (revTransFunFun R b a b)
-                           ≃{byDef • byArgDef • byFunDef ▻ λ f => rightInv f ◅}
-                           constFun (R a b) (HasRefl.refl b))
-  (symmInvExt  (a b : α) : symmFun R b a • symmFun R a b
-                           ≃{byDef • byArgDef ▻ λ f => symmInv f ◅}
-                           idFun (R a b))
-  (transInvExt {a b : α} (f : R a b) (c : α) :
-     symmFun R a c • transFun R f c
-     ≃{byDef • byArgDef ▻ λ g => transInv f g ◅ byDef • byArgDef}
-     revTransFun R c f⁻¹ • symmFun R b c)
-  (transInvExtExt (a b c : α) :
-     revCompFunFun (R b c) (symmFun R a c) • transFunFun R a b c
-     ≃{byDef • byArgDef ▻ λ f => transInvExt f c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
-     compFunFun (symmFun R b c) (R c a) • revTransFunFun R c b a • symmFun R a b)
+  namespace IsGroupoidEquivalence
+
+    section
+
+      variable [IsEquivalence R] [h : IsGroupoidEquivalence R]
+
+      class IsGroupoidEquivalenceExt [HasFullFunOp V] [HasTransFun R] [HasSymmFun R] extends
+        IsCategoricalPreorder.IsCategoricalPreorderExt R where
+      (leftInvExt  (a b : α) : substFun (symmFun R a b) (transFunFun    R a b a)
+                               ≃{byDef • byArgDef • byFunDef ▻ λ f => h.leftInv  f ◅}
+                               constFun (R a b) (HasRefl.refl a))
+      (rightInvExt (a b : α) : substFun (symmFun R a b) (revTransFunFun R b a b)
+                               ≃{byDef • byArgDef • byFunDef ▻ λ f => h.rightInv f ◅}
+                               constFun (R a b) (HasRefl.refl b))
+      (symmInvExt  (a b : α) : symmFun R b a • symmFun R a b
+                               ≃{byDef • byArgDef ▻ λ f => h.symmInv f ◅}
+                               idFun (R a b))
+      (transInvExt {a b : α} (f : R a b) (c : α) :
+         symmFun R a c • transFun R f c
+         ≃{byDef • byArgDef ▻ λ g => h.transInv f g ◅ byDef • byArgDef}
+         revTransFun R c f⁻¹ • symmFun R b c)
+      (transInvExtExt (a b c : α) :
+         revCompFunFun (R b c) (symmFun R a c) • transFunFun R a b c
+         ≃{byDef • byArgDef ▻ λ f => transInvExt f c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
+         compFunFun (symmFun R b c) (R c a) • revTransFunFun R c b a • symmFun R a b)
+
+    end
+
+    def IsGroupoidEquivalenceExt.translate [HasFullFunOp V] [IsEquivalence R] [HasTransFun R]
+                                           [HasSymmFun R] {h₁ h₂ : IsGroupoidEquivalence R}
+                                           [IsGroupoidEquivalenceExt R (h := h₁)] :
+      IsGroupoidEquivalenceExt R (h := h₂) :=
+    { toIsCategoricalPreorderExt := IsCategoricalPreorder.IsCategoricalPreorderExt.translate R
+                                      (h₁ := h₁.toIsCategoricalPreorder),
+      leftInvExt     := leftInvExt     (h := h₁),
+      rightInvExt    := rightInvExt    (h := h₁),
+      symmInvExt     := symmInvExt     (h := h₁),
+      transInvExt    := transInvExt    (h := h₁),
+      transInvExtExt := transInvExtExt (h := h₁) }
+
+  end IsGroupoidEquivalence
 
 end MetaRelation
 
@@ -137,6 +195,7 @@ namespace CategoryTheory
   [hasIdentity         : HasIdentity.{v, iv} V]
   [hasInternalFunctors : HasInternalFunctors V]
   [hasLinearFunOp      : HasLinearFunOp      V]
+  [hasLinearFunExt     : HasLinearFunExt     V]
 
   namespace HomUniverse
 
@@ -147,6 +206,7 @@ namespace CategoryTheory
     instance : HasIdentity         M.V := M.hasIdentity
     instance : HasInternalFunctors M.V := M.hasInternalFunctors
     instance : HasLinearFunOp      M.V := M.hasLinearFunOp
+    instance : HasLinearFunExt     M.V := M.hasLinearFunExt
 
   end HomUniverse
 
@@ -354,6 +414,18 @@ namespace CategoryTheory
 
     def isoDesc {a b : α} (f : Iso a b) : IsoDesc.rel a b := ⟨f, f⁻¹, leftInv f, rightInv f⟩
 
+    def isoDescReflEq (a : α) :
+      isoDesc (HasRefl.refl a) ≃ IsoDesc.refl a :=
+    HasEquivalenceRelation.refl (HasRefl.refl a)
+
+    def isoDescSymmEq {a b : α} (e : Iso a b) :
+      isoDesc e⁻¹ ≃ (isoDesc e)⁻¹ :=
+    HasEquivalenceRelation.refl e⁻¹
+
+    def isoDescTransEq {a b c : α} (e : Iso a b) (f : Iso b c) :
+      isoDesc (f • e) ≃ isoDesc f • isoDesc e :=
+    HasEquivalenceRelation.refl (f • e)
+
   end IsGroupoid
 
 
@@ -417,7 +489,7 @@ namespace CategoryTheory
     namespace HasIsoDescEq
 
       variable {M : HomUniverse.{v, iv}} {α : Sort u} [IsPreCategory M α]
-               [h : HasIsomorphisms α] [HasIsoDescEq α]
+               [hIso : HasIsomorphisms α] [h : HasIsoDescEq α]
 
       def isoAssoc {a b c d : α} (e : Iso a b) (f : Iso b c) (g : Iso c d) :
         (g • f) • e ≃ g • (f • e) :=
@@ -437,19 +509,19 @@ namespace CategoryTheory
                   (rightTransEquiv (isoDesc e) (isoDescReflEq b) •
                    isoDescTransEq e (HasRefl.refl b)))
 
-      def isoLeftInv {a b : α} (e : Iso a b) : e⁻¹ • e ≃ HasRefl.refl (R := h.Iso) a :=
+      def isoLeftInv {a b : α} (e : Iso a b) : e⁻¹ • e ≃ HasRefl.refl (R := hIso.Iso) a :=
       isoDescInj ((isoDescReflEq a)⁻¹ •
                   leftInv (isoDesc e) •
                   (rightTransEquiv (isoDesc e) (isoDescSymmEq e) •
                    isoDescTransEq e e⁻¹))
 
-      def isoRightInv {a b : α} (e : Iso a b) : e • e⁻¹ ≃ HasRefl.refl (R := h.Iso) b :=
+      def isoRightInv {a b : α} (e : Iso a b) : e • e⁻¹ ≃ HasRefl.refl (R := hIso.Iso) b :=
       isoDescInj ((isoDescReflEq b)⁻¹ •
                   rightInv (isoDesc e) •
                   (leftTransEquiv (isoDescSymmEq e) (isoDesc e) •
                    isoDescTransEq e⁻¹ e))
 
-      def isoReflInv (a : α) : (HasRefl.refl (R := h.Iso) a)⁻¹ ≃ HasRefl.refl (R := h.Iso) a :=
+      def isoReflInv (a : α) : (HasRefl.refl (R := hIso.Iso) a)⁻¹ ≃ HasRefl.refl (R := hIso.Iso) a :=
       isoDescInj ((symmEquiv (isoDescReflEq a) •
                    isoDescReflEq a)⁻¹ •
                   isoDescSymmEq (HasRefl.refl a))
@@ -464,7 +536,7 @@ namespace CategoryTheory
                    isoDescTransEq f⁻¹ e⁻¹)⁻¹ •
                   isoDescSymmEq (f • e))
 
-      instance isoIsGroupoidEquivalence : IsGroupoidEquivalence h.Iso :=
+      instance isoIsGroupoidEquivalence : IsGroupoidEquivalence hIso.Iso :=
       { assoc    := isoAssoc,
         rightId  := isoRightId,
         leftId   := isoLeftId,
@@ -518,7 +590,7 @@ namespace CategoryTheory
       (isoDescTransEqExt {a b : α} (e : Iso a b) (c : α) :
          toHomFun a c • transFun Iso e c
          ≃{byDef • byArgDef ▻ λ f => isoDescTransEq e f ◅ byDef • byArgDef}
-         transFun Hom (isoDesc e).toHom c • toHomFun b c)
+         transFun Hom (toHom e) c • toHomFun b c)
       (isoDescTransEqExtExt (a b c : α) :
          revCompFunFun (Iso b c) (toHomFun a c) • transFunFun Iso a b c
          ≃{byDef • byArgDef ▻ λ e => isoDescTransEqExt e c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
@@ -552,8 +624,48 @@ namespace CategoryTheory
       IsGroupoid M α :=
     ⟨h.Iso⟩
 
-    -- TODO: Also define the other direction.
-
   end IsCategory
+
+  namespace IsGroupoid
+
+    variable {M : IsoUniverse.{v, iv}} (α : Sort u) [h : IsGroupoid M α]
+
+    instance hasIsomorphisms : HasIsomorphisms α :=
+    { Iso            := h.Iso,
+      isoEquivalence := h.isoIsEquivalence,
+      isoDesc        := isoDesc,
+      isoDescInj     := id }
+
+    instance hasIsoToHomFun : HasIsoToHomFun α :=
+    { isoSymmFun  := h.isoHasSymmFun,
+      isoTransFun := h.isoHasTransFun,
+      defToHomFun := λ a b => defIdFun (Iso a b) }
+
+    instance hasIsoDescEq : HasIsoDescEq α :=
+    { isoDescReflEq  := isoDescReflEq,
+      isoDescSymmEq  := isoDescSymmEq,
+      isoDescTransEq := isoDescTransEq }
+
+    instance isGroupoidEquivalenceExt :
+      IsGroupoidEquivalenceExt h.Iso (h := HasIsoDescEq.isoIsGroupoidEquivalence) :=
+    IsGroupoidEquivalenceExt.translate h.Iso
+
+    instance hasIsoDescEqExt : HasIsoDescEqExt α :=
+    { isoDescTransEqExt    := λ e c => (HasLinearFunExt.rightId (transFun Iso e c))⁻¹ •
+                                       HasLinearFunExt.leftId (transFun Iso e c),
+      isoDescTransEqExtExt := λ a b c => (HasLinearFunExt.rightId (transFunFun Iso a b c) •
+                                          HasLinearFunExt.leftId (transFunFun Iso a b c • idFun (Iso a b)) •
+                                          defCongrArg (defCompFunFun (transFunFun Iso a b c • idFun (Iso a b))
+                                                                     (Iso b c ⟶ Iso a c))
+                                                      (HasLinearFunExt.rightIdExt (Iso b c) (Iso a c)))⁻¹ •
+                                         (HasLinearFunExt.leftId (transFunFun Iso a b c) •
+                                          defCongrArg (defCompFunFun (transFunFun Iso a b c)
+                                                                     (Iso b c ⟶ Iso a c))
+                                                      (HasLinearFunExt.leftIdExt (Iso b c) (Iso a c))),
+      isoGroupoidExt       := isGroupoidEquivalenceExt α }
+
+    instance isCategory : IsCategory M α := ⟨⟩
+
+  end IsGroupoid
 
 end CategoryTheory

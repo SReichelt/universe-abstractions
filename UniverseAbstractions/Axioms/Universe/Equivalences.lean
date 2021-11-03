@@ -3,6 +3,7 @@ import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
+import UniverseAbstractions.Lemmas.FunctorPreCategory
 
 
 
