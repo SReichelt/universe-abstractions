@@ -1,5 +1,5 @@
 import UniverseAbstractions.Axioms.Universes
-import UniverseAbstractions.Axioms.Relations
+import UniverseAbstractions.Axioms.MetaRelations
 
 
 

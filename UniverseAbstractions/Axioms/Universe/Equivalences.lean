@@ -286,7 +286,7 @@ class HasEquivOp (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
 namespace HasEquivOp
 
   open MetaRelation IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
-       CategoryTheory HasIsomorphisms HasIsoDescEq IsCategory
+       CategoryTheory HasIsomorphisms HasIsoToHomFun IsCategory
        HasFunctors HasLinearFunOp HasEquivalences HasInternalEquivalences
 
   section
@@ -325,7 +325,7 @@ namespace HasEquivOp
              [HasEquivOp U] [HasEquivOpEq U]
 
     instance isGroupoidEquivalence [HasEquivOpEq U] : IsGroupoidEquivalence hEquiv.Equiv :=
-    isoIsGroupoidEquivalence (α := U)
+    HasIsoDescEq.isoIsGroupoidEquivalence (α := U)
 
   end HasEquivOpEq
 
@@ -360,7 +360,7 @@ namespace HasEquivOp
              [hEquiv : HasInternalEquivalences U] [HasEquivOp U] [HasEquivOpFun U]
              [HasEquivOpEq U]
 
-    class HasEquivOpFunExt extends HasIsoDescEqExt (M := ⟨⟨U⟩⟩) U
+    class HasEquivOpFunExt extends HasIsoToHomFunExt (M := ⟨⟨U⟩⟩) U
 
     namespace HasEquivOpFunExt
 

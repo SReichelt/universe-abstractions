@@ -32,6 +32,7 @@ namespace MetaRelation
   notation:90 g:91 " • " f:90 => MetaRelation.HasTrans.trans f g
   postfix:max "⁻¹" => MetaRelation.HasSymm.symm
 
+  -- TODO: I think "lift" is not the correct word for this.
   @[reducible] def lift {ω : Sort w} (l : ω → α) : MetaRelation ω V := λ a b => R (l a) (l b)
 
   namespace lift

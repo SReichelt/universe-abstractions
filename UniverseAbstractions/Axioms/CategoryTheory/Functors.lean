@@ -1,9 +1,5 @@
-import UniverseAbstractions.Axioms.Universes
-import UniverseAbstractions.Axioms.Relations
-import UniverseAbstractions.Axioms.Universe.Identity
-import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Lemmas.DerivedFunctors
 
 
 
@@ -11,81 +7,6 @@ set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
 universe u v w vw iv iw
-
-
-
-class MetaFunctor {α : Sort u} {V : Universe.{v}} {W : Universe.{w}} {VW : Universe.{vw}}
-                  [HasFunctors V W VW] (R : MetaRelation α V) (S : MetaRelation α W) :
-  Sort (max 1 u vw) where
-(baseFun (a b : α) : R a b ⟶ S a b)
-
-namespace MetaFunctor
-
-  open MetaRelation HasSymmFun HasTransFun HasFunctors HasCongrArg HasLinearFunOp
-
-  section
-
-    variable {α : Sort u} {V : Universe.{v}} {W : Universe.{w}} {VW : Universe.{vw}}
-             [HasIdentity.{w, iw} W] [HasFunctors V W VW]
-             {R : MetaRelation α V} {S : MetaRelation α W}
-
-    instance coeFun : CoeFun (MetaFunctor R S) (λ _ => ∀ {a b}, R a b → S a b) :=
-    ⟨λ F {a b} => apply (F.baseFun a b)⟩
-
-    variable (F : MetaFunctor R S)
-
-    class IsReflFunctor  [HasRefl  R] [HasRefl  S] where
-    (reflEq  (a     : α)                         : F (HasRefl.refl a) ≃ HasRefl.refl (R := S) a)
-
-    class IsSymmFunctor  [HasSymm  R] [HasSymm  S] where
-    (symmEq  {a b   : α} (f : R a b)             : F f⁻¹ ≃ (F f)⁻¹)
-
-    class IsTransFunctor [HasTrans R] [HasTrans S] where
-    (transEq {a b c : α} (f : R a b) (g : R b c) : F (g • f) ≃ F g • F f)
-
-    class IsPreorderFunctor [IsPreorder R] [IsPreorder S] extends
-      IsReflFunctor F, IsTransFunctor F
-
-    class IsEquivalenceFunctor [IsEquivalence R] [IsEquivalence S] extends
-      IsPreorderFunctor F, IsSymmFunctor F
-
-  end
-
-  section
-
-    variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
-             {R S : MetaRelation α V} (F : MetaFunctor R S)
-
-    class IsSymmFunctor.IsSymmFunctorExt [HasLinearFunOp V]
-                                         [HasSymm R] [HasSymmFun R]
-                                         [HasSymm S] [HasSymmFun S]
-                                         [IsSymmFunctor F] where
-    (symmEqExt (a b : α) :
-       F.baseFun b a • symmFun R a b
-       ≃{byArgDef ▻ λ f => symmEq f ◅ byDef}
-       symmFun S a b • F.baseFun a b)
-
-    class IsTransFunctor.IsTransFunctorExt [HasLinearFunOp V]
-                                           [HasTrans R] [HasTransFun R]
-                                           [HasTrans S] [HasTransFun S]
-                                           [IsTransFunctor F] where
-    (transEqExt {a b : α} (f : R a b) (c : α) :
-       F.baseFun a c • transFun R f c
-       ≃{byArgDef ▻ λ g => transEq f g ◅ byDef}
-       transFun S (F f) c • F.baseFun b c)
-    (transEqExtExt (a b c : α) :
-       revCompFunFun (R b c) (F.baseFun a c) • transFunFun R a b c
-       ≃{byDef • byArgDef ▻ λ f => transEqExt f c ◅ byDef • byArgDef • byArgDef}
-       compFunFun (F.baseFun b c) (S a c) • transFunFun S a b c • F.baseFun a b)
-
-  end
-
-  @[reducible] def PreFunctor {α : Sort u} {β : Sort v} {W : Universe.{w}}
-                              [HasIdentity.{w, iw} W] [HasInternalFunctors W]
-                              (R : MetaRelation α W) (S : MetaRelation β W) (φ : α → β) :=
-  MetaFunctor R (lift S φ)
-
-end MetaFunctor
 
 
 
@@ -201,13 +122,13 @@ namespace CategoryTheory
     def isoSymmEq {a b : α} (e : a ⇿ b) :
       iφ.E e⁻¹ ≃ (iφ.E e)⁻¹ :=
     isoDescInj ((isoDescSymmEq (iφ.E e))⁻¹ •
-                symmEquiv (isoFunEq e) •
+                invEquiv (isoFunEq e) •
                 congrArgIsoDesc φ (isoDescSymmEq e) •
                 isoFunEq e⁻¹)
 
     def isoTransEq {a b c : α} (e : a ⇿ b) (f : b ⇿ c) :
       iφ.E (f • e) ≃ iφ.E f • iφ.E e :=
-    isoDescInj ((transEquiv (isoFunEq e) (isoFunEq f) •
+    isoDescInj ((compEquiv (isoFunEq e) (isoFunEq f) •
                 isoDescTransEq (iφ.E e) (iφ.E f))⁻¹ •
                 mapIsoDescTransEq φ (isoDesc e) (isoDesc f) •
                 congrArgIsoDesc φ (isoDescTransEq e f) •

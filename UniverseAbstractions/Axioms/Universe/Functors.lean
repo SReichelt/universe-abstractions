@@ -1,5 +1,5 @@
 import UniverseAbstractions.Axioms.Universes
-import UniverseAbstractions.Axioms.Relations
+import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 
 
@@ -510,7 +510,7 @@ end IsBiFunctorial
 
 namespace MetaRelation
 
-  open HasFunctors HasCongrFun HasSwapFun HasSwapFunFun
+  open HasFunctors HasCongrArg HasCongrFun HasSwapFun HasSwapFunFun
 
   variable {α : Sort u} {V : Universe.{v}} {VV : Universe.{vv}} [HasIdentity.{v, iv} V]
            [HasFunctors V V VV] (R : MetaRelation α V)
@@ -528,6 +528,12 @@ namespace MetaRelation
     { F := symmFun R a b,
       a := e,
       e := byDef }
+
+    variable [HasCongrArg V V]
+
+    def congrArgSymm {a b : α} {e₁ e₂ : R a b} (he : e₁ ≃ e₂) :
+      e₁⁻¹ ≃ e₂⁻¹ :=
+    defCongrArg (defSymmFun a b) he
 
   end HasSymmFun
 
@@ -575,6 +581,19 @@ namespace MetaRelation
     { F := revTransFunFun R a b c,
       a := g,
       e := byDef }
+
+    def congrArgTransLeft [HasCongrArg V V] {a b c : α} (f : R a b) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
+      g₁ • f ≃ g₂ • f :=
+    defCongrArg (defTransFun f c) hg
+
+    def congrArgTransRight [HasCongrArg V VV] {a b c : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) (g : R b c) :
+      g • f₁ ≃ g • f₂ :=
+    defCongrFun (defCongrArg (defTransFunFun a b c) hf) g
+
+    def congrArgTrans [HasCongrArg V V] [HasCongrArg V VV] {a b c : α}
+                      {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
+      g₁ • f₁ ≃ g₂ • f₂ :=
+    congrArgTransRight R hf g₂ • congrArgTransLeft R f₁ hg
 
   end HasTransFun
 

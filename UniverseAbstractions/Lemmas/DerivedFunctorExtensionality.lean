@@ -1,5 +1,5 @@
 import UniverseAbstractions.Axioms.Universes
-import UniverseAbstractions.Axioms.Relations
+import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality

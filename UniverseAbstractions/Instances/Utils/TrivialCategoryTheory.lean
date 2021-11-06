@@ -14,7 +14,7 @@ universe u v iv w iw
 
 namespace MetaRelation
 
-  open IsCategoricalPreorder IsGroupoidEquivalence
+  open IsCategoricalPreorder IsPreGroupoidEquivalence IsGroupoidEquivalence
 
   variable {α : Sort u} {V : Universe.{v}} [HasIdentity V] (R : MetaRelation α V)
 
@@ -59,12 +59,16 @@ namespace MetaRelation
     { rightIdExt := λ _ _ => funEq,
       leftIdExt  := λ _ _ => funEq }
 
+    instance isPreGroupoidEquivalenceExt [IsEquivalence R] [IsPreGroupoidEquivalence R]
+                                         [HasTransFun R] [HasSymmFun R] [HasFullFunOp V] :
+      IsPreGroupoidEquivalenceExt R :=
+    { leftInvExt  := λ _ _ => funEq,
+      rightInvExt := λ _ _ => funEq }
+
     instance isGroupoidEquivalenceExt [IsEquivalence R] [IsGroupoidEquivalence R]
                                       [HasTransFun R] [HasSymmFun R] [HasFullFunOp V] :
       IsGroupoidEquivalenceExt R :=
-    { leftInvExt     := λ _ _   => funEq,
-      rightInvExt    := λ _ _   => funEq,
-      symmInvExt     := λ _ _   => funEq,
+    { symmInvExt     := λ _ _   => funEq,
       transInvExt    := λ _ _   => funEq,
       transInvExtExt := λ _ _ _ => funEq }
 
@@ -121,7 +125,7 @@ end MetaFunctor
 
 namespace CategoryTheory
 
-  open MetaRelation MetaFunctor HasIsomorphisms HasIsoDescEq IsIsoFunctor
+  open MetaRelation MetaFunctor HasIsomorphisms HasIsoToHomFun IsIsoFunctor
 
   section HasTrivialIdentity
 
@@ -157,12 +161,11 @@ namespace CategoryTheory
 
     variable {M : IsoUniverse.{w, iw}} [HasTrivialExtensionality M.V M.V]
 
-    instance hasIsoDescEqExt (α : Sort u) [IsPreCategory M.toHomUniverse α]
-                             [hIso : HasIsomorphisms α] [HasIsoDescEq α] [HasIsoToHomFun α] :
-      HasIsoDescEqExt α :=
-    { isoDescTransEqExt    := λ _ _   => funEq,
-      isoDescTransEqExtExt := λ _ _ _ => funEq,
-      isoGroupoidExt       := isGroupoidEquivalenceExt hIso.Iso }
+    instance hasIsoToHomFunExt (α : Sort u) [IsPreCategory M.toHomUniverse α]
+                               [hIso : HasIsomorphisms α] [HasIsoDescEq α] [HasIsoToHomFun α] :
+      HasIsoToHomFunExt α :=
+    { toHomFunExt    := isTransFunctorExt (toHomMetaFunctor α),
+      isoGroupoidExt := isGroupoidEquivalenceExt hIso.Iso }
 
     instance isIsoFunctorExt {α : Sort u} {β : Sort v}
                              [IsPreCategory M.toHomUniverse α] [IsPreCategory M.toHomUniverse β]
@@ -172,7 +175,7 @@ namespace CategoryTheory
                              (φ : α → β) [IsPreCategoryFunctor φ] [iφ : IsIsoFunctor φ] :
       IsIsoFunctorExt φ :=
     { isoFunEqExt := λ _ _ => funEq,
-      symmFunExt  := isSymmFunctorExt iφ.E,
+      symmFunExt  := isSymmFunctorExt  iφ.E,
       transFunExt := isTransFunctorExt iφ.E }
 
   end HasTrivialExtensionality

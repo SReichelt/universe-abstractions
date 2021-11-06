@@ -575,7 +575,7 @@ namespace type
   instance hasInternalEquivalences : HasInternalEquivalences type.{u} :=
   { defToFunFun  := λ _ _ => HasTrivialFunctoriality.defFun,
     isExt        := λ E => HasTrivialExtensionality.equivDescExt type.{u} (HasEquivalences.desc E),
-    equivDescInj := λ h => Equiv.ext ⟨h, Eq.symm (IsoDesc.Equiv.invEquiv h)⟩ }
+    equivDescInj := λ h => Equiv.ext ⟨h, Eq.symm (IsoDesc.Equiv.toInvEquiv h)⟩ }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
   ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
