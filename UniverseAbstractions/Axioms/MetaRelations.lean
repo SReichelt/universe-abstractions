@@ -32,6 +32,19 @@ namespace MetaRelation
   notation:90 g:91 " • " f:90 => MetaRelation.HasTrans.trans f g
   postfix:max "⁻¹" => MetaRelation.HasSymm.symm
 
+  @[reducible] def opposite : MetaRelation α V := λ a b => R b a
+
+  namespace opposite
+
+    instance hasRefl  [h : HasRefl  R] : HasRefl  (opposite R) := ⟨h.refl⟩
+    instance hasSymm  [h : HasSymm  R] : HasSymm  (opposite R) := ⟨h.symm⟩
+    instance hasTrans [h : HasTrans R] : HasTrans (opposite R) := ⟨λ f g => h.trans g f⟩
+
+    instance isPreorder    [IsPreorder    R] : IsPreorder    (opposite R) := ⟨⟩
+    instance isEquivalence [IsEquivalence R] : IsEquivalence (opposite R) := ⟨⟩
+
+  end opposite
+
   -- TODO: I think "lift" is not the correct word for this.
   @[reducible] def lift {ω : Sort w} (l : ω → α) : MetaRelation ω V := λ a b => R (l a) (l b)
 

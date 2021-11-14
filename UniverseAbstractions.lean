@@ -1,4 +1,6 @@
 import UniverseAbstractions.Axioms.Universes
+import UniverseAbstractions.Axioms.MetaProperties
+import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
@@ -16,8 +18,9 @@ import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.IdentityQuantif
 import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.UniversalExtensionality
 import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.FunctorProperties
 
+import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Functors
+import UniverseAbstractions.Axioms.CategoryTheory.Extended
 
 import UniverseAbstractions.Lemmas.DerivedFunctors
 import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality

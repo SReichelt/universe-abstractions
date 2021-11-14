@@ -29,7 +29,6 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 import UniverseAbstractions.Instances.Utils.Trivial
-import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory
 
 import UniverseAbstractions.MathlibFragments.CoreExt
 import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
@@ -37,8 +36,8 @@ import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
 
 
 set_option autoBoundImplicitLocal false
-set_option maxHeartbeats 100000
-set_option synthInstance.maxHeartbeats 100000
+set_option maxHeartbeats 200000
+set_option synthInstance.maxHeartbeats 200000
 --set_option pp.universes true
 
 universe u v w iu upv
@@ -49,7 +48,7 @@ universe u v w iu upv
 
 namespace unit
 
-  open MetaRelation CategoryTheory HasFunctors HasInternalEquivalences HasEquivOp HasEquivOpFun
+  open MetaRelation HasFunctors HasInternalEquivalences HasEquivOp HasEquivOpFun
 
   -- `unit` has instance equivalences in `unit`.
 
@@ -139,9 +138,6 @@ namespace unit
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit :=
   ⟨λ _ => HasTrivialIdentity.defEquiv inst⟩
 
-  -- Verify that `unit` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory ⟨⟨unit⟩⟩ unit := HasEquivOpFunExt.isCategory unit
-
   -- Dependent functors to and from `unit` are not really dependent.
 
   instance hasTrivialTypeIdentity : HasTrivialIdentity {unit} := ⟨λ _ _ => inst⟩
@@ -209,7 +205,7 @@ end unit
 
 namespace boolean
 
-  open MetaRelation CategoryTheory HasEquivOp HasEquivOpFun
+  open MetaRelation HasEquivOp HasEquivOpFun
 
   -- `boolean` has instance equivalences in `unit`.
 
@@ -297,9 +293,6 @@ namespace boolean
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition boolean :=
   ⟨λ e => HasTrivialIdentity.defEquiv (Equiv.fromDesc e)⟩
-
-  -- Verify that `boolean` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory ⟨⟨boolean⟩⟩ boolean := HasEquivOpFunExt.isCategory boolean
 
 end boolean
 
@@ -475,7 +468,7 @@ end sort
 
 namespace prop
 
-  open MetaRelation CategoryTheory HasEquivOp HasEquivOpFun
+  open MetaRelation HasEquivOp HasEquivOpFun
 
   instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
 
@@ -511,9 +504,6 @@ namespace prop
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
   ⟨λ e => HasTrivialIdentity.defEquiv (Iff.intro e.toFun e.invFun)⟩
 
-  -- Verify that `prop` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory ⟨⟨prop⟩⟩ prop := HasEquivOpFunExt.isCategory prop
-
   -- Dependent products are given by `∃`, requiring choice to obtain a witness unless the witness
   -- is in `prop`.
 
@@ -535,7 +525,7 @@ end prop
 
 namespace type
 
-  open MetaRelation CategoryTheory IsPreCategory HasEquivOp HasEquivOpFun
+  open MetaRelation
 
   -- Use specialized types for `type.{0}`.
 
@@ -573,20 +563,11 @@ namespace type
   -- `EquivDesc`, so we can directly use the equivalence proofs from generic code.
 
   instance hasInternalEquivalences : HasInternalEquivalences type.{u} :=
-  { defToFunFun  := λ _ _ => HasTrivialFunctoriality.defFun,
-    isExt        := λ E => HasTrivialExtensionality.equivDescExt type.{u} (HasEquivalences.desc E),
-    equivDescInj := λ h => Equiv.ext ⟨h, Eq.symm (IsoDesc.Equiv.toInvEquiv h)⟩ }
+  { defToFunFun := λ _ _ => HasTrivialFunctoriality.defFun,
+    isExt       := λ E => HasTrivialExtensionality.equivDescExt type.{u} (HasEquivalences.desc E) }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
   ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
-
-  instance hasEquivOpEq : HasEquivOpEq type.{u} :=
-  { isoDescReflEq  := λ _   => rfl,
-    isoDescSymmEq  := λ _   => rfl,
-    isoDescTransEq := λ _ _ => rfl }
-
-  -- Verify that `type` satisfies `IsCategory` according to our generalized definition.
-  instance isCategory : IsCategory ⟨⟨type.{u}⟩⟩ type.{u} := HasEquivOpFunExt.isCategory type.{u}
 
   -- The target equality of dependent functors contains a cast (from `sort.hasOutCongrArg`),
   -- but we can eliminate it easily.

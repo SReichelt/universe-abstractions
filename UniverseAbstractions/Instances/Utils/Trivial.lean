@@ -345,12 +345,10 @@ namespace HasTrivialExtensionality
     EquivDesc.IsExtensional e :=
   ⟨⟩
 
-  instance hasInternalEquivalences [HasTrivialIdentity U] [HasTrivialFunctoriality U U]
-                                   [HasEquivalences U U U] :
+  instance hasInternalEquivalences [HasTrivialFunctoriality U U] [HasEquivalences U U U] :
     HasInternalEquivalences U :=
   { defToFunFun  := λ _ _ => HasTrivialFunctoriality.defFun,
-    isExt        := λ E => equivDescExt U (HasEquivalences.desc E),
-    equivDescInj := λ _ => HasTrivialIdentity.eq }
+    isExt        := λ E => equivDescExt U (HasEquivalences.desc E) }
 
 end HasTrivialExtensionality
 

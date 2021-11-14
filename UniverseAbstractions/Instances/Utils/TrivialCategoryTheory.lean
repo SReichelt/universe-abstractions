@@ -1,6 +1,6 @@
 import UniverseAbstractions.Instances.Utils.Trivial
+import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Functors
 
 
 
@@ -8,13 +8,13 @@ set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 set_option synthInstance.maxHeartbeats 10000
 
-universe u v iv w iw
+universe u u' v w vw iv iw
 
 
 
 namespace MetaRelation
 
-  open IsCategoricalPreorder IsPreGroupoidEquivalence IsGroupoidEquivalence
+  open IsCategoricalPreorder IsGroupoidEquivalence
 
   variable {α : Sort u} {V : Universe.{v}} [HasIdentity V] (R : MetaRelation α V)
 
@@ -32,11 +32,8 @@ namespace MetaRelation
       leftId  := λ _ => eq }
 
     instance isGroupoidEquivalence [IsEquivalence R] : IsGroupoidEquivalence R :=
-    { leftInv  := λ _   => eq,
-      rightInv := λ _   => eq,
-      reflInv  := λ _   => eq,
-      symmInv  := λ _   => eq,
-      transInv := λ _ _ => eq }
+    { leftInv  := λ _ => eq,
+      rightInv := λ _ => eq }
 
   end HasTrivialIdentity
 
@@ -59,18 +56,11 @@ namespace MetaRelation
     { rightIdExt := λ _ _ => funEq,
       leftIdExt  := λ _ _ => funEq }
 
-    instance isPreGroupoidEquivalenceExt [IsEquivalence R] [IsPreGroupoidEquivalence R]
-                                         [HasTransFun R] [HasSymmFun R] [HasFullFunOp V] :
-      IsPreGroupoidEquivalenceExt R :=
-    { leftInvExt  := λ _ _ => funEq,
-      rightInvExt := λ _ _ => funEq }
-
     instance isGroupoidEquivalenceExt [IsEquivalence R] [IsGroupoidEquivalence R]
                                       [HasTransFun R] [HasSymmFun R] [HasFullFunOp V] :
       IsGroupoidEquivalenceExt R :=
-    { symmInvExt     := λ _ _   => funEq,
-      transInvExt    := λ _ _   => funEq,
-      transInvExtExt := λ _ _ _ => funEq }
+    { leftInvExt  := λ _ _ => funEq,
+      rightInvExt := λ _ _ => funEq }
 
   end HasTrivialExtensionality
 
@@ -123,88 +113,39 @@ end MetaFunctor
 
 
 
-namespace CategoryTheory
+namespace MetaQuantification
 
-  open MetaRelation MetaFunctor HasIsomorphisms HasIsoToHomFun IsIsoFunctor
+  open MetaRelation MetaFunctor IsNatural
 
   section HasTrivialIdentity
 
     open HasTrivialIdentity
 
-    variable {M : HomUniverse.{v, iv}} [HasTrivialIdentity M.V]
+    variable {α : Sort u} {β : Sort u'} {V : Universe.{v}} {W : Universe.{w}}
+             {VW : Universe.{vw}} [HasFunctors V W VW] [HasIdentity.{w, iw} W]
+             [HasTrivialIdentity W] {R : MetaRelation α V} {S : MetaRelation β W}
 
-    instance hasIsoDescEq (α : Sort u) [IsPreCategory M α] [HasIsomorphisms α] :
-      HasIsoDescEq α :=
-    { isoDescReflEq  := λ _   => eq (U := M.V),
-      isoDescSymmEq  := λ _   => eq (U := M.V),
-      isoDescTransEq := λ _ _ => eq (U := M.V) }
+    instance isNatural {φ ψ : α → β} (F : PreFunctor R S φ) (G : PreFunctor R S ψ)
+                       (η : MetaQuantification S φ ψ) [hTrans : HasTrans S] :
+      IsNatural F G η :=
+    { nat := λ _ => eq }
 
   end HasTrivialIdentity
-
-  section HasTrivialFunctoriality
-
-    open HasTrivialFunctoriality
-
-    variable {M : HomUniverse.{v, iv}} [HasTrivialFunctoriality M.V M.V]
-
-    instance hasIsoToHomFun (α : Sort u) [IsPreCategory M α] [hIso : HasIsomorphisms α] :
-      HasIsoToHomFun α :=
-    { isoSymmFun  := hasSymmFun  hIso.Iso,
-      isoTransFun := hasTransFun hIso.Iso,
-      defToHomFun := λ _ _ => defFun }
-
-  end HasTrivialFunctoriality
 
   section HasTrivialExtensionality
 
     open HasTrivialExtensionality
 
-    variable {M : IsoUniverse.{w, iw}} [HasTrivialExtensionality M.V M.V]
+    variable {α : Sort u} {β : Sort u'} {W : Universe.{w}} [HasIdentity.{w, iw} W]
+             [HasInternalFunctors W] [HasTrivialExtensionality W W]
+             {R : MetaRelation α W} {S : MetaRelation β W}
 
-    instance hasIsoToHomFunExt (α : Sort u) [IsPreCategory M.toHomUniverse α]
-                               [hIso : HasIsomorphisms α] [HasIsoDescEq α] [HasIsoToHomFun α] :
-      HasIsoToHomFunExt α :=
-    { toHomFunExt    := isTransFunctorExt (toHomMetaFunctor α),
-      isoGroupoidExt := isGroupoidEquivalenceExt hIso.Iso }
-
-    instance isIsoFunctorExt {α : Sort u} {β : Sort v}
-                             [IsPreCategory M.toHomUniverse α] [IsPreCategory M.toHomUniverse β]
-                             [HasIsomorphisms α] [HasIsomorphisms β]
-                             [HasIsoDescEq α] [HasIsoDescEq β]
-                             [HasIsoToHomFun α] [HasIsoToHomFun β]
-                             (φ : α → β) [IsPreCategoryFunctor φ] [iφ : IsIsoFunctor φ] :
-      IsIsoFunctorExt φ :=
-    { isoFunEqExt := λ _ _ => funEq,
-      symmFunExt  := isSymmFunctorExt  iφ.E,
-      transFunExt := isTransFunctorExt iφ.E }
+    instance isNaturalExt [HasLinearFunOp W] [HasTrans S] [HasTransFun S]
+                          {φ ψ : α → β} (F : PreFunctor R S φ) (G : PreFunctor R S ψ)
+                          (η : MetaQuantification S φ ψ) [h : IsNatural F G η] :
+      IsNaturalExt F G η :=
+    { natExt := λ _ _ => funEq }
 
   end HasTrivialExtensionality
 
-end CategoryTheory
-
-
-
-namespace HasTrivialIdentity
-
-  open HasLinearFunOp HasEquivOp
-
-  instance hasEquivOpEq (U : Universe) [HasIdentity U] [HasTrivialIdentity U]
-                        [HasInternalFunctors U] [HasLinearFunOp U] [HasLinearFunExt U]
-                        [HasInternalEquivalences U] [HasEquivOp U] :
-    HasEquivOpEq U :=
-  ⟨⟩
-
-end HasTrivialIdentity
-
-namespace HasTrivialExtensionality
-
-  open HasLinearFunOp HasEquivOp HasEquivOpFun
-
-  instance hasEquivOpFunExt (U : Universe) [HasIdentity U] [HasInternalFunctors U]
-                            [HasTrivialExtensionality U U] [HasFullFunOp U]
-                            [HasInternalEquivalences U] [HasEquivOp U] [HasEquivOpFun U]
-                            [HasEquivOpEq U] :
-    HasEquivOpFunExt U :=
-  ⟨⟩
-
-end HasTrivialExtensionality
+end MetaQuantification

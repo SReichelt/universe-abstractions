@@ -10,6 +10,8 @@ import UniverseAbstractions.Lemmas.DerivedFunctors
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
+universe u
+
 
 
 namespace HasLinearFunOp.HasLinearFunExt
@@ -256,3 +258,26 @@ namespace HasFullFunOp.HasFullFunExt
   (substConstFun F (dupFun G))⁻¹
 
 end HasFullFunOp.HasFullFunExt
+
+
+
+namespace MetaRelation
+
+  open HasFunctors HasLinearFunOp HasLinearFunExt
+
+  variable {α : Sort u} {V : Universe} [HasIdentity V] [HasInternalFunctors V] [HasLinearFunOp V]
+           [HasLinearFunExt V] (R : MetaRelation α V)
+
+  namespace opposite
+
+    def revTransFunEq [HasTrans R] [HasTransFun R] (a : α) {b c : α} (f : R c b) :
+      HasTransFun.revTransFun (opposite R) a f ≃ HasTransFun.transFun R f a :=
+    byDef • swapSwap (HasTransFun.transFunFun R c b a) f
+
+    def revTransFunFunEq [HasTrans R] [HasTransFun R] (a b c : α) :
+      HasTransFun.revTransFunFun (opposite R) a b c ≃ HasTransFun.transFunFun R c b a :=
+    swapSwapExt (HasTransFun.transFunFun R c b a)
+
+  end opposite
+
+end MetaRelation

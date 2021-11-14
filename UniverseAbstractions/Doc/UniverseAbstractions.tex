@@ -63,6 +63,10 @@
 \newcommand{\substFun}{\combinator{S'}}
 \newcommand{\revSubstFun}{\combinator{S}}
 
+\newcommand{\eqDef}{\overset{\text{def}}{=}}
+
+\newenvironment{anonFun}{\left[\begin{aligned}[c]}{\end{aligned}\right]}
+
 \newcommand{\Lean}{\texttt}
 
 \begin{document}
@@ -214,11 +218,11 @@ $(\sim)$ on $S.$ Then for $\V := \Bool$ and
 for $a,b \in S,$ $(\prec)$ is reflexive/symmetric/transitive whenever $(\sim)$ is.
 
 The notation we use for the three specific instances can be understood category-theoretically:
-Let $S$ be the set of objects in a category, and let $(a \to b)$ denote the set of morphisms
+Let $S$ be the set of objects in a category, and let $[a \to b]$ denote the set of morphisms
 from $a \in S$ to $b \in S.$ Then the morphism arrow $(\to)$ is in fact a $\Set$-valued
 meta-relation on $S,$ and all notations coincide:
 \begin{itemize}
-  \item A morphism $f : a \to b$ is indeed an instance of the type $(a \to b) \in \Set.$
+  \item A morphism $f : a \to b$ is indeed an instance of the type $[a \to b] \in \Set.$
   \item For each $a \in S,$ we have $\id_a : a \to a.$
   \item For an isomorphism $f : a \to b,$ we have $f^{-1} : b \to a.$
   \item For morphisms $f : a \to b$ and $g : b \to c,$ we have $g \circ f : a \to c.$
@@ -299,7 +303,7 @@ conditions are much weaker.
 
 \begin{definition}
   For universes $\U = (I, (S_A)_{A \in I})$ and $\V = (J, (T_B)_{B \in J}),$ a
-  \defn{functor type} from $A \in \U$ to $B \in \V$ is a type $(A \to B)$ in a universe $\W$
+  \defn{functor type} from $A \in \U$ to $B \in \V$ is a type $[A \to B]$ in a universe $\W$
   with the following two properties:
   \begin{itemize}
     \item For every instance $F : A \to B$ (which we call a \defn{functor}) we have a
@@ -315,12 +319,12 @@ conditions are much weaker.
   \end{itemize}
   
   We say that we \defn{have functors from $\U$ to $\V$ in $\W$} if for every $A \in \U$ and
-  $B \in \V$ we have a functor type $(A \to B) \in \W.$
+  $B \in \V$ we have a functor type $[A \to B] \in \W.$
   We say that a universe $\U$ has \defn{internal functors} if we have functors from $\U$ to
   $\U$ in $\U.$
 
   As is common practice, we define the symbol ``$\to$'' to be right-associative, i.e.\ the
-  notation ``$A \to B \to C$'' stands for ``$A \to (B \to C).$'' We call such a functor $F$ a
+  notation ``$A \to B \to C$'' stands for ``$A \to [B \to C].$'' We call such a functor $F$ a
   \defn{bifunctor}, and we write ``$F(a,b)$'' for ``$F(a)(b).$'' (In section \ref{sec:products},
   we will identify $A \to B \to C$ with $A \times B \to C,$ where $A \times B$ is a product
   type.)
@@ -334,7 +338,7 @@ are much more rarer. Let us analyze a few examples.
   in $\Set$.
   \item The universe of categories has internal functors: For categories $\C$ and $\D,$ the
   (categorical) functors from $\C$ to $\D$ form a category $\D^\C,$ and we define the type
-  $(\C \to \D)$ to be that category.\\
+  $[\C \to \D]$ to be that category.\\
   We need to verify that functors respect instance equivalences. Recall that for objects
   $a$ and $b$ of either $\C$ or $\D,$ the type $a \equiv b$ is the set of isomorphisms from
   $a$ to $b.$ Indeed, functors map isomorphisms to isomorphisms.
@@ -363,16 +367,16 @@ are much more rarer. Let us analyze a few examples.
   % TODO: Do commutative rings without 1 work?
   \item Continuous functions between topological spaces can be regarded as internal
   functors of a universe of topological spaces, by fixing a topology on them.
-  \item The universe $\Unit$ only has a single type $1,$ so we must set $(1 \to 1) := 1.$
+  \item The universe $\Unit$ only has a single type $1,$ so we must set $[1 \to 1] := 1.$
   The type $1$ has exactly one instance $\emptyset,$ so $\apply$ is completely
   defined by $\apply_{11\emptyset}(\emptyset) := \emptyset,$ and $\congrArg$ is completely
   defined by $\congrArg_{11\emptyset\emptyset\emptyset}(\emptyset) := \emptyset.$
   \item For $\Bool,$ we set
   \begin{align*}
-    (0 \to 0) &:= 1,\\
-    (0 \to 1) &:= 1,\\
-    (1 \to 0) &:= 0,\\
-    (1 \to 1) &:= 1,
+    [0 \to 0] &:= 1,\\
+    [0 \to 1] &:= 1,\\
+    [1 \to 0] &:= 0,\\
+    [1 \to 1] &:= 1,
   \end{align*}
   matching logical implication.\footnote{This can be regarded as a degenerate case of
   the Curry-Howard correspondence.} Since $0$ has no instances and $1$ only has
@@ -402,7 +406,7 @@ are much more rarer. Let us analyze a few examples.
     F : A \to B &\to     C\\
         (a,b)   &\mapsto t_{ab}
   \end{align*}
-  to mean that $F$ is a functor from $A$ to $(B \to C),$ and that for each $a : A$ and $b : B$ we
+  to mean that $F$ is a functor from $A$ to $[B \to C],$ and that for each $a : A$ and $b : B$ we
   have an instance equivalence $\fndef{F}(a,b) : F(a,b) \equiv t_{ab}.$
 
   Likewise for \defn{trifunctors} $F : A \to B \to C \to D,$ and so on.
@@ -427,11 +431,11 @@ axiomatically.
                  a &\mapsto a
     \end{aligned}\\[1em]
     \begin{aligned}
-      \revAppFun_{AB} : A \to (A \to B) &\to     B\\
+      \revAppFun_{AB} : A \to [A \to B] &\to     B\\
                         (a,F)           &\mapsto F(a)
     \end{aligned}\\[1em]
     \begin{aligned}
-      \compFun_{ABC} : (A \to B) \to (B \to C) \to A &\to     C\\
+      \compFun_{ABC} : [A \to B] \to [B \to C] \to A &\to     C\\
                        (F,G,a)                       &\mapsto G(F(a))
     \end{aligned}
   \end{gather*}
@@ -449,9 +453,9 @@ axiomatically.
 
   Now we define
   \begin{align*}
-    \swapFun_{ABC} &:= \compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\revAppFun_{BC}) \circ \compFun_{A(B{\to}C)C}\\
+    \swapFun_{ABC} &:= \compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}) \circ \compFun_{A[B{\to}C]C}\\
                    &: \begin{aligned}[t]
-                        (A \to B \to C) \to B \to A &\to     C\\
+                        [A \to B \to C] \to B \to A &\to     C\\
                         (F,b,a)                     &\mapsto F(a,b)
                       \end{aligned}
   \end{align*}
@@ -459,7 +463,7 @@ axiomatically.
   \begin{align*}
     \revCompFun_{ABC} &:= \swapFun(\compFun_{ABC})\\
                       &: \begin{aligned}[t]
-                           (B \to C) \to (A \to B) \to A &\to     C\\
+                           [B \to C] \to [A \to B] \to A &\to     C\\
                            (G,F,a)                       &\mapsto G(F(a))
                          \end{aligned}
   \end{align*}
@@ -470,12 +474,15 @@ axiomatically.
     \nm{rightId}_{AB} &: \compFun_{AAB}(\idFun_A) \equiv \idFun_{A{\to}B}\\
     \nm{leftId}_{AB}  &: \revCompFun_{ABB}(\idFun_B) \equiv \idFun_{A{\to}B}\\
     \nm{swapT}_{AB}   &: \swapFun(\revAppFun_{AB}) \equiv \idFun_{A{\to}B}\\
-    \nm{swapB'}_{ABC} &: \swapFun_{(B{\to}C)AC} \circ \compFun_{ABC} \equiv \revCompFun_{AB((B{\to}C){\to}C)}(\revAppFun_{BC})\\
-    \nm{swapB}_{ABC}  &: \swapFun_{(A{\to}B)AC} \circ \revCompFun_{ABC} \equiv \revCompFun_{A((A{\to}B){\to}B)((A{\to}B){\to}C)}(\revAppFun_{AB}) \circ \revCompFun_{(A{\to}B)BC}\\
-    \nm{assoc}_{ABCD} &: \compFun_{(B{\to}C)((C{\to}D){\to}(B{\to}D))((C{\to}D){\to}(A{\to}D))}(\compFun_{BCD}) \circ \revCompFun_{(C{\to}D)(B{\to}D)(A{\to}D)} \circ \compFun_{ABD} \equiv\\
-                      &\:\ \ \revCompFun_{(B{\to}C)}(\compFun_{ACD}) \circ \compFun_{ABC}
+    \nm{swapB'}_{ABC} &: \swapFun_{[B{\to}C]AC} \circ \compFun_{ABC} \equiv \revCompFun_{AB[[B{\to}C]{\to}C]}(\revAppFun_{BC})\\
+    \nm{swapB}_{ABC}  &: \swapFun_{[A{\to}B]AC} \circ \revCompFun_{ABC} \equiv \revCompFun_{A[[A{\to}B]{\to}B][[A{\to}B]{\to}C]}(\revAppFun_{AB}) \circ \revCompFun_{[A{\to}B]BC}\\
+    \nm{assoc}_{ABCD} &: \compFun_{[B{\to}C][[C{\to}D]{\to}[B{\to}D]][[C{\to}D]{\to}[A{\to}D]]}(\compFun_{BCD}) \circ \revCompFun_{[C{\to}D][B{\to}D][A{\to}D]} \circ \compFun_{ABD} \equiv\\
+                      &\:\ \ \revCompFun_{[B{\to}C][A{\to}C][[C{\to}D]{\to}[A{\to}D]]}(\compFun_{ACD}) \circ \compFun_{ABC}
   \end{align*}
 \end{definition}
+
+(For the meaning of these equivalences, see lemma \ref{lem:extensional} and proposition
+\ref{prp:extensionality-axioms}.)
 
 \begin{remark}
   When defining $\swapFun$ and $\revCompFun,$ we implicitly assumed that we can derive
@@ -517,18 +524,18 @@ demonstration purposes we will explicitly construct $\fndef{\swapFun}$ now.
 
 Recall that ``$\circ$'' is just a shorthand for $\compFun$ in reverse order. So for a given
 $F : A \to B \to C,$ the term
-$\swapFun(F) = (\compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\revAppFun_{BC}) \circ \compFun_{A(B{\to}C)C})(F)$
+$\swapFun(F) = (\compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}) \circ \compFun_{A[B{\to}C]C})(F)$
 is exactly the left side of an equivalence given by $\fndef{\compFun}$:
 \begin{align*}
-  e &:= \fndef{\compFun}(\compFun_{A(B{\to}C)C},\compFun_{B((B{\to}C){\to}C)(A{\to}C)}(\revAppFun_{BC}),F)\\
-    &: \swapFun(F) \equiv \compFun_{A(B{\to}C)C}(F) \circ \revAppFun_{BC}.
+  e &:= \fndef{\compFun}(\compFun_{A[B{\to}C]C},\compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}),F)\\
+    &: \swapFun(F) \equiv \compFun_{A[B{\to}C]C}(F) \circ \revAppFun_{BC}.
 \end{align*}
 Applying proposition \ref{prp:congrfun} to $e$ and an instance $b : B,$ we obtain
-\[e(b) : \swapFun(F,b) \equiv (\compFun_{A(B{\to}C)C}(F) \circ \revAppFun_{BC})(b).\]
+\[e(b) : \swapFun(F,b) \equiv (\compFun_{A[B{\to}C]C}(F) \circ \revAppFun_{BC})(b).\]
 The right side is again an application of $\compFun,$ so we have
 \begin{align*}
-  f &:= \fndef{\compFun}(\revAppFun_{BC},\compFun_{A(B{\to}C)C}(F),b)\\
-    &: (\compFun_{A(B{\to}C)C}(F) \circ \revAppFun_{BC})(b) \equiv \revAppFun_{BC}(b) \circ F,
+  f &:= \fndef{\compFun}(\revAppFun_{BC},\compFun_{A[B{\to}C]C}(F),b)\\
+    &: (\compFun_{A[B{\to}C]C}(F) \circ \revAppFun_{BC})(b) \equiv \revAppFun_{BC}(b) \circ F,
 \end{align*}
 and, applying transitivity of $(\equiv),$
 \begin{align*}
@@ -582,8 +589,8 @@ Finally, we can apply transitivity twice to arrive at
                      (b,a)   &\mapsto b
   \end{align*}
   \begin{align*}
-    \nm{rightConst}_{ABC} &: \compFun_{B(A{\to}B)(A{\to}C)}(\constFun_{AB}) \circ \revCompFun_{ABC} \equiv \revCompFun_{BC(A{\to}C)}(\constFun_{AC})\\
-    \nm{leftConst}_{ABC}  &: \compFun_{C(B{\to}C)(A{\to}C)}(\constFun_{BC}) \circ \compFun_{ABC} \equiv \constFun_{(A{\to}B)(C{\to}A{\to}C)}(\constFun_{AC})
+    \nm{rightConst}_{ABC} &: \compFun_{ABC} \circ \constFun_{AB} \equiv \revCompFun_{[B{\to}C]C[A{\to}C]}(\constFun_{AC}) \circ \revAppFun_{BC}\\
+    \nm{leftConst}_{ABC}  &: \compFun_{C[B{\to}C][A{\to}C]}(\constFun_{BC}) \circ \compFun_{ABC} \equiv \constFun_{[A{\to}B][C{\to}A{\to}C]}(\constFun_{AC})
   \end{align*}
 \end{definition}
 
@@ -594,16 +601,16 @@ Finally, we can apply transitivity twice to arrive at
 
   First we assert the existence of
   \begin{align*}
-    \dupFun_{AB} : (A \to A \to B) \to A &\to     B\\
+    \dupFun_{AB} : [A \to A \to B] \to A &\to     B\\
                    (F,a)                 &\mapsto F(a,a)
   \end{align*}
   and derive
   \begin{align*}
-    \substFun_{ABC} &:= \revCompFun_{(A{\to}B{\to}C)(A{\to}A{\to}C)(A{\to}C)}(\dupFun_{AC}) \circ
-                        \revCompFun_{A(B{\to}C)(A{\to}C)} \circ
+    \substFun_{ABC} &:= \revCompFun_{[A{\to}B{\to}C][A{\to}A{\to}C][A{\to}C]}(\dupFun_{AC}) \circ
+                        \revCompFun_{A[B{\to}C][A{\to}C]} \circ
                         \compFun_{ABC}\\
                     &: \begin{aligned}[t]
-                         (A \to B) \to (A \to B \to C) \to A &\to     C\\
+                         [A \to B] \to [A \to B \to C] \to A &\to     C\\
                          (F,G,a)                             &\mapsto G(a,F(a))
                        \end{aligned}
   \end{align*}
@@ -611,7 +618,7 @@ Finally, we can apply transitivity twice to arrive at
   \begin{align*}
     \revSubstFun_{ABC} &:= \swapFun(\substFun_{ABC})\\
                        &: \begin{aligned}[t]
-                            (A \to B \to C) \to (A \to B) \to A &\to     C\\
+                            [A \to B \to C] \to [A \to B] \to A &\to     C\\
                             (G,F,a)                             &\mapsto G(a,F(a)).
                           \end{aligned}
   \end{align*}
@@ -619,12 +626,12 @@ Finally, we can apply transitivity twice to arrive at
   Then we assert the existence of the following equivalences.
   \begin{align*}
     \nm{dupC}_{AB}      &: \dupFun_{AB} \circ \swapFun_{AAB} \equiv \dupFun_{AB}\\
-    \nm{dupK}_{AB}      &: \dupFun_{AB} \circ \constFun_{A(A{\to}B)} \equiv \idFun_{A{\to}B}\\
-    \nm{dupW}_{AB}      &: \dupFun_{AB} \circ \dupFun_{A(A{\to}B)} \equiv \dupFun_{AB} \circ \revCompFun_{A(A{\to}A{\to}B)(A{\to}B)}(\dupFun_{AB})\\
-    \nm{rightDup}_{ABC} &: \begin{aligned}[t]\compFun_{ABC} \circ \dupFun_{AB} &\equiv \revCompFun_{(B{\to}C)(A{\to}A{\to}C)(A{\to}C)}(\dupFun_{AC})\,\circ\\
-                                                                               &\ \ \ \ \compFun_{(B{\to}C)((A{\to}B){\to}(A{\to}C))(A{\to}A{\to}C)}(\revCompFun_{ABC}) \circ \compFun_{A(A{\to}B)(A{\to}C)}\end{aligned}\\
-    \nm{leftDup}_{ABC}  &: \compFun_{(A{\to}B{\to}B{\to}C)(A{\to}B{\to}C)(A{\to}C)}(\revCompFun_{A(B{\to}B{\to}C)(B{\to}C)}(\dupFun_{BC})) \circ \substFun_{ABC} \equiv\\
-                        &\:\ \ \substFun(\substFun_{ABC},\compFun_{(A{\to}B{\to}B{\to}C)(A{\to}B{\to}C)(A{\to}C)} \circ \substFun_{AB(B{\to}C)})
+    \nm{dupK}_{AB}      &: \dupFun_{AB} \circ \constFun_{A[A{\to}B]} \equiv \idFun_{A{\to}B}\\
+    \nm{dupW}_{AB}      &: \dupFun_{AB} \circ \dupFun_{A[A{\to}B]} \equiv \dupFun_{AB} \circ \revCompFun_{A[A{\to}A{\to}B][A{\to}B]}(\dupFun_{AB})\\
+    \nm{rightDup}_{ABC} &: \begin{aligned}[t]\compFun_{ABC} \circ \dupFun_{AB} &\equiv \revCompFun_{[B{\to}C][A{\to}A{\to}C][A{\to}C]}(\dupFun_{AC})\,\circ\\
+                                                                               &\ \ \ \ \compFun_{[B{\to}C][[A{\to}B]{\to}[A{\to}C]][A{\to}A{\to}C]}(\revCompFun_{ABC}) \circ \compFun_{A[A{\to}B][A{\to}C]}\end{aligned}\\
+    \nm{leftDup}_{ABC}  &: \compFun_{[A{\to}B{\to}B{\to}C][A{\to}B{\to}C][A{\to}C]}(\revCompFun_{A[B{\to}B{\to}C][B{\to}C]}(\dupFun_{BC})) \circ \substFun_{ABC} \equiv\\
+                        &\:\ \ \substFun(\substFun_{ABC},\compFun_{[A{\to}B{\to}B{\to}C][A{\to}B{\to}C][A{\to}C]} \circ \substFun_{AB[B{\to}C]})
   \end{align*}
 \end{definition}
 
@@ -642,7 +649,7 @@ Finally, we can apply transitivity twice to arrive at
 (Note that proposition \ref{prp:congrfun} says that the converse is always true in
 a universe with linear functor operations.)
 
-\begin{proof}
+\begin{proof}[Proof for $\nm{rightId}$]
   Under the extensionality condition, the equivalence
   \[\nm{rightId}_{AB} : \compFun_{AAB}(\idFun_A) \equiv \idFun_{A{\to}B}\]
   exists if for every $F : A \to B$ we have an equivalence
@@ -654,6 +661,13 @@ a universe with linear functor operations.)
   which is given by $\id_{F(a)}.$
 
   The other axioms are analogous.
+\end{proof}
+
+\begin{proof}[Alternative proof]
+  The functoriality algorithm presented in the next section does not depend on these
+  axioms. Therefore we may state them in the alternative form given in proposition
+  \ref{prp:extensionality-axioms}, from which lemma \ref{lem:extensional} follows
+  immediately.
 \end{proof}
 
 \begin{theorem}
@@ -838,7 +852,7 @@ in the following proposition is sufficient.
   for constant $a_1 : A_1.$
   Then recursively obtain the functor
   \begin{align*}
-    F' : A_1 &\to     (A_2 \to B)\\
+    F' : A_1 &\to     [A_2 \to B]\\
          a_1 &\mapsto F_{a_1}.
   \end{align*}
   Finally set $F := F',$ apply proposition \ref{prp:congrfun} to $\fndef{F'}$ to obtain
@@ -892,7 +906,7 @@ in the following proposition is sufficient.
     \hline
     \rule{0pt}{2em}
     $\begin{aligned}
-      F : (B \to C) &\to     C\\
+      F : [B \to C] &\to     C\\
           G         &\mapsto G(b)
     \end{aligned}$ &
     for $b : B$ &
@@ -906,7 +920,7 @@ in the following proposition is sufficient.
     \parbox{3cm}{for $b : B$ \\ and $G_a : B \to C$} &
     $\swapFun_{ABC}(G,b)$ with
     $\begin{aligned}
-      G : A &\to     (B \to C)\\
+      G : A &\to     [B \to C]\\
           a &\mapsto G_a
     \end{aligned}$\\
     \hline
@@ -918,7 +932,7 @@ in the following proposition is sufficient.
     for $G_a : A \to B$ &
     $\dupFun_{AB}(G)$ with
     $\begin{aligned}
-      G : A &\to     (A \to B)\\
+      G : A &\to     [A \to B]\\
           a &\mapsto G_a
     \end{aligned}$\\
     \hline
@@ -936,7 +950,7 @@ in the following proposition is sufficient.
       \end{aligned}$
       and
       $\begin{aligned}
-        G : A &\to     (B \to C)\\
+        G : A &\to     [B \to C]\\
             a &\mapsto G_a
       \end{aligned}$
     }
@@ -985,7 +999,7 @@ in the following proposition is sufficient.
   \[H_{FG} := \revCompFun_{BCD}(G) \circ F\]
   and
   \begin{align*}
-    \fndef{H_{FG}}(a,b) &:= \fndef{\revCompFun_{BCD}}(G,F(a),b) \circ \fndef{\compFun_{A(B{\to}C)(B{\to}D)}}(F,\revCompFun_{BCD}(G),a)(b)\\
+    \fndef{H_{FG}}(a,b) &:= \fndef{\revCompFun_{BCD}}(G,F(a),b) \circ \fndef{\compFun_{A[B{\to}C][B{\to}D]}}(F,\revCompFun_{BCD}(G),a)(b)\\
                         &: H_{FG}(a,b) \equiv G(F(a,b)).
   \end{align*}
 
@@ -1007,16 +1021,16 @@ in the following proposition is sufficient.
   If instead we want to construct a functor that takes $F$ and $G$ as
   arguments, we can either execute the functoriality algorithm directly for
   \begin{align*}
-    H : (A \to B \to C) \to (C \to D) \to A \to B &\to     D\\
+    H : [A \to B \to C] \to [C \to D] \to A \to B &\to     D\\
         (F,G,a,b)                                 &\mapsto G(F(a,b)),
   \end{align*}
   or we can use the previous result and construct
   \begin{align*}
-    H : (A \to B \to C) \to (C \to D) &\to     (A \to B \to D)\\
+    H : [A \to B \to C] \to [C \to D] &\to     [A \to B \to D]\\
         (F,G)                         &\mapsto H_{FG} = \revCompFun_{BCD}(G) \circ F.
   \end{align*}
   The algorithm (always) produces the same result in both cases, which is
-  \[H := \compFun_{(C{\to}D)((B{\to}C){\to}(B{\to}D))(A{\to}B{\to}D)}(\revCompFun_{BCD}) \circ \compFun_{A(B{\to}C)(B{\to}D)}.\]
+  \[H := \compFun_{[C{\to}D][[B{\to}C]{\to}[B{\to}D]][A{\to}B{\to}D]}(\revCompFun_{BCD}) \circ \compFun_{A[B{\to}C][B{\to}D]}.\]
 \end{example}
 
 \begin{remark}
@@ -1034,6 +1048,96 @@ in the following proposition is sufficient.
   ``obviously functorial,'' it probably has a universe-based interpretation so that
   functoriality indeed does not need to be proved.
 \end{remark}
+
+\begin{definition}
+  For a universe $\U$ instance equivalences in $\V$ and internal functors,
+  types $A_1\ldots,A_n,B \in \U,$ and two families
+  $(s_{a_1 \ldots a_n})_{a_k : A_k}$ and $(t_{a_1 \ldots a_n})_{a_k : A_k}$
+  of instances $s_{a_1 \ldots a_n},t_{a_1 \ldots a_n} : B,$ we write
+  \begin{align*}
+    e : A_1 \to \dots \to A_n &\leadsto \V\\
+        (a_1 \ldots a_n)      &\mapsto  [s_{a_1 \ldots a_n} \equiv t_{a_1 \ldots a_n}]
+  \end{align*}
+  for the equivalence $e : F_s \equiv F_t$ between the two functors $F_s$ and $F_t$
+  that are obtained by applying the functoriality algorithm to
+  $(s_{a_1 \ldots a_n})_{a_k : A_k}$ and $(t_{a_1 \ldots a_n})_{a_k : A_k},$
+  respectively.
+\end{definition}
+
+\begin{proposition}
+  \label{prp:extensionality-axioms}
+  Using this definition, we may rewrite the named equivalences of section
+  \ref{sec:funop} as follows.
+
+  For linear functor operations:
+  \begin{gather*}
+    \begin{aligned}
+      \nm{rightId}_{AB} : [A \to B] \to A &\leadsto \V\\
+                          (F,a)           &\mapsto  [(F \circ \idFun_A)(a) \equiv F(a)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{leftId}_{AB} : [A \to B] \to A &\leadsto \V\\
+                         (F,a)           &\mapsto  [(\idFun_B \circ F)(a) \equiv F(a)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{swapT}_{AB} : [A \to B] \to A &\leadsto \V\\
+                        (F,a)           &\mapsto  [\revAppFun_{AB}(a,F) \equiv F(a)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{swapB'}_{ABC} : [A \to B] \to A \to [B \to C] &\leadsto \V\\
+                          (F,a,G)                       &\mapsto  [(G \circ F)(a) \equiv G(F(a))]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{swapB}_{ABC} : [B \to C] \to A \to [A \to B] &\leadsto \V\\
+                         (G,a,F)                       &\mapsto  [(G \circ F)(a) \equiv G(F(a))]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{assoc}_{ABCD} : [A \to B] \to [B \to C] \to [C \to D] \to A &\leadsto \V\\
+                          (F,G,H,a)                                   &\mapsto  [((H \circ G) \circ F)(a) \equiv (H \circ (G \circ F))(a)]
+    \end{aligned}
+  \end{gather*}
+  For affine functor operations:
+  \begin{gather*}
+    \begin{aligned}
+      \nm{rightConst}_{ABC} : B \to [B \to C] \to A &\leadsto \V\\
+                              (b,G,a)               &\mapsto  [(G \circ \constFun_{AB}(b))(a) \equiv G(b)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{leftConst}_{ABC} : [A \to B] \to C \to A &\leadsto \V\\
+                             (F,c,a)               &\mapsto  [(\constFun_{BC}(c) \circ F)(a) \equiv c]
+    \end{aligned}
+  \end{gather*}
+  For full functor operations:
+  \begin{gather*}
+    \begin{aligned}
+      \nm{dupC}_{AB} : [A \to A \to B] \to A &\leadsto \V\\
+                       (F,a)                 &\mapsto  [\swapFun(F,a,a) \equiv F(a,a)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{dupK}_{AB} : [A \to B] \to A &\leadsto \V\\
+                       (F,a)           &\mapsto  [\constFun_{A[A{\to}B]}(F,a,a) \equiv F(a)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{dupW}_{AB} : [A \to A \to A \to B] \to A &\leadsto \V\\
+                       (F,a)                       &\mapsto  [\dupFun_{A[A{\to}B]}(F,a,a) \equiv F(a,a,a)]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{rightDup}_{ABC} : [A \to A \to B] \to [B \to C] \to A &\leadsto \V\\
+                            (F,G,a)                             &\mapsto  [(G \circ \dupFun_{AB}(F))(a) \equiv G(F(a,a))]
+    \end{aligned}\\[1ex]
+    \begin{aligned}
+      \nm{leftDup}_{ABC} : [A \to B] \to [A \to B \to B \to C] \to A &\leadsto \V\\
+                           (F,G,a)                                   &\mapsto  [(\dupFun_{BC} \circ G)(a,F(a)) \equiv G(a,F(a),F(a))]
+    \end{aligned}
+  \end{gather*}
+\end{proposition}
+
+Thus, each axiom asserts the equivalence of two functors that map identical arguments to
+(provably) equivalent values, i.e.\ it asserts that specific functors are
+\defn{extensional}.
+In the next sections, we will show that the axioms imply the extensionality of \emph{all}
+functors that can be constructed from $\idFun,$ $\revAppFun,$ $\compFun,$ $\constFun,$ and
+$\dupFun$.
 
 \subsection{Functor universe}
 \label{sec:functor-universe}
@@ -1076,13 +1180,13 @@ functors and full functor operations, and a type $A \in \U.$
 
 \begin{proposition}
   \label{prp:fun-univ-full}
-  In this case, $\U^A$ also has internal functors, defined by $(B^A \to C^A) := (B \to C)^A$
+  In this case, $\U^A$ also has internal functors, defined by $[B^A \to C^A] := [B \to C]^A$
   for $B,C \in \U.$
 \end{proposition}
 \vspace{-1ex}
 \begin{proof}
-  For a functor $G : B^A \to C^A,$ which is also an instance of the type $A \to B \to C,$
-  and an instance $F : B^A,$ which is also an instance of $A \to B,$ we define their functor
+  For a functor $G : B^A \to C^A,$ which is also an instance of the type $[A \to B \to C],$
+  and an instance $F : B^A,$ which is also an instance of $[A \to B],$ we define their functor
   application in $\U^A$ by $G(F) := \revSubstFun_{ABC}(G,F).$ This definition
   respects instance equivalences because it is an application of the functor
   $\revSubstFun_{ABC}(G).$
@@ -1098,11 +1202,11 @@ functors and full functor operations, and a type $A \in \U.$
 \begin{proof}
   As a functor, $\constFun_{AB}$ respects instance equivalences.
   Moreover, for $G : B \to C$ and $b : B$ with $B,C \in \U$ we can derive an equivalence
-  \[\nm{embedMap}(G,b) : G^A(b^A) = \revSubstFun_{ABC}(\constFun_{A(B{\to}C)}(G),\constFun_{AB}(b)) \equiv
-    \constFun_{AC}(G(b)) = (G(b))^A\]
+  \[\nm{embedMap}(G,b) : G^A(b^A) \eqDef \revSubstFun_{ABC}(\constFun_{A[B{\to}C]}(G),\constFun_{AB}(b)) \equiv
+    \constFun_{AC}(G(b)) \eqDef (G(b))^A\]
   as follows.
   First, from $\nm{rightConst}$ and $\nm{dupK}$ we can derive the more generic equivalence
-  \[\nm{leftSK}(G,F) : G^A(F) = \revSubstFun_{ABC}(\constFun_{A(B{\to}C)}(G),F) \equiv G \circ F\]
+  \[\nm{leftSK}(G,F) : G^A(F) \eqDef \revSubstFun_{ABC}(\constFun_{A[B{\to}C]}(G),F) \equiv G \circ F\]
   for every $F : A \to B$ and $G : B \to C.$
   Then setting $F := \constFun_{AB}(b)$ yields $\nm{embedMap}$ via a second application
   of $\nm{rightConst}.$
@@ -1120,7 +1224,7 @@ functors and full functor operations, and a type $A \in \U.$
   need to verify that they also map all other instances of $\U^A$ to the values
   specified by their definition, up to equivalence. E.g.\ for $\idFun_{B^A}$ we
   need to provide an equivalence
-  \[\fndef{\idFun_{B^A}}(F) : \idFun_{B^A}(F) = \revSubstFun_{ABC}(\constFun_{AB}(\idFun_B),F) \equiv F\]
+  \[\fndef{\idFun_{B^A}}(F) : \idFun_{B^A}(F) \eqDef \revSubstFun_{ABC}(\constFun_{AB}(\idFun_B),F) \equiv F\]
   for $F : B^A.$ This equivalence follows from $\nm{leftSK}$ (from the proof of
   proposition \ref{prp:fun-univ-embed-map}) and $\nm{leftId}.$
 
@@ -1250,16 +1354,16 @@ we can either apply a constant functor (i.e.\ in $\U$) to a variable argument
 
 \begin{proposition}
   \label{prp:fun-univ-linear}
-  We have functors from $\U^A$ to $\U^A$ in $\U,$ defined by $(B^A \to C^A) := (B \to C)$
+  We have functors from $\U^A$ to $\U^A$ in $\U,$ defined by $[B^A \to C^A] := [B \to C]$
   for $B,C \in \U.$ Moreover, we have functors from $\U$ to $\U^A$ in $\U^A,$
-  defined by $(B \to C^A) := (B \to C)^A.$
+  defined by $[B \to C^A] := [B \to C]^A.$
 \end{proposition}
 \vspace{-1ex}
 \begin{proof}
   For a functor $G : B^A \to C^A,$ which by definition is just an instance of
-  $B \to C,$ and an instance $F : B^A,$ we define their functor application by
+  $[B \to C],$ and an instance $F : B^A,$ we define their functor application by
   $G(F) := G \circ F.$ For a functor $G : B \to C^A,$ which is an instance of
-  $A \to B \to C,$ and an instance $b : B,$ we define
+  $[A \to B \to C],$ and an instance $b : B,$ we define
   $G(b) := \swapFun_{ABC}(G,b).$
 \end{proof}
 
@@ -1283,13 +1387,13 @@ empty type.
   For a universe $\U$ with internal functors and at least linear functor operations,
   $\U^{A?}$ has internal functors as follows. For $B,C \in \U,$ we set
   \begin{itemize}
-    \item $(B \to C)$ in $\U^{A?}$ to be the same as $(B \to C)$ in $\U,$
-    \item $(B \to C^A) := (B \to C)^A,$
-    \item $(B^A \to C^A) := \begin{cases}
-      (B \to C)^A & \text{if $\U$ has full functor operations}\\
-      (B \to C)   & \text{otherwise,}
+    \item $[B \to C]$ in $\U^{A?}$ to be the same as $[B \to C]$ in $\U,$
+    \item $[B \to C^A] := [B \to C]^A,$
+    \item $[B^A \to C^A] := \begin{cases}
+      [B \to C]^A & \text{if $\U$ has full functor operations}\\
+      [B \to C]   & \text{otherwise,}
     \end{cases}$
-    \item $(X \to Y) := 0$ for all $X,Y \in \V^{A?}$ not covered above.
+    \item $[X \to Y] := 0$ for all $X,Y \in \V^{A?}$ not covered above.
   \end{itemize}
   Functor application is defined as in propositions \ref{prp:fun-univ-full} and
   \ref{prp:fun-univ-linear}.
@@ -1386,8 +1490,8 @@ axioms that we have defined generically on universe-based structures.)
     $\begin{array}{@{}l@{}}
       \constFun_{AC}(G(b))\\
       \compFun_{ABC}(\constFun_{AB}(b),G)\\
-      \swapFun_{ABC}(\constFun_{A(B{\to}C)}(G),b)\\
-      \left[\substFun_{ABC}(\constFun_{AB}(b),\constFun_{A(B{\to}C)}(G))\right]
+      \swapFun_{ABC}(\constFun_{A[B{\to}C]}(G),b)\\
+      \left[\substFun_{ABC}(\constFun_{AB}(b),\constFun_{A[B{\to}C]}(G))\right]
     \end{array}$\\
     \hline
     \rule{0pt}{3em}
@@ -1399,8 +1503,8 @@ axioms that we have defined generically on universe-based structures.)
     $\begin{array}{@{}l@{}}
       G\\
       \compFun_{AAB}(\idFun_A,G)\\
-      \dupFun_{AB}(\constFun_{A(A{\to}B)}(G))\\
-      \left[\substFun_{AAB}(\idFun_A,\constFun_{A(A{\to}B)}(G))\right]
+      \dupFun_{AB}(\constFun_{A[A{\to}B]}(G))\\
+      \left[\substFun_{AAB}(\idFun_A,\constFun_{A[A{\to}B]}(G))\right]
     \end{array}$\\
     \hline
     \rule{0pt}{2em}
@@ -1411,7 +1515,7 @@ axioms that we have defined generically on universe-based structures.)
     \parbox{3cm}{for $G : B \to C$ \\ and $b_a : B$} &
     $\begin{array}{@{}l@{}}
       \compFun_{ABC}(H,G)\\
-      \substFun_{ABC}(H,\constFun_{B(B{\to}C)}(G))
+      \substFun_{ABC}(H,\constFun_{B[B{\to}C]}(G))
     \end{array}$
     with
     $\begin{aligned}
@@ -1421,14 +1525,14 @@ axioms that we have defined generically on universe-based structures.)
     \hline
     \rule{0pt}{2.5em}
     $\begin{aligned}
-      F : (B \to C) &\to     C\\
+      F : [B \to C] &\to     C\\
           G         &\mapsto G(b)
     \end{aligned}$ &
     for $b : B$ &
     $\begin{array}{@{}l@{}}
       \revAppFun_{BC}(b)\\
-      \swapFun_{(B{\to}C)BC}(\idFun_{B{\to}C},b)\\
-      \left[\substFun_{(B{\to}C)BC}(\constFun_{(B{\to}C)B}(b),\idFun_{B{\to}C})\right]
+      \swapFun_{[B{\to}C]BC}(\idFun_{B{\to}C},b)\\
+      \left[\substFun_{[B{\to}C]BC}(\constFun_{[B{\to}C]B}(b),\idFun_{B{\to}C})\right]
     \end{array}$\\
     \hline
     \rule{0pt}{2em}
@@ -1443,7 +1547,7 @@ axioms that we have defined generically on universe-based structures.)
     \end{array}$
     with
     $\begin{aligned}
-      G : A &\to     (B \to C)\\
+      G : A &\to     [B \to C]\\
           a &\mapsto G_a
     \end{aligned}$\\
     \hline
@@ -1459,7 +1563,7 @@ axioms that we have defined generically on universe-based structures.)
     \end{array}$
     with
     $\begin{aligned}
-      G : A &\to     (A \to B)\\
+      G : A &\to     [A \to B]\\
           a &\mapsto G_a
     \end{aligned}$
   \end{longtable}

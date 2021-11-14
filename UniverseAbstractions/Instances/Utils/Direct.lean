@@ -217,10 +217,10 @@ namespace HasAffineFunOp
     congrFun (rightConst A B C) b •
     (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
 
-    def rightConstCongrCongr (A : U) {B C : U} (b : B) (F : B ⟶ C) :
-      F • constFun A b ≃ constFun A (F b) :=
+    def rightConstCongrCongr (A : U) {B C : U} (b : B) (G : B ⟶ C) :
+      G • constFun A b ≃ constFun A (G b) :=
     (byDef • byArgDef • byDef) •
-    congrFun (rightConstCongr U A b C) F •
+    congrFun (rightConstCongr U A b C) G •
     byDef⁻¹
 
     def leftConstCongr {A B : U} (F : A ⟶ B) (C : U) :

@@ -109,8 +109,8 @@ namespace HasAffineFunOp
   variable (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasAffineFunOp U]
 
   class HasAffineFunExt extends HasLinearFunExt U where
-  (rightConst (A : U) {B C : U} (b : B) (F : B ⟶ C) :
-     F • constFun A b ≃{byArgDef ▻-◅} constFun A (F b))
+  (rightConst (A : U) {B C : U} (b : B) (G : B ⟶ C) :
+     G • constFun A b ≃{byArgDef ▻-◅} constFun A (G b))
   (leftConst {A B C : U} (F : A ⟶ B) (c : C) :
      constFun B c • F ≃{byDef ▻-◅} constFun A c)
   (rightConstExt (A : U) {B : U} (b : B) (C : U) :
@@ -189,5 +189,13 @@ end HasFullFunOp
 
 
 
+class HasLinearFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
+  HasInternalFunctors U, HasLinearFunOp U, HasLinearFunOp.HasLinearFunExt U : Type (max u iu)
+
 class HasStandardFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
   HasInternalFunctors U, HasFullFunOp U, HasFullFunOp.HasFullFunExt U : Type (max u iu)
+
+instance HasStandardFunctors.hasLinearFunctors (U : Universe) [HasIdentity.{u, iu} U]
+                                               [HasStandardFunctors U] :
+  HasLinearFunctors U :=
+⟨⟩

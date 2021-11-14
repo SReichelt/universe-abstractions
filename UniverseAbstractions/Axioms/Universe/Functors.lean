@@ -597,6 +597,20 @@ namespace MetaRelation
 
   end HasTransFun
 
+  namespace opposite
+
+    instance hasSymmFun [HasSymm R] [h : HasSymmFun R] :
+      HasSymmFun (opposite R) :=
+    { defSymmFun := λ a b => h.defSymmFun b a }
+
+    instance hasTransFun [HasIdentity VV] [HasFunctors V VV VV] [HasCongrFun V V]
+                         [HasSwapFunFun V V V] [HasTrans R] [h : HasTransFun R] :
+      HasTransFun (opposite R) :=
+    { defTransFun    := λ f   c => HasTransFun.defRevTransFun R c f,
+      defTransFunFun := λ a b c => HasTransFun.defRevTransFunFun R c b a }
+
+  end opposite
+
   namespace lift
 
     variable {ω : Sort w} (l : ω → α)
