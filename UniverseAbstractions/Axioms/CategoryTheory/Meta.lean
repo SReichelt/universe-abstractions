@@ -288,6 +288,7 @@ namespace MetaRelation
     instance isAssociativeExt [HasLinearFunOp V] [HasLinearFunExt V] [HasTrans R] [IsAssociative R]
                               [HasTransFun R] [hAssocExt : IsAssociativeExt R] :
       IsAssociativeExt (opposite R) :=
+    -- TODO: This essentially requires making `compAssocRightExt` more generic.
     { assocExt       := λ f g d   => sorry,
       assocExtExt    := λ f c d   => sorry,
       assocExtExtExt := λ a b c d => sorry }
@@ -366,6 +367,7 @@ class MetaFunctor {α : Sort u} {V : Universe.{v}} {W : Universe.{w}} {VW : Univ
 namespace MetaFunctor
 
   open MetaRelation HasSymmFun HasTransFun HasFunctors HasCongrArg HasLinearFunOp HasLinearFunExt
+       HasSubLinearFunOp HasAffineFunOp HasAffineFunExt
 
   section
 
@@ -377,13 +379,13 @@ namespace MetaFunctor
 
     variable [HasIdentity.{w, iw} W] (F : MetaFunctor R S)
 
-    class IsReflFunctor  [HasRefl  R] [HasRefl  S] where
-    (reflEq  (a     : α)                         : F (HasRefl.refl a) ≃ HasRefl.refl (R := S) a)
+    class IsReflFunctor  [hR : HasRefl  R] [hS : HasRefl  S] where
+    (reflEq  (a     : α)                         : F (hR.refl a) ≃ hS.refl a)
 
-    class IsSymmFunctor  [HasSymm  R] [HasSymm  S] where
+    class IsSymmFunctor  [hR : HasSymm  R] [hS : HasSymm  S] where
     (symmEq  {a b   : α} (f : R a b)             : F f⁻¹ ≃ (F f)⁻¹)
 
-    class IsTransFunctor [HasTrans R] [HasTrans S] where
+    class IsTransFunctor [hR : HasTrans R] [hS : HasTrans S] where
     (transEq {a b c : α} (f : R a b) (g : R b c) : F (g • f) ≃ F g • F f)
 
     class IsPreorderFunctor [IsPreorder R] [IsPreorder S] extends
@@ -468,11 +470,11 @@ namespace MetaFunctor
       transEqExtExt := λ a b c => (rightId (transFunFun R a b c) •
                                    leftId (transFunFun R a b c • idFun (R a b)) •
                                    defCongrArg (defCompFunFun (transFunFun R a b c • idFun (R a b))
-                                                              ((R b c) ⟶ (R a c)))
+                                                              (R b c ⟶ R a c))
                                                (rightIdExt (R b c) (R a c)))⁻¹ •
                                   (leftId (transFunFun R a b c) •
                                    defCongrArg (defCompFunFun (transFunFun R a b c)
-                                                              ((R b c) ⟶ (R a c)))
+                                                              (R b c ⟶ R a c))
                                                (leftIdExt (R b c) (R a c))) }
 
     instance isPreorderFunctor [IsPreorder R] [HasTransFun R] :
@@ -485,7 +487,165 @@ namespace MetaFunctor
 
   end idFun
 
-  -- TODO: comp, const
+  namespace constFun
+
+    section
+
+      variable (α : Sort u) {V : Universe.{v}} {C : V}
+
+      def constRelation (c : C) : MetaRelation α V := unitRelation α C
+
+      instance (c : C) : IsEquivalence (constRelation α c) := unitEquivalence α c
+
+      variable [HasIdentity V] [HasInternalFunctors V] [HasAffineFunOp V] (c : C)
+
+      instance hasSymmFun : HasSymmFun (constRelation α c) :=
+      { defSymmFun := λ _ _ => defConstFun C c }
+
+      instance hasTransFun : HasTransFun (constRelation α c) :=
+      { defTransFun    := λ _ _   => defConstFun C c,
+        defTransFunFun := λ _ _ _ => defConstFun C (constFun C c), }
+
+    end
+
+    variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             [HasAffineFunOp V] (R : MetaRelation α V) {C : V} (c : C)
+
+    def metaFunctor : MetaFunctor R (constRelation α c) :=
+    ⟨λ a b => constFun (R a b) c⟩
+
+    instance isReflFunctor [HasRefl R] : IsReflFunctor (metaFunctor R c) :=
+    ⟨λ _ => byDef⟩
+
+    instance isSymmFunctor [HasSymm R] : IsSymmFunctor (metaFunctor R c) :=
+    ⟨λ _ => (congrArgSymm (constRelation α c) byDef)⁻¹ • byDef⟩
+
+    instance isSymmFunctorExt [HasSymm R] [HasSymmFun R] [HasAffineFunExt V] :
+      IsSymmFunctor.IsSymmFunctorExt (metaFunctor R c) :=
+    { symmEqExt := λ a b => (leftConst (constFun (R a b) c) c)⁻¹ • leftConst (symmFun R a b) c }
+
+    instance isTransFunctor [HasTrans R] : IsTransFunctor (metaFunctor R c) :=
+    ⟨λ _ _ => (congrArgTrans (constRelation α c) byDef byDef)⁻¹ • byDef⟩
+
+    instance isTransFunctorExt [HasTrans R] [HasTransFun R] [HasAffineFunExt V] :
+      IsTransFunctor.IsTransFunctorExt (metaFunctor R c) :=
+    { transEqExt    := λ {a b} f d => (leftConst (constFun (R b d) c) c)⁻¹ • leftConst (transFun R f d) c,
+      transEqExtExt := λ a b d => (defCongrArg (defConstFunFun (R a b) (R b d ⟶ C))
+                                                (leftConst (constFun (R b d) c) c • byDef) •
+                                   rightConst (R a b) (constFun C c) (compFunFun (constFun (R b d) c) C) •
+                                   defCongrArg (defRevCompFunFun (R a b) (compFunFun (constFun (R b d) c) C))
+                                               (leftConst (constFun (R a b) c) (constFun C c)))⁻¹ •
+                                  (leftConst (transFunFun R a b d) (constFun (R b d) c) •
+                                   defCongrArg (defCompFunFun (transFunFun R a b d) (R b d ⟶ C))
+                                               (leftConstFunExt (R b d) (R a d) c)) }
+
+    instance isPreorderFunctor    [IsPreorder    R] : IsPreorderFunctor    (metaFunctor R c) := ⟨⟩
+    instance isEquivalenceFunctor [IsEquivalence R] : IsEquivalenceFunctor (metaFunctor R c) := ⟨⟩
+
+  end constFun
+
+  namespace compFun
+
+    variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             [HasLinearFunOp V] {R S T : MetaRelation α V}
+             (F : MetaFunctor R S) (G : MetaFunctor S T)
+
+    def metaFunctor : MetaFunctor R T :=
+    ⟨λ a b => G.baseFun a b • F.baseFun a b⟩
+
+    instance isReflFunctor [HasRefl R] [HasRefl S] [HasRefl T]
+                           [hF : IsReflFunctor F] [hG : IsReflFunctor G] :
+      IsReflFunctor (metaFunctor F G) :=
+    ⟨λ a => hG.reflEq a • HasCongrArg.congrArg (G.baseFun a a) (hF.reflEq a) • byDef⟩
+
+    instance isSymmFunctor [HasSymm R] [HasSymm S] [HasSymm T] [HasSymmFun T]
+                           [hF : IsSymmFunctor F] [hG : IsSymmFunctor G] :
+      IsSymmFunctor (metaFunctor F G) :=
+    ⟨λ {a b} e => (congrArgSymm T byDef)⁻¹ •
+                  hG.symmEq (F e) •
+                  HasCongrArg.congrArg (G.baseFun b a) (hF.symmEq e) •
+                  byDef⟩
+
+    instance isSymmFunctorExt [HasSymm R] [HasSymm S] [HasSymm T]
+                              [HasSymmFun R] [HasSymmFun S] [HasSymmFun T]
+                              [hF : IsSymmFunctor F] [hG : IsSymmFunctor G]
+                              [hFExt : IsSymmFunctor.IsSymmFunctorExt F]
+                              [hGExt : IsSymmFunctor.IsSymmFunctorExt G]
+                              [HasLinearFunExt V] :
+      IsSymmFunctor.IsSymmFunctorExt (metaFunctor F G) :=
+    { symmEqExt := λ a b => compAssoc (F.baseFun a b) (G.baseFun a b) (symmFun T a b) •
+                            defCongrArg (defCompFunFun (F.baseFun a b) (T b a)) (hGExt.symmEqExt a b) •
+                            (compAssoc (F.baseFun a b) (symmFun S a b) (G.baseFun b a))⁻¹ •
+                            defCongrArg (defRevCompFunFun (R a b) (G.baseFun b a)) (hFExt.symmEqExt a b) •
+                            compAssoc (symmFun R a b) (F.baseFun b a) (G.baseFun b a) }
+
+    instance isTransFunctor [HasTrans R] [HasTrans S] [HasTrans T] [HasTransFun T]
+                            [hF : IsTransFunctor F] [hG : IsTransFunctor G] :
+      IsTransFunctor (metaFunctor F G) :=
+    ⟨λ {a b c} e f => (congrArgTrans T byDef byDef)⁻¹ •
+                      hG.transEq (F e) (F f) •
+                      HasCongrArg.congrArg (G.baseFun a c) (hF.transEq e f) •
+                      byDef⟩
+
+    instance isTransFunctorExt [HasTrans R] [HasTrans S] [HasTrans T]
+                               [HasTransFun R] [HasTransFun S] [HasTransFun T]
+                               [hF : IsTransFunctor F] [hG : IsTransFunctor G]
+                               [hFExt : IsTransFunctor.IsTransFunctorExt F]
+                               [hGExt : IsTransFunctor.IsTransFunctorExt G] [HasLinearFunExt V] :
+      IsTransFunctor.IsTransFunctorExt (metaFunctor F G) :=
+    { transEqExt    := λ {a b} f c => compAssoc (F.baseFun b c) (G.baseFun b c) (transFun T ((metaFunctor F G) f) c) •
+                                      defCongrArg (defCompFunFun (F.baseFun b c) (T a c))
+                                                  (defCongrArg (defCompFunFun (G.baseFun b c) (T a c))
+                                                               (defCongrArg (defTransFunFun a b c)
+                                                                            ((defCompFun (F.baseFun a b) (G.baseFun a b)).eff f)⁻¹) •
+                                                   hGExt.transEqExt (F f) c) •
+                                      (compAssoc (F.baseFun b c) (transFun S (F f) c) (G.baseFun a c))⁻¹ •
+                                      defCongrArg (defRevCompFunFun (R b c) (G.baseFun a c)) (hFExt.transEqExt f c) •
+                                      compAssoc (transFun R f c) (F.baseFun a c) (G.baseFun a c),
+      transEqExtExt := λ a b c => defCongrArg (defRevCompFunFun (R a b) (compFunFun (G.baseFun b c • F.baseFun b c) (T a c)))
+                                              (compAssoc (F.baseFun a b) (G.baseFun a b) (transFunFun T a b c)) •
+                                  defCongrArg (defCompFunFun ((transFunFun T a b c • G.baseFun a b) • F.baseFun a b) (R b c ⟶ T a c))
+                                              (compAssocExt (F.baseFun b c) (G.baseFun b c) (T a c)) •
+                                  (compAssoc ((transFunFun T a b c • G.baseFun a b) • F.baseFun a b)
+                                             (compFunFun (G.baseFun b c) (T a c))
+                                             (compFunFun (F.baseFun b c) (T a c)))⁻¹ •
+                                  defCongrArg (defRevCompFunFun (R a b) (compFunFun (F.baseFun b c) (T a c)))
+                                              (compAssoc (F.baseFun a b)
+                                                         (transFunFun T a b c • G.baseFun a b)
+                                                         (compFunFun (G.baseFun b c) (T a c)) •
+                                               defCongrArg (defCompFunFun (F.baseFun a b) (S b c ⟶ T a c))
+                                                           (hGExt.transEqExtExt a b c) •
+                                               (compAssoc (F.baseFun a b)
+                                                          (transFunFun S a b c)
+                                                          (revCompFunFun (S b c) (G.baseFun a c)))⁻¹) •
+                                  compAssoc (transFunFun S a b c • F.baseFun a b)
+                                            (revCompFunFun (S b c) (G.baseFun a c))
+                                            (compFunFun (F.baseFun b c) (T a c)) •
+                                  defCongrArg (defCompFunFun (transFunFun S a b c • F.baseFun a b) (R b c ⟶ T a c))
+                                              (compAssocMidExt (F.baseFun b c) (G.baseFun a c))⁻¹ •
+                                  (compAssoc (transFunFun S a b c • F.baseFun a b)
+                                             (compFunFun (F.baseFun b c) (S a c))
+                                             (revCompFunFun (R b c) (G.baseFun a c)))⁻¹ •
+                                  defCongrArg (defRevCompFunFun (R a b) (revCompFunFun (R b c) (G.baseFun a c)))
+                                              (hFExt.transEqExtExt a b c) •
+                                  compAssoc (transFunFun R a b c)
+                                            (revCompFunFun (R b c) (F.baseFun a c))
+                                            (revCompFunFun (R b c) (G.baseFun a c)) •
+                                  defCongrArg (defCompFunFun (transFunFun R a b c) (R b c ⟶ T a c))
+                                              (compAssocRightExt (R b c) (F.baseFun a c) (G.baseFun a c)) }
+
+    instance isPreorderFunctor [IsPreorder R] [IsPreorder S] [IsPreorder T] [HasTransFun T]
+                               [IsPreorderFunctor F] [IsPreorderFunctor G] :
+      IsPreorderFunctor (metaFunctor F G) :=
+    ⟨⟩
+
+    instance isEquivalenceFunctor [IsEquivalence R] [IsEquivalence S] [IsEquivalence T]
+                                  [HasSymmFun T] [HasTransFun T]
+                                  [IsEquivalenceFunctor F] [IsEquivalenceFunctor G] :
+      IsEquivalenceFunctor (metaFunctor F G) :=
+    ⟨⟩
+
+  end compFun
 
   namespace symmFun
 

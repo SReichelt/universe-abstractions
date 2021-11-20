@@ -166,7 +166,21 @@ namespace HasAffineFunOp.HasAffineFunExt
     swapFunFun (constFun A (constFun B c))
     ≃{▻ λ b => defCongrArg (defConstFunFun A C) byDef • swapConst A (constFun B c) b ◅}
     constFun B (constFun A c) :=
-  defCongrArg (defConstFunFun B (A ⟶ C)) byDef • rightConst B c (constFunFun A C) • swapConstExt A (constFun B c)
+  defCongrArg (defConstFunFun B (A ⟶ C)) byDef •
+  rightConst B c (constFunFun A C) •
+  swapConstExt A (constFun B c)
+
+  def leftConstFunExt (A B : U) {C : U} (c : C) :
+    revCompFunFun A (constFun B c)
+    ≃{▻ λ F => leftConst F c ◅}
+    constFun (A ⟶ B) (constFun A c) :=
+  defCongrArg (defConstFunFun (A ⟶ B) (A ⟶ C)) byDef •
+  swapConst (A ⟶ B) (constFunFun A C) c •
+  defCongrArg (defRevSwapFunFun (A ⟶ B) c (A ⟶ C)) (leftConstExtExt A B C) •
+  (defCongrArg (defCompFunFun (compFunFunFun A B C) (A ⟶ C))
+               (defCongrArg (defRevAppFunFun (B ⟶ C) (A ⟶ C)) byDef •
+                swapCompFun (constFunFun B C) c (A ⟶ C)) •
+   swapComp (compFunFunFun A B C) (compFunFun (constFunFun B C) (A ⟶ C)) c)⁻¹
 
 end HasAffineFunOp.HasAffineFunExt
 

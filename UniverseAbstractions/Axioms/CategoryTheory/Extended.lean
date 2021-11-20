@@ -49,11 +49,8 @@ namespace CategoryTheory
 
   namespace IsCategory
 
-    -- TODO: Unbundle (`IsIsoRel`)
-
-    class HasIsomorphisms {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasLinearFunctors V]
-                          (α : Sort u) [hCat : IsCategory V α] where
-    (Iso                                  : MetaRelation α V)
+    class IsIsoRel {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasLinearFunctors V]
+                   {α : Sort u} [hCat : IsCategory V α] (Iso : MetaRelation α V) where
     [isoIsEquivalence                     : IsEquivalence Iso]
     [isoInv {a b : α} (e : Iso a b)       : IsInv Iso e e⁻¹]
     [isoHasSymmFun                        : HasSymmFun Iso]
@@ -62,7 +59,27 @@ namespace CategoryTheory
     [toHomIsPreorderFunctor               : IsPreorderFunctor toHomMetaFunctor]
     (toHomInj {a b : α} {e₁ e₂ : Iso a b} : toHomMetaFunctor e₁ ≃ toHomMetaFunctor e₂ → e₁ ≃ e₂)
 
+    namespace IsIsoRel
+
+      variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasLinearFunctors V]
+               {α : Sort u} [hCat : IsCategory V α] (Iso : MetaRelation α V) [h : IsIsoRel Iso]
+
+      instance : IsEquivalence Iso := h.isoIsEquivalence
+      instance : HasSymmFun    Iso := h.isoHasSymmFun
+      instance : HasTransFun   Iso := h.isoHasTransFun
+
+      instance : IsPreorderFunctor h.toHomMetaFunctor := h.toHomIsPreorderFunctor
+
+    end IsIsoRel
+
+    class HasIsomorphisms {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasLinearFunctors V]
+                          (α : Sort u) [hCat : IsCategory V α] where
+    (Iso      : MetaRelation α V)
+    [isIsoRel : IsIsoRel Iso]
+
     namespace HasIsomorphisms
+
+      open IsIsoRel
 
       infix:20 " ⇿ " => CategoryTheory.IsCategory.HasIsomorphisms.Iso
 
@@ -76,11 +93,7 @@ namespace CategoryTheory
         variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasLinearFunctors V] {α : Sort u}
                  [hCat : IsCategory V α] [h : HasIsomorphisms α]
 
-        instance : IsEquivalence h.Iso := h.isoIsEquivalence
-        instance : HasSymmFun    h.Iso := h.isoHasSymmFun
-        instance : HasTransFun   h.Iso := h.isoHasTransFun
-
-        instance : IsPreorderFunctor h.toHomMetaFunctor := h.toHomIsPreorderFunctor
+        instance : IsIsoRel h.Iso := h.isIsoRel
 
         def idIso (a : α) : a ⇿ a := HasRefl.refl a
 
@@ -105,8 +118,8 @@ namespace CategoryTheory
                   (congrArgTransLeft hCat.Hom (toHom e) (toHomIsPreorderFunctor.reflEq b) •
                    toHomIsPreorderFunctor.transEq e (idIso b)))
 
-        def isoLeftInv  {a b : α} (e : a ⇿ b) : e⁻¹ • e ≃ idIso a := (h.isoInv e).leftInv
-        def isoRightInv {a b : α} (e : a ⇿ b) : e • e⁻¹ ≃ idIso b := (h.isoInv e).rightInv
+        def isoLeftInv  {a b : α} (e : a ⇿ b) : e⁻¹ • e ≃ idIso a := (isoInv e).leftInv
+        def isoRightInv {a b : α} (e : a ⇿ b) : e • e⁻¹ ≃ idIso b := (isoInv e).rightInv
 
         instance isoIsGroupoidEquivalence : IsGroupoidEquivalence h.Iso :=
         { assoc    := isoAssoc,
@@ -119,7 +132,7 @@ namespace CategoryTheory
 
       class HasIsomorphismsExt {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasStandardFunctors V]
                                (α : Sort u) [IsCategory V α] [hIso : HasIsomorphisms α] where
-      [toHomIsTransFunctorExt      : IsTransFunctor.IsTransFunctorExt hIso.toHomMetaFunctor]
+      [toHomIsTransFunctorExt      : IsTransFunctor.IsTransFunctorExt hIso.isIsoRel.toHomMetaFunctor]
       [isoIsGroupoidEquivalenceExt : IsGroupoidEquivalenceExt hIso.Iso]
 
       namespace HasIsomorphismsExt
@@ -127,15 +140,15 @@ namespace CategoryTheory
         variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasStandardFunctors V] (α : Sort u)
                  [IsCategory V α] [hIso : HasIsomorphisms α] [h : HasIsomorphismsExt α]
 
-        instance : IsTransFunctor.IsTransFunctorExt hIso.toHomMetaFunctor := h.toHomIsTransFunctorExt
+        instance : IsTransFunctor.IsTransFunctorExt hIso.isIsoRel.toHomMetaFunctor := h.toHomIsTransFunctorExt
 
         instance : IsGroupoidEquivalenceExt hIso.Iso := h.isoIsGroupoidEquivalenceExt
 
         def isoGroupoid : IsGroupoid V α :=
         { toHasMorphisms              := isoMorphisms α,
-          homIsEquivalence            := hIso.isoIsEquivalence,
-          homHasSymmFun               := hIso.isoHasSymmFun,
-          homHasTransFun              := hIso.isoHasTransFun,
+          homIsEquivalence            := hIso.isIsoRel.isoIsEquivalence,
+          homHasSymmFun               := hIso.isIsoRel.isoHasSymmFun,
+          homHasTransFun              := hIso.isIsoRel.isoHasTransFun,
           homIsGroupoidEquivalence    := isoIsGroupoidEquivalence,
           homIsGroupoidEquivalenceExt := h.isoIsGroupoidEquivalenceExt }
 
@@ -154,15 +167,16 @@ namespace CategoryTheory
     variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasStandardFunctors V] (α : Sort u)
              [hGrp : IsGroupoid V α]
 
-    instance hasIsomorphisms : HasIsomorphisms α :=
-    { Iso                    := hGrp.Hom,
-      isoIsEquivalence       := hGrp.homIsEquivalence,
+    instance isIsoRel : IsIsoRel hGrp.Hom :=
+    { isoIsEquivalence       := hGrp.homIsEquivalence,
       isoInv                 := isInv hGrp.Hom,
       isoHasSymmFun          := hGrp.homHasSymmFun,
       isoHasTransFun         := hGrp.homHasTransFun,
       toHomMetaFunctor       := idFun.metaFunctor hGrp.Hom,
       toHomIsPreorderFunctor := idFun.isPreorderFunctor hGrp.Hom,
       toHomInj               := λ h => byDef • h • byDef⁻¹ }
+
+    instance hasIsomorphisms : HasIsomorphisms α := ⟨hGrp.Hom⟩
 
     instance hasIsomorphismsExt : HasIsomorphismsExt α :=
     { toHomIsTransFunctorExt      := idFun.isTransFunctorExt hGrp.Hom,
@@ -295,11 +309,12 @@ namespace CategoryTheory
     [isSymmFunctorExt     (F : BundledFunctor hCatFun.Fun) : IsSymmFunctorExt     (isIsoFunProp.preFunctor F)]
     [isTransFunctorExt    (F : BundledFunctor hCatFun.Fun) : IsTransFunctorExt    (isIsoFunProp.preFunctor F)]
     (isoFunEq (F : BundledFunctor hCatFun.Fun) {a b : α} (e : a ⇿ b) :
-       hβIso.toHomMetaFunctor ((isIsoFunProp.preFunctor F) e) ≃ (hCatFun.isFunProp.preFunctor F) (hαIso.toHomMetaFunctor e))
+       hβIso.isIsoRel.toHomMetaFunctor ((isIsoFunProp.preFunctor F) e) ≃
+       (hCatFun.isFunProp.preFunctor F) (hαIso.isIsoRel.toHomMetaFunctor e))
     (isoFunEqExt (F : BundledFunctor hCatFun.Fun) (a b : α) :
-       hβIso.toHomMetaFunctor.baseFun (F.φ a) (F.φ b) • (isIsoFunProp.preFunctor F).baseFun a b
+       hβIso.isIsoRel.toHomMetaFunctor.baseFun (F.φ a) (F.φ b) • (isIsoFunProp.preFunctor F).baseFun a b
        ≃{▻ λ e => isoFunEq F e ◅}
-       (hCatFun.isFunProp.preFunctor F).baseFun a b • hαIso.toHomMetaFunctor.baseFun a b)
+       (hCatFun.isFunProp.preFunctor F).baseFun a b • hαIso.isIsoRel.toHomMetaFunctor.baseFun a b)
 
   end IsCategory
 
@@ -417,5 +432,25 @@ namespace CategoryTheory
                  (isNatRel.metaQuantification η)]
 
   end HasMorphisms
+
+  class IsNatUniverse (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+                      [hFunUniv : IsFunUniverse W] where
+  [hasNaturalTransformations (α : Sort u) (β : Sort v)
+                             [hα : HasMorphisms W α] [hβ : HasMorphisms W β] [HasTrans hβ.Hom] :
+     HasMorphisms.HasNaturalTransformations α β (hFun := hFunUniv.hasMorphismFunctors α β)]
+
+  namespace IsFunUniverse
+
+    variable (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+             [hFunUniv : IsFunUniverse W] [h : IsNatUniverse W]
+
+    instance (α : Sort u) (β : Sort v) [hα : HasMorphisms W α] [hβ : HasMorphisms W β]
+             [HasTrans hβ.Hom] :
+      HasMorphisms.HasNaturalTransformations α β (hFun := hFunUniv.hasMorphismFunctors α β) :=
+    h.hasNaturalTransformations α β
+
+    -- TODO: Add variants for the three other types of structures
+
+  end IsFunUniverse
 
 end CategoryTheory
