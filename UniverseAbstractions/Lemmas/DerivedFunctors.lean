@@ -35,25 +35,29 @@ namespace HasLinearFunOp
 
   @[reducible] def swapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := defSwapFun F b
 
-  instance swapFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} {b : B} :
-    IsFunApp ((B ⟶ C) ⟶ C) (swapFun F b) :=
-  compFun.isFunApp
-
   def defSwapFunFun {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶{λ b => swapFun F b} (A ⟶ C) :=
   compFunFun F C • revAppFunFun B C
   ◄ byDef • byArgDef
 
   @[reducible] def swapFunFun {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := defSwapFunFun F
 
-  instance swapFunFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} :
-    IsFunApp (((B ⟶ C) ⟶ C) ⟶ (A ⟶ C)) (swapFunFun F) :=
-  compFun.isFunApp
-
   def defSwapFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶{λ F => swapFunFun F} (B ⟶ A ⟶ C) :=
   compFunFun (revAppFunFun B C) (A ⟶ C) • compFunFunFun A (B ⟶ C) C
   ◄ byDef • byArgDef
 
   @[reducible] def swapFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := defSwapFunFunFun A B C
+
+  instance swapFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} {b : B} :
+    IsFunApp B (swapFun F b) :=
+  { F := swapFunFun F,
+    a := b,
+    e := byDef }
+
+  instance swapFunFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} :
+    IsFunApp (A ⟶ B ⟶ C) (swapFunFun F) :=
+  { F := swapFunFunFun A B C,
+    a := F,
+    e := byDef }
 
   instance swapFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((((B ⟶ C) ⟶ C) ⟶ (A ⟶ C)) ⟶ (B ⟶ A ⟶ C)) (swapFunFunFun A B C) :=
@@ -69,17 +73,19 @@ namespace HasLinearFunOp
 
   @[reducible] def revSwapFunFun (A : U) {B : U} (b : B) (C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := defRevSwapFunFun A b C
 
-  instance revSwapFunFun.isFunApp {A B C : U} {b : B} :
-    IsFunApp ((B ⟶ A ⟶ C) ⟶ (A ⟶ C)) (revSwapFunFun A b C) :=
-  swapFun.isFunApp
-
   def defRevSwapFunFunFun (A B C : U) : B ⟶{λ b => revSwapFunFun A b C} ((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) :=
   defSwapFunFun (swapFunFunFun A B C)
 
   @[reducible] def revSwapFunFunFun (A B C : U) : B ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := defRevSwapFunFunFun A B C
 
+  instance revSwapFunFun.isFunApp {A B C : U} {b : B} :
+    IsFunApp B (revSwapFunFun A b C) :=
+  { F := revSwapFunFunFun A B C,
+    a := b,
+    e := byDef }
+
   instance revSwapFunFunFun.isFunApp {A B C : U} :
-    IsFunApp (((B ⟶ A ⟶ C) ⟶ (A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (revSwapFunFunFun A B C) :=
+    IsFunApp ((A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C)) (revSwapFunFunFun A B C) :=
   swapFunFun.isFunApp
 
   instance hasSwapFun : HasSwapFun U U U := ⟨defSwapFun⟩
@@ -95,17 +101,19 @@ namespace HasLinearFunOp
 
   @[reducible] def revCompFunFun (A : U) {B C : U} (G : B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) := defRevCompFunFun A G
 
-  instance revCompFunFun.isFunApp {A B C : U} {G : B ⟶ C} :
-    IsFunApp (((B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) (revCompFunFun A G) :=
-  swapFun.isFunApp
-
   def defRevCompFunFunFun (A B C : U) : (B ⟶ C) ⟶{λ G => revCompFunFun A G} ((A ⟶ B) ⟶ (A ⟶ C)) :=
   defSwapFunFun (compFunFunFun A B C)
 
   @[reducible] def revCompFunFunFun (A B C : U) : (B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) := defRevCompFunFunFun A B C
 
+  instance revCompFunFun.isFunApp {A B C : U} {G : B ⟶ C} :
+    IsFunApp (B ⟶ C) (revCompFunFun A G) :=
+  { F := revCompFunFunFun A B C,
+    a := G,
+    e := byDef }
+
   instance revCompFunFunFun.isFunApp {A B C : U} :
-    IsFunApp ((((B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) ⟶ ((A ⟶ B) ⟶ (A ⟶ C))) (revCompFunFunFun A B C) :=
+    IsFunApp ((A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C)) (revCompFunFunFun A B C) :=
   swapFunFun.isFunApp
 
   instance hasRevCompFunFun : HasRevCompFunFun U U := ⟨defRevCompFunFun⟩
@@ -131,19 +139,11 @@ namespace HasFullFunOp
 
   @[reducible] def substFun {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶ C := defSubstFun F G
 
-  instance substFun.isFunApp {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
-    IsFunApp (A ⟶ A ⟶ C) (substFun F G) :=
-  dupFun.isFunApp
-
   def defSubstFunFun {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ B ⟶ C) ⟶{λ G => substFun F G} (A ⟶ C) :=
   dupFunFun A C • revCompFunFun A (compFunFun F C)
   ◄ byDef • byArgDef
 
   @[reducible] def substFunFun {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ C) := defSubstFunFun F C
-
-  instance substFunFun.isFunApp {A B C : U} {F : A ⟶ B} :
-    IsFunApp ((A ⟶ A ⟶ C) ⟶ (A ⟶ C)) (substFunFun F C) :=
-  compFun.isFunApp
 
   def defSubstFunFunFun (A B C : U) : (A ⟶ B) ⟶{λ F => substFunFun F C} ((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) :=
   revCompFunFun (A ⟶ B ⟶ C) (dupFunFun A C) •
@@ -153,6 +153,18 @@ namespace HasFullFunOp
 
   @[reducible] def substFunFunFun (A B C : U) : (A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) :=
   defSubstFunFunFun A B C
+
+  instance substFun.isFunApp {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
+    IsFunApp (A ⟶ B ⟶ C) (substFun F G) :=
+  { F := substFunFun F C,
+    a := G,
+    e := byDef }
+
+  instance substFunFun.isFunApp {A B C : U} {F : A ⟶ B} :
+    IsFunApp (A ⟶ B) (substFunFun F C) :=
+  { F := substFunFunFun A B C,
+    a := F,
+    e := byDef }
 
   instance substFunFunFun.isFunApp {A B C : U} :
     IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (substFunFunFun A B C) :=
@@ -170,18 +182,20 @@ namespace HasFullFunOp
 
   @[reducible] def revSubstFunFun {A B C : U} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) := defRevSubstFunFun G
 
-  instance revSubstFunFun.isFunApp {A B C : U} {G : A ⟶ B ⟶ C} :
-    IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) (revSubstFunFun G) :=
-  swapFun.isFunApp
-
   def defRevSubstFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶{λ G => revSubstFunFun G} ((A ⟶ B) ⟶ (A ⟶ C)) :=
   defSwapFunFun (substFunFunFun A B C)
 
   @[reducible] def revSubstFunFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) :=
   defRevSubstFunFunFun A B C
 
+  instance revSubstFunFun.isFunApp {A B C : U} {G : A ⟶ B ⟶ C} :
+    IsFunApp (A ⟶ B ⟶ C) (revSubstFunFun G) :=
+  { F := revSubstFunFunFun A B C,
+    a := G,
+    e := byDef }
+
   instance revSubstFunFunFun.isFunApp {A B C : U} :
-    IsFunApp ((((A ⟶ B ⟶ C) ⟶ (A ⟶ C)) ⟶ (A ⟶ C)) ⟶ ((A ⟶ B) ⟶ (A ⟶ C))) (revSubstFunFunFun A B C) :=
+    IsFunApp ((A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C)) (revSubstFunFunFun A B C) :=
   swapFunFun.isFunApp
 
   instance hasRevSubstFunFun : HasRevSubstFunFun U U := ⟨defRevSubstFunFun⟩
@@ -226,6 +240,28 @@ namespace HasFullFunOp
   @[reducible] def revBiCompFunFunFunFun (A B C D : U) :
     (B ⟶ C ⟶ D) ⟶ (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ D) :=
   defRevBiCompFunFunFunFun A B C D
+
+  instance revBiCompFun.isFunApp {A B C D : U} {H : B ⟶ C ⟶ D} {F : A ⟶ B} {G : A ⟶ C} :
+    IsFunApp (A ⟶ C) (revBiCompFun H F G) :=
+  { F := revBiCompFunFun H F,
+    a := G,
+    e := byDef }
+
+  instance revBiCompFunFun.isFunApp {A B C D : U} {H : B ⟶ C ⟶ D} {F : A ⟶ B} :
+    IsFunApp (A ⟶ B) (revBiCompFunFun H F) :=
+  { F := revBiCompFunFunFun A H,
+    a := F,
+    e := byDef }
+
+  instance revBiCompFunFunFun.isFunApp {A B C D : U} {H : B ⟶ C ⟶ D} :
+    IsFunApp (B ⟶ C ⟶ D) (revBiCompFunFunFun A H) :=
+  { F := revBiCompFunFunFunFun A B C D,
+    a := H,
+    e := byDef }
+
+  instance revBiCompFunFunFunFun.isFunApp {A B C D : U} :
+    IsFunApp (((A ⟶ B) ⟶ A ⟶ C ⟶ D) ⟶ (A ⟶ B) ⟶ (A ⟶ C) ⟶ A ⟶ D) (revBiCompFunFunFunFun A B C D) :=
+  compFun.isFunApp
 
   instance hasBiCompFun : HasBiCompFun U U U U := ⟨defBiCompFun⟩
   instance hasRevBiCompFunFun : HasRevBiCompFunFun U U U := ⟨defRevBiCompFunFun⟩
