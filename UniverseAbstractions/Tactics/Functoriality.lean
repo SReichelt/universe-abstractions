@@ -378,10 +378,8 @@ namespace Lean
           let a₁ ← a₁.instantiate
           let app := mkApp3 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revAppFunFun) hHasLinearFunOp A₁ B_G
           return ← constructLambdaAppFunctor φ app a₁
-        let A_F₁ := A_G _⟶ A₁
-        let A_F₂ := A₁ _⟶ B_G
-        let F₁ ← φ.U.mkFreshInstMVar A_F₁
-        let F₂ ← φ.U.mkFreshInstMVar A_F₂
+        let F₁ ← φ.U.mkFreshInstMVar (A_G _⟶ A₁)
+        let F₂ ← φ.U.mkFreshInstMVar (A₁ _⟶ B_G)
         if ← isDefEq G' (mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defCompFun) hHasLinearFunOp A_G A₁ B_G F₁ F₂) then
           let F₁ ← F₁.instantiate
           let F₂ ← F₂.instantiate
@@ -394,20 +392,17 @@ namespace Lean
             constructLambdaAppFunctor φ revComp F₁
         let A₂ ← φ.U.mkFreshTypeMVar
         let A₃ ← φ.U.mkFreshTypeMVar
-        let A_F₃ := A₁ _⟶ A₂
-        let F₃ ← φ.U.mkFreshInstMVar A_F₃
+        let F₃ ← φ.U.mkFreshInstMVar (A₁ _⟶ A₂)
         if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defCompFunFun) hHasLinearFunOp A₁ A₂ F₃ A₃) then
           let F₃ ← F₃.instantiate
           let comp := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.compFunFunFun) hHasLinearFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ comp F₃
-        let A_F₄ := A₂ _⟶ A₃
-        let F₄ ← φ.U.mkFreshInstMVar A_F₄
+        let F₄ ← φ.U.mkFreshInstMVar (A₂ _⟶ A₃)
         if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defRevCompFunFun) hHasLinearFunOp A₁ A₂ A₃ F₄) then
           let F₄ ← F₄.instantiate
           let revComp := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revCompFunFunFun) hHasLinearFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ revComp F₄
-        let A_F₅ := A_G _⟶ (A₁ _⟶ B_G)
-        let F₅ ← φ.U.mkFreshInstMVar A_F₅
+        let F₅ ← φ.U.mkFreshInstMVar (A_G _⟶ A₁ _⟶ B_G)
         if ← isDefEq G' (mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defSwapFun) hHasLinearFunOp A_G A₁ B_G F₅ a₁) then
           let F₅ ← F₅.instantiate
           let a₁ ← a₁.instantiate
@@ -418,8 +413,7 @@ namespace Lean
           | none =>
             let revSwap := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revSwapFunFun) hHasLinearFunOp A_G A₁ a₁ B_G
             constructLambdaAppFunctor φ revSwap F₅
-        let A_F₆ := A₁ _⟶ (A_G _⟶ A₂)
-        let F₆ ← φ.U.mkFreshInstMVar A_F₆
+        let F₆ ← φ.U.mkFreshInstMVar (A₁ _⟶ A_G _⟶ A₂)
         if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defSwapFunFun) hHasLinearFunOp A₁ A_G A₂ F₆) then
           let F₆ ← F₆.instantiate
           let swap := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.swapFunFunFun) hHasLinearFunOp A₁ A_G A₂
@@ -430,15 +424,13 @@ namespace Lean
           let revSwap := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revSwapFunFunFun) hHasLinearFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ revSwap a₂
         let hHasNonLinearFunOp ← _HasInternalFunctors.mkFreshDeclMVar φ.U ``HasNonLinearFunOp
-        let A_F₇ := A_G _⟶ (A_G _⟶ B_G)
-        let F₇ ← φ.U.mkFreshInstMVar A_F₇
+        let F₇ ← φ.U.mkFreshInstMVar (A_G _⟶ A_G _⟶ B_G)
         if ← isDefEq G' (mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasNonLinearFunOp.defDupFun) hHasNonLinearFunOp A_G B_G F₇) then
           let F₇ ← F₇.instantiate
           let dup := mkApp3 (_HasInternalFunctors.getDecl φ.U ``HasNonLinearFunOp.dupFunFun) hHasNonLinearFunOp A_G B_G
           return ← constructLambdaAppFunctor φ dup F₇
         let hHasFullFunOp ← _HasInternalFunctors.mkFreshDeclMVar φ.U ``HasFullFunOp
-        let A_F₈ := A_G _⟶ (A₁ _⟶ B_G)
-        let F₈ ← φ.U.mkFreshInstMVar A_F₈
+        let F₈ ← φ.U.mkFreshInstMVar (A_G _⟶ A₁ _⟶ B_G)
         if ← isDefEq G' (mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.defSubstFun) hHasFullFunOp A_G A₁ B_G F₁ F₈) then
           let F₁ ← F₁.instantiate
           let F₈ ← F₈.instantiate
@@ -453,8 +445,7 @@ namespace Lean
           let F₃ ← F₃.instantiate
           let subst := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.substFunFunFun) hHasFullFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ subst F₃
-        let A_F₉ := A₁ _⟶ (A₂ _⟶ A₃)
-        let F₉ ← φ.U.mkFreshInstMVar A_F₉
+        let F₉ ← φ.U.mkFreshInstMVar (A₁ _⟶ A₂ _⟶ A₃)
         if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.defRevSubstFunFun) hHasFullFunOp A₁ A₂ A₃ F₉) then
           let F₉ ← F₉.instantiate
           let revSubst := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.revSubstFunFunFun) hHasFullFunOp A₁ A₂ A₃
