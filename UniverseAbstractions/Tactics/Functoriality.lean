@@ -43,159 +43,228 @@ namespace Lean
 
   open Meta Elab Tactic
 
-  -- Some helper code so that we can work with universes more easily in meta code.
 
-  @[reducible] def TypedExpr (type : Expr) := Expr
+
+  -- We reflect quite a bit of the type system on the meta level, as a kind of annotation on
+  -- `Expr`. Of course, this does not provide any type safety, but it allows us to leave a lot of
+  -- arguments implicit. Using `CoeSort`, we can directly use any instance of `Expr` as a type.
+
+  @[reducible] def TypeExpr := Expr
+  @[reducible] def TypedExpr (type : TypeExpr) := Expr
 
   namespace TypedExpr
 
-    instance : CoeSort Expr Type := ⟨TypedExpr⟩
+    instance : CoeSort TypeExpr Type := ⟨TypedExpr⟩
 
-    def mkFreshMVar {type : Expr} : MetaM type :=
+    def mkFreshMVar {type : TypeExpr} : MetaM type :=
       mkFreshExprMVar type
 
-    def instantiate {type : Expr} (e : type) : MetaM type :=
+    def instantiate {type : TypeExpr} (e : type) : MetaM type :=
       instantiateMVars e
 
-    def elaborate {type : Expr} (stx : Syntax) : TacticM type :=
+    def elaborate {type : TypeExpr} (stx : Syntax) : TacticM type :=
       elabTerm stx type
 
   end TypedExpr
 
-  def mkHasInstancesInst {u v : Level} {I : mkSort v} (h : mkApp (mkConst ``HasInstances [u, v]) I)
-                         (A : I) :
-      mkSort u :=
-    mkApp3 (mkConst ``HasInstances.Inst [u, v]) I h A
 
-  def universeHasInstances (u : Level) :
-      mkApp (mkConst ``HasInstances [mkLevelSucc u, mkLevelSucc (mkLevelSucc u)]) (mkConst ``Universe [u]) :=
-    mkConst ``Universe.hasInstances [u]
 
-  structure MetaUniverse where
+  class _HasInstances (u : outParam Level) {v : Level} (I : mkSort v) where
+  (h : mkApp (mkConst ``HasInstances [u, v]) I)
+
+  namespace _HasInstances
+
+    instance (u : outParam Level) {v : Level} (I : mkSort v) :
+             Coe (_HasInstances u I) Expr :=
+    ⟨λ h => h.h⟩
+
+    variable {u v : Level} {I : mkSort v} [h : _HasInstances u I]
+
+    def mkInst (A : I) : mkSort u :=
+      mkApp3 (mkConst ``HasInstances.Inst [u, v]) I h A
+    notation "_⌈" A:0 "⌉" => _HasInstances.mkInst A
+
+  end _HasInstances
+
+
+
+  def mkUniverse (u : Level) : mkSort (mkLevelSucc (mkLevelSucc u)) := mkConst ``Universe [u]
+
+  instance (u : Level) : _HasInstances (mkLevelSucc u) (mkUniverse u) :=
+    ⟨mkConst ``Universe.hasInstances [u]⟩
+
+
+
+  structure _Universe where
   {u : Level}
-  (U : mkConst ``Universe [u])
+  (U : mkUniverse u)
 
-  namespace MetaUniverse
+  namespace _Universe
 
-    instance : Coe MetaUniverse Expr := ⟨MetaUniverse.U⟩
+    instance : Coe _Universe Expr := ⟨_Universe.U⟩
 
-    def mkFreshMVar : MetaM MetaUniverse := do
+    def mkFreshMVar : MetaM _Universe := do
       let u ← mkFreshLevelMVar
-      let U : mkConst ``Universe [u] ← TypedExpr.mkFreshMVar
+      let U : mkUniverse u ← TypedExpr.mkFreshMVar
       return ⟨U⟩
 
-    def instantiate (U : MetaUniverse) : MetaM MetaUniverse := do
+    def instantiate (U : _Universe) : MetaM _Universe := do
       let u ← instantiateLevelMVars U.u
-      let U : mkConst ``Universe [u] ← U.U.instantiate
+      let U : mkUniverse u ← U.U.instantiate
       return ⟨U⟩
 
-    def mkUniverseInst (U : MetaUniverse) : mkSort (mkLevelSucc U.u) :=
-      mkHasInstancesInst (universeHasInstances U.u) U.U
+    instance : CoeSort _Universe Type := ⟨λ U => _⌈U.U⌉⟩
 
-    instance : CoeSort MetaUniverse Type := ⟨λ U => TypedExpr U.mkUniverseInst⟩
-
-    def mkFreshTypeMVar (U : MetaUniverse) : MetaM U :=
+    def mkFreshTypeMVar (U : _Universe) : MetaM U :=
       TypedExpr.mkFreshMVar
 
-    def mkTypeInst {U : MetaUniverse} (A : U) : mkSort U.u :=
-      mkHasInstancesInst (mkApp (mkConst ``Universe.instInst [U.u]) U) A
+    instance (U : _Universe) : _HasInstances U.u (_⌈U.U⌉) :=
+      ⟨mkApp (mkConst ``Universe.instInst [U.u]) U⟩
 
-    instance (U : MetaUniverse) : CoeSort U Type := ⟨λ A => TypedExpr (U.mkTypeInst A)⟩
+    instance (U : _Universe) : CoeSort U Type := ⟨λ A => _⌈A⌉⟩
 
-    def mkFreshInstMVar {U : MetaUniverse} (A : U) : MetaM A :=
+    def mkFreshInstMVar {U : _Universe} (A : U) : MetaM A :=
       TypedExpr.mkFreshMVar
 
-  end MetaUniverse
+  end _Universe
 
-  structure MetaInternalFunctors where
-  (U    : MetaUniverse)
-  {iu   : Level}
-  {hId  : mkApp (mkConst ``HasIdentity [U.u, iu]) U}
-  (hFun : mkApp2 (mkConst ``HasInternalFunctors [U.u, iu]) U hId)
 
-  namespace MetaInternalFunctors
 
-    def mkFreshMVar : MetaM MetaInternalFunctors := do
-      let U ← MetaUniverse.mkFreshMVar
-      let iu ← mkFreshLevelMVar
-      let hId : mkApp (mkConst ``HasIdentity [U.u, iu]) U ← TypedExpr.mkFreshMVar
-      let hFun : mkApp2 (mkConst ``HasInternalFunctors [U.u, iu]) U hId ← TypedExpr.mkFreshMVar
-      return ⟨U, hFun⟩
+  class _HasIdentity (U : _Universe) (iu : outParam Level) where
+  (h : mkApp (mkConst ``HasIdentity [U.u, iu]) U)
 
-    def instantiate (φ : MetaInternalFunctors) : MetaM MetaInternalFunctors := do
-      let U ← φ.U.instantiate
-      let iu ← instantiateLevelMVars φ.iu
-      let hId : mkApp (mkConst ``HasIdentity [U.u, iu]) U ← φ.hId.instantiate
-      let hFun : mkApp2 (mkConst ``HasInternalFunctors [U.u, iu]) U hId ← φ.hFun.instantiate
-      return ⟨U, hFun⟩
+  namespace _HasIdentity
 
-    def hFunBase (φ : MetaInternalFunctors) :
-        mkApp3 (mkConst ``HasFunctors [φ.U.u, φ.U.u, φ.U.u]) φ.U φ.U φ.U :=
-      mkApp3 (mkConst ``HasInternalFunctors.toHasFunctors [φ.U.u, φ.iu]) φ.U φ.hId φ.hFun
+    instance (U : _Universe) (iu : Level) : Coe (_HasIdentity U iu) Expr :=
+      ⟨λ h => h.h⟩
 
-    def getBaseDecl (φ : MetaInternalFunctors) (n : Name) : Expr :=
-      mkApp4 (mkConst n [φ.U.u, φ.U.u, φ.U.u]) φ.U φ.U φ.U φ.hFunBase
+  end _HasIdentity
 
-    def getBaseDeclWithId (φ : MetaInternalFunctors) (n : Name) : Expr :=
-      mkApp5 (mkConst n [φ.U.u, φ.U.u, φ.U.u, φ.iu]) φ.U φ.U φ.U φ.hFunBase φ.hId
 
-    def getDecl (φ : MetaInternalFunctors) (n : Name) : Expr :=
-      mkApp3 (mkConst n [φ.U.u, φ.iu]) φ.U φ.hId φ.hFun
 
-    def mkFreshDeclMVar (φ : MetaInternalFunctors) (n : Name) : MetaM (φ.getDecl n) :=
+  class _HasFunctors (U V : _Universe) (UV : outParam _Universe) where
+  (h : mkApp3 (mkConst ``HasFunctors [U.u, V.u, UV.u]) U V UV)
+
+  namespace _HasFunctors
+
+    instance (U V UV : _Universe) : Coe (_HasFunctors U V UV) Expr :=
+      ⟨λ h => h.h⟩
+
+    def getDecl (U V : _Universe) {UV : _Universe} [h : _HasFunctors U V UV]
+                (n : Name) : Expr :=
+      mkApp4 (mkConst n [U.u, V.u, UV.u]) U V UV h
+
+    def getDeclWithId (U V : _Universe) {UV : _Universe} {iv : Level}
+                      [h : _HasFunctors U V UV] [hId : _HasIdentity V iv]
+                      (n : Name) : Expr :=
+      mkApp5 (mkConst n [U.u, V.u, UV.u, iv]) U V UV h hId
+
+    def mkFreshDeclMVar (U V : _Universe) {UV : _Universe} [_HasFunctors U V UV]
+                        (n : Name) : MetaM (getDecl U V n) :=
       TypedExpr.mkFreshMVar
 
-    def mkFunType {φ : MetaInternalFunctors} (A B : φ.U) : φ.U :=
-      mkApp2 (φ.getBaseDecl ``HasFunctors.Fun) A B
+    variable {U V UV : _Universe} [_HasFunctors U V UV]
 
-    def mkFunArrow {φ : MetaInternalFunctors} (A B : φ.U) : Expr :=
-      mkForall `_ BinderInfo.default (φ.U.mkTypeInst A) (φ.U.mkTypeInst B)
+    def mkFun (A : U) (B : V) : UV := mkApp2 (getDecl U V ``HasFunctors.Fun) A B
+    infixr:20 " _⟶ " => _HasFunctors.mkFun
 
-    def mkApplyFn {φ : MetaInternalFunctors} {A B : φ.U} (F : mkFunType A B) : φ.mkFunArrow A B :=
-      mkApp3 (φ.getBaseDecl ``HasFunctors.apply) A B F
+    def mkFunArrow (A : U) (B : V) : TypeExpr := mkForall `_ BinderInfo.default _⌈A⌉ _⌈B⌉
+    infixr:20 " _→ " => _HasFunctors.mkFunArrow
 
-    def mkApply {φ : MetaInternalFunctors} {A B : φ.U} (F : mkFunType A B) (a : A) : B :=
-      mkApp (φ.mkApplyFn F) a
+    def mkApplyFn {A : U} {B : V} (F : A _⟶ B) : A _→ B :=
+      mkApp3 (getDecl U V ``HasFunctors.apply) A B F
 
-    def mkDefFunType {φ : MetaInternalFunctors} (A B : φ.U) (f : mkFunArrow A B) : Expr :=
-      mkApp3 (φ.getBaseDeclWithId ``HasFunctors.DefFun) A B f
+    def mkApply {A : U} {B : V} (F : A _⟶ B) (a : A) : B := mkApp (mkApplyFn F) a
+    instance (A : U) (B : V) : CoeFun (A _⟶ B) (λ _ => A → B) := ⟨mkApply⟩
 
-  end MetaInternalFunctors
+    variable {iv : Level} [_HasIdentity V iv]
+
+    def mkDefFun (A : U) (B : V) (f : A _→ B) : TypeExpr :=
+      mkApp3 (getDeclWithId U V ``HasFunctors.DefFun) A B f
+    notation:20 A:21 " _⟶{" f:0 "} " B:21 => _HasFunctors.mkDefFun A B f
+
+    def mkFromDefFun {A : U} {B : V} {f : A _→ B} (F : A _⟶{f} B) : A _⟶ B :=
+      mkApp4 (getDeclWithId U V ``HasFunctors.fromDefFun) A B f F
+
+    def mkToDefFun {A : U} {B : V} (F : A _⟶ B) : A _⟶{mkApplyFn F} B :=
+      mkApp3 (getDeclWithId U V ``HasFunctors.toDefFun) A B F
+
+  end _HasFunctors
+
+
+
+  class _HasInternalFunctors (U : _Universe) {iu : Level} [hId : _HasIdentity U iu] where
+  (h : mkApp2 (mkConst ``HasInternalFunctors [U.u, iu]) U hId)
+
+  namespace _HasInternalFunctors
+
+    instance (U : _Universe) {iu : Level} [_HasIdentity U iu] :
+             Coe (_HasInternalFunctors U) Expr :=
+      ⟨λ h => h.h⟩
+
+    instance (U : _Universe) {iu : Level} [hId : _HasIdentity U iu] [h : _HasInternalFunctors U] :
+             _HasFunctors U U U :=
+      ⟨mkApp3 (mkConst ``HasInternalFunctors.toHasFunctors [U.u, iu]) U hId h⟩
+
+    def getDecl (U : _Universe) {iu : Level} [hId : _HasIdentity U iu] [h : _HasInternalFunctors U]
+                (n : Name) : Expr :=
+      mkApp3 (mkConst n [U.u, iu]) U hId h
+
+    def mkFreshDeclMVar (U : _Universe) {iu : Level} [hId : _HasIdentity U iu]
+                        [h : _HasInternalFunctors U] (n : Name) : MetaM (getDecl U n) :=
+      TypedExpr.mkFreshMVar
+
+  end _HasInternalFunctors
+
+
 
   -- A function that has been transformed into a lambda abstraction that we can work with more
   -- easily. In particular, the lambda variable `a` is an `FVar`, so that `t` does not contain any
   -- loose bound variables. This is required for Lean algorithms such as `isDefEq` to work.
 
-  structure LambdaAbstr (φ : MetaInternalFunctors) where
-  {A B : φ.U}
-  (a   : A)
-  (t   : B)
+  structure LambdaAbstraction {U V UV : _Universe} [_HasFunctors U V UV] (A : U) (B : V) where
+  (a : A)
+  (t : B)
 
-  namespace LambdaAbstr
+  namespace LambdaAbstraction
 
-    variable {φ : MetaInternalFunctors}
+    variable {U V UV : _Universe} [_HasFunctors U V UV] {A : U} {B : V} (f : LambdaAbstraction A B)
 
-    def mkFunType (f : LambdaAbstr φ) : φ.U :=
-      φ.mkFunType f.A f.B
-
-    def exprAsConstant (f : LambdaAbstr φ) (t : f.B) : MetaM (Option f.B) := do
+    def exprAsConstant (t : B) : MetaM (Option B) := do
       if !(t.containsFVar f.a.fvarId!) then
         return t
-      let t' : f.B ← reduce t
+      let t' : B ← reduce t
       if !(t'.containsFVar f.a.fvarId!) then
         return t'
       none
 
-    def asConstant (f : LambdaAbstr φ) : MetaM (Option f.B) := f.exprAsConstant f.t
+    def asConstant : MetaM (Option B) := f.exprAsConstant f.t
 
-    def isId (f : LambdaAbstr φ) : MetaM Bool := isDefEq f.t f.a
+    def isId : MetaM Bool := isDefEq f.t f.a
 
-  end LambdaAbstr
+  end LambdaAbstraction
+
+
 
   structure FunctorialityData where
   (mvarId : MVarId)
-  (φ      : MetaInternalFunctors)
-  (f      : LambdaAbstr φ)
+  (U      : _Universe)
+  {iu     : Level}
+  [hId    : _HasIdentity U iu]
+  [hFun   : _HasInternalFunctors U]
+  {A B    : U}
+  (f      : LambdaAbstraction A B)
+
+  namespace FunctorialityData
+
+    variable (φ : FunctorialityData)
+
+    instance : _HasIdentity φ.U φ.iu := φ.hId
+    instance : _HasInternalFunctors φ.U := φ.hFun
+
+  end FunctorialityData
+
+
 
   -- The actual algorithm is implemented as a set of mutually recursive functions.
   -- Of these, `constructLambdaFunctor` is the main entry point (called by `constructFunctor`
@@ -209,27 +278,27 @@ namespace Lean
     -- The main entry point, which handles `constFun` and `idFun` directly, and calls either
     -- `constructLambdaAppFunctor` or `constructLambdaDefFunFunctor` otherwise.
 
-    partial def constructLambdaFunctor (φ : FunctorialityData) : MetaM φ.f.mkFunType := do
+    partial def constructLambdaFunctor (φ : FunctorialityData) : MetaM (φ.A _⟶ φ.B) := do
       match ← φ.f.asConstant with
       | some t => do
-        let hHasSubLinearFunOp ← synthInstance (φ.φ.getDecl ``HasSubLinearFunOp)
-        mkApp4 (φ.φ.getDecl ``HasSubLinearFunOp.constFun) hHasSubLinearFunOp φ.f.A φ.f.B t
+        let hHasSubLinearFunOp ← synthInstance (_HasInternalFunctors.getDecl φ.U ``HasSubLinearFunOp)
+        mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasSubLinearFunOp.constFun) hHasSubLinearFunOp φ.A φ.B t
       | none => do
         if ← φ.f.isId then
-          let hHasLinearFunOp ← synthInstance (φ.φ.getDecl ``HasLinearFunOp)
-          return mkApp2 (φ.φ.getDecl ``HasLinearFunOp.idFun) hHasLinearFunOp φ.f.A
-        let B_b ← φ.φ.U.mkFreshTypeMVar
-        let G ← φ.φ.U.mkFreshInstMVar (φ.φ.mkFunType B_b φ.f.B)
-        let b ← φ.φ.U.mkFreshInstMVar B_b
-        if ← isDefEq φ.f.t (φ.φ.mkApply G b) then
+          let hHasLinearFunOp ← synthInstance (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp)
+          return mkApp2 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.idFun) hHasLinearFunOp φ.A
+        let B_b ← φ.U.mkFreshTypeMVar
+        let G ← φ.U.mkFreshInstMVar (B_b _⟶ φ.B)
+        let b ← φ.U.mkFreshInstMVar B_b
+        if ← isDefEq φ.f.t (G b) then
           let G ← G.instantiate
           let b ← b.instantiate
           return ← constructLambdaAppFunctor φ G b
-        let A_G ← φ.φ.U.mkFreshTypeMVar
-        let B_G ← φ.φ.U.mkFreshTypeMVar
-        let g : φ.φ.mkFunArrow A_G B_G ← TypedExpr.mkFreshMVar
-        let G' : φ.φ.mkDefFunType A_G B_G g ← TypedExpr.mkFreshMVar
-        if ← isDefEq φ.f.t (mkApp4 (φ.φ.getBaseDeclWithId ``HasFunctors.fromDefFun) A_G B_G g G') then
+        let A_G ← φ.U.mkFreshTypeMVar
+        let B_G ← φ.U.mkFreshTypeMVar
+        let g : (A_G _→ B_G) ← TypedExpr.mkFreshMVar
+        let G' : (A_G _⟶{g} B_G) ← TypedExpr.mkFreshMVar
+        if ← isDefEq φ.f.t (_HasFunctors.mkFromDefFun G') then
           let g ← g.instantiate
           let G' ← G'.instantiate
           return ← constructLambdaDefFunFunctor φ g G'
@@ -240,35 +309,35 @@ namespace Lean
     -- to it. (Note that we do not optimize the case where both parts are constant, since that
     -- should have been handled already.)
 
-    partial def constructLambdaAppFunctor (φ : FunctorialityData) {B_b : φ.φ.U}
-                                          (G : φ.φ.mkFunType B_b φ.f.B) (b : B_b) :
-                MetaM φ.f.mkFunType :=
+    partial def constructLambdaAppFunctor (φ : FunctorialityData) {B_b : φ.U}
+                                          (G : B_b _⟶ φ.B) (b : B_b) :
+                MetaM (φ.A _⟶ φ.B) :=
       withDefault do
-        let f_G : LambdaAbstr φ.φ := ⟨φ.f.a, G⟩
-        let f_b : LambdaAbstr φ.φ := ⟨φ.f.a, b⟩
-        let hHasLinearFunOp ← synthInstance (φ.φ.getDecl ``HasLinearFunOp)
+        let f_G : LambdaAbstraction φ.A (B_b _⟶ φ.B) := ⟨φ.f.a, G⟩
+        let f_b : LambdaAbstraction φ.A B_b := ⟨φ.f.a, b⟩
+        let hHasLinearFunOp ← synthInstance (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp)
         match ← f_G.asConstant with
         | some G => do
           if ← f_b.isId then
             return G
-          let F_b ← constructLambdaFunctor ⟨φ.mvarId, φ.φ, f_b⟩
+          let F_b ← constructLambdaFunctor ⟨φ.mvarId, φ.U, f_b⟩
           -- TODO: Write as `trans` to enable notation.
-          return mkApp6 (φ.φ.getDecl ``HasLinearFunOp.compFun) hHasLinearFunOp φ.f.A B_b φ.f.B F_b G
+          return mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.compFun) hHasLinearFunOp φ.A B_b φ.B F_b G
         | none => do
           match ← f_b.asConstant with
           | some b => do
             if ← f_G.isId then
-              return mkApp4 (φ.φ.getDecl ``HasLinearFunOp.revAppFun) hHasLinearFunOp B_b b φ.f.B
-            let F_G ← constructLambdaFunctor ⟨φ.mvarId, φ.φ, f_G⟩
-            return mkApp6 (φ.φ.getDecl ``HasLinearFunOp.swapFun) hHasLinearFunOp φ.f.A B_b φ.f.B F_G b
+              return mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revAppFun) hHasLinearFunOp B_b b φ.B
+            let F_G ← constructLambdaFunctor ⟨φ.mvarId, φ.U, f_G⟩
+            return mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.swapFun) hHasLinearFunOp φ.A B_b φ.B F_G b
           | none => do
-            let F_G ← constructLambdaFunctor ⟨φ.mvarId, φ.φ, f_G⟩
+            let F_G ← constructLambdaFunctor ⟨φ.mvarId, φ.U, f_G⟩
             if ← f_b.isId then
-              let hHasNonLinearFunOp ← synthInstance (φ.φ.getDecl ``HasNonLinearFunOp)
-              return mkApp4 (φ.φ.getDecl ``HasNonLinearFunOp.dupFun) hHasNonLinearFunOp φ.f.A φ.f.B F_G
-            let F_b ← constructLambdaFunctor ⟨φ.mvarId, φ.φ, f_b⟩
-            let hHasFullFunOp ← synthInstance (φ.φ.getDecl ``HasFullFunOp)
-            return mkApp6 (φ.φ.getDecl ``HasFullFunOp.substFun) hHasFullFunOp φ.f.A B_b φ.f.B F_b F_G
+              let hHasNonLinearFunOp ← synthInstance (_HasInternalFunctors.getDecl φ.U ``HasNonLinearFunOp)
+              return mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasNonLinearFunOp.dupFun) hHasNonLinearFunOp φ.A φ.B F_G
+            let F_b ← constructLambdaFunctor ⟨φ.mvarId, φ.U, f_b⟩
+            let hHasFullFunOp ← synthInstance (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp)
+            return mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.substFun) hHasFullFunOp φ.A B_b φ.B F_b F_G
 
     -- This function performs the simple but tedious task of converting applications of `def...Fun`
     -- to a functor application of the corresponding `...FunFun`, which is then handled by
@@ -288,108 +357,107 @@ namespace Lean
 
     -- TODO: Use `IsFunApp` type class instead, or a variant thereof.
 
-    partial def constructLambdaDefFunFunctor (φ : FunctorialityData) {A_G B_G : φ.φ.U}
-                                             (g : φ.φ.mkFunArrow A_G B_G)
-                                             (G' : φ.φ.mkDefFunType A_G B_G g) :
-                MetaM Expr := do
-      let G ← φ.φ.U.mkFreshInstMVar (φ.φ.mkFunType A_G B_G)
-      if ← isDefEq G' (mkApp3 (φ.φ.getBaseDeclWithId ``HasFunctors.toDefFun) A_G B_G G) then
+    partial def constructLambdaDefFunFunctor (φ : FunctorialityData) {A_G B_G : φ.U}
+                                             (g : A_G _→ B_G) (G' : A_G _⟶{g} B_G) :
+                MetaM (A_G _⟶ B_G) := do
+      let G ← φ.U.mkFreshInstMVar (A_G _⟶ B_G)
+      if ← isDefEq G' (_HasFunctors.mkToDefFun G) then
         let G ← G.instantiate
-        return ← constructLambdaFunctor ⟨φ.mvarId, φ.φ, ⟨φ.f.a, G⟩⟩
+        return ← constructLambdaFunctor ⟨φ.mvarId, φ.U, ⟨φ.f.a, G⟩⟩
       withReducible do
-        let hHasSubLinearFunOp ← φ.φ.mkFreshDeclMVar ``HasSubLinearFunOp
-        let b ← φ.φ.U.mkFreshInstMVar B_G
-        if ← isDefEq G' (mkApp4 (φ.φ.getDecl ``HasSubLinearFunOp.defConstFun) hHasSubLinearFunOp A_G B_G b) then
+        let hHasSubLinearFunOp ← _HasInternalFunctors.mkFreshDeclMVar φ.U ``HasSubLinearFunOp
+        let b ← φ.U.mkFreshInstMVar B_G
+        if ← isDefEq G' (mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasSubLinearFunOp.defConstFun) hHasSubLinearFunOp A_G B_G b) then
           let b ← b.instantiate
-          let const := mkApp3 (φ.φ.getDecl ``HasSubLinearFunOp.constFunFun) hHasSubLinearFunOp A_G B_G
+          let const := mkApp3 (_HasInternalFunctors.getDecl φ.U ``HasSubLinearFunOp.constFunFun) hHasSubLinearFunOp A_G B_G
           return ← constructLambdaAppFunctor φ const b
-        let hHasLinearFunOp ← φ.φ.mkFreshDeclMVar ``HasLinearFunOp
-        let A₁ ← φ.φ.U.mkFreshTypeMVar
-        let a₁ ← φ.φ.U.mkFreshInstMVar A₁
-        if ← isDefEq G' (mkApp4 (φ.φ.getDecl ``HasLinearFunOp.defRevAppFun) hHasLinearFunOp A₁ a₁ B_G) then
+        let hHasLinearFunOp ← _HasInternalFunctors.mkFreshDeclMVar φ.U ``HasLinearFunOp
+        let A₁ ← φ.U.mkFreshTypeMVar
+        let a₁ ← φ.U.mkFreshInstMVar A₁
+        if ← isDefEq G' (mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defRevAppFun) hHasLinearFunOp A₁ a₁ B_G) then
           let a₁ ← a₁.instantiate
-          let app := mkApp3 (φ.φ.getDecl ``HasLinearFunOp.revAppFunFun) hHasLinearFunOp A₁ B_G
+          let app := mkApp3 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revAppFunFun) hHasLinearFunOp A₁ B_G
           return ← constructLambdaAppFunctor φ app a₁
-        let A_F₁ := φ.φ.mkFunType A_G A₁
-        let A_F₂ := φ.φ.mkFunType A₁ B_G
-        let F₁ ← φ.φ.U.mkFreshInstMVar A_F₁
-        let F₂ ← φ.φ.U.mkFreshInstMVar A_F₂
-        if ← isDefEq G' (mkApp6 (φ.φ.getDecl ``HasLinearFunOp.defCompFun) hHasLinearFunOp A_G A₁ B_G F₁ F₂) then
+        let A_F₁ := A_G _⟶ A₁
+        let A_F₂ := A₁ _⟶ B_G
+        let F₁ ← φ.U.mkFreshInstMVar A_F₁
+        let F₂ ← φ.U.mkFreshInstMVar A_F₂
+        if ← isDefEq G' (mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defCompFun) hHasLinearFunOp A_G A₁ B_G F₁ F₂) then
           let F₁ ← F₁.instantiate
           let F₂ ← F₂.instantiate
-          let comp := mkApp5 (φ.φ.getDecl ``HasLinearFunOp.compFunFun) hHasLinearFunOp A_G A₁ F₁ B_G
+          let comp := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.compFunFun) hHasLinearFunOp A_G A₁ F₁ B_G
           return ← match ← φ.f.exprAsConstant comp with
           | some comp =>
             constructLambdaAppFunctor φ comp F₂
           | none =>
-            let revComp := mkApp5 (φ.φ.getDecl ``HasLinearFunOp.revCompFunFun) hHasLinearFunOp A_G A₁ B_G F₂
+            let revComp := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revCompFunFun) hHasLinearFunOp A_G A₁ B_G F₂
             constructLambdaAppFunctor φ revComp F₁
-        let A₂ ← φ.φ.U.mkFreshTypeMVar
-        let A₃ ← φ.φ.U.mkFreshTypeMVar
-        let A_F₃ := φ.φ.mkFunType A₁ A₂
-        let F₃ ← φ.φ.U.mkFreshInstMVar A_F₃
-        if ← isDefEq G' (mkApp5 (φ.φ.getDecl ``HasLinearFunOp.defCompFunFun) hHasLinearFunOp A₁ A₂ F₃ A₃) then
+        let A₂ ← φ.U.mkFreshTypeMVar
+        let A₃ ← φ.U.mkFreshTypeMVar
+        let A_F₃ := A₁ _⟶ A₂
+        let F₃ ← φ.U.mkFreshInstMVar A_F₃
+        if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defCompFunFun) hHasLinearFunOp A₁ A₂ F₃ A₃) then
           let F₃ ← F₃.instantiate
-          let comp := mkApp4 (φ.φ.getDecl ``HasLinearFunOp.compFunFunFun) hHasLinearFunOp A₁ A₂ A₃
+          let comp := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.compFunFunFun) hHasLinearFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ comp F₃
-        let A_F₄ := φ.φ.mkFunType A₂ A₃
-        let F₄ ← φ.φ.U.mkFreshInstMVar A_F₄
-        if ← isDefEq G' (mkApp5 (φ.φ.getDecl ``HasLinearFunOp.defRevCompFunFun) hHasLinearFunOp A₁ A₂ A₃ F₄) then
+        let A_F₄ := A₂ _⟶ A₃
+        let F₄ ← φ.U.mkFreshInstMVar A_F₄
+        if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defRevCompFunFun) hHasLinearFunOp A₁ A₂ A₃ F₄) then
           let F₄ ← F₄.instantiate
-          let revComp := mkApp4 (φ.φ.getDecl ``HasLinearFunOp.revCompFunFunFun) hHasLinearFunOp A₁ A₂ A₃
+          let revComp := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revCompFunFunFun) hHasLinearFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ revComp F₄
-        let A_F₅ := φ.φ.mkFunType A_G (φ.φ.mkFunType A₁ B_G)
-        let F₅ ← φ.φ.U.mkFreshInstMVar A_F₅
-        if ← isDefEq G' (mkApp6 (φ.φ.getDecl ``HasLinearFunOp.defSwapFun) hHasLinearFunOp A_G A₁ B_G F₅ a₁) then
+        let A_F₅ := A_G _⟶ (A₁ _⟶ B_G)
+        let F₅ ← φ.U.mkFreshInstMVar A_F₅
+        if ← isDefEq G' (mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defSwapFun) hHasLinearFunOp A_G A₁ B_G F₅ a₁) then
           let F₅ ← F₅.instantiate
           let a₁ ← a₁.instantiate
-          let swap := mkApp5 (φ.φ.getDecl ``HasLinearFunOp.swapFunFun) hHasLinearFunOp A_G A₁ B_G F₅
+          let swap := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.swapFunFun) hHasLinearFunOp A_G A₁ B_G F₅
           return ← match ← φ.f.exprAsConstant swap with
           | some swap =>
             constructLambdaAppFunctor φ swap a₁
           | none =>
-            let revSwap := mkApp5 (φ.φ.getDecl ``HasLinearFunOp.revSwapFunFun) hHasLinearFunOp A_G A₁ a₁ B_G
+            let revSwap := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revSwapFunFun) hHasLinearFunOp A_G A₁ a₁ B_G
             constructLambdaAppFunctor φ revSwap F₅
-        let A_F₆ := φ.φ.mkFunType A₁ (φ.φ.mkFunType A_G A₂)
-        let F₆ ← φ.φ.U.mkFreshInstMVar A_F₆
-        if ← isDefEq G' (mkApp5 (φ.φ.getDecl ``HasLinearFunOp.defSwapFunFun) hHasLinearFunOp A₁ A_G A₂ F₆) then
+        let A_F₆ := A₁ _⟶ (A_G _⟶ A₂)
+        let F₆ ← φ.U.mkFreshInstMVar A_F₆
+        if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defSwapFunFun) hHasLinearFunOp A₁ A_G A₂ F₆) then
           let F₆ ← F₆.instantiate
-          let swap := mkApp4 (φ.φ.getDecl ``HasLinearFunOp.swapFunFunFun) hHasLinearFunOp A₁ A_G A₂
+          let swap := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.swapFunFunFun) hHasLinearFunOp A₁ A_G A₂
           return ← constructLambdaAppFunctor φ swap F₆
-        let a₂ ← φ.φ.U.mkFreshInstMVar A₂
-        if ← isDefEq G' (mkApp5 (φ.φ.getDecl ``HasLinearFunOp.defRevSwapFunFun) hHasLinearFunOp A₁ A₂ a₂ A₃) then
+        let a₂ ← φ.U.mkFreshInstMVar A₂
+        if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.defRevSwapFunFun) hHasLinearFunOp A₁ A₂ a₂ A₃) then
           let a₂ ← a₂.instantiate
-          let revSwap := mkApp4 (φ.φ.getDecl ``HasLinearFunOp.revSwapFunFunFun) hHasLinearFunOp A₁ A₂ A₃
+          let revSwap := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasLinearFunOp.revSwapFunFunFun) hHasLinearFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ revSwap a₂
-        let hHasNonLinearFunOp ← φ.φ.mkFreshDeclMVar ``HasNonLinearFunOp
-        let A_F₇ := φ.φ.mkFunType A_G (φ.φ.mkFunType A_G B_G)
-        let F₇ ← φ.φ.U.mkFreshInstMVar A_F₇
-        if ← isDefEq G' (mkApp4 (φ.φ.getDecl ``HasNonLinearFunOp.defDupFun) hHasNonLinearFunOp A_G B_G F₇) then
+        let hHasNonLinearFunOp ← _HasInternalFunctors.mkFreshDeclMVar φ.U ``HasNonLinearFunOp
+        let A_F₇ := A_G _⟶ (A_G _⟶ B_G)
+        let F₇ ← φ.U.mkFreshInstMVar A_F₇
+        if ← isDefEq G' (mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasNonLinearFunOp.defDupFun) hHasNonLinearFunOp A_G B_G F₇) then
           let F₇ ← F₇.instantiate
-          let dup := mkApp3 (φ.φ.getDecl ``HasNonLinearFunOp.dupFunFun) hHasNonLinearFunOp A_G B_G
+          let dup := mkApp3 (_HasInternalFunctors.getDecl φ.U ``HasNonLinearFunOp.dupFunFun) hHasNonLinearFunOp A_G B_G
           return ← constructLambdaAppFunctor φ dup F₇
-        let hHasFullFunOp ← φ.φ.mkFreshDeclMVar ``HasFullFunOp
-        let A_F₈ := φ.φ.mkFunType A_G (φ.φ.mkFunType A₁ B_G)
-        let F₈ ← φ.φ.U.mkFreshInstMVar A_F₈
-        if ← isDefEq G' (mkApp6 (φ.φ.getDecl ``HasFullFunOp.defSubstFun) hHasFullFunOp A_G A₁ B_G F₁ F₈) then
+        let hHasFullFunOp ← _HasInternalFunctors.mkFreshDeclMVar φ.U ``HasFullFunOp
+        let A_F₈ := A_G _⟶ (A₁ _⟶ B_G)
+        let F₈ ← φ.U.mkFreshInstMVar A_F₈
+        if ← isDefEq G' (mkApp6 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.defSubstFun) hHasFullFunOp A_G A₁ B_G F₁ F₈) then
           let F₁ ← F₁.instantiate
           let F₈ ← F₈.instantiate
-          let subst := mkApp5 (φ.φ.getDecl ``HasFullFunOp.substFunFun) hHasFullFunOp A_G A₁ F₁ B_G
+          let subst := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.substFunFun) hHasFullFunOp A_G A₁ F₁ B_G
           return ← match ← φ.f.exprAsConstant subst with
           | some subst =>
             constructLambdaAppFunctor φ subst F₈
           | none =>
-            let revSubst := mkApp5 (φ.φ.getDecl ``HasFullFunOp.revSubstFunFun) hHasFullFunOp A_G A₁ B_G F₈
+            let revSubst := mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.revSubstFunFun) hHasFullFunOp A_G A₁ B_G F₈
             constructLambdaAppFunctor φ revSubst F₁
-        if ← isDefEq G' (mkApp5 (φ.φ.getDecl ``HasFullFunOp.defSubstFunFun) hHasFullFunOp A₁ A₂ F₃ A₃) then
+        if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.defSubstFunFun) hHasFullFunOp A₁ A₂ F₃ A₃) then
           let F₃ ← F₃.instantiate
-          let subst := mkApp4 (φ.φ.getDecl ``HasFullFunOp.substFunFunFun) hHasFullFunOp A₁ A₂ A₃
+          let subst := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.substFunFunFun) hHasFullFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ subst F₃
-        let A_F₉ := φ.φ.mkFunType A₁ (φ.φ.mkFunType A₂ A₃)
-        let F₉ ← φ.φ.U.mkFreshInstMVar A_F₉
-        if ← isDefEq G' (mkApp5 (φ.φ.getDecl ``HasFullFunOp.defRevSubstFunFun) hHasFullFunOp A₁ A₂ A₃ F₉) then
+        let A_F₉ := A₁ _⟶ (A₂ _⟶ A₃)
+        let F₉ ← φ.U.mkFreshInstMVar A_F₉
+        if ← isDefEq G' (mkApp5 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.defRevSubstFunFun) hHasFullFunOp A₁ A₂ A₃ F₉) then
           let F₉ ← F₉.instantiate
-          let revSubst := mkApp4 (φ.φ.getDecl ``HasFullFunOp.revSubstFunFunFun) hHasFullFunOp A₁ A₂ A₃
+          let revSubst := mkApp4 (_HasInternalFunctors.getDecl φ.U ``HasFullFunOp.revSubstFunFunFun) hHasFullFunOp A₁ A₂ A₃
           return ← constructLambdaAppFunctor φ revSubst F₉
         throwTacticEx `makeFunctor φ.mvarId m!"unsupported fromDefFun argument '{G'}'"
 
@@ -400,19 +468,20 @@ namespace Lean
   -- convert it to a lambda abstraction with a lambda application in its body (which can hopefully
   -- be unfolded).
 
-  def constructFunctor (mvarId : MVarId) (φ : MetaInternalFunctors) (A B : φ.U) :
-    φ.mkFunArrow A B → MetaM (φ.mkFunType A B)
+  def constructFunctor (mvarId : MVarId) {U : _Universe} {iu : Level} [_HasIdentity U iu]
+                       [hFun : _HasInternalFunctors U] (A B : U) :
+    (A _→ B) → MetaM (A _⟶ B)
     | Expr.lam n d b c => withLocalDecl n c.binderInfo d fun a : A =>
       let t : B := b.instantiate1 a
-      constructLambdaFunctor ⟨mvarId, φ, ⟨a, t⟩⟩
+      constructLambdaFunctor ⟨mvarId, U, ⟨a, t⟩⟩
     | f => do
-      let F ← φ.U.mkFreshInstMVar (φ.mkFunType A B)
-      if ← isDefEq f (φ.mkApplyFn F) then
+      let F ← U.mkFreshInstMVar (A _⟶ B)
+      if ← isDefEq f (_HasFunctors.mkApplyFn F) then
         return F
       let a := mkFVar (← mkFreshFVarId)
-      withLocalDecl `a BinderInfo.default (φ.U.mkTypeInst A) fun a : A =>
+      withLocalDecl `a BinderInfo.default _⌈A⌉ fun a : A =>
         let t : B := mkApp f a
-        constructLambdaFunctor ⟨mvarId, φ, ⟨a, t⟩⟩
+        constructLambdaFunctor ⟨mvarId, U, ⟨a, t⟩⟩
 
   -- The `makeFunctor` tactic, which calls `constructFunctor` based on the target type and given
   -- term. Note that the target type determines how to elaborate the term, which enables us to omit
@@ -420,15 +489,21 @@ namespace Lean
 
   def makeFunctor (mvarId : MVarId) (hf : Syntax) : TacticM Expr := do
     let type ← getMVarType mvarId
-    let φ ← MetaInternalFunctors.mkFreshMVar
-    let A ← φ.U.mkFreshTypeMVar
-    let B ← φ.U.mkFreshTypeMVar
-    if ← isDefEq type (φ.U.mkTypeInst (φ.mkFunType A B)) then
-      let φ ← φ.instantiate
-      let A : φ.U ← A.instantiate
-      let B : φ.U ← B.instantiate
-      let f : φ.mkFunArrow A B ← TypedExpr.elaborate hf
-      return ← constructFunctor mvarId φ A B f
+    let U ← _Universe.mkFreshMVar
+    let A ← U.mkFreshTypeMVar
+    let B ← U.mkFreshTypeMVar
+    let iu ← mkFreshLevelMVar
+    let hId : _HasIdentity U iu := ⟨← TypedExpr.mkFreshMVar⟩
+    let hFun : _HasInternalFunctors U := ⟨← TypedExpr.mkFreshMVar⟩
+    if ← isDefEq type _⌈A _⟶ B⌉ then
+      let U ← U.instantiate
+      let A : U ← A.instantiate
+      let B : U ← B.instantiate
+      let iu ← instantiateLevelMVars iu
+      let hId : _HasIdentity U iu := ⟨← hId.h.instantiate⟩
+      let hFun : _HasInternalFunctors U := ⟨← hFun.h.instantiate⟩
+      let f : (A _→ B) ← TypedExpr.elaborate hf
+      return ← constructFunctor mvarId A B f
     throwTacticEx `makeFunctor mvarId m!"type '{type}' is not an application of 'HasFunctors.Fun'"
 
   elab "makeFunctor " hf:term : tactic => do
@@ -467,7 +542,7 @@ namespace Lean
 --    let φ ← MetaInternalFunctors.mkFreshMVar
 --    let A ← φ.U.mkFreshTypeMVar
 --    let B ← φ.U.mkFreshTypeMVar
---    let f : φ.mkFunArrow A B ← TypedExpr.mkFreshMVar
+--    let f : (A _→ B) ← TypedExpr.mkFreshMVar
 --    if ← isDefEq type (φ.mkDefFunType A B f) then
 --      let φ ← φ.instantiate
 --      let A ← A.instantiate
