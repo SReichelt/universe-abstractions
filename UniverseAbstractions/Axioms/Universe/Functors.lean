@@ -143,7 +143,7 @@ namespace HasCongrFun
     -- an axiom. When implementing the axiom, the hypothesis is then accessible in a generic way,
     -- so the implementation shrinks to a proof of `F₁ ≃ F₂` given `∀ a, F₁ a ≃ F₂ a`. If functors
     -- are extensional, then this proof is completely generic (see `Trivial.lean`). In general it
-    -- can be regarded as a naturality proof.
+    -- can be regarded as a proof that the instance of `F₁ a ≃ F₂ a` is natural in `a`.
 
     def IsExtensional {A : U} {B : V} (F₁ F₂ : A ⟶ B) (h : ∀ a, F₁ a ≃ F₂ a) := F₁ ≃ F₂
     notation:25 F₁:26 " ≃{" h:0 "} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ h

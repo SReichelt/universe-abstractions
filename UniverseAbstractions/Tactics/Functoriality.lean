@@ -52,13 +52,13 @@ namespace Lean
   def mkUniverseInst (u : Level) (U : Expr) : Expr :=
     mkHasInstancesInst (mkLevelSucc u) (mkLevelSucc (mkLevelSucc u)) (mkConst ``Universe [u]) (mkConst ``Universe.hasInstances [u]) U
 
-  def mkUniverseInstInst (u : Level) (U U' A : Expr) : Expr :=
-    mkHasInstancesInst u (mkLevelSucc u) U' (mkApp (mkConst ``Universe.instInst [u]) U) A
+  def mkUniverseInstInst (u : Level) (U A : Expr) : Expr :=
+    mkHasInstancesInst u (mkLevelSucc u) (mkUniverseInst u U) (mkApp (mkConst ``Universe.instInst [u]) U) A
 
   structure FunUniv where
   (mvarId   : MVarId)
   (u iu     : Level)
-  (U U'     : Expr)
+  (U        : Expr)
   (hId hFun : Expr)
 
   namespace FunUniv
@@ -67,13 +67,13 @@ namespace Lean
       mkApp3 (mkConst n [φ.u, φ.iu]) φ.U φ.hId φ.hFun
 
     def mkTypeInst (φ : FunUniv) (A : Expr) : Expr :=
-      mkUniverseInstInst φ.u φ.U φ.U' A
+      mkUniverseInstInst φ.u φ.U A
 
     def mkFunType (φ : FunUniv) (A B : Expr) : Expr :=
       mkApp2 (φ.getDecl ``HasInternalFunctors.Helpers.Fun) A B
 
     def mkFreshTypeMVar (φ : FunUniv): MetaM Expr :=
-      mkFreshExprMVar φ.U'
+      mkFreshExprMVar (mkUniverseInst φ.u φ.U)
 
     def mkFreshInstMVar (φ : FunUniv) (A : Expr) : MetaM Expr :=
       mkFreshExprMVar (φ.mkTypeInst A)
@@ -329,20 +329,18 @@ namespace Lean
     let U ← mkFreshExprMVar (mkConst ``Universe [u])
     let hId ← mkFreshExprMVar (mkApp (mkConst ``HasIdentity [u, iu]) U)
     let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasInternalFunctors [u, iu]) U hId)
-    let U' := mkUniverseInst u U
-    let φ' : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
+    let φ' : FunUniv := ⟨mvarId, u, iu, U, hId, hFun⟩
     let A ← φ'.mkFreshTypeMVar
     let B ← φ'.mkFreshTypeMVar
     if ← isDefEq type (φ'.mkTypeInst (φ'.mkFunType A B)) then
       let u ← instantiateLevelMVars u
       let iu ← instantiateLevelMVars iu
       let U ← instantiateMVars U
-      let U' ← instantiateMVars U'
       let hId ← instantiateMVars hId
       let hFun ← instantiateMVars hFun
       let A ← instantiateMVars A
       let B ← instantiateMVars B
-      let φ : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
+      let φ : FunUniv := ⟨mvarId, u, iu, U, hId, hFun⟩
       let A' := φ.mkTypeInst A
       let B' := φ.mkTypeInst B
       let f ← elabTerm hf (← mkArrow A' B')
@@ -387,8 +385,7 @@ namespace Lean
     let U ← mkFreshExprMVar (mkConst ``Universe [u])
     let hId ← mkFreshExprMVar (mkApp (mkConst ``HasIdentity [u, iu]) U)
     let hFun ← mkFreshExprMVar (mkApp2 (mkConst ``HasInternalFunctors [u, iu]) U hId)
-    let U' := mkUniverseInst u U
-    let φ' : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
+    let φ' : FunUniv := ⟨mvarId, u, iu, U, hId, hFun⟩
     let A ← φ'.mkFreshTypeMVar
     let B ← φ'.mkFreshTypeMVar
     let A' := φ'.mkTypeInst A
@@ -398,7 +395,6 @@ namespace Lean
       let u ← instantiateLevelMVars u
       let iu ← instantiateLevelMVars iu
       let U ← instantiateMVars U
-      let U' ← instantiateMVars U'
       let hId ← instantiateMVars hId
       let hFun ← instantiateMVars hFun
       let A ← instantiateMVars A
@@ -406,7 +402,7 @@ namespace Lean
       let A' ← instantiateMVars A'
       let B' ← instantiateMVars B'
       let f ← instantiateMVars f
-      let φ : FunUniv := ⟨mvarId, u, iu, U, U', hId, hFun⟩
+      let φ : FunUniv := ⟨mvarId, u, iu, U, hId, hFun⟩
       let F ← constructFunctor φ A B A' B' f
       let hDefTypeBody := mkApp3 (mkConst ``Eq [u]) B' (mkApp4 (φ.getDecl ``HasInternalFunctors.Helpers.apply) A B F (mkBVar 0)) (mkApp f (mkBVar 0))
       let hDefType := mkForall `a BinderInfo.default A' hDefTypeBody

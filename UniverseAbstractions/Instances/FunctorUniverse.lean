@@ -218,8 +218,8 @@ namespace functorUniverse
 
     instance hasLinearFunOp : HasLinearFunOp ({A ⟶} U) :=
     { defIdFun         := λ B     => ⟨baseIdFun         A B,     baseIdFun.eff         A B⟩,
-      defRevAppFun        := λ F C   => ⟨baseAppFun        A F C,   baseAppFun.eff        A F C⟩,
-      defRevAppFunFun     := λ B C   => ⟨baseAppFunFun     A B C,   baseAppFunFun.eff     A B C⟩,
+      defRevAppFun     := λ F C   => ⟨baseAppFun        A F C,   baseAppFun.eff        A F C⟩,
+      defRevAppFunFun  := λ B C   => ⟨baseAppFunFun     A B C,   baseAppFunFun.eff     A B C⟩,
       defCompFun       := λ G H   => ⟨baseCompFun       A G H,   baseCompFun.eff       A G H⟩,
       defCompFunFun    := λ G D   => ⟨baseCompFunFun    A G D,   baseCompFunFun.eff    A G D⟩,
       defCompFunFunFun := λ B C D => ⟨baseCompFunFunFun A B C D, baseCompFunFunFun.eff A B C D⟩ }
@@ -450,13 +450,16 @@ inductive OptionalFunctorType {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV 
 | idFn
 | empty
 
+def OptionalFunctorInstanceType {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
+  OptionalFunctorType A V → Sort v
+| OptionalFunctorType.const B => ⌈B⌉
+| OptionalFunctorType.fn AB   => ⌈AB⌉
+| OptionalFunctorType.idFn    => PUnit.{v}
+| OptionalFunctorType.empty   => PEmpty.{v}
+
 instance {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
   HasInstances.{v, v + 1} (OptionalFunctorType A V) :=
-⟨λ β => match β with
-        | OptionalFunctorType.const B => ⌈B⌉
-        | OptionalFunctorType.fn AB   => ⌈AB⌉
-        | OptionalFunctorType.idFn    => PUnit.{v}
-        | OptionalFunctorType.empty   => PEmpty.{v}⟩
+⟨OptionalFunctorInstanceType A V⟩
 
 def optionalFunctorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
   Universe.{v} :=
@@ -486,7 +489,7 @@ namespace optionalFunctorUniverse
                       | const B, const C => const (B ⟶ C)
                       | const B, fn AC   => fn (B ⟶ AC)
                       | fn AB,   fn AC   => const (AB ⟶ AC)
-                      | idFn,    δ       => δ
+                      | idFn,    γ       => γ
                       | _,       _       => empty,
     apply := λ {β γ} => match β, γ with
                         | const B, const C => λ (G : B ⟶ C)   (b : B)  => G b
