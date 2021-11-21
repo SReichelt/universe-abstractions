@@ -633,26 +633,6 @@ end MetaRelation
 class HasInternalFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
   HasFunctors U U U, HasCongrArg U U : Type (max u iu)
 
-namespace HasInternalFunctors.Helpers
-
-  -- Restricted copies of definitions in `HasFunctors` to help functoriality tactic.
-
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U]
-
-  @[reducible] def Fun (A B : U) : U := HasFunctors.Fun A B
-  @[reducible] def DefFun (A B : U) (f : A → B) := HasFunctors.DefFun A B f
-
-  variable {A B : U}
-
-  @[reducible] def apply (F : A ⟶ B) : A → B := HasFunctors.apply F
-
-  @[reducible] def toDefFun               (F : A ⟶ B)    : A ⟶{apply F} B := HasFunctors.toDefFun F
-  @[reducible] def fromDefFun {f : A → B} (F : A ⟶{f} B) : A ⟶ B          := HasFunctors.fromDefFun F
-
-  @[reducible] def toDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) : A ⟶{f} B := HasFunctors.toDefFun' F h
-
-end HasInternalFunctors.Helpers
-
 
 
 -- The following axioms are equivalent to asserting the existence of five functors with specified
