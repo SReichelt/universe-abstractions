@@ -46,7 +46,7 @@ namespace functorUniverse
   HasConstFun.constFun A b
 
   instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
-                        (IUV : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} UV IUV] :
+                                   (IUV : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} UV IUV] :
     HasInstanceEquivalences.{v, iv} ({A ⟶} V) IUV :=
   ⟨λ (B : V) => h.hasEq (A ⟶ B)⟩
 
@@ -75,7 +75,7 @@ namespace functorUniverse
       G
 
       variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasInternalFunctors U]
-              [HasLinearFunOp U] [HasLinearFunExt U]
+               [HasLinearFunOp U] [HasLinearFunExt U]
 
       instance hasIndependentCongrArg : HasCongrArg ({A ⟶} U) ({A ⟶} U) :=
       ⟨λ {B C : U} (G : B ⟶ C) {F₁ F₂ : A ⟶ B} h => defCongrArg (defRevCompFunFun A G) h⟩
@@ -115,7 +115,7 @@ namespace functorUniverse
       def independentDependentCompFun {B C D : U} (G : B ⟶ C) (H : A ⟶ C ⟶ D) : A ⟶ B ⟶ D := compFunFun G D • H
       def independentDependentCompFun.eff {B C D : U} (G : B ⟶ C) (H : A ⟶ C ⟶ D) (b : B) :
         swapFun (independentDependentCompFun A G H) b ≃ swapFun H (G b) :=
-      defCongrArg (defCompFunFun H D) (swapCompFun G b D) • swapComp H (compFunFun G D) b
+      defCongrArg (HasCompFunFun.defCompFunFun H D) (swapCompFun G b D) • swapComp H (compFunFun G D) b
 
       instance hasIndependentDependentCompFun : HasCompFun U U ({A ⟶} U) :=
       ⟨λ G H => ⟨independentDependentCompFun A G H, independentDependentCompFun.eff A G H⟩⟩
@@ -124,7 +124,7 @@ namespace functorUniverse
       def dependentIndependentCompFun.eff {B C D : U} (G : A ⟶ B ⟶ C) (H : C ⟶ D) (b : B) :
         swapFun (dependentIndependentCompFun A G H) b ≃ H • swapFun G b :=
       compAssoc G (revAppFun b C) H •
-      defCongrArg (defCompFunFun G D) (swapRevCompFun H b) •
+      defCongrArg (HasCompFunFun.defCompFunFun G D) (swapRevCompFun H b) •
       swapComp G (revCompFunFun B H) b
 
       instance hasDependentIndependentCompFun : HasCompFun U ({A ⟶} U) ({A ⟶} U) :=
@@ -147,7 +147,7 @@ namespace functorUniverse
         def dependentConstFun (B : U) {C : U} (F : A ⟶ C) : A ⟶ B ⟶ C := constFunFun B C • F
         def dependentConstFun.eff (B : U) {C : U} (F : A ⟶ C) (b : B) :
           swapFun (dependentConstFun A B F) b ≃ F :=
-        leftId F • defCongrArg (defCompFunFun F C) (swapConstFun b C) • swapComp F (constFunFun B C) b
+        leftId F • defCongrArg (HasCompFunFun.defCompFunFun F C) (swapConstFun b C) • swapComp F (constFunFun B C) b
 
         instance hasDependentConstFun : HasConstFun U ({A ⟶} U) :=
         ⟨λ B {C} F => ⟨dependentConstFun A B F, dependentConstFun.eff A B F⟩⟩
@@ -230,7 +230,7 @@ namespace functorUniverse
     dupConst F •
     dupSwap (constFun A F) •
     defCongrArg (defDupFunFun A C) ((swapConstExt A F)⁻¹ •
-                                    defCongrArg (defCompFunFun F (A ⟶ C)) (leftConstExt G C) •
+                                    defCongrArg (HasCompFunFun.defCompFunFun F (A ⟶ C)) (leftConstExt G C) •
                                     (compAssoc F (constFunFun B C) (compFunFun G C))⁻¹)
 
     def baseConstFunFun (B C : U) : A ⟶ C ⟶ B ⟶ C := embedFunctor A (constFunFun B C)
@@ -418,7 +418,7 @@ namespace functorUniverse
       def baseElimFun.eff {B : U} (F : A ⟶ B) (G : A ⟶ Top U) :
         substFun G (baseElimFun A F) ≃ F :=
       baseConstFun.eff A (Top U) F G •
-      defCongrArg (defSubstFunFun G B) (defCongrArg (defCompFunFun F (Top U ⟶ B))
+      defCongrArg (defSubstFunFun G B) (defCongrArg (HasCompFunFun.defCompFunFun F (Top U ⟶ B))
                                                     (elimFunFunConstEq B))
 
       instance hasInternalTop : HasInternalTop ({A ⟶} U) :=
@@ -472,8 +472,8 @@ namespace optionalFunctorUniverse
   notation:20 "{" A:0 " ⟶}? " V:21 => optionalFunctorUniverse A V
 
   instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV]
-                        (IV : Universe.{iv}) [hConst : HasInstanceEquivalences.{v, iv} V IV]
-                        [hFn : HasInstanceEquivalences.{v, iv} ({A ⟶} V) IV] [HasTop IV] :
+                                   (IV : Universe.{iv}) [hConst : HasInstanceEquivalences.{v, iv} V IV]
+                                   [hFn : HasInstanceEquivalences.{v, iv} ({A ⟶} V) IV] [HasTop IV] :
     HasInstanceEquivalences.{v, iv} ({A ⟶}? V) IV :=
   ⟨λ β => match β with
           | const B => hConst.hasEq B

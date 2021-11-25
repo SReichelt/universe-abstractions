@@ -30,7 +30,7 @@ namespace coFunctorUniverse
   def inst {U : Universe.{u}} {V VU : Universe.{v}} [HasFunctors V U VU] {B : V} {A : U} (F : B ⟶ A) : B ⟶! A := F
 
   instance hasInstanceEquivalences {U : Universe.{u}} (A : U) (V : Universe.{v}) {VU : Universe.{v}} [HasFunctors V U VU]
-                        (IVU : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} VU IVU] :
+                                   (IVU : Universe.{iv}) [h : HasInstanceEquivalences.{v, iv} VU IVU] :
     HasInstanceEquivalences.{v, iv} (V {⟶ A}) IVU :=
   ⟨λ (B : V) => h.hasEq (B ⟶ A)⟩
 
@@ -60,7 +60,7 @@ namespace coFunctorUniverse
              [HasLinearFunOp U]
 
     instance hasIndependentCongrArg : HasCongrArg (U {⟶ A}) (U {⟶ A}) :=
-    ⟨λ {B C : U} (F : C ⟶ B) {G₁ G₂ : B ⟶ A} h => defCongrArg (defCompFunFun F A) h⟩
+    ⟨λ {B C : U} (F : C ⟶ B) {G₁ G₂ : B ⟶ A} h => defCongrArg (HasCompFunFun.defCompFunFun F A) h⟩
 
     variable [HasLinearFunExt U]
 

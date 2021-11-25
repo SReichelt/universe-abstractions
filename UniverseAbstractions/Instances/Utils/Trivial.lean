@@ -147,6 +147,11 @@ namespace HasTrivialFunctoriality
     HasConstFun U V :=
   ⟨λ _ {_} _ => defFun⟩
 
+  instance hasRevAppFun (U : Universe) [HasFunctors U U U] [HasIdentity U]
+                        [HasTrivialFunctoriality U U] :
+    HasRevAppFun U :=
+  ⟨λ _ _ => defFun⟩
+
   instance hasCompFun (U V W : Universe) {UV VW UW : Universe} [HasIdentity W]
                       [HasFunctors U V UV] [HasFunctors V W VW] [HasFunctors U W UW]
                       [HasTrivialFunctoriality U W] :
@@ -224,20 +229,14 @@ namespace HasTrivialFunctoriality
   variable (U : Universe) [HasIdentity U] [HasInternalFunctors U] [HasTrivialFunctoriality U U]
 
   instance hasLinearFunOp : HasLinearFunOp U :=
-  { defIdFun         := λ _     => defFun,
-    defRevAppFun     := λ _ _   => defFun,
-    defRevAppFunFun  := λ _ _   => defFun,
-    defCompFun       := λ _ _   => defFun,
-    defCompFunFun    := λ _ _   => defFun,
+  { defRevAppFunFun  := λ _ _   => defFun,
     defCompFunFunFun := λ _ _ _ => defFun }
 
   instance hasAffineFunOp : HasAffineFunOp U :=
-  { defConstFun    := λ _ {_} _ => defFun,
-    defConstFunFun := λ _ _     => defFun }
+  { defConstFunFun := λ _ _ => defFun }
 
   instance hasFullFunOp : HasFullFunOp U :=
-  { defDupFun    := λ _   => defFun,
-    defDupFunFun := λ _ _ => defFun }
+  { defDupFunFun := λ _ _ => defFun }
 
   instance hasInternalTop [HasTop U] : HasInternalTop U :=
   { defElimFun := λ _ => defFun }

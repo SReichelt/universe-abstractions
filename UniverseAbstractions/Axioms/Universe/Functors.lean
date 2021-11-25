@@ -44,12 +44,14 @@ namespace HasFunctors
     CoeFun ⌈A ⟶ B⌉ (λ _ => A → B) :=
   ⟨apply⟩
 
-  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V] 
-
-  class IsFunApp (A : outParam ⌈U⌉) {B : V} (b : B) where
+  class IsFunApp {U : outParam Universe} {V : Universe} {UV : outParam Universe}
+                 [outParam (HasFunctors U V UV)] [HasIdentity V]
+                 (A : outParam U) {B : V} (b : B) where
   (F : A ⟶ B)
   (a : A)
   (e : F a ≃ b)
+
+  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
 
   instance (priority := low) IsFunApp.refl {A : U} {B : V} (F : A ⟶ B) (a : A) : IsFunApp A (F a) :=
   { F := F,
@@ -90,6 +92,9 @@ namespace HasFunctors
   @[simp] theorem fromCastDefFun {f f' : A → B} (F : A ⟶{f} B) (h : ∀ a, f a ≃ f' a) :
     fromDefFun (castDefFun F h) = fromDefFun F :=
   rfl
+
+  def defAppFun (F : A ⟶ B) : A ⟶{λ a => F a} B := F
+  @[reducible] def appFun (F : A ⟶ B) : A ⟶ B := defAppFun F
 
 end HasFunctors
 
@@ -225,8 +230,8 @@ end HasCongrFun
 -- The following seems to be a good criterion for deciding how much polymorphism we want:
 -- Whenever we define a functor `(A ⟶ B) ⟶{λ F => ...} C` taking a functor as an argument, we force
 -- `A`, `B`, and `A ⟶ B` into the same universe.
--- If that forces all types to be in the same universe, we do not define individual functors any
--- more, but use `HasLinearFunOp`, `HasAffineFunOp`, or `HasFullFunOp`, defined further below.
+-- If that forces all types to be in the same universe, we usually do not define individual functors
+-- any more, but use `HasLinearFunOp`, `HasAffineFunOp`, or `HasFullFunOp`, defined further below.
 
 class HasIdFun (U : Universe) {UU : Universe} [HasFunctors U U UU] [HasIdentity U] where
 (defIdFun (A : U) : A ⟶{id} A)
@@ -250,6 +255,22 @@ namespace HasConstFun
 
 end HasConstFun
 
+class HasRevAppFun (U : Universe) [HasFunctors U U U] [HasIdentity U] where
+(defRevAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶{λ F => F a} B)
+
+namespace HasRevAppFun
+
+  open HasCongrArg
+
+  variable {U : Universe} [HasFunctors U U U] [HasIdentity U] [HasRevAppFun U]
+
+  @[reducible] def revAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶ B := defRevAppFun a B
+
+  instance hasCongrFun [HasCongrArg U U] : HasCongrFun U U :=
+  ⟨λ {A B F₁ F₂} h a => defCongrArg (defRevAppFun a B) h⟩
+
+end HasRevAppFun
+
 class HasCompFun (U V W : Universe) {UV VW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW]
                  [HasFunctors U W UW] [HasIdentity W] where
 (defCompFun {A : U} {B : V} {C : W} (F : A ⟶ B) (G : B ⟶ C) : A ⟶{λ a => G (F a)} C)
@@ -267,30 +288,46 @@ end HasCompFun
 class HasCompFunFun (U W : Universe) {UW : Universe} [HasFunctors U W UW] [HasFunctors W UW UW]
                     [HasFunctors W W W] [HasIdentity W] [HasIdentity UW] extends
   HasCompFun U W W where
-(defCompFunFun {A : U} {B : W} (F : A ⟶ B) (C : W) : (B ⟶ C) ⟶{λ G => defCompFun F G} (A ⟶ C))
+(defCompFunFun {A : U} {B : W} (F : A ⟶ B) (C : W) : (B ⟶ C) ⟶{λ G => G ⊙ F} (A ⟶ C))
 
 namespace HasCompFunFun
 
-  variable {U W : Universe} {UW : Universe} [HasFunctors U W UW] [HasFunctors W UW UW]
+  open HasFunctors
+
+  variable {U W UW : Universe} [HasFunctors U W UW] [HasFunctors W UW UW]
            [HasFunctors W W W] [HasIdentity W] [HasIdentity UW] [HasCompFunFun U W]
 
   @[reducible] def compFunFun {A : U} {B : W} (F : A ⟶ B) (C : W) : (B ⟶ C) ⟶ (A ⟶ C) :=
   defCompFunFun F C
+
+  instance compFun.isFunApp {A : U} {B C : W} {F : A ⟶ B} {G : B ⟶ C} :
+    IsFunApp (B ⟶ C) (G ⊙ F) :=
+  { F := compFunFun F C,
+    a := G,
+    e := byDef }
 
 end HasCompFunFun
 
 class HasRevCompFunFun (U W : Universe) {UW : Universe} [HasFunctors U U U] [HasFunctors U W UW]
                        [HasFunctors U UW UW] [HasIdentity W] [HasIdentity UW] extends
   HasCompFun U U W where
-(defRevCompFunFun (A : U) {B : U} {C : W} (G : B ⟶ C) : (A ⟶ B) ⟶{λ F => defCompFun F G} (A ⟶ C))
+(defRevCompFunFun (A : U) {B : U} {C : W} (G : B ⟶ C) : (A ⟶ B) ⟶{λ F => G ⊙ F} (A ⟶ C))
 
 namespace HasRevCompFunFun
 
-  variable {U W : Universe} {UW : Universe} [HasFunctors U U U] [HasFunctors U W UW]
+  open HasFunctors
+
+  variable {U W UW : Universe} [HasFunctors U U U] [HasFunctors U W UW]
            [HasFunctors U UW UW] [HasIdentity W] [HasIdentity UW] [HasRevCompFunFun U W]
 
   @[reducible] def revCompFunFun (A : U) {B : U} {C : W} (G : B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
   defRevCompFunFun A G
+
+  instance (priority := low) compFun.isFunApp {A B : U} {C : W} {F : A ⟶ B} {G : B ⟶ C} :
+    IsFunApp (A ⟶ B) (G ⊙ F) :=
+  { F := revCompFunFun A G,
+    a := F,
+    e := byDef }
 
 end HasRevCompFunFun
 
@@ -319,15 +356,23 @@ class HasSwapFunFun (U V W : Universe) {VW UVW UW VUW : Universe} [HasFunctors V
                     [HasFunctors U VW UVW] [HasFunctors U W UW] [HasFunctors V UW VUW]
                     [HasIdentity W] [HasIdentity UW] extends
   HasSwapFun U V W where
-(defSwapFunFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) : B ⟶{λ b => defSwapFun F b} (A ⟶ C))
+(defSwapFunFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) : B ⟶{λ b => HasSwapFun.swapFun F b} (A ⟶ C))
 
 namespace HasSwapFunFun
+
+  open HasFunctors HasSwapFun
 
   variable {U V W UW VW UVW VUW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
            [HasFunctors U W UW] [HasFunctors V UW VUW] [HasIdentity W] [HasIdentity UW]
            [HasSwapFunFun U V W]
 
   @[reducible] def swapFunFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := defSwapFunFun F
+
+  instance swapFun.isFunApp {A : U} {B : V} {C : W} {F : A ⟶ B ⟶ C} {b : B} :
+    IsFunApp B (swapFun F b) :=
+  { F := swapFunFun F,
+    a := b,
+    e := byDef }
 
 end HasSwapFunFun
 
@@ -360,7 +405,7 @@ end HasSubstFun
 class HasRevSubstFunFun (U W : Universe) {UW : Universe} [HasFunctors U U U] [HasFunctors U W UW]
                         [HasFunctors U UW UW] [HasIdentity W] [HasIdentity UW] extends
   HasSubstFun U U W where
-(defRevSubstFunFun {A B : U} {C : W} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶{λ F => defSubstFun F G} (A ⟶ C))
+(defRevSubstFunFun {A B : U} {C : W} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶{λ F => HasSubstFun.substFun F G} (A ⟶ C))
 
 namespace HasRevSubstFunFun
 
@@ -395,7 +440,7 @@ class HasRevBiCompFunFun (U V X : Universe) {UV UX VUX UUX : Universe} [HasFunct
                          [HasFunctors U UX UUX] [HasIdentity X] [HasIdentity UX] extends
   HasBiCompFun U V U X where
 (defRevBiCompFunFun {A : U} {B : V} {C : U} {D : X} (H : B ⟶ C ⟶ D) (F : A ⟶ B) :
-   (A ⟶ C) ⟶{λ G => defBiCompFun F G H} (A ⟶ D))
+   (A ⟶ C) ⟶{λ G => HasBiCompFun.biCompFun F G H} (A ⟶ D))
 
 namespace HasRevBiCompFunFun
 
@@ -413,7 +458,7 @@ class HasRevBiCompFunFunFun (U X : Universe) {UX : Universe} [HasFunctors U U U]
                             [HasFunctors U UX UX] [HasIdentity X] [HasIdentity UX] extends
   HasRevBiCompFunFun U U X where
 (defRevBiCompFunFunFun (A : U) {B C : U} {D : X} (H : B ⟶ C ⟶ D) :
-   (A ⟶ B) ⟶{λ F => defRevBiCompFunFun H F} ((A ⟶ C) ⟶ (A ⟶ D)))
+   (A ⟶ B) ⟶{λ F => HasRevBiCompFunFun.revBiCompFunFun H F} ((A ⟶ C) ⟶ (A ⟶ D)))
 
 namespace HasRevBiCompFunFunFun
 
@@ -473,7 +518,7 @@ class IsBiFunctorial {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors
                      [HasIdentity W] [HasIdentity VW]
                      {A : U} {B : V} {C : W} (f : A → B → C) extends
   IsRightFunctorial f where
-(defRightFunFun : A ⟶{λ a => defRightFun a} (B ⟶ C))
+(defRightFunFun : A ⟶{λ a => IsRightFunctorial.rightFun f a} (B ⟶ C))
 
 namespace IsBiFunctorial
 
@@ -496,7 +541,7 @@ namespace IsBiFunctorial
 
   def defLeftFunFun {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW]
                     [HasSwapFunFun U V W] :
-    B ⟶{λ b => defLeftFun f b} (A ⟶ C) :=
+    B ⟶{λ b => IsLeftFunctorial.leftFun f b} (A ⟶ C) :=
   defSwapFunFun (rightFunFun f)
 
   @[reducible] def leftFunFun {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW]
@@ -656,74 +701,63 @@ class HasInternalFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
 
 
 
-class HasLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
-(defIdFun         (A : U)                             : A ⟶{id} A)
-(defRevAppFun     {A : U} (a : A) (B : U)             : (A ⟶ B) ⟶{λ F => F a} B)
-(defRevAppFunFun  (A B : U)                           : A ⟶{λ a => defRevAppFun a B} ((A ⟶ B) ⟶ B))
-(defCompFun       {A B C : U} (F : A ⟶ B) (G : B ⟶ C) : A ⟶{λ a => G (F a)} C)
-(defCompFunFun    {A B : U} (F : A ⟶ B) (C : U)       : (B ⟶ C) ⟶{λ G => defCompFun F G} (A ⟶ C))
-(defCompFunFunFun (A B C : U)                         : (A ⟶ B) ⟶{λ F => defCompFunFun F C} ((B ⟶ C) ⟶ (A ⟶ C)))
+class HasLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends
+  HasIdFun U, HasRevAppFun U, HasCompFunFun U U where
+(defRevAppFunFun  (A B : U)   : A ⟶{λ a => HasRevAppFun.revAppFun a B} ((A ⟶ B) ⟶ B))
+(defCompFunFunFun (A B C : U) : (A ⟶ B) ⟶{λ F => HasCompFunFun.compFunFun F C} ((B ⟶ C) ⟶ (A ⟶ C)))
 
 namespace HasLinearFunOp
 
-  open MetaRelation HasFunctors HasCongrArg HasCongrFun
+  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasCompFunFun
 
   variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
 
-  instance hasIdFun : HasIdFun U := ⟨defIdFun⟩
+  @[reducible] def idFun (A : U) : A ⟶ A := HasIdFun.idFun A
 
-  @[reducible] def idFun (A : U) : A ⟶ A := defIdFun A
-
-  def defAppFun {A B : U} (F : A ⟶ B) : A ⟶{λ a => F a} B := F
-  @[reducible] def appFun {A B : U} (F : A ⟶ B) : A ⟶ B := defAppFun F
-  def defAppFunFun (A B : U) : (A ⟶ B) ⟶{λ F => appFun F} (A ⟶ B) := defIdFun (A ⟶ B)
+  @[reducible] def appFun {A B : U} (F : A ⟶ B) : A ⟶ B := HasFunctors.appFun F
+  def defAppFunFun (A B : U) : (A ⟶ B) ⟶{λ F => appFun F} (A ⟶ B) := HasIdFun.defIdFun (A ⟶ B)
   @[reducible] def appFunFun (A B : U) : (A ⟶ B) ⟶ A ⟶ B := defAppFunFun A B
 
-  @[reducible] def revAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶ B := defRevAppFun a B
+  instance appFun.isFunApp {A B : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (appFun F) :=
+  { F := appFunFun A B,
+    a := F,
+    e := byDef }
+
+  @[reducible] def revAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶ B := HasRevAppFun.revAppFun a B
   @[reducible] def revAppFunFun (A B : U) : A ⟶ (A ⟶ B) ⟶ B := defRevAppFunFun A B
 
-  instance revAppFun.isFunApp {A : U} (a : A) (B : U) : IsFunApp A (revAppFun a B) :=
+  instance revAppFun.isFunApp {A B : U} {a : A} : IsFunApp A (revAppFun a B) :=
   { F := revAppFunFun A B,
     a := a,
     e := byDef }
 
-  instance hasCompFun    : HasCompFun U U U  := ⟨defCompFun⟩
-  instance hasCompFunFun : HasCompFunFun U U := ⟨defCompFunFun⟩
-
-  @[reducible] def compFun {A B C : U} (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := defCompFun F G
-  @[reducible] def compFunFun {A B : U} (F : A ⟶ B) (C : U) : (B ⟶ C) ⟶ (A ⟶ C) := defCompFunFun F C
+  @[reducible] def compFun {A B C : U} (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := HasCompFun.compFun F G
+  @[reducible] def compFunFun {A B : U} (F : A ⟶ B) (C : U) : (B ⟶ C) ⟶ (A ⟶ C) := HasCompFunFun.compFunFun F C
   @[reducible] def compFunFunFun (A B C : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C) := defCompFunFunFun A B C
 
-  instance compFun.isFunApp {A B C : U} {F : A ⟶ B} {G : B ⟶ C} : IsFunApp (B ⟶ C) (compFun F G) :=
-  { F := compFunFun F C,
-    a := G,
-    e := byDef }
-
-  instance compFunFun.isFunApp {A B C : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (compFunFun F C) :=
+  instance compFunFun.isFunApp {A B C : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (HasCompFunFun.compFunFun F C) :=
   { F := compFunFunFun A B C,
     a := F,
     e := byDef }
 
   instance isPreorder : IsPreorder hFun.Fun :=
   { refl  := idFun,
-    trans := compFun }
+    trans := HasCompFun.compFun }
 
   instance hasTransFun : HasTransFun hFun.Fun :=
   { defTransFun    := defCompFunFun,
     defTransFunFun := defCompFunFunFun }
 
-  instance {A B C : U} {F : A ⟶ B} {G : B ⟶ C} : IsFunApp (B ⟶ C) (G • F) :=
-  compFun.isFunApp
-
-  instance hasCongrFun : HasCongrFun U U := ⟨λ {A B F₁ F₂} h a => defCongrArg (defRevAppFun a B) h⟩
+  instance trans.isFunApp {A B C : U} {F : A ⟶ B} {G : B ⟶ C} : IsFunApp (B ⟶ C) (G • F) :=
+  HasCompFunFun.compFun.isFunApp
 
 end HasLinearFunOp
 
 
 
-class HasSubLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
-(defConstFun    (A : U) {B : U} (b : B) : A ⟶{Function.const ⌈A⌉ b} B)
-(defConstFunFun (A B : U)               : B ⟶{λ b => defConstFun A b} (A ⟶ B))
+class HasSubLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends
+  HasConstFun U U where
+(defConstFunFun (A B : U) : B ⟶{λ b => HasConstFun.constFun A b} (A ⟶ B))
 
 namespace HasSubLinearFunOp
 
@@ -731,9 +765,7 @@ namespace HasSubLinearFunOp
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasSubLinearFunOp U]
 
-  instance hasConstFun : HasConstFun U U := ⟨defConstFun⟩
-
-  @[reducible] def constFun (A : U) {B : U} (b : B) : A ⟶ B := defConstFun A b
+  @[reducible] def constFun (A : U) {B : U} (b : B) : A ⟶ B := HasConstFun.constFun A b
   @[reducible] def constFunFun (A B : U) : B ⟶ (A ⟶ B) := defConstFunFun A B
 
   instance constFun.isFunApp {A B : U} {b : B} : IsFunApp B (constFun A b) :=
@@ -748,9 +780,9 @@ class HasAffineFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] exte
 
 
 
-class HasNonLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
-(defDupFun    {A B : U} (F : A ⟶ A ⟶ B) : A ⟶{λ a => F a a} B)
-(defDupFunFun (A B : U)                 : (A ⟶ A ⟶ B) ⟶{λ F => defDupFun F} (A ⟶ B))
+class HasNonLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends
+  HasDupFun U U where
+(defDupFunFun (A B : U) : (A ⟶ A ⟶ B) ⟶{λ F => HasDupFun.dupFun F} (A ⟶ B))
 
 namespace HasNonLinearFunOp
 
@@ -758,9 +790,7 @@ namespace HasNonLinearFunOp
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasNonLinearFunOp U]
 
-  instance hasDupFun : HasDupFun U U := ⟨defDupFun⟩
-
-  @[reducible] def dupFun {A B : U} (F : A ⟶ A ⟶ B) : A ⟶ B := defDupFun F
+  @[reducible] def dupFun {A B : U} (F : A ⟶ A ⟶ B) : A ⟶ B := HasDupFun.dupFun F
   @[reducible] def dupFunFun (A B : U) : (A ⟶ A ⟶ B) ⟶ (A ⟶ B) := defDupFunFun A B
 
   instance dupFun.isFunApp {A B : U} {F : A ⟶ A ⟶ B} : IsFunApp (A ⟶ A ⟶ B) (dupFun F) :=

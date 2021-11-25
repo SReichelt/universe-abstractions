@@ -69,7 +69,7 @@ namespace HasLinearFunOp
   def funCodomainDesc {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc (revCompFunFun C e.toFun) (revCompFunFun C e.invFun) :=
   ⟨λ F => leftId F •
-          defCongrArg (defCompFunFun F A) he.leftExt.invExt •
+          defCongrArg (HasCompFunFun.defCompFunFun F A) he.leftExt.invExt •
           (compAssoc F e.toFun e.invFun)⁻¹ •
           byDef •
           byArgDef⟩

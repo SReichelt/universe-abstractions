@@ -54,7 +54,7 @@ namespace HasInternalProducts
   @[reducible] def revIntroFun [HasLinearFunOp U] (A : U) {B : U} (b : B) : A ⟶ A ⊓ B := defRevIntroFun A b
 
   instance revIntroFun.isFunApp [HasLinearFunOp U] {A B : U} {b : B} :
-    IsFunApp ((B ⟶ A ⊓ B) ⟶ A ⊓ B) (revIntroFun A b) :=
+    IsFunApp B (revIntroFun A b) :=
   swapFun.isFunApp
 
   def defRevIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶{λ b => revIntroFun A b} (A ⟶ A ⊓ B) :=
@@ -63,7 +63,7 @@ namespace HasInternalProducts
   @[reducible] def revIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶ A ⟶ A ⊓ B := defRevIntroFunFun A B
 
   instance revIntroFunFun.isFunApp [HasLinearFunOp U] {A B : U} :
-    IsFunApp (((B ⟶ A ⊓ B) ⟶ A ⊓ B) ⟶ (A ⟶ A ⊓ B)) (revIntroFunFun A B) :=
+    IsFunApp (A ⟶ B ⟶ A ⊓ B) (revIntroFunFun A B) :=
   swapFunFun.isFunApp
 
   def defRevElimFun [HasLinearFunOp U] {A B C : U} (F : B ⟶ A ⟶ C) :

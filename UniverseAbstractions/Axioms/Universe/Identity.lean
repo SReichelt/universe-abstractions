@@ -35,7 +35,7 @@ namespace HasInstanceEquivalences
 end HasInstanceEquivalences
 
 class HasIdentity (U : Universe.{u}) : Type (max u (iu + 1)) where
-(IU : Universe.{iu})
+{IU : Universe.{iu}}
 [h  : HasInstanceEquivalences U IU]
 
 namespace HasIdentity
@@ -48,4 +48,7 @@ namespace HasIdentity
 
 end HasIdentity
 
-instance HasInstanceEquivalences.hasIdentity (U IU : Universe) [HasInstanceEquivalences U IU] : HasIdentity U := ⟨IU⟩
+-- Although this is an obvious instance loop, it doesn't seem to cause any problems.
+-- It is difficult to avoid while keeping the two options of either specifying `IU`
+-- explicitly or omitting it.
+instance HasInstanceEquivalences.hasIdentity (U IU : Universe) [HasInstanceEquivalences U IU] : HasIdentity U := ⟨⟩

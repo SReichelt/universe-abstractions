@@ -60,7 +60,7 @@ namespace HalfEquivDesc
     ⟨he.invExt •
      defCongrArg (defRevCompFunFun A eInvFun)
                  (leftId eToFun •
-                  defCongrArg (defCompFunFun eToFun B) hf.invExt •
+                  defCongrArg (HasCompFunFun.defCompFunFun eToFun B) hf.invExt •
                   (compAssoc eToFun fToFun fInvFun)⁻¹) •
      compAssoc (fToFun • eToFun) fInvFun eInvFun⟩
 

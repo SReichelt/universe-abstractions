@@ -85,7 +85,7 @@ end HasDirectNonLinearFunOp
 
 namespace HasLinearFunOp
 
-  open HasFunctors HasCongrArg HasCongrFun
+  open HasFunctors HasCongrArg HasCongrFun HasCompFun
 
   variable [HasLinearFunOp U]
 
@@ -191,7 +191,7 @@ end HasLinearFunOp
 
 namespace HasAffineFunOp
 
-  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp
+  open HasFunctors HasCongrArg HasCongrFun HasCompFun HasLinearFunOp HasSubLinearFunOp
 
   variable [HasAffineFunOp U]
 
@@ -249,7 +249,7 @@ end HasAffineFunOp
 
 namespace HasFullFunOp
 
-  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp
+  open HasFunctors HasCongrArg HasCongrFun HasCompFun HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp
 
   variable [HasFullFunOp U]
 

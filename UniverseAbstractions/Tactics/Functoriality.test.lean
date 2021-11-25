@@ -8,6 +8,8 @@ set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 --set_option pp.all true
 
+universe u iu
+
 
 
 -- This file contains tests for the `makeFunctor` and `functoriality` tactics, mostly used
@@ -23,7 +25,7 @@ set_option autoBoundImplicitLocal false
 
 
 
-variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U]
+variable {U : Universe.{u}} [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasFullFunOp U]
 
 def testRaw (A B : U) (F : A ⟶ B) : A ⟶ B := by makeFunctor (HasFunctors.apply F)
 #print testRaw
@@ -62,8 +64,8 @@ def testIndirFun (A B : U) (F : A ⟶ B) : A ⟶ B := Λ a => apply F a
 def testFromToDefFun (A B : U) : (A ⟶ B) ⟶ (A ⟶ B) :=
 Λ F => HasFunctors.fromDefFun (HasFunctors.toDefFun F)
 #print testFromToDefFun
-theorem testFromToDefPiEff (A B : U) (F : A ⟶ B) :
-  testFromToDefFun A B F = F :=
+def testFromToDefPiEff (A B : U) (F : A ⟶ B) :
+  testFromToDefFun A B F ≃ F :=
 HasFunctors.byDef
 
 def testApp (A B : U) (a : A) : (A ⟶ B) ⟶ B := Λ F => F a
@@ -89,9 +91,9 @@ def testSwap₂₃ (A B C D : U) : (A ⟶ B ⟶ C ⟶ D) ⟶ (A ⟶ C ⟶ B ⟶ 
 
 def testComp (A B C : U) (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := Λ a => G (F a)
 #print testComp
-theorem testCompEff (A B C : U) (F : A ⟶ B) (G : B ⟶ C) (a : A) :
-  (testComp A B C F G) a = G (F a) :=
-HasLinearFunOp.byDef₂
+def testCompEff (A B C : U) (F : A ⟶ B) (G : B ⟶ C) (a : A) :
+  (testComp A B C F G) a ≃ G (F a) :=
+HasFunctors.byDef
 
 def testTestComp (A B C : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C) := Λ F G => testComp A B C F G
 #print testTestComp
@@ -105,39 +107,39 @@ def testIndirComp (A B C : U) (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := Λ a => c
 
 def testCompComp (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶ D := Λ a => H (G (F a))
 #print testCompComp
-theorem testCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
-  (testCompComp A B C D F G H) a = H (G (F a)) :=
-HasLinearFunOp.byDef₃
+def testCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
+  (testCompComp A B C D F G H) a ≃ H (G (F a)) :=
+HasFunctors.byDef
 
 def testCompCompFunct (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶{λ a => H (G (F a))} D :=
 by functoriality
 
 def testTestCompComp (A B C D : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (C ⟶ D) ⟶ (A ⟶ D) := Λ F G H => testCompComp A B C D F G H
 #print testTestCompComp
-theorem testTestCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
-  (testTestCompComp A B C D F G H) a = H (G (F a)) :=
-by simp [testTestCompComp]
+def testTestCompCompEff (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) :
+  (testTestCompComp A B C D) F G H ≃ testCompComp A B C D F G H :=
+HasCongrFun.byDef₃
 
 def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => testCompComp A B C D F G H} (A ⟶ D) :=
 by functoriality
 
 def testComp₂ (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) : A ⟶ B ⟶ D := Λ a b => G (F a b)
 #print testComp₂
-theorem testComp₂Eff (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) (a : A) (b : B) :
-  testComp₂ A B C D F G a b = G (F a b) :=
-by simp [testComp₂]
+def testComp₂Eff (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) (a : A) (b : B) :
+  testComp₂ A B C D F G a b ≃ G (F a b) :=
+HasCongrFun.byDef₂
 
 def testTestComp₂ (A B C D : U) : (A ⟶ B ⟶ C) ⟶ (C ⟶ D) ⟶ (A ⟶ B ⟶ D) := Λ F G => testComp₂ A B C D F G
 #print testTestComp₂
-theorem testTestComp₂Eff (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) (a : A) (b : B) :
-  testTestComp₂ A B C D F G a b = G (F a b) :=
-by simp [testTestComp₂]
+def testTestComp₂Eff (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) :
+  (testTestComp₂ A B C D) F G ≃ testComp₂ A B C D F G :=
+HasCongrFun.byDef₂
 
 def testRevTestComp₂ (A B C D : U) : (C ⟶ D) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ B ⟶ D) := Λ G F => testComp₂ A B C D F G
 #print testRevTestComp₂
-theorem testRevTestComp₂Eff (A B C D : U) (G : C ⟶ D) (F : A ⟶ B ⟶ C) (a : A) (b : B) :
-  testRevTestComp₂ A B C D G F a b = G (F a b) :=
-by simp [testRevTestComp₂]
+def testRevTestComp₂Eff (A B C D : U) (G : C ⟶ D) (F : A ⟶ B ⟶ C) :
+  (testRevTestComp₂ A B C D) G F ≃ testComp₂ A B C D F G :=
+HasCongrFun.byDef₂
 
 def testDup (A B : U) (F : A ⟶ A ⟶ B) : A ⟶ B := Λ a => F a a
 #print testDup
