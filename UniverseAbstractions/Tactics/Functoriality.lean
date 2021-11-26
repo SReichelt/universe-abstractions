@@ -241,25 +241,28 @@ namespace Lean
       mkApp3 (getDeclWithId U V ``HasFunctors.toDefFun) A B F
 
     structure FunctorDefinition (A : U) (B : V) where
-    {f  : _⌈A⌉ _→ _⌈B⌉}
-    (F' : A _⟶{f} B)
-    (F  : A _⟶ B)  -- Should be defeq to `fromDefFun F'` in transparency mode "reducible".
+    (F   : A _⟶ B)
+    {f   : _⌈A⌉ _→ _⌈B⌉}
+    (F'  : A _⟶{f} B)
+    (F'' : A _⟶ B)  -- `mkFromDefFun F'`, must be defeq to `F`.
 
-    def getFunctorDefinition {A : U} {B : V} (F : A _⟶ B) :
+    def getFunctorDefinition? {A : U} {B : V} (F : A _⟶ B) :
         MetaM (Option (FunctorDefinition A B)) := do
       let f : (_⌈A⌉ _→ _⌈B⌉) ← TypedExpr.mkFreshMVar
       let F' : (A _⟶{f} B) ← TypedExpr.mkFreshMVar
       let F'' := mkFromDefFun F'
       if ← isDefEq F F'' then
-        -- If `F` is defeq to `fromDefFun F'` in reducible transparancy mode, then store
-        -- `F` in the result instead of `F''`, as terms involving `fromDefFun` are usually
-        -- hard to read.
-        if ← withReducible (isDefEq F F'') then
-          return some ⟨F', F⟩
-        -- TODO: It would be nice if we could somehow unfold one by one until we reach
-        -- a suitable term.
-        return some ⟨F', F''⟩
+        return some ⟨F, F', F''⟩
       return none
+
+    def getFunctorDefinition {A : U} {B : V} (F : A _⟶ B) :
+        MetaM (FunctorDefinition A B) := do
+      match ← getFunctorDefinition? F with
+      | some F' => F'
+      | none => do
+        let F' := mkToDefFun F
+        let F'' := mkApp3 (_HasFunctors.getDeclWithId U V ``HasFunctors.appFun) A B F
+        return ⟨F, F', F''⟩
 
     class _IsFunApp (A : outParam U) {B : V} (b : B) where
     (h : mkApp3 (getDeclWithId U V ``HasFunctors.IsFunApp) A B b)
@@ -295,9 +298,9 @@ namespace Lean
         let hId_V' : _HasIdentity V' iv' := ⟨← TypedExpr.mkFreshMVar⟩
         let A' : U' ← TypedExpr.mkFreshMVar
         let B' : V' ← TypedExpr.mkFreshMVar
-        match ← getFunctorDefinition (A := A') (B := B') b with
+        match ← getFunctorDefinition? (A := A') (B := B') b with
         | some b' =>
-          let h : _IsFunApp A (B := B) b'.F ← synthesize'
+          let h : _IsFunApp A (B := B) b'.F'' ← synthesize'
           return ⟨h⟩
         | none =>
           -- Finally, try to synthesize an instance of `IsFunApp` normally.
@@ -384,6 +387,8 @@ namespace Lean
 
     instance : _HasIdentity φ.V φ.iv := φ.hId
 
+    def FunDef := _HasFunctors.FunctorDefinition φ.A φ.B
+
   end DefFunData
 
   def FunctorLambdaAbstraction (φ : DefFunData) := LambdaAbstraction _⌈φ.A⌉ _⌈φ.B⌉
@@ -395,25 +400,26 @@ namespace Lean
     -- The main entry point, which handles `constFun` and `idFun` directly, and calls
     -- `constructLambdaAppFunctor` to deal with a lambda application.
 
-    partial def constructLambdaFunctor (φ : DefFunData) (f : FunctorLambdaAbstraction φ) : MetaM φ.mkFun := do
+    partial def constructLambdaFunctor (φ : DefFunData) (f : FunctorLambdaAbstraction φ) :
+                MetaM φ.FunDef := do
       match ← f.asConstant with
       | some t => do
         let constFun ← getSynthInstanceDecl ``HasConstFun ``HasConstFun.constFun 
                                             [φ.U.u, φ.V.u, φ.UV.u,         φ.iv]
                                             [φ.U,   φ.V,   φ.UV,   φ.hFun, φ.hId]
-        mkApp3 constFun φ.A φ.B t
+        _HasFunctors.getFunctorDefinition (mkApp3 constFun φ.A φ.B t)
       | none => do
         if ← f.isId then
           let idFun ← getSynthInstanceDecl ``HasIdFun ``HasIdFun.idFun
                                            [φ.U.u, φ.UV.u,         φ.iv]
                                            [φ.U,   φ.UV,   φ.hFun, φ.hId]
-          return mkApp idFun φ.A
+          return ← _HasFunctors.getFunctorDefinition (mkApp idFun φ.A)
         let W ← _Universe.mkFreshMVar
         let WV ← _Universe.mkFreshMVar
         let hFun_WV : _HasFunctors W φ.V WV := ⟨← TypedExpr.mkFreshMVar⟩
         let C : W ← TypedExpr.mkFreshMVar
         let hFunApp : _HasFunctors._IsFunApp C f.t ← _HasFunctors._IsFunApp.synthesize
-        return ← constructLambdaAppFunctor φ f C
+        constructLambdaAppFunctor φ f C
 
     -- This function handles the different cases of functor application in the lambda body,
     -- depending on which parts are either equal to the lambda variable or constant with respect
@@ -425,13 +431,13 @@ namespace Lean
     partial def constructLambdaAppFunctor (φ : DefFunData) (f : FunctorLambdaAbstraction φ)
                                           {W WV : _Universe} [hFun_WV : _HasFunctors W φ.V WV]
                                           (C : W) [hFunApp : _HasFunctors._IsFunApp C f.t] :
-                MetaM φ.mkFun := do
+                MetaM φ.FunDef := do
       let G ← _HasFunctors._IsFunApp.getFun C f.t
       let c ← _HasFunctors._IsFunApp.getArg C f.t
       match ← f.exprAsConstant G with
       | some G => do
         if ← f.exprIsId c then
-          return mkApp3 (_HasFunctors.getDeclWithId φ.U φ.V ``HasFunctors.appFun) φ.A φ.B G
+          return ← _HasFunctors.getFunctorDefinition (A := φ.A) G
         let UW ← _Universe.mkFreshMVar
         let hFun_UW : _HasFunctors φ.U W UW := ⟨← TypedExpr.synthesize⟩
         let iw ← mkFreshLevelMVar
@@ -440,7 +446,7 @@ namespace Lean
         let compFun ← getSynthInstanceDecl ``HasCompFun ``HasCompFun.compFun
                                            [φ.U.u, W.u, φ.V.u, UW.u, WV.u, φ.UV.u,                           φ.iv]
                                            [φ.U,   W,   φ.V,   UW,   WV,   φ.UV,   hFun_UW, hFun_WV, φ.hFun, φ.hId]
-        return mkApp5 compFun φ.A C φ.B F_c G
+        _HasFunctors.getFunctorDefinition (mkApp5 compFun φ.A C φ.B F_c.F G)
       | none => do
         match ← f.exprAsConstant c with
         | some c => do
@@ -448,7 +454,7 @@ namespace Lean
             let revAppFun ← getSynthInstanceDecl ``HasRevAppFun ``HasRevAppFun.revAppFun
                                                  [φ.V.u,         φ.iv]
                                                  [φ.V,   φ.hFun, φ.hId]
-            return mkApp3 revAppFun C c φ.B
+            return ← _HasFunctors.getFunctorDefinition (mkApp3 revAppFun C c φ.B)
           let UWV ← _Universe.mkFreshMVar
           let hFun_UWV : _HasFunctors φ.U WV UWV := ⟨← TypedExpr.synthesize⟩
           let iwv ← mkFreshLevelMVar
@@ -457,7 +463,7 @@ namespace Lean
           let swapFun ← getSynthInstanceDecl ``HasSwapFun ``HasSwapFun.swapFun
                                              [φ.U.u, W.u, φ.V.u, WV.u, UWV.u, φ.UV.u,                            φ.iv]
                                              [φ.U,   W,   φ.V,   WV,   UWV,   φ.UV,   hFun_WV, hFun_UWV, φ.hFun, φ.hId]
-          return mkApp5 swapFun φ.A C φ.B F_G c
+          _HasFunctors.getFunctorDefinition (mkApp5 swapFun φ.A C φ.B F_G.F c)
         | none => do
           if ← f.exprIsId c then
             let UUV ← _Universe.mkFreshMVar
@@ -468,7 +474,7 @@ namespace Lean
             let dupFun ← getSynthInstanceDecl ``HasDupFun ``HasDupFun.dupFun
                                               [φ.U.u, φ.V.u, φ.UV.u, UUV.u,                   φ.iv]
                                               [φ.U,   φ.V,   φ.UV,   UUV,   φ.hFun, hFun_UUV, φ.hId]
-            return mkApp3 dupFun φ.A φ.B F_G
+            return ← _HasFunctors.getFunctorDefinition (mkApp3 dupFun φ.A φ.B F_G.F)
           let UW ← _Universe.mkFreshMVar
           let hFun_UW : _HasFunctors φ.U W UW := ⟨← TypedExpr.synthesize⟩
           let iw ← mkFreshLevelMVar
@@ -482,7 +488,7 @@ namespace Lean
           let substFun ← getSynthInstanceDecl ``HasSubstFun ``HasSubstFun.substFun
                                               [φ.U.u, W.u, φ.V.u, UW.u, WV.u, UWV.u, φ.UV.u,                                     φ.iv]
                                               [φ.U,   W,   φ.V,   UW,   WV,   UWV,   φ.UV,   hFun_UW, hFun_WV, hFun_UWV, φ.hFun, φ.hId]
-          return mkApp5 substFun φ.A C φ.B F_c F_G
+          _HasFunctors.getFunctorDefinition (mkApp5 substFun φ.A C φ.B F_c.F F_G.F)
 
   end
 
@@ -491,22 +497,26 @@ namespace Lean
   -- convert it to a lambda abstraction with a lambda application in its body (which can hopefully
   -- be unfolded).
 
-  def constructFunctor (φ : DefFunData) : φ.mkFunArrow → MetaM φ.mkFun
+  def constructFunctorDefinition (φ : DefFunData) : φ.mkFunArrow → MetaM φ.FunDef
     | Expr.lam n d b c => withLocalDecl n c.binderInfo d fun a : φ.A =>
-      let t : φ.B := b.instantiate1 a
-      constructLambdaFunctor φ ⟨a, t⟩
-    | f => do
-      let a := mkFVar (← mkFreshFVarId)
-      withLocalDecl `a BinderInfo.default _⌈φ.A⌉ fun a : φ.A =>
-        let t : φ.B := mkApp f a
-        constructLambdaFunctor φ ⟨a, t⟩
+      constructLambdaFunctor φ ⟨a, b.instantiate1 a⟩
+    | f => withLocalDecl `a BinderInfo.default _⌈φ.A⌉ fun a : φ.A =>
+      constructLambdaFunctor φ ⟨a, mkApp f a⟩
+
+  def constructFunctor (φ : DefFunData) (f : φ.mkFunArrow) : MetaM φ.mkFun := do
+    let F ← constructFunctorDefinition φ f
+    -- If `F.F` is defeq to `fromDefFun F.F'` in reducible transparancy mode, then use `F.F`
+    -- instead of `F.F''`, as terms involving `fromDefFun` are usually hard to read.
+    if ← withReducible (isDefEq F.F F.F'') then
+      return F.F
+    -- TODO: It would be nice if we could somehow unfold one by one until we reach
+    -- a suitable term.
+    F.F''
 
   def constructDefFun (φ : DefFunData) (f : φ.mkFunArrow) : MetaM (φ.A _⟶{f} φ.B) := do
-    let F ← constructFunctor φ f
-    match ← _HasFunctors.getFunctorDefinition F with
-    | some F' => return F'.F'
-    | none => throwError m!"unable to extract definition from functor '{F}'"
-
+    let F ← constructFunctorDefinition φ f
+    F.F'
+  
   -- The `makeFunctor` tactic, which calls `constructFunctor` based on the target type and given
   -- term. Note that the target type determines how to elaborate the term, which enables us to omit
   -- the variable type in `Λ` expressions.
@@ -531,7 +541,7 @@ namespace Lean
   -- Implementation of the `Λ` notation.
   -- We want `Λ a b ... => t` to be a shortcut for:
   -- `by makeFunctor (λ a => by makeFunctor (λ b => ... t))`.
-  -- However, `expandExplicitBinders` only accepts a name, so as a hack, we currently give it a
+  -- However, `expandExplicitBinders` only accepts a name, so as a hack, we currently pass it a
   -- dummy name `__mkFun` and then recursively replace the corresponding syntax nodes in the
   -- result.
 
