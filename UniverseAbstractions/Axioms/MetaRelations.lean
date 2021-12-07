@@ -11,80 +11,84 @@ universe u v w
 
 
 
-def MetaRelation (α : Sort u) (V : Universe.{v}) : Sort (max u (v + 1)) := α → α → V
+def MetaRelation (α : Sort u) (V : Universe.{v, w}) := α → α → V
 
 namespace MetaRelation
 
-  variable {α : Sort u} {V : Universe} (R : MetaRelation α V)
+  section
 
-  class HasRefl where
-  (refl (a : α) : R a a)
+    variable {α : Sort u} {V : Universe} (R : MetaRelation α V)
 
-  class HasSymm where
-  (symm {a b : α} : R a b → R b a)
+    class HasRefl where
+    (refl (a : α) : R a a)
 
-  class HasTrans where
-  (trans {a b c : α} : R a b → R b c → R a c)
+    class HasSymm where
+    (symm {a b : α} : R a b → R b a)
 
-  class IsPreorder extends HasRefl R, HasTrans R
-  class IsEquivalence extends IsPreorder R, HasSymm R
+    class HasTrans where
+    (trans {a b c : α} : R a b → R b c → R a c)
 
-  notation:90 g:91 " • " f:90 => MetaRelation.HasTrans.trans f g
-  postfix:max "⁻¹" => MetaRelation.HasSymm.symm
+    class IsPreorder extends HasRefl R, HasTrans R
+    class IsEquivalence extends IsPreorder R, HasSymm R
 
-  @[reducible] def opposite : MetaRelation α V := λ a b => R b a
+    notation:90 g:91 " • " f:90 => MetaRelation.HasTrans.trans f g
+    postfix:max "⁻¹" => MetaRelation.HasSymm.symm
 
-  namespace opposite
+    @[reducible] def opposite : MetaRelation α V := λ a b => R b a
 
-    instance hasRefl  [h : HasRefl  R] : HasRefl  (opposite R) := ⟨h.refl⟩
-    instance hasSymm  [h : HasSymm  R] : HasSymm  (opposite R) := ⟨h.symm⟩
-    instance hasTrans [h : HasTrans R] : HasTrans (opposite R) := ⟨λ f g => h.trans g f⟩
+    namespace opposite
 
-    instance isPreorder    [IsPreorder    R] : IsPreorder    (opposite R) := ⟨⟩
-    instance isEquivalence [IsEquivalence R] : IsEquivalence (opposite R) := ⟨⟩
+      instance hasRefl  [h : HasRefl  R] : HasRefl  (opposite R) := ⟨h.refl⟩
+      instance hasSymm  [h : HasSymm  R] : HasSymm  (opposite R) := ⟨h.symm⟩
+      instance hasTrans [h : HasTrans R] : HasTrans (opposite R) := ⟨λ f g => h.trans g f⟩
 
-  end opposite
+      instance isPreorder    [IsPreorder    R] : IsPreorder    (opposite R) := ⟨⟩
+      instance isEquivalence [IsEquivalence R] : IsEquivalence (opposite R) := ⟨⟩
 
-  -- TODO: I think "lift" is not the correct word for this.
-  @[reducible] def lift {ω : Sort w} (l : ω → α) : MetaRelation ω V := λ a b => R (l a) (l b)
+    end opposite
 
-  namespace lift
+    -- TODO: I think "lift" is not the correct word for this.
+    @[reducible] def lift {ω : Sort w} (l : ω → α) : MetaRelation ω V := λ a b => R (l a) (l b)
 
-    variable {ω : Sort w} (l : ω → α)
+    namespace lift
 
-    instance hasRefl  [h : HasRefl  R] : HasRefl  (lift R l) := ⟨λ a => h.refl (l a)⟩
-    instance hasSymm  [h : HasSymm  R] : HasSymm  (lift R l) := ⟨h.symm⟩
-    instance hasTrans [h : HasTrans R] : HasTrans (lift R l) := ⟨h.trans⟩
+      variable {ω : Sort w} (l : ω → α)
 
-    instance isPreorder    [IsPreorder    R] : IsPreorder    (lift R l) := ⟨⟩
-    instance isEquivalence [IsEquivalence R] : IsEquivalence (lift R l) := ⟨⟩
+      instance hasRefl  [h : HasRefl  R] : HasRefl  (lift R l) := ⟨λ a => h.refl (l a)⟩
+      instance hasSymm  [h : HasSymm  R] : HasSymm  (lift R l) := ⟨h.symm⟩
+      instance hasTrans [h : HasTrans R] : HasTrans (lift R l) := ⟨h.trans⟩
 
-  end lift
+      instance isPreorder    [IsPreorder    R] : IsPreorder    (lift R l) := ⟨⟩
+      instance isEquivalence [IsEquivalence R] : IsEquivalence (lift R l) := ⟨⟩
+
+    end lift
+
+  end
+
+  def nativeRelation {α : Sort u} (r : α → α → Prop) : MetaRelation α prop := r
+
+  def nativeEquivalence {α : Sort u} {r : α → α → Prop} (e : Equivalence r) :
+    IsEquivalence (nativeRelation r) :=
+  { refl  := e.refl,
+    symm  := e.symm
+    trans := e.trans }
+
+  def unitRelation (α : Sort u) {V : Universe.{v}} (B : V) :
+    MetaRelation α V :=
+  λ _ _ => B
+
+  def unitEquivalence (α : Sort u) {V : Universe.{v}} {B : V} (b : B) :
+    IsEquivalence (unitRelation α B) :=
+  { refl  := λ _   => b,
+    symm  := λ _   => b,
+    trans := λ _ _ => b }
 
 end MetaRelation
 
-def MetaRelation.nativeRelation {α : Sort u} (r : α → α → Prop) : MetaRelation α prop := r
-
-def MetaRelation.nativeEquivalence {α : Sort u} {r : α → α → Prop} (e : Equivalence r) :
-  IsEquivalence (nativeRelation r) :=
-{ refl  := e.refl,
-  symm  := e.symm
-  trans := e.trans }
-
-def MetaRelation.unitRelation (α : Sort u) {V : Universe.{v}} (B : V) :
-  MetaRelation α V :=
-λ _ _ => B
-
-def MetaRelation.unitEquivalence (α : Sort u) {V : Universe.{v}} {B : V} (b : B) :
-  IsEquivalence (MetaRelation.unitRelation α B) :=
-{ refl  := λ _   => b,
-  symm  := λ _   => b,
-  trans := λ _ _ => b }
 
 
-
-class HasEquivalenceRelation (α : Sort u) (V : outParam Universe.{v}) :
-  Sort (max u (v + 1)) where
+class HasEquivalenceRelation (α : Sort u) (V : outParam Universe.{v, w}) :
+  Sort (max u (v + 1) w) where
 (R : MetaRelation α V)
 [h : MetaRelation.IsEquivalence R]
 

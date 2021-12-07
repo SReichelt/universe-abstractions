@@ -29,7 +29,7 @@ namespace CommSemigroup
   open Bundled
 
   @[reducible] def typeClass : SimpleTypeClass.{u + 1, u + 1} := CommSemigroup.{u}
-  @[reducible] def univ : Universe := Bundled.univ.{u + 1, u + 1} typeClass.{u}
+  @[reducible] def univ : Universe.{u + 1, u + 2} := Bundled.univ typeClass.{u}
 
   instance inst (A : univ) : CommSemigroup ⌈A⌉ := Bundled.inst A
 

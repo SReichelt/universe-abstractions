@@ -27,7 +27,9 @@ import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality
 import UniverseAbstractions.Lemmas.DerivedSingletonFunctors
 import UniverseAbstractions.Lemmas.DerivedProductFunctors
 
-import UniverseAbstractions.Tactics.Functoriality
+import UniverseAbstractions.Meta.TypedExpr
+import UniverseAbstractions.Meta.Reflect
+import UniverseAbstractions.Meta.Tactics.Functoriality
 
 import UniverseAbstractions.Instances.Utils.Trivial
 import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory

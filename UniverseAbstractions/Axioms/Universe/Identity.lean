@@ -10,8 +10,8 @@ universe u v iu iv
 
 
 
-class HasInstanceEquivalences (U : Universe.{u}) (IU : outParam Universe.{iu}) : Type (max u iu) where
-(hasEq (A : U) : HasEquivalenceRelation ⌈A⌉ IU)
+class HasInstanceEquivalences (U : Universe.{u}) (IU : outParam Universe.{iu}) where
+(hasEq (A : U) : HasEquivalenceRelation A IU)
 
 namespace HasInstanceEquivalences
 
@@ -19,9 +19,9 @@ namespace HasInstanceEquivalences
 
   variable {U IU : Universe} [h : HasInstanceEquivalences U IU]
 
-  instance hasEquivalenceRelation (A : U) : HasEquivalenceRelation ⌈A⌉ IU := h.hasEq A
+  instance hasEquivalenceRelation (A : U) : HasEquivalenceRelation A IU := h.hasEq A
 
-  @[reducible] def Rel (A : U) : MetaRelation ⌈A⌉ IU := (hasEquivalenceRelation A).R
+  @[reducible] def Rel (A : U) : MetaRelation A IU := (hasEquivalenceRelation A).R
 
   instance isEquivalence (A : U) : IsEquivalence (Rel A) := HasEquivalenceRelation.isEquivalence
 
@@ -34,7 +34,7 @@ namespace HasInstanceEquivalences
 
 end HasInstanceEquivalences
 
-class HasIdentity (U : Universe.{u}) : Type (max u (iu + 1)) where
+class HasIdentity (U : Universe.{u}) where
 {IU : Universe.{iu}}
 [h  : HasInstanceEquivalences U IU]
 

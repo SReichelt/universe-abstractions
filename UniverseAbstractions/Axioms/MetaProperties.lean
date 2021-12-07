@@ -9,7 +9,7 @@ universe u v w
 
 
 
-def MetaProperty (α : Sort u) (V : Universe.{v}) : Sort (max u (v + 1)) := α → V
+def MetaProperty (α : Sort u) (V : Universe.{v}) := α → V
 
 namespace MetaProperty
 

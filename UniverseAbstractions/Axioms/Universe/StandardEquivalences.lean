@@ -10,6 +10,8 @@ import UniverseAbstractions.Lemmas.DerivedProductFunctors
 
 
 
+-- TODO:
+--
 --  instance hasLinearStandardEquivalences : HasLinearStandardEquivalences type.{u} :=
 --  { defFunDomainEquiv      := λ e _   => ⟨λ f => funext λ b => congrArg f (e.rightInv b),
 --                                          λ f => funext λ a => congrArg f (e.leftInv  a)⟩,

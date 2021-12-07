@@ -12,13 +12,16 @@ import UniverseAbstractions.Instances.Utils.Direct
 
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
+-- TODO: Improve performance.
+set_option maxHeartbeats 500000
 
-universe u v w vw iu iv iw ivw
+universe u v vv w vw iu iv iw ivw
 
 
 
-def functorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
-  Universe.{v} :=
+-- TODO: Lift universe level restriction on `UV`.
+def functorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] :
+  Universe.{v, vv} :=
 { A    := ⌈V⌉,
   inst := ⟨λ B => ⌈A ⟶ B⌉⟩ }
 
@@ -30,11 +33,14 @@ namespace functorUniverse
 
   notation:20 "{" A:0 " ⟶} " V:21 => functorUniverse A V
 
+  -- TODO: Lift universe level restriction on `UV`.
   def type {U : Universe.{u}} {V UV : Universe.{v}} [HasFunctors U V UV] (A : U) (B : V) : {A ⟶} V := B
   infixr:20 " !⟶ " => functorUniverse.type
 
+  -- TODO: Lift universe level restriction on `UV`.
   def inst {U : Universe.{u}} {V UV : Universe.{v}} [HasFunctors U V UV] {A : U} {B : V} (F : A ⟶ B) : A !⟶ B := F
 
+  -- TODO: Lift universe level restriction on `UU`.
   def idInst {U : Universe.{u}} (A : U) {UU : Universe.{u}} [HasFunctors U U UU] [HasIdentity.{u, iu} U]
              [HasIdFun U] :
     A !⟶ A :=
@@ -369,30 +375,32 @@ namespace functorUniverse
       F₁ ≃ F₂ :=
     bySwap (eqExt (swapFunFun F₂) (swapFunFun F₁))
 
-    instance hasSubsingletonExt [HasSubsingletonExt U U] :
-      HasSubsingletonExt ({A ⟶} U) ({A ⟶} U) :=
-    ⟨λ {AB AC} [hSub : HasInstanceEquivalences.IsSubsingleton AC] F₁ F₂ => baseEqExt A (hSub := hSub) F₁ F₂⟩
-
-    instance hasDirectLinearFunExt : HasDirectLinearFunExt ({A ⟶} U) :=
-    { rightId        := λ B C     : U => HasSimpEmbed.bySimp A (rightIdExt B C),
-      leftId         := λ B C     : U => HasSimpEmbed.bySimp A (leftIdExt B C),
-      swapRevApp     := λ B C     : U => HasSimpEmbed.bySimp A (swapRevAppExt B C),
-      swapCompFun    := λ B C D   : U => HasSimpEmbed.bySimp A (swapCompFunExtExt B C D),
-      swapRevCompFun := λ B C D   : U => HasSimpEmbed.bySimp A (swapRevCompFunExtExt B C D),
-      compAssoc      := λ B C D E : U => HasSimpEmbed.bySimp A (compAssocExtExtExt B C D E) }
-
-    instance hasDirectSubLinearFunExt : HasDirectSubLinearFunExt ({A ⟶} U) :=
-    { rightConst := λ B C D : U => HasSimpEmbed.bySimp A (rightConstExtExt B C D),
-      leftConst  := λ B C D : U => HasSimpEmbed.bySimp A (leftConstExtExt B C D) }
-
-    instance hasDirectNonLinearFunExt : HasDirectNonLinearFunExt ({A ⟶} U) :=
-    { dupSwap  := λ B C   : U => HasSimpEmbed.bySimp A (dupSwapExt B C),
-      dupConst := λ B C   : U => HasSimpEmbed.bySimp A (dupConstExt B C),
-      dupDup   := λ B C   : U => HasSimpEmbed.bySimp A (dupDupExt B C),
-      rightDup := λ B C D : U => HasSimpEmbed.bySimp A (rightDupExtExt B C D),
-      substDup := λ B C D : U => HasSimpEmbed.bySimp A (substDupExtExt B C D) }
-
-    instance hasStandardFunctors : HasStandardFunctors ({A ⟶} U) := ⟨⟩
+-- TODO: These no longer have acceptable performance.
+--
+--    instance hasSubsingletonExt [HasSubsingletonExt U U] :
+--      HasSubsingletonExt ({A ⟶} U) ({A ⟶} U) :=
+--    ⟨λ {AB AC} [hSub : HasInstanceEquivalences.IsSubsingleton AC] F₁ F₂ => baseEqExt A (hSub := hSub) F₁ F₂⟩
+--
+--    instance hasDirectLinearFunExt : HasDirectLinearFunExt ({A ⟶} U) :=
+--    { rightId        := λ B C     : U => HasSimpEmbed.bySimp A (rightIdExt B C),
+--      leftId         := λ B C     : U => HasSimpEmbed.bySimp A (leftIdExt B C),
+--      swapRevApp     := λ B C     : U => HasSimpEmbed.bySimp A (swapRevAppExt B C),
+--      swapCompFun    := λ B C D   : U => HasSimpEmbed.bySimp A (swapCompFunExtExt B C D),
+--      swapRevCompFun := λ B C D   : U => HasSimpEmbed.bySimp A (swapRevCompFunExtExt B C D),
+--      compAssoc      := λ B C D E : U => HasSimpEmbed.bySimp A (compAssocExtExtExt B C D E) }
+--
+--    instance hasDirectSubLinearFunExt : HasDirectSubLinearFunExt ({A ⟶} U) :=
+--    { rightConst := λ B C D : U => HasSimpEmbed.bySimp A (rightConstExtExt B C D),
+--      leftConst  := λ B C D : U => HasSimpEmbed.bySimp A (leftConstExtExt B C D) }
+--
+--    instance hasDirectNonLinearFunExt : HasDirectNonLinearFunExt ({A ⟶} U) :=
+--    { dupSwap  := λ B C   : U => HasSimpEmbed.bySimp A (dupSwapExt B C),
+--      dupConst := λ B C   : U => HasSimpEmbed.bySimp A (dupConstExt B C),
+--      dupDup   := λ B C   : U => HasSimpEmbed.bySimp A (dupDupExt B C),
+--      rightDup := λ B C D : U => HasSimpEmbed.bySimp A (rightDupExtExt B C D),
+--      substDup := λ B C D : U => HasSimpEmbed.bySimp A (substDupExtExt B C D) }
+--
+--    instance hasStandardFunctors : HasStandardFunctors ({A ⟶} U) := ⟨⟩
 
   end Functors
 
@@ -444,24 +452,25 @@ end functorUniverse
 
 
 
-inductive OptionalFunctorType {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] where
+inductive OptionalFunctorType {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] where
 | const (B : V)
 | fn (AB : {A ⟶} V)
 | idFn
 | empty
 
-def OptionalFunctorInstanceType {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
+def OptionalFunctorInstanceType {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] :
   OptionalFunctorType A V → Sort v
 | OptionalFunctorType.const B => ⌈B⌉
 | OptionalFunctorType.fn AB   => ⌈AB⌉
 | OptionalFunctorType.idFn    => PUnit.{v}
 | OptionalFunctorType.empty   => PEmpty.{v}
 
-instance {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
-  HasInstances.{v, v + 1} (OptionalFunctorType A V) :=
+-- TODO: Restore second level argument.
+instance {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] :
+  HasInstances.{v} (OptionalFunctorType A V) :=
 ⟨OptionalFunctorInstanceType A V⟩
 
-def optionalFunctorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v}) {UV : Universe.{v}} [HasFunctors U V UV] :
+def optionalFunctorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] :
   Universe.{v} :=
 ⟨OptionalFunctorType A V⟩
 

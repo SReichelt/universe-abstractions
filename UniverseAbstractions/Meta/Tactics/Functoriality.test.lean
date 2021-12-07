@@ -1,6 +1,6 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
-import UniverseAbstractions.Tactics.Functoriality
+import UniverseAbstractions.Meta.Tactics.Functoriality
 
 
 
@@ -8,7 +8,7 @@ set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 --set_option pp.all true
 
-universe u iu
+universe u v iu iuv
 
 
 
@@ -25,22 +25,25 @@ universe u iu
 
 
 
-variable {U : Universe.{u}} [HasIdentity.{u, iu} U] [HasInternalFunctors U] [HasFullFunOp U]
+variable {U : Universe.{u, v}} [HasIdentity.{u, iu, v, iuv} U] [HasInternalFunctors U] [HasFullFunOp U]
 
 def testRaw (A B : U) (F : A ⟶ B) : A ⟶ B := by makeFunctor (HasFunctors.apply F)
 #print testRaw
+def testRawEff (A B : U) (F : A ⟶ B) (a : A) : (testRaw A B F) a ≃ F a := HasFunctors.byDef
 
 def testRawFunct (A B : U) (F : A ⟶ B) : A ⟶{HasFunctors.apply F} B :=
 by functoriality
+#print testRawFunct
 
 def testConst (A B : U) (b : B) : A ⟶ B := Λ a => b
 #print testConst
 
-def testNamedConst (A B : U) (b : B) : A ⟶ B := by makeFunctor (Function.const ⌈A⌉ b)
+def testNamedConst (A B : U) (b : B) : A ⟶ B := by makeFunctor (Function.const A b)
 #print testNamedConst
 
-def testConstFunct (A B : U) (b : B) : A ⟶{Function.const ⌈A⌉ b} B :=
+def testConstFunct (A B : U) (b : B) : A ⟶{Function.const A b} B :=
 by functoriality
+#print testConstFunct
 
 def testTestConst (A B : U) : B ⟶ (A ⟶ B) := Λ b => testConst A B b
 #print testTestConst
@@ -56,6 +59,12 @@ def testTestId (A B : U) : B ⟶ (A ⟶ A) := Λ b => testId A
 
 def testFun (A B : U) (F : A ⟶ B) : A ⟶ B := Λ a => F a
 #print testFun
+
+def testAppFun (A B : U) (F : A ⟶ B) : A ⟶ B := Λ a => (HasFunctors.appFun F) a
+#print testAppFun
+def testAppFunEff (A B : U) (F : A ⟶ B) (a : A) :
+  (testAppFun A B F) a ≃ (HasFunctors.appFun F) a :=
+HasFunctors.byDef
 
 def apply {A B : U} (F : A ⟶ B) (a : A) := F a
 def testIndirFun (A B : U) (F : A ⟶ B) : A ⟶ B := Λ a => apply F a
@@ -113,6 +122,7 @@ HasFunctors.byDef
 
 def testCompCompFunct (A B C D : U) (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶{λ a => H (G (F a))} D :=
 by functoriality
+#print testCompCompFunct
 
 def testTestCompComp (A B C D : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (C ⟶ D) ⟶ (A ⟶ D) := Λ F G H => testCompComp A B C D F G H
 #print testTestCompComp
@@ -122,6 +132,7 @@ HasCongrFun.byDef₃
 
 def testTestCompCompFunct (A B C D : U) (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => testCompComp A B C D F G H} (A ⟶ D) :=
 by functoriality
+#print testTestCompCompFunct
 
 def testComp₂ (A B C D : U) (F : A ⟶ B ⟶ C) (G : C ⟶ D) : A ⟶ B ⟶ D := Λ a b => G (F a b)
 #print testComp₂
@@ -140,6 +151,16 @@ def testRevTestComp₂ (A B C D : U) : (C ⟶ D) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ 
 def testRevTestComp₂Eff (A B C D : U) (G : C ⟶ D) (F : A ⟶ B ⟶ C) :
   (testRevTestComp₂ A B C D) G F ≃ testComp₂ A B C D F G :=
 HasCongrFun.byDef₂
+
+def testRevTestComp₂Funct (A B C D : U) : (C ⟶ D) ⟶{λ G => Λ F => testComp₂ A B C D F G} ((A ⟶ B ⟶ C) ⟶ (A ⟶ B ⟶ D)) :=
+by functoriality
+#print testRevTestComp₂Funct
+
+def testRevAppApp (A B C : U) : A ⟶ (A ⟶ B) ⟶ (B ⟶ C) ⟶ C := Λ a F G => G (F a)
+#print testRevAppApp
+def testRevAppAppEff (A B C : U) (a : A) (F : A ⟶ B) (G : B ⟶ C) :
+  (testRevAppApp A B C) a F G ≃ G (F a) :=
+HasCongrFun.byDef₃
 
 def testDup (A B : U) (F : A ⟶ A ⟶ B) : A ⟶ B := Λ a => F a a
 #print testDup

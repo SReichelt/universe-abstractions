@@ -9,9 +9,9 @@ import UniverseAbstractions.Instances.Utils.Bundled
 
 
 set_option autoBoundImplicitLocal false
---set_option pp.universes true
+set_option pp.universes true
 
-universe u v w iw
+universe u v w ww iw
 
 
 
@@ -19,14 +19,14 @@ namespace CategoryTheory.IsCategory
 
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder
 
-  def typeClass (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    SimpleTypeClass.{max u (w + 1) iw, max u (w + 1) iw} := IsCategory.{max u (w + 1) iw, w, iw} W
-  def univ (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    Universe.{max u (w + 1) iw} := Bundled.univ.{max u (w + 1) iw, max u (w + 1) iw} (typeClass.{u} W)
+  def typeClass (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
+    SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
+  def univ (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
+    Universe.{max 1 u w, (max 1 u w ww iw) + 1} := Bundled.univ (typeClass.{u} W)
 
-  variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+  variable {W : Universe.{w, ww}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
 
-  instance inst (A : univ.{u} W) : IsCategory.{max u (w + 1) iw} W ⌈A⌉ := Bundled.inst A
+  instance inst (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W ⌈A⌉ := Bundled.inst A
 
   variable [hIsoUniv : IsIsoUniverse W]
 
@@ -51,7 +51,7 @@ namespace CategoryTheory.IsCategory
   HasCategoryFunctors.isCategoryFunctor (bundledFunctor F)
 
   instance funIsCategory (A : univ.{u} W) (B : univ.{v} W) :
-    IsCategory.{max u v (w + 1) iw, w, iw} W (A ⟶' B) :=
+    IsCategory.{max 1 u v w, w, ww, iw} W (A ⟶' B) :=
   { Hom                         := λ (F G : A ⟶' B) => NaturalTransformation F G,
     homIsPreorder               := sorry,
     homHasTransFun              := sorry,
@@ -59,11 +59,11 @@ namespace CategoryTheory.IsCategory
     homIsCategoricalPreorderExt := sorry }
 
   instance hasFunctorInstances :
-    HasFunctorInstances.{max u (w + 1) iw, max u (w + 1) iw, max u (w + 1) iw} (typeClass.{u} W) :=
+    HasFunctorInstances (typeClass.{u} W) :=
   ⟨funIsCategory⟩
 
   instance hasFunctors : HasFunctors (univ W) (univ W) (univ W) :=
-  Bundled.hasFunctors.{max u (w + 1) iw, max u (w + 1) iw, max u (w + 1) iw} (typeClass.{u} W)
+  Bundled.hasFunctors (typeClass.{u} W)
 
   instance hasCongrArg : HasCongrArg (univ W) (univ W) :=
   ⟨λ F => sorry⟩

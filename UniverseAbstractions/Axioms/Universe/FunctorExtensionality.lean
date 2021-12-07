@@ -190,10 +190,10 @@ end HasFullFunOp
 
 
 class HasLinearFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
-  HasInternalFunctors U, HasLinearFunOp U, HasLinearFunOp.HasLinearFunExt U : Type (max u iu)
+  HasInternalFunctors U, HasLinearFunOp U, HasLinearFunOp.HasLinearFunExt U
 
 class HasStandardFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
-  HasInternalFunctors U, HasFullFunOp U, HasFullFunOp.HasFullFunExt U : Type (max u iu)
+  HasInternalFunctors U, HasFullFunOp U, HasFullFunOp.HasFullFunExt U
 
 instance HasStandardFunctors.hasLinearFunctors (U : Universe) [HasIdentity.{u, iu} U]
                                                [HasStandardFunctors U] :

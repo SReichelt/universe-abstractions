@@ -29,8 +29,7 @@ universe u v w uv vw uvw vv iu iv iuv
 
 
 
-class HasFunctors (U : Universe.{u}) (V : Universe.{v}) (UV : outParam Universe.{uv}) :
-  Type (max u v uv) where
+class HasFunctors (U : Universe.{u}) (V : Universe.{v}) (UV : outParam Universe.{uv}) where
 (Fun                   : U → V → UV)
 (apply {A : U} {B : V} : Fun A B → A → B)
 
@@ -41,7 +40,7 @@ namespace HasFunctors
   infixr:20 " ⟶ " => HasFunctors.Fun
 
   instance coeFun {U V UV : Universe} [HasFunctors U V UV] (A : U) (B : V) :
-    CoeFun ⌈A ⟶ B⌉ (λ _ => A → B) :=
+    CoeFun (A ⟶ B) (λ _ => A → B) :=
   ⟨apply⟩
 
   class IsFunApp {U : outParam Universe} {V : Universe} {UV : outParam Universe}
@@ -83,8 +82,14 @@ namespace HasFunctors
   @[simp] theorem toFromDefFun' {f : A → B} (F : A ⟶{f} B) : toDefFun' (fromDefFun F) F.eff = F :=
   by induction F; rfl
 
-  instance {F : A ⟶ B} : CoeDep ⌈A ⟶ B⌉ F  (A ⟶{apply F} B) := ⟨toDefFun F⟩
-  instance {f : A → B} : Coe    (A ⟶{f} B) ⌈A ⟶ B⌉          := ⟨fromDefFun⟩
+  instance {F : A ⟶ B} : CoeDep (A ⟶ B) F  (A ⟶{apply F} B) := ⟨toDefFun F⟩
+  instance {f : A → B} : Coe    (A ⟶{f} B) (A ⟶ B)          := ⟨fromDefFun⟩
+
+  def castFun (F : A ⟶ B) (f : A → B) (h : ∀ a, F a ≃ f a) : A ⟶ B := fromDefFun (toDefFun' F h)
+
+  @[simp] theorem simpCastFun (F : A ⟶ B) (f : A → B) (h : ∀ a, F a ≃ f a) :
+    castFun F f h = F :=
+  fromToDefFun' F h
 
   def castDefFun {f f' : A → B} (F : A ⟶{f} B) (h : ∀ a, f a ≃ f' a) : A ⟶{f'} B :=
   ⟨F.F, λ a => h a • F.eff a⟩
@@ -101,7 +106,7 @@ end HasFunctors
 
 
 class HasCongrArg (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [HasFunctors U V UV]
-                  [HasIdentity.{u, iu} U] [HasIdentity.{v, iv} V] : Type (max u v uv iu iv) where
+                  [HasIdentity.{u, iu} U] [HasIdentity.{v, iv} V] where
 (congrArg {A : U} {B : V} (F : A ⟶ B) {a₁ a₂ : A} : a₁ ≃ a₂ → F a₁ ≃ F a₂)
 
 namespace HasCongrArg
@@ -245,7 +250,7 @@ namespace HasIdFun
 end HasIdFun
 
 class HasConstFun (U V : Universe) {UV : Universe} [HasFunctors U V UV] [HasIdentity V] where
-(defConstFun (A : U) {B : V} (b : B) : A ⟶{Function.const ⌈A⌉ b} B)
+(defConstFun (A : U) {B : V} (b : B) : A ⟶{Function.const A b} B)
 
 namespace HasConstFun
 
@@ -282,6 +287,12 @@ namespace HasCompFun
 
   @[reducible] def compFun {A : U} {B : V} {C : W} (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := defCompFun F G
   notation:90 G:91 " ⊙ " F:90 => HasCompFun.compFun F G
+
+  def defCompDefFun [HasIdentity V] [HasCongrArg V W] {A : U} {B : V} {C : W} {f : A → B}
+                    (F : A ⟶{f} B) (G : B ⟶ C) :
+    A ⟶{λ a => G (f a)} C :=
+  G ⊙ F
+  ◄ HasCongrArg.byArgDef
 
 end HasCompFun
 
@@ -337,18 +348,16 @@ class HasSwapFun (U V W : Universe) {VW UVW UW : Universe} [HasFunctors V W VW] 
 
 namespace HasSwapFun
 
-  open HasFunctors HasCongrFun
-
-  variable {U V W VW UVW UW : Universe} [HasFunctors V W VW] [HasFunctors V W VW]
-           [HasFunctors U VW UVW] [HasFunctors U W UW] [HasIdentity W] [HasSwapFun U V W]
+  variable {U V W VW UVW UW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
+           [HasFunctors U W UW] [HasIdentity W] [HasSwapFun U V W]
 
   @[reducible] def swapFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := defSwapFun F b
 
   def defSwapDefFun [HasIdentity VW] [HasCongrFun V W] {A : U} {B : V} {C : W} {f : A → (B ⟶ C)}
                     (F : A ⟶{f} (B ⟶ C)) (b : B) :
-    A ⟶{λ a => f a b} C :=
+    A ⟶{λ a => (f a) b} C :=
   swapFun F b
-  ◄ byFunDef
+  ◄ HasCongrFun.byFunDef
 
 end HasSwapFun
 
@@ -387,6 +396,12 @@ namespace HasDupFun
 
   @[reducible] def dupFun {A : U} {B : V} (F : A ⟶ A ⟶ B) : A ⟶ B := defDupFun F
 
+  def defDupDefFun [HasIdentity UV] [HasCongrFun U V] {A : U} {B : V} {f : A → (A ⟶ B)}
+                   (F : A ⟶{f} (A ⟶ B)) :
+    A ⟶{λ a => (f a) a} B :=
+  dupFun F
+  ◄ HasCongrFun.byFunDef
+
 end HasDupFun
 
 class HasSubstFun (U V W : Universe) {UV VW UVW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW]
@@ -399,6 +414,12 @@ namespace HasSubstFun
            [HasFunctors U VW UVW] [HasFunctors U W UW] [HasIdentity W] [HasSubstFun U V W]
 
   @[reducible] def substFun {A : U} {B : V} {C : W} (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶ C := defSubstFun F G
+
+  def defSubstDefFun [HasIdentity V] [HasIdentity VW] [HasCongrArg V W] [HasCongrFun V W]
+                     {A : U} {B : V} {C : W} {f : A → B} (F : A ⟶{f} B) {g : A → (B ⟶ C)} (G : A ⟶{g} (B ⟶ C)) :
+    A ⟶{λ a => g a (f a)} C :=
+  substFun (B := B) F G
+  ◄ HasCongrFun.byFunDef • HasCongrArg.byArgDef
 
 end HasSubstFun
 
@@ -676,12 +697,12 @@ end MetaRelation
 
 
 class HasInternalFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
-  HasFunctors U U U, HasCongrArg U U : Type (max u iu)
+  HasFunctors U U U, HasCongrArg U U
 
 
 
 -- The following axioms are equivalent to asserting the existence of five functors with specified
--- behavior, writing `Λ` for a functorial `λ` as defined in `Tactics/Functoriality.lean`:
+-- behavior, writing `Λ` for a functorial `λ` as defined in `Meta/Tactics/Functoriality.lean`:
 -- id    : `A ⟶ A,                           Λ a => a`
 -- const : `B ⟶ (A ⟶ B),                     Λ b a => b`
 -- app   : `A ⟶ (A ⟶ B) ⟶ B,                 Λ a F => F a`

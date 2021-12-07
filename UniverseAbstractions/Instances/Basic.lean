@@ -36,8 +36,7 @@ import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
 
 
 set_option autoBoundImplicitLocal false
-set_option maxHeartbeats 200000
-set_option synthInstance.maxHeartbeats 200000
+set_option synthInstance.maxHeartbeats 100000
 --set_option pp.universes true
 
 universe u v w iu upv
@@ -54,7 +53,7 @@ namespace unit
 
   def unitEq (α : Sort u) : HasEquivalenceRelation α unit :=
   { R := unitRelation α Inst,
-    h := unitEquivalence α inst }
+    h := unitEquivalence α (B := Inst) inst }
 
   def unitInstanceEquivalences (U : Universe) : HasInstanceEquivalences U unit :=
   ⟨λ A => unit.unitEq ⌈A⌉⟩
@@ -423,7 +422,8 @@ namespace sort
     fst   := PProd.fst,
     snd   := PProd.snd }
 
-  instance (priority := low) hasProductEq : HasProducts.HasProductEq sort.{u} sort.{v} :=
+  instance (priority := low) hasProductEq :
+    HasProducts.HasProductEq sort.{u} sort.{v} (UxV := sort.{max 1 u v}) :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => rfl }
@@ -584,7 +584,8 @@ namespace type
     fst   := Sigma.fst,
     snd   := Sigma.snd }
 
-  instance hasDependentProductEq : HasDependentProducts.HasDependentProductEq type.{u} type.{v} :=
+  instance hasDependentProductEq :
+    HasDependentProducts.HasDependentProductEq type.{u} type.{v} (UxV := type.{max u v}) :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => rfl }
@@ -597,7 +598,7 @@ namespace type
     snd   := PSigma.snd }
 
   instance (priority := low) hasDependentProductEq' :
-    HasDependentProducts.HasDependentProductEq sort.{u} type.{v} :=
+    HasDependentProducts.HasDependentProductEq sort.{u} type.{v} (UxV := sort.{max u (v + 1)}) :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => rfl }
@@ -610,7 +611,7 @@ namespace type
     snd   := Subtype.property }
 
   instance (priority := low) hasSubtypeEq :
-    HasDependentProducts.HasDependentProductEq sort.{u} prop :=
+    HasDependentProducts.HasDependentProductEq sort.{u} prop (UxV := sort.{max 1 u}) :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => HasTrivialIdentity.eq }

@@ -12,8 +12,7 @@ universe u v uv iu iv iuv
 
 
 
-class HasProducts (U : Universe.{u}) (V : Universe.{v}) (UxV : outParam Universe.{uv}) :
-  Type (max u v uv) where
+class HasProducts (U : Universe.{u}) (V : Universe.{v}) (UxV : outParam Universe.{uv}) where
 (Prod                                  : U → V → UxV)
 (intro {A : U} {B : V} (a : A) (b : B) : Prod A B)
 (fst   {A : U} {B : V} (P : Prod A B)  : A)

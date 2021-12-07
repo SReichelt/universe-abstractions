@@ -5,7 +5,7 @@ import UniverseAbstractions.MathlibFragments.CoreExt
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w
+universe u v w w'
 
 
 
@@ -32,7 +32,7 @@ namespace HasInstances
   notation "⌈" A:0 "⌉" => HasInstances.Inst A
 
   instance sortHasInstances : HasInstances.{u, u + 1} (Sort u) := ⟨id⟩
-  instance unitHasInstances : HasInstances.{0, 1}     Unit     := ⟨λ _ => True⟩
+  instance unitHasInstances : HasInstances.{0, 0}     True     := ⟨λ _ => True⟩
   instance boolHasInstances : HasInstances.{0, 1}     Bool     := ⟨λ b => cond b True False⟩
 
 end HasInstances
@@ -57,7 +57,7 @@ namespace Bundled
 
   instance hasInstances {I : Sort v} [HasInstances.{u, v} I] (φ : GeneralizedTypeClass.{u, v, w} I) :
     HasInstances.{u, max (u + 1) v (w + 1)} (Bundled φ) :=
-  ⟨λ S => ⌈S.A⌉⟩
+  ⟨λ S => S.A⟩
 
 end Bundled
 
@@ -70,34 +70,30 @@ end Bundled
 --
 -- A `Universe` on its own is usually not very useful, but can have additional structure defined as
 -- type classes on `Universe`. See e.g. `Functors.lean`.
---
--- Although we could make `Universe` polymorphic in the second (Lean) universe argument of
--- `HasInstances`, we specifically choose `u + 1` and specifically adapt to this restriction where
--- necessary. Otherwise, the number of different (Lean) universe variables tends to explode because
--- we are frequently dealing with both 
 
-def Universe : Type (u + 1) := Bundled HasInstances.{u, u + 1}
+def Universe : Type (max (u + 1) v) := Bundled HasInstances.{u, v}
 
 namespace Universe
 
-  instance hasInstances : HasInstances.{u + 1, u + 2} Universe.{u} := Bundled.hasInstances HasInstances
+  instance hasInstances : HasInstances.{v, max (u + 2) (v + 1)} Universe.{u, v} :=
+  Bundled.hasInstances HasInstances
 
-  variable (U : Universe)
+  def univ : Universe.{v, max (u + 2) (v + 1)} := ⟨Universe.{u, v}⟩
 
-  instance instInst : HasInstances.{u, u + 1} U.A := U.inst
-  instance : HasInstances ⌈U⌉ := instInst U
+  variable (U : Universe.{u, v})
 
-  def univ : Universe.{u + 1} := ⟨Universe.{u}⟩
+  instance instInst : HasInstances.{u, v} U.A := U.inst
+  instance : HasInstances U := instInst U
 
 end Universe
 
 
 
-def unit : Universe.{0} := ⟨Unit⟩
+def unit : Universe.{0, 0} := ⟨True⟩
 
 namespace unit
 
-  def Inst : unit := ()
+  def Inst : unit := trivial
 
   def inst {A : unit} : A := trivial
 
@@ -105,7 +101,7 @@ end unit
 
 
 
-def boolean : Universe.{0} := ⟨Bool⟩
+def boolean : Universe.{0, 1} := ⟨Bool⟩
 
 namespace boolean
 
@@ -118,7 +114,7 @@ end boolean
 
 
 
-def sort : Universe.{u} := ⟨Sort u⟩
+def sort : Universe.{u, u + 1} := ⟨Sort u⟩
 @[reducible] def prop := sort.{0}
 @[reducible] def type := sort.{u + 1}
 
@@ -126,12 +122,12 @@ def sort : Universe.{u} := ⟨Sort u⟩
 
 namespace Bundled
 
-  def TypeClass (U : Universe.{max u w}) := GeneralizedTypeClass.{max u w, (max u w) + 1, w} ⌈U⌉
+  def TypeClass (U : Universe.{u, v}) := GeneralizedTypeClass.{u, v, w} U
 
-  def univ {U : Universe.{max u w}} (φ : TypeClass.{u, w} U) : Universe.{max u w} :=
+  def univ {U : Universe.{u, v}} (φ : TypeClass.{u, v, w} U) : Universe.{u, max (u + 1) v (w + 1)} :=
   ⟨Bundled φ⟩
 
-  instance univ.inst {U : Universe.{max u w}} {φ : TypeClass.{u, w} U} (A : univ φ) :
+  instance univ.inst {U : Universe.{u, v}} {φ : TypeClass.{u, v, w} U} (A : univ φ) :
     φ A.A :=
   A.inst
 
@@ -139,13 +135,14 @@ end Bundled
 
 
 
-def UniverseClass := Bundled.TypeClass.{(max u w) + 1, w} Universe.univ.{max u w}
+def UniverseClass := Bundled.TypeClass.{v, max (u + 2) (v + 1) (w + 2), w} Universe.univ.{max u w, v}
 
 namespace UniverseClass
 
-  def univ (φ : UniverseClass.{u, w}) : Universe.{(max u w) + 1} := Bundled.univ.{(max u w) + 1, w} φ
+  def univ (φ : UniverseClass.{u, v, w}) : Universe.{v, max (u + 2) (v + 1) (w + 2)} :=
+  Bundled.univ φ
 
-  instance {φ : UniverseClass.{u, w}} (U : univ φ) : HasInstances.{max u w, (max u w) + 1} ⌈U⌉ :=
+  instance {φ : UniverseClass.{u, v, w}} (U : univ φ) : HasInstances.{max u w, v} U :=
   Universe.instInst U.A
 
 end UniverseClass
@@ -154,13 +151,13 @@ end UniverseClass
 
 namespace Universe
 
-  def emptyUniverse : Universe.{u} :=
-  { A    := PEmpty.{u + 1},
+  def emptyUniverse : Universe.{u, v} :=
+  { A    := PEmpty.{v},
     inst := ⟨PEmpty.elim⟩ }
 
 
-  def singletonUniverse (α : Sort u) : Universe.{u} :=
-  { A    := PUnit.{u + 1},
+  def singletonUniverse (α : Sort u) : Universe.{u, v} :=
+  { A    := PUnit.{v},
     inst := ⟨λ _ => α⟩ }
   notation "{" α:0 "}" => Universe.singletonUniverse α
 
@@ -173,48 +170,28 @@ namespace Universe
   @[reducible] def singletonUniverse.orig {α : Sort u} (a : ⌊α⌋) : α := a
   notation "⸥" a:0 "⸤" => Universe.singletonUniverse.orig a
 
-  instance (U : Universe.{u}) : HasInstances ⌊U⌋ := Universe.instInst U
+  instance (U : Universe.{u, v}) : HasInstances ⌊U⌋ := Universe.instInst U
 
 
-  instance (U : Universe.{u}) : HasInstances.{u, u + 1} (Option ⌈U⌉) :=
+  instance (U : Universe.{u}) : HasInstances.{u} (Option U) :=
   ⟨λ C => match C with
           | none   => PEmpty.{u}
-          | some A => ⌈A⌉⟩
+          | some A => A⟩
 
-  def optionUniverse (U : Universe.{u}) : Universe.{u} := ⟨Option ⌈U⌉⟩
-
-
-  structure LiftedType (U : Universe.{u}) : Type (max 1 u v) where
-  (A : U)
-
-  structure LiftedInstance {U : Universe.{u}} (A : U) : Sort (max 1 u v) where
-  (a : A)
-
-  instance (U : Universe.{u}) : HasInstances.{max 1 u v, (max 1 u v) + 1} (LiftedType.{u, v} U) :=
-  ⟨λ C => LiftedInstance.{u, v} C.A⟩
-
-  def liftedUniverse (U : Universe.{u}) : Universe.{max 1 u v} := ⟨LiftedType.{u, v} U⟩
+  def optionUniverse (U : Universe.{u}) : Universe.{u} := ⟨Option U⟩
 
 
-  structure TypeProduct (U : Universe.{u}) (V : Universe.{v}) : Type (max 1 u v) where
-  (A : U)
-  (B : V)
+  instance (U : Universe.{u}) (V : Universe.{v}) : HasInstances.{max 1 u v} (PProd U V) :=
+  ⟨λ C => PProd C.fst C.snd⟩
 
-  instance (U : Universe.{u}) (V : Universe.{v}) : HasInstances.{max 1 u v, (max 1 u v) + 1} (TypeProduct U V) :=
-  ⟨λ C => PProd ⌈C.A⌉ ⌈C.B⌉⟩
-
-  def productUniverse (U : Universe.{u}) (V : Universe.{v}) : Universe.{max 1 u v} := ⟨TypeProduct U V⟩
+  def productUniverse (U : Universe.{u}) (V : Universe.{v}) : Universe.{max 1 u v} := ⟨PProd U V⟩
 
 
-  inductive TypeSum (U V : Universe.{u}) : Type u where
-  | inU (A : U)
-  | inV (B : V)
-
-  instance (U V : Universe.{u}) : HasInstances.{u, u + 1} (TypeSum U V) :=
+  instance (U V : Universe.{u}) : HasInstances.{u} (PSum U V) :=
   ⟨λ C => match C with
-          | TypeSum.inU A => ⌈A⌉
-          | TypeSum.inV B => ⌈B⌉⟩
+          | PSum.inl A => A
+          | PSum.inr B => B⟩
 
-  def sumUniverse (U V : Universe.{u}) : Universe.{u} := ⟨TypeSum U V⟩
+  def sumUniverse (U V : Universe.{u}) : Universe.{u} := ⟨PSum U V⟩
 
 end Universe

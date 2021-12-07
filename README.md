@@ -4,7 +4,7 @@ A Lean 4 project to automate proofs that follow from structural properties, base
 
 This is still work in progress and subject to frequent refactoring.
 
-For a mathematical description, see [UniverseAbstractions.pdf](UniverseAbstractions/Doc/UniverseAbstractions.pdf).
+For a mathematical description, see [UniverseAbstractions.pdf](Doc/UniverseAbstractions.pdf).
 
 ## Directory Structure
 
@@ -15,5 +15,6 @@ For a mathematical description, see [UniverseAbstractions.pdf](UniverseAbstracti
   * `CategoryTheory`: Standard definitions from category theory, generalized to use instance equivalences instead of equality.
 * `Lemmas`: Derived definitions and proofs that work generically on universes (with structure).
 * `Instances`: Definitions of specific universes, including native Lean universes with their structure.
-* `Tactics`: Currently just one tactic, which builds a functor from a lambda term.
+* `Meta`: Meta-level code to work with universes.
+  * `Tactics`: Currently just one tactic, which builds a functor from a lambda term.
 * `MathlibFragments`: Small parts of mathlib ported to Lean 4; slightly generalized so we can use the `≃` notation for instance equivalences.
