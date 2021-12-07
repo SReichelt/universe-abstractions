@@ -1,5 +1,8 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Products
+import UniverseAbstractions.Lemmas.DerivedFunctors
+import UniverseAbstractions.Lemmas.DerivedProductFunctors
 import UniverseAbstractions.Meta.Tactics.Functoriality
 
 
@@ -188,3 +191,13 @@ def testSubst₂ (A B C D : U) (F : A ⟶ B ⟶ C) (G : A ⟶ B ⟶ C ⟶ D) : A
 
 def testDup₃ (A B : U) : (A ⟶ A ⟶ A ⟶ B) ⟶ (A ⟶ B) := Λ F a => F a a a
 #print testDup₃
+
+variable [HasInternalProducts U]
+
+def testProdSwap [HasLinearFunOp U] (A B : U) : A ⊓ B ⟶ B ⊓ A :=
+HasInternalProducts.elimFun (Λ a b => HasProducts.intro b a)
+#print testProdSwap
+
+def testProdDistr [HasAffineFunOp U] (A B C : U) : (A ⟶ B ⊓ C) ⟶ (A ⟶ B) ⊓ (A ⟶ C) :=
+Λ F => HasProducts.intro (Λ a => HasProducts.fst (F a)) (Λ a => HasProducts.snd (F a))
+#print testProdDistr

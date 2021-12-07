@@ -160,7 +160,7 @@ namespace Lean
             let F' : φ.A _⟶{f'} φ.B ← TypedExpr.mkFreshMVar
             if ← isDefEq e (mkHasFunctors.mkByDef F' f.a) then
               let F'' := mkHasFunctors.mkFromDefFun (← F'.instantiate)
-              -- Return the original term `F.F.F` if it is reducibly defeq, as it easier to read.
+              -- Return the original term `F.F.F` if it is reducibly defeq, as it is easier to read.
               if ← (withReducible (isDefEq F.F.F F'')) then
                 return F.F.F
               return F''

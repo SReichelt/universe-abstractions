@@ -188,7 +188,7 @@ namespace HasInternalProducts
   defMergeFunFunFun A B C
 
   def distr [HasAffineFunOp U] {A B C : U} (F : A ⟶ B ⊓ C) : (A ⟶ B) ⊓ (A ⟶ C) :=
-  intro (fstFun B C • F) (sndFun B C • F) -- TODO: Rewrite using tactic, as a test
+  intro (fstFun B C • F) (sndFun B C • F)
 
   def defDistrFun [HasFullFunOp U] (A B C : U) : (A ⟶ B ⊓ C) ⟶{λ F => distr F} (A ⟶ B) ⊓ (A ⟶ C) :=
   mergeFun (revCompFunFun A (fstFun B C)) (revCompFunFun A (sndFun B C))
