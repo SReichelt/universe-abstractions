@@ -53,9 +53,7 @@ namespace HasLinearFunOp
 
   instance swapFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} {b : B} :
     IsFunApp B (swapFun F b) :=
-  { F := swapFunFun F,
-    a := b,
-    e := byDef }
+  HasSwapFunFun.swapFun.isFunApp
 
   instance swapFunFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} :
     IsFunApp (A ⟶ B ⟶ C) (swapFunFun F) :=
@@ -65,7 +63,7 @@ namespace HasLinearFunOp
 
   instance swapFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((((B ⟶ C) ⟶ C) ⟶ (A ⟶ C)) ⟶ (B ⟶ A ⟶ C)) (swapFunFunFun A B C) :=
-  trans.isFunApp
+  compFun.isFunApp
 
   -- We can apply the "swap" functor to itself to obtain its functoriality in reverse order.
 
@@ -91,6 +89,12 @@ namespace HasLinearFunOp
   instance revSwapFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C)) (revSwapFunFunFun A B C) :=
   swapFunFun.isFunApp
+
+  instance swapFun.isFunApp₂ {A B C : U} {F : A ⟶ B ⟶ C} {b : B} :
+    IsFunApp₂ (A ⟶ B ⟶ C) B (swapFun F b) :=
+  ⟨{ F := revSwapFunFun A b C,
+     a := F,
+     e := byDef }⟩
 
   -- Same for composition.
 
@@ -118,6 +122,10 @@ namespace HasLinearFunOp
   instance revCompFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C)) (revCompFunFunFun A B C) :=
   swapFunFun.isFunApp
+
+  instance compFun.isFunApp₂ {A B C : U} {F : A ⟶ B} {G : B ⟶ C} :
+    IsFunApp₂ (A ⟶ B) (B ⟶ C) (compFun F G) :=
+  ⟨HasRevCompFunFun.compFun.isFunApp⟩
 
 end HasLinearFunOp
 
@@ -171,7 +179,7 @@ namespace HasFullFunOp
 
   instance substFunFunFun.isFunApp {A B C : U} :
     IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (substFunFunFun A B C) :=
-  trans.isFunApp
+  compFun.isFunApp
 
   -- Substitution with reverse argument order.
 
@@ -200,6 +208,10 @@ namespace HasFullFunOp
   instance revSubstFunFunFun.isFunApp {A B C : U} :
     IsFunApp ((A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C)) (revSubstFunFunFun A B C) :=
   swapFunFun.isFunApp
+
+  instance substFun.isFunApp₂ {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
+    IsFunApp₂ (A ⟶ B) (A ⟶ B ⟶ C) (substFun F G) :=
+  ⟨HasRevSubstFunFun.substFun.isFunApp⟩
 
   -- A version of reverse composition where the functor has two arguments.
 
@@ -250,15 +262,11 @@ namespace HasFullFunOp
 
   instance revBiCompFun.isFunApp {A B C D : U} {H : B ⟶ C ⟶ D} {F : A ⟶ B} {G : A ⟶ C} :
     IsFunApp (A ⟶ C) (revBiCompFun H F G) :=
-  { F := revBiCompFunFun H F,
-    a := G,
-    e := byDef }
+  HasRevBiCompFunFun.biCompFun.isFunApp
 
   instance revBiCompFunFun.isFunApp {A B C D : U} {H : B ⟶ C ⟶ D} {F : A ⟶ B} :
     IsFunApp (A ⟶ B) (revBiCompFunFun H F) :=
-  { F := revBiCompFunFunFun A H,
-    a := F,
-    e := byDef }
+  HasRevBiCompFunFunFun.revBiCompFunFun.isFunApp
 
   instance revBiCompFunFunFun.isFunApp {A B C D : U} {H : B ⟶ C ⟶ D} :
     IsFunApp (B ⟶ C ⟶ D) (revBiCompFunFunFun A H) :=
@@ -268,6 +276,6 @@ namespace HasFullFunOp
 
   instance revBiCompFunFunFunFun.isFunApp {A B C D : U} :
     IsFunApp (((A ⟶ B) ⟶ A ⟶ C ⟶ D) ⟶ (A ⟶ B) ⟶ (A ⟶ C) ⟶ A ⟶ D) (revBiCompFunFunFunFun A B C D) :=
-  trans.isFunApp
+  compFun.isFunApp
 
 end HasFullFunOp

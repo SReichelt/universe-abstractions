@@ -127,7 +127,7 @@ namespace Bundled
   def univ {U : Universe.{u, v}} (φ : TypeClass.{u, v, w} U) : Universe.{u, max (u + 1) v (w + 1)} :=
   ⟨Bundled φ⟩
 
-  instance univ.inst {U : Universe.{u, v}} {φ : TypeClass.{u, v, w} U} (A : univ φ) :
+  def univ.inst {U : Universe.{u, v}} {φ : TypeClass.{u, v, w} U} (A : univ φ) :
     φ A.A :=
   A.inst
 

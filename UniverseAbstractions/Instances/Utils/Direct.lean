@@ -119,53 +119,44 @@ namespace HasLinearFunOp
 
     def rightIdCongr {A B : U} (F : A ⟶ B) :
       F • idFun A ≃ F :=
-    byDef • congrFun (rightId A B) F • byDef⁻¹
+    applyCongrFun (rightId A B) F byDef byDef
 
     def leftIdCongr {A B : U} (F : A ⟶ B) :
       idFun B • F ≃ F :=
-    byDef • congrFun (leftId A B) F • (byDef (F := defRevCompFunFun _ _))⁻¹
+    applyCongrFun (leftId A B) F byDef byDef
 
     def swapRevAppCongr {A B : U} (F : A ⟶ B) :
       swapFun (revAppFunFun A B) F ≃ F :=
-    byDef • congrFun (swapRevApp A B) F • byDef⁻¹
+    applyCongrFun (swapRevApp A B) F byDef byDef
 
     def swapCompFunCongr {A B : U} (F : A ⟶ B) (C : U) :
       swapFunFun (compFunFun F C) ≃ revAppFunFun B C • F :=
-    byDef •
-    congrFun (swapCompFun A B C) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (swapCompFun A B C) F (byDef • byArgDef • byDef) byDef
 
     def swapCompFunCongrCongr {A B : U} (F : A ⟶ B) (a : A) (C : U) :
       swapFun (compFunFun F C) a ≃ revAppFun (F a) C :=
-    (byDef • byDef) • congrFun (swapCompFunCongr U F C) a • byDef⁻¹
+    applyCongrFun (swapCompFunCongr U F C) a byDef (byDef • byDef)
 
     def swapRevCompFunCongr (A : U) {B C : U} (F : B ⟶ C) :
       swapFunFun (revCompFunFun A F) ≃ revCompFunFun (A ⟶ B) F • revAppFunFun A B :=
-    (byDef • byArgDef • byDef) •
-    congrFun (swapRevCompFun A B C) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (swapRevCompFun A B C) F (byDef • byArgDef • byDef) (byDef • byArgDef • byDef)
 
     def swapRevCompFunCongrCongr {A B C : U} (F : B ⟶ C) (a : A) :
       swapFun (revCompFunFun A F) a ≃ F • revAppFun a B :=
-    (byDef • byArgDef • byDef) • congrFun (swapRevCompFunCongr U A F) a • byDef⁻¹
+    applyCongrFun (swapRevCompFunCongr U A F) a byDef (byDef • byArgDef • byDef)
 
     def compAssocCongr {A B : U} (F : A ⟶ B) (C D : U) :
       revCompFunFun (C ⟶ D) (compFunFun F D) • compFunFunFun B C D ≃ compFunFunFun A C D • compFunFun F C :=
-    (byDef • byArgDef • byDef) •
-    congrFun (compAssoc A B C D) F •
-    (byDef • byArgDef • byArgDef₂ • byArgDef (F := defCompFun _ _) • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (compAssoc A B C D) F
+                  (byDef • byArgDef • byArgDef₂ • byArgDef • byDef) (byDef • byArgDef • byDef)
 
     def compAssocCongrCongr {A B C : U} (F : A ⟶ B) (G : B ⟶ C) (D : U) :
       compFunFun F D • compFunFun G D ≃ compFunFun (G • F) D :=
-    (byDef • byArgDef • byDef) •
-    congrFun (compAssocCongr U F C D) G •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (compAssocCongr U F C D) G (byDef • byArgDef • byDef) (byDef • byArgDef • byDef)
 
     def compAssocCongrCongrCongr {A B C D : U} (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) :
       (H • G) • F ≃ H • (G • F) :=
-    byDef •
-    congrFun (compAssocCongrCongr U F G D) H •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (compAssocCongrCongr U F G D) H (byDef • byArgDef • byDef) byDef
 
     instance hasLinearFunExt : HasLinearFunExt U :=
     { rightId              := rightIdCongr U,
@@ -213,27 +204,19 @@ namespace HasAffineFunOp
 
     def rightConstCongr (A : U) {B : U} (b : B) (C : U) :
       compFunFun (constFun A b) C ≃ constFunFun A C • revAppFun b C :=
-    (byDef • byArgDef • byDef) •
-    congrFun (rightConst A B C) b •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (rightConst A B C) b (byDef • byArgDef • byDef) (byDef • byArgDef • byDef)
 
     def rightConstCongrCongr (A : U) {B C : U} (b : B) (G : B ⟶ C) :
       G • constFun A b ≃ constFun A (G b) :=
-    (byDef • byArgDef • byDef) •
-    congrFun (rightConstCongr U A b C) G •
-    byDef⁻¹
+    applyCongrFun (rightConstCongr U A b C) G byDef (byDef • byArgDef • byDef)
 
     def leftConstCongr {A B : U} (F : A ⟶ B) (C : U) :
       compFunFun F C • constFunFun B C ≃ constFunFun A C :=
-    byDef •
-    congrFun (leftConst A B C) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (leftConst A B C) F (byDef • byArgDef • byDef) byDef
 
     def leftConstCongrCongr {A B C : U} (F : A ⟶ B) (c : C) :
       constFun B c • F ≃ constFun A c :=
-    byDef •
-    congrFun (leftConstCongr U F C) c •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (leftConstCongr U F C) c (byDef • byArgDef • byDef) byDef
 
     instance hasAffineFunExt : HasAffineFunExt U :=
     { rightConst       := rightConstCongrCongr U,
@@ -256,13 +239,11 @@ namespace HasFullFunOp
   class HasDirectNonLinearFunExt where
   (dupSwap (A B : U) : dupFunFun A B • swapFunFunFun A A B ≃ dupFunFun A B)
   (dupConst (A B : U) : dupFunFun A B • constFunFun A (A ⟶ B) ≃ idFun (A ⟶ B))
-  (dupDup (A B : U) : dupFunFun A B • dupFunFun A (A ⟶ B) ≃
-                      dupFunFun A B • revCompFunFun A (dupFunFun A B))
   (rightDup (A B C : U) :
-     compFunFunFun A B C • dupFunFun A B ≃
      revCompFunFun (B ⟶ C) (dupFunFun A C) •
      compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
-     compFunFunFun A (A ⟶ B) (A ⟶ C))
+     compFunFunFun A (A ⟶ B) (A ⟶ C) ≃
+     compFunFunFun A B C • dupFunFun A B)
   (substDup (A B C : U) :
      compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C) •
      substFunFunFun A B C ≃
@@ -274,7 +255,6 @@ namespace HasFullFunOp
     def fromFullFunExt [HasFullFunExt U] : HasDirectNonLinearFunExt U :=
     { dupSwap  := HasFullFunExt.dupSwapExt,
       dupConst := HasFullFunExt.dupConstExt,
-      dupDup   := HasFullFunExt.dupDupExt,
       rightDup := HasFullFunExt.rightDupExtExt,
       substDup := HasFullFunExt.substDupExtExt }
 
@@ -282,54 +262,37 @@ namespace HasFullFunOp
 
     def dupSwapCongr {A B : U} (F : A ⟶ A ⟶ B) :
       dupFun (swapFunFun F) ≃ dupFun F :=
-    byDef •
-    congrFun (dupSwap A B) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (dupSwap A B) F (byDef • byArgDef • byDef) byDef
 
     def dupConstCongr {A B : U} (F : A ⟶ B) :
       dupFun (constFun A F) ≃ F :=
-    byDef •
-    congrFun (dupConst A B) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
-
-    def dupDupCongr {A B : U} (F : A ⟶ A ⟶ A ⟶ B) :
-      dupFun (dupFun F) ≃ dupFun (dupFunFun A B • F) :=
-    (byDef • byArgDef • byDef) •
-    congrFun (dupDup A B) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (dupConst A B) F (byDef • byArgDef • byDef) byDef
 
     def rightDupCongr {A B : U} (F : A ⟶ A ⟶ B) (C : U) :
-      compFunFun (dupFun F) C ≃ dupFunFun A C • compFunFun F (A ⟶ C) • revCompFunFunFun A B C :=
-    (byDef • byArgDef • byArgDef₂ • byArgDef • byDef) •
-    congrFun (rightDup A B C) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+      dupFunFun A C • compFunFun F (A ⟶ C) • revCompFunFunFun A B C ≃ compFunFun (dupFun F) C :=
+    applyCongrFun (rightDup A B C) F
+                  (byDef • byArgDef • byArgDef₂ • byArgDef • byDef) (byDef • byArgDef • byDef)
 
     def rightDupCongrCongr {A B C : U} (F : A ⟶ A ⟶ B) (G : B ⟶ C) :
-      G • dupFun F ≃ dupFun (revCompFunFun A G • F) :=
-    (byDef • byArgDef • byArgDef₂ • byArgDef • byDef) •
-    congrFun (rightDupCongr U F C) G •
-    byDef⁻¹
+      dupFun (revCompFunFun A G • F) ≃ G • dupFun F :=
+    applyCongrFun (rightDupCongr U F C) G
+                  (byDef • byArgDef • byArgDef₂ • byArgDef • byDef) byDef
 
     def substDupCongr {A B : U} (F : A ⟶ B) (C : U) :
       substFunFun F C • revCompFunFun A (dupFunFun B C) ≃ substFunFun F C • substFunFun F (B ⟶ C) :=
-    (byDef₂ • congrFun byArgDef (substFunFun F C) • byFunDef • byArgDef • byDef) •
-    congrFun (substDup A B C) F •
-    (byDef • byArgDef • byDef (F := defCompFun _ _))⁻¹
+    applyCongrFun (substDup A B C) F
+                  (byDef • byArgDef • byDef)
+                  (byDef₂ • congrFun byArgDef (substFunFun F C) • byFunDef • byArgDef • byDef)
 
     def substDupCongrCongr {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) :
       substFun F (dupFunFun B C • G) ≃ substFun F (substFun F G) :=
-    let e : (substFunFun F C) (revCompFun (dupFunFun B C) G) ≃ substFun F (dupFunFun B C • G) := byDef;
-    (byDef • byArgDef • byDef) •
-    congrFun (substDupCongr U F C) G •
-    (e • byArgDef • byDef (F := defCompFun _ _))⁻¹
-
+    applyCongrFun (substDupCongr U F C) G (byDef • byArgDef • byDef) (byDef • byArgDef • byDef)
+  
     instance hasFullFunExt : HasFullFunExt U :=
     { dupSwap        := dupSwapCongr U,
       dupSwapExt     := dupSwap,
       dupConst       := dupConstCongr U,
       dupConstExt    := dupConst,
-      dupDup         := dupDupCongr U,
-      dupDupExt      := dupDup,
       rightDup       := rightDupCongrCongr U,
       rightDupExt    := rightDupCongr U,
       rightDupExtExt := rightDup,

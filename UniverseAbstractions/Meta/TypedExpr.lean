@@ -27,11 +27,12 @@ namespace Lean
     -- The type is an implicit parameter so that e.g. a typed parameter can be filled with
     -- just `← mkFreshMVar`.
 
-    def mkFreshMVar {α : Expr} : MetaM (TypedExpr α) := mkFreshExprMVar α
-    def instantiate {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := instantiateMVars
-    def elaborate   {α : Expr} (a : Syntax) : TacticM (TypedExpr α) := elabTerm a α
-    def synthesize  {α : Expr} : MetaM (TypedExpr α) := synthInstance α
-    def synthesize? {α : Expr} : MetaM (Option (TypedExpr α)) := synthInstance? α
+    def mkFreshMVar   {α : Expr} : MetaM (TypedExpr α) := mkFreshExprMVar α
+    def instantiate   {α α' : Expr} : TypedExpr α → MetaM (TypedExpr α') := instantiateMVars
+    def elaborate'    {α : Expr} (a : Syntax) : TermElabM (TypedExpr α) := Term.elabTermAndSynthesize a α
+    def elaborate     {α : Expr} (a : Syntax) : TacticM (TypedExpr α) := elabTerm a α
+    def synthesize    {α : Expr} : MetaM (TypedExpr α) := synthInstance α
+    def trySynthesize {α : Expr} : MetaM (LOption (TypedExpr α)) := trySynthInstance α
 
     def unfold_whnf   {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnf
     def unfold_whnfR  {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnfR
@@ -87,19 +88,28 @@ namespace Lean
   class InstanceExpr (C : ClassExpr) where
   (h : TypedExpr C.α)
 
+  instance (C : ClassExpr) : Inhabited (InstanceExpr C) := ⟨⟨arbitrary⟩⟩
+
   instance : CoeSort ClassExpr Type := ⟨InstanceExpr⟩
   instance (C : ClassExpr) : Coe C (TypedExpr C.α) := ⟨λ h => h.h⟩
 
-  namespace ClassExpr
+  namespace InstanceExpr
+
+    def mkFreshMVar {C : ClassExpr} : MetaM C := do
+      pure ⟨← TypedExpr.mkFreshMVar⟩
+
+    def instantiate {C C' : ClassExpr} (h : InstanceExpr C) : MetaM C' := do
+      pure ⟨← h.h.instantiate⟩
 
     def synthesize {C : ClassExpr} : MetaM C := do
-      return ⟨← TypedExpr.synthesize⟩
+      pure ⟨← TypedExpr.synthesize⟩
 
     def synthesize? {C : ClassExpr} : MetaM (Option C) := do
-      match ← TypedExpr.synthesize? with
-      | some h => some ⟨h⟩
-      | none   => none
+      match ← TypedExpr.trySynthesize with
+      | LOption.some h => some ⟨h⟩
+      | LOption.none   => none
+      | LOption.undef  => none
 
-  end ClassExpr
+  end InstanceExpr
 
 end Lean

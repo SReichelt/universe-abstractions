@@ -194,7 +194,7 @@ namespace functorUniverse
     def baseAppFun {B : U} (F : A ⟶ B) (C : U) : A ⟶ (B ⟶ C) ⟶ C := revAppFunFun B C • F
     def baseAppFun.eff {B : U} (F : A ⟶ B) (C : U) (G : A ⟶ B ⟶ C) :
       substFun G (baseAppFun A F C) ≃ substFun F G :=
-    substApp F G
+    substCompRevApp F G
 
     def baseAppFunFun (B C : U) : A ⟶ B ⟶ (B ⟶ C) ⟶ C := embedFunctor A (revAppFunFun B C)
     def baseAppFunFun.eff (B C : U) (F : A ⟶ B) :
@@ -396,7 +396,6 @@ namespace functorUniverse
 --    instance hasDirectNonLinearFunExt : HasDirectNonLinearFunExt ({A ⟶} U) :=
 --    { dupSwap  := λ B C   : U => HasSimpEmbed.bySimp A (dupSwapExt B C),
 --      dupConst := λ B C   : U => HasSimpEmbed.bySimp A (dupConstExt B C),
---      dupDup   := λ B C   : U => HasSimpEmbed.bySimp A (dupDupExt B C),
 --      rightDup := λ B C D : U => HasSimpEmbed.bySimp A (rightDupExtExt B C D),
 --      substDup := λ B C D : U => HasSimpEmbed.bySimp A (substDupExtExt B C D) }
 --

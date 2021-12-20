@@ -3,8 +3,9 @@ import Lake
 open Lake DSL
 
 package UniverseAbstractions {
+  defaultFacet := PackageFacet.oleans,
   dependencies := #[{
     name := `Qq
-    src := Source.git "https://github.com/gebner/quote4.git" "e46540ec1d52a76630bc1431f152962cb825aef6"
+    src := Source.git "https://github.com/SReichelt/quote4.git" "1e335e6bb004961435d7ca8911f6fc267e3e5d60"
   }]
 }

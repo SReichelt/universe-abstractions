@@ -151,24 +151,18 @@ namespace HasFullFunOp
      dupFunFun A B • constFunFun A (A ⟶ B)
      ≃{byDef • byArgDef ▻ λ F => dupConst F ◅}
      idFun (A ⟶ B))
-  (dupDup {A B : U} (F : A ⟶ A ⟶ A ⟶ B) :
-     dupFun (dupFun F) ≃{byFunDef ▻-◅ byDef₂ • byFunDef} dupFun (dupFunFun A B • F))
-  (dupDupExt (A B : U) :
-     dupFunFun A B • dupFunFun A (A ⟶ B)
-     ≃{byDef • byArgDef ▻ λ F => dupDup F ◅ byDef • byArgDef}
-     dupFunFun A B • revCompFunFun A (dupFunFun A B))
   (rightDup {A B C : U} (F : A ⟶ A ⟶ B) (G : B ⟶ C) :
-     G • dupFun F ≃{byArgDef ▻-◅ byDef₂ • byFunDef} dupFun (revCompFunFun A G • F))
+     dupFun (revCompFunFun A G • F) ≃{byDef₂ • byFunDef ▻-◅ byArgDef} G • dupFun F)
   (rightDupExt {A B : U} (F : A ⟶ A ⟶ B) (C : U) :
-     compFunFun (dupFun F) C
-     ≃{▻ λ G => rightDup F G ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
-     dupFunFun A C • compFunFun F (A ⟶ C) • revCompFunFunFun A B C)
+     dupFunFun A C • compFunFun F (A ⟶ C) • revCompFunFunFun A B C
+     ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻ λ G => rightDup F G ◅}
+     compFunFun (dupFun F) C)
   (rightDupExtExt (A B C : U) :
-     compFunFunFun A B C • dupFunFun A B
-     ≃{byDef • byArgDef ▻ λ F => rightDupExt F C ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
      revCompFunFun (B ⟶ C) (dupFunFun A C) •
      compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
-     compFunFunFun A (A ⟶ B) (A ⟶ C))
+     compFunFunFun A (A ⟶ B) (A ⟶ C)
+     ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻ λ F => rightDupExt F C ◅ byDef • byArgDef}
+     compFunFunFun A B C • dupFunFun A B)
   (substDup {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) :
      substFun F (dupFunFun B C • G)
      ≃{byDef₂ • byFunDef ▻-◅ byFunDef}

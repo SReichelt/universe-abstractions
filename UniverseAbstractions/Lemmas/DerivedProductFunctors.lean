@@ -53,18 +53,27 @@ namespace HasInternalProducts
 
   @[reducible] def revIntroFun [HasLinearFunOp U] (A : U) {B : U} (b : B) : A ⟶ A ⊓ B := defRevIntroFun A b
 
-  instance revIntroFun.isFunApp [HasLinearFunOp U] {A B : U} {b : B} :
-    IsFunApp B (revIntroFun A b) :=
-  swapFun.isFunApp
-
   def defRevIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶{λ b => revIntroFun A b} (A ⟶ A ⊓ B) :=
   defSwapFunFun (introFunFun A B)
 
   @[reducible] def revIntroFunFun [HasLinearFunOp U] (A B : U) : B ⟶ A ⟶ A ⊓ B := defRevIntroFunFun A B
 
+  instance revIntroFun.isFunApp [HasLinearFunOp U] {A B : U} {b : B} :
+    IsFunApp B (revIntroFun A b) :=
+  { F := revIntroFunFun A B,
+    a := b,
+    e := byDef }
+
   instance revIntroFunFun.isFunApp [HasLinearFunOp U] {A B : U} :
     IsFunApp (A ⟶ B ⟶ A ⊓ B) (revIntroFunFun A B) :=
   swapFunFun.isFunApp
+
+  instance intro.isFunApp₂ [HasLinearFunOp U] {A B : U} {a : A} {b : B} : IsFunApp₂ A B (intro a b) :=
+  ⟨{ F := revIntroFun A b,
+     a := a,
+     e := byDef }⟩
+
+  -- TODO: Define `IsFunApp` instances.
 
   def defRevElimFun [HasLinearFunOp U] {A B C : U} (F : B ⟶ A ⟶ C) :
     A ⊓ B ⟶{λ P => F (snd P) (fst P)} C :=

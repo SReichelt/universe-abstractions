@@ -313,8 +313,6 @@ namespace HasTrivialExtensionality
     dupSwapExt     := λ _ _   => funEq,
     dupConst       := λ _     => funEq,
     dupConstExt    := λ _ _   => funEq,
-    dupDup         := λ _     => funEq,
-    dupDupExt      := λ _ _   => funEq,
     rightDup       := λ _ _   => funEq,
     rightDupExt    := λ _ _   => funEq,
     rightDupExtExt := λ _ _ _ => funEq,

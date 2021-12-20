@@ -7,6 +7,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 
 
 set_option autoBoundImplicitLocal false
+set_option synthInstance.maxHeartbeats 1000
 --set_option pp.universes true
 
 universe u v w iv iw
@@ -202,8 +203,7 @@ namespace CategoryTheory
 
     class IsIsoExtUniverse (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasStandardFunctors V]
                            [hIsoUniv : IsIsoUniverse V] where
-    [hasIsomorphismsExt (α : Sort u) [IsCategory V α] :
-       HasIsomorphisms.HasIsomorphismsExt α (hIso := hIsoUniv.hasIsomorphisms α)]
+    [hasIsomorphismsExt (α : Sort u) [IsCategory V α] : HasIsomorphisms.HasIsomorphismsExt α]
 
     namespace IsIsoExtUniverse
 
@@ -386,9 +386,7 @@ namespace CategoryTheory
                          [hIsoUniv : IsIsoUniverse W]
                          [hIsoExtUniv : IsIsoUniverse.IsIsoExtUniverse W]
                          [hFunUniv : IsFunUniverse W] where
-  [hasIsoFunEq (α β : Sort u) [IsCategory W α] [IsCategory W β] :
-     HasIsoFunEq α β (hαIso := hIsoUniv.hasIsomorphisms α) (hβIso := hIsoUniv.hasIsomorphisms β)
-                     (hCatFun := hFunUniv.hasCategoryFunctors α β)]
+  [hasIsoFunEq (α β : Sort u) [IsCategory W α] [IsCategory W β] : HasIsoFunEq α β]
 
   namespace IsIsoFunUniverse
 
@@ -398,9 +396,7 @@ namespace CategoryTheory
              [hIsoUniv : IsIsoUniverse W] [IsIsoExtUniverse W] [hFunUniv : IsFunUniverse W]
              [h : IsIsoFunUniverse W]
 
-    instance (α β : Sort u) [IsCategory W α] [IsCategory W β] :
-      HasIsoFunEq α β (hαIso := hIsoUniv.hasIsomorphisms α) (hβIso := hIsoUniv.hasIsomorphisms β)
-                      (hCatFun := hFunUniv.hasCategoryFunctors α β) :=
+    instance (α β : Sort u) [IsCategory W α] [IsCategory W β] : HasIsoFunEq α β :=
     h.hasIsoFunEq α β
 
   end IsIsoFunUniverse
@@ -437,7 +433,7 @@ namespace CategoryTheory
                       [hFunUniv : IsFunUniverse W] where
   [hasNaturalTransformations (α : Sort u) (β : Sort v)
                              [hα : HasMorphisms W α] [hβ : HasMorphisms W β] [HasTrans hβ.Hom] :
-     HasMorphisms.HasNaturalTransformations α β (hFun := hFunUniv.hasMorphismFunctors α β)]
+     HasMorphisms.HasNaturalTransformations α β]
 
   namespace IsFunUniverse
 
@@ -446,7 +442,7 @@ namespace CategoryTheory
 
     instance (α : Sort u) (β : Sort v) [hα : HasMorphisms W α] [hβ : HasMorphisms W β]
              [HasTrans hβ.Hom] :
-      HasMorphisms.HasNaturalTransformations α β (hFun := hFunUniv.hasMorphismFunctors α β) :=
+      HasMorphisms.HasNaturalTransformations α β :=
     h.hasNaturalTransformations α β
 
     -- TODO: Add variants for the three other types of structures

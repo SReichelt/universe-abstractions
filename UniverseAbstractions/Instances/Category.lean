@@ -52,24 +52,24 @@ namespace CategoryTheory.IsCategory
 
   instance funIsCategory (A : univ.{u} W) (B : univ.{v} W) :
     IsCategory.{max 1 u v w, w, ww, iw} W (A ⟶' B) :=
-  { Hom                         := λ (F G : A ⟶' B) => NaturalTransformation F G,
+  { Hom                         := λ (F G : A ⟶' B) => sorry, --NaturalTransformation F G,
     homIsPreorder               := sorry,
     homHasTransFun              := sorry,
     homIsCategoricalPreorder    := sorry,
     homIsCategoricalPreorderExt := sorry }
 
   instance hasFunctorInstances :
-    HasFunctorInstances (typeClass.{u} W) :=
+    HasFunctorInstances.{max 1 u w, max 1 u w ww iw, w} (typeClass.{u} W) :=
   ⟨funIsCategory⟩
 
-  instance hasFunctors : HasFunctors (univ W) (univ W) (univ W) :=
-  Bundled.hasFunctors (typeClass.{u} W)
+  instance hasFunctors : HasFunctors (univ.{u} W) (univ.{u} W) (univ.{u} W) :=
+  Bundled.hasFunctors.{max 1 u w, max 1 u w ww iw, w} (typeClass.{u} W)
 
-  instance hasCongrArg : HasCongrArg (univ W) (univ W) :=
+  instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) :=
   ⟨λ F => sorry⟩
 
-  instance hasInternalFunctors : HasInternalFunctors (univ W) := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors (univ.{u} W) := ⟨⟩
 
-  instance hasLinearFunOp : HasLinearFunOp (univ W) := sorry
+  instance hasLinearFunOp : HasLinearFunOp (univ.{u} W) := sorry
 
 end CategoryTheory.IsCategory
