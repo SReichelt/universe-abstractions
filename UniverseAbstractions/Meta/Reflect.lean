@@ -2,6 +2,7 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Meta.TypedExpr
 import UniverseAbstractions.Meta.Helpers
 
@@ -420,6 +421,17 @@ namespace Lean
     def synthesize {U V UV : _Universe} : MetaM (mkHasFunctors U V UV) := do
       pure { toInstanceExpr := ← InstanceExpr.synthesize }
 
+    @[reducible] def mkArrowInst {u_U v_U u_V v_V u_UV v_UV : Level} {U : ⌜Universe.{u_U, v_U}⌝}
+                                 {V : ⌜Universe.{u_V, v_V}⌝} {UV : ⌜Universe.{u_UV, v_UV}⌝}
+                                 (h : mkHasFunctors'' U V UV) (A : Q($U)) (B : Q($V)) :=
+    Q($A → $B)
+
+    def mkArrowApp' {u_U v_U u_V v_V u_UV v_UV : Level} {U : ⌜Universe.{u_U, v_U}⌝}
+                    {V : ⌜Universe.{u_V, v_V}⌝} {UV : ⌜Universe.{u_UV, v_UV}⌝}
+                    (h : mkHasFunctors'' U V UV) (A : Q($U)) (B : Q($V)) (f : Q($A → $B))
+                    (a : Q($A)) : Q($B) :=
+    ⌜$f $a⌝
+
     def mkFun {u_U v_U u_V v_V u_UV v_UV : Level} {U : ⌜Universe.{u_U, v_U}⌝}
               {V : ⌜Universe.{u_V, v_V}⌝} {UV : ⌜Universe.{u_UV, v_UV}⌝}
               (h : mkHasFunctors'' U V UV) (A : Q($U)) (B : Q($V)) : Q($UV) :=
@@ -460,6 +472,9 @@ namespace Lean
 
       variable {U V UV : _Universe} [h : mkHasFunctors U V UV]
 
+      def mkArrowApp (A : _⌈U⌉_) (B : _⌈V⌉_) (f : ⌜$A → $B⌝) (a : A) : B :=
+      mkArrowApp' h.h A B f a
+
       instance reflect : HasFunctors U V UV :=
       { Fun   := mkFun h.h,
         apply := λ {A B} => mkApply h.h A B }
@@ -496,6 +511,9 @@ namespace Lean
 
       def mkFromDefFun {A : _⌈U⌉_} {B : _⌈V⌉_} {f : ⌜$A → $B⌝} (F : A _⟶{f} B) : A _⟶ B :=
       ⌜HasFunctors.fromDefFun $F⌝
+
+      def mkByDef' {A : _⌈U⌉_} {B : _⌈V⌉_} {f : ⌜$A → $B⌝} (F : A _⟶{f} B) (a : Q($A)) :=
+      ⌜($F).eff $a⌝
 
       def mkByDef {A : _⌈U⌉_} {B : _⌈V⌉_} {f : ⌜$A → $B⌝} (F : A _⟶{f} B) (a : Q($A)) :=
       ⌜HasFunctors.byDef (F := $F) (a := $a)⌝
@@ -739,21 +757,45 @@ namespace Lean
 
   namespace mkHasCongrArg
 
-    def mkCongrArg' {U V UV : _Universe} {iu_U iuv_U iu_V iuv_V : Level}
-                    (hFun : mkHasFunctors'' U.U V.U UV.U) (hId_U : mkHasIdentity'' U.U iu_U iuv_U)
-                    (hId_V : mkHasIdentity'' V.U iu_V iuv_V)
-                    (hCongrArg : mkHasCongrArg' U.U V.U UV.U hFun hId_U hId_V)
-                    (A : _⌈U⌉_) (B : _⌈V⌉_) (F : Q($A ⟶ $B)) (a₁ a₂ : Q($A)) (h : Q($a₁ ≃ $a₂)) :
+    def mkCongrArg'' {U V UV : _Universe} {iu_U iuv_U iu_V iuv_V : Level}
+                     (hFun : mkHasFunctors'' U.U V.U UV.U) (hId_U : mkHasIdentity'' U.U iu_U iuv_U)
+                     (hId_V : mkHasIdentity'' V.U iu_V iuv_V)
+                     (hCongrArg : mkHasCongrArg' U.U V.U UV.U hFun hId_U hId_V)
+                     (A : _⌈U⌉_) (B : _⌈V⌉_) (F : Q($A ⟶ $B)) (a₁ a₂ : Q($A)) (h : Q($a₁ ≃ $a₂)) :
       Q($F $a₁ ≃ $F $a₂) :=
     ⌜HasCongrArg.congrArg $F $h⌝
+
+    def mkDefCongrArg'' {U V UV : _Universe} {iu_U iuv_U iu_V iuv_V : Level}
+                        (hFun : mkHasFunctors'' U.U V.U UV.U) (hId_U : mkHasIdentity'' U.U iu_U iuv_U)
+                        (hId_V : mkHasIdentity'' V.U iu_V iuv_V)
+                        (hCongrArg : mkHasCongrArg' U.U V.U UV.U hFun hId_U hId_V)
+                        (A : _⌈U⌉_) (B : _⌈V⌉_) (f : Q($A → $B)) (F : Q($A ⟶{$f} $B))
+                        (a₁ a₂ : Q($A)) (h : Q($a₁ ≃ $a₂)) :
+      Q($f $a₁ ≃ $f $a₂) :=
+    ⌜HasCongrArg.defCongrArg $F $h⌝
 
     variable {U V UV : _Universe} [hFun : mkHasFunctors U V UV] [hId_U : mkHasIdentity U]
              [hId_V : mkHasIdentity V] [hCongrArg : mkHasCongrArg U V]
 
+    def mkCongrArg' {A : _⌈U⌉_} {B : _⌈V⌉_} (F : A _⟶ B) {a₁ a₂ : A} (h : a₁ _≃ a₂) : F a₁ _≃ F a₂ :=
+    mkCongrArg'' hFun.h hId_U.h.h hId_V.h.h hCongrArg.h A B F a₁ a₂ h
+
     def mkCongrArg {A : _⌈U⌉_} {B : _⌈V⌉_} (F : A _⟶ B) {a₁ a₂ : A} (h : a₁ _≃_ a₂) : F a₁ _≃_ F a₂ :=
     match h with
     | some h' =>
-      some (mkCongrArg' hFun.h hId_U.h.h hId_V.h.h hCongrArg.h A B F a₁ a₂ h')
+      some (mkCongrArg' F h')
+    | none =>
+      none
+
+    def mkDefCongrArg' {A : _⌈U⌉_} {B : _⌈V⌉_} {f : ⌜$A → $B⌝} (F : A _⟶{f} B) {a₁ a₂ : A} (h : a₁ _≃ a₂) :
+      mkHasFunctors.mkArrowApp A B f a₁ _≃ mkHasFunctors.mkArrowApp A B f a₂ :=
+    mkDefCongrArg'' hFun.h hId_U.h.h hId_V.h.h hCongrArg.h A B f F a₁ a₂ h
+
+    def mkDefCongrArg {A : _⌈U⌉_} {B : _⌈V⌉_} {f : ⌜$A → $B⌝} (F : A _⟶{f} B) {a₁ a₂ : A} (h : a₁ _≃_ a₂) :
+      mkHasFunctors.mkArrowApp A B f a₁ _≃_ mkHasFunctors.mkArrowApp A B f a₂ :=
+    match h with
+    | some h' =>
+      some (mkDefCongrArg' F h')
     | none =>
       none
 
@@ -778,11 +820,11 @@ namespace Lean
 
     open mkHasFunctors
 
-    def mkCongrFun' {U V UV : _Universe} {iu_V iuv_V iu_UV iuv_UV : Level}
-                    (hFun : mkHasFunctors'' U.U V.U UV.U) (hId_V : mkHasIdentity'' V.U iu_V iuv_V)
-                    (hId_UV : mkHasIdentity'' UV.U iu_UV iuv_UV)
-                    (hCongrFun : mkHasCongrFun' U.U V.U UV.U hFun hId_V hId_UV)
-                    (A : _⌈U⌉_) (B : _⌈V⌉_) (F₁ F₂ : Q($A ⟶ $B)) (h : Q($F₁ ≃ $F₂)) (a : Q($A)) :
+    def mkCongrFun'' {U V UV : _Universe} {iu_V iuv_V iu_UV iuv_UV : Level}
+                     (hFun : mkHasFunctors'' U.U V.U UV.U) (hId_V : mkHasIdentity'' V.U iu_V iuv_V)
+                     (hId_UV : mkHasIdentity'' UV.U iu_UV iuv_UV)
+                     (hCongrFun : mkHasCongrFun' U.U V.U UV.U hFun hId_V hId_UV)
+                     (A : _⌈U⌉_) (B : _⌈V⌉_) (F₁ F₂ : Q($A ⟶ $B)) (h : Q($F₁ ≃ $F₂)) (a : Q($A)) :
       Q($F₁ $a ≃ $F₂ $a) :=
     ⌜HasCongrFun.congrFun $h $a⌝
 
@@ -809,11 +851,15 @@ namespace Lean
     variable {U V UV : _Universe} [hFun : mkHasFunctors U V UV] [hId_V : mkHasIdentity V]
              [hId_UV : mkHasIdentity UV]
 
+    def mkCongrFun' [hCongrFun : mkHasCongrFun U V] {A : _⌈U⌉_} {B : _⌈V⌉_} {F₁ F₂ : A _⟶ B}
+                    (h : F₁ _≃ F₂) (a : A) : F₁ a _≃ F₂ a :=
+    mkCongrFun'' hFun.h hId_V.h.h hId_UV.h.h hCongrFun.h A B F₁ F₂ h a
+
     def mkCongrFun [hCongrFun : mkHasCongrFun U V] {A : _⌈U⌉_} {B : _⌈V⌉_} {F₁ F₂ : A _⟶ B}
                    (h : F₁ _≃_ F₂) (a : A) : F₁ a _≃_ F₂ a :=
     match h with
-    | some h' => 
-      some (mkCongrFun' hFun.h hId_V.h.h hId_UV.h.h hCongrFun.h A B F₁ F₂ h' a)
+    | some h' =>
+      some (mkCongrFun' h' a)
     | none =>
       none
 
@@ -879,9 +925,10 @@ namespace Lean
     let _ := h.h
     ⌜HasConstFun.defConstFun $A $b⌝
   
-    def mkConstFun (A : _⌈U⌉_) {B : _⌈V⌉_} (b : Q($B)) : A _⟶ B :=
+    def mkConstFun (A : _⌈U⌉_) {B : _⌈V⌉_} (b : B) : A _⟶ B :=
     let _ := h.h
-    ⌜HasConstFun.constFun $A $b⌝
+    let b' : Q($B) := b
+    ⌜HasConstFun.constFun $A $b'⌝
 
     instance reflect : HasConstFun U V :=
     ⟨λ A {_} b => mkHasFunctors.mkDefFun.reflect' (mkDefConstFun A b) (mkConstFun A b)⟩
@@ -901,13 +948,16 @@ namespace Lean
 
     variable {U : _Universe} [mkHasFunctors U U U] [mkHasIdentity U] [h : mkHasRevAppFun U]
 
-    def mkDefRevAppFun {A : _⌈U⌉_} (a : Q($A)) (B : _⌈U⌉_) : (A _⟶ B) _⟶{⌜λ F => F $a⌝} B :=
+    def mkDefRevAppFun' (A : _⌈U⌉_) (a : Q($A)) (B : _⌈U⌉_) : (A _⟶ B) _⟶{⌜λ F => F $a⌝} B :=
     let _ := h.h
     ⌜HasRevAppFun.defRevAppFun $a $B⌝
-  
-    def mkRevAppFun {A : _⌈U⌉_} (a : Q($A)) (B : _⌈U⌉_) : (A _⟶ B)_⟶ B :=
+
+    def mkDefRevAppFun {A : _⌈U⌉_} (a : A) (B : _⌈U⌉_) := mkDefRevAppFun' A a B
+
+    def mkRevAppFun {A : _⌈U⌉_} (a : A) (B : _⌈U⌉_) : (A _⟶ B) _⟶ B :=
     let _ := h.h
-    ⌜HasRevAppFun.revAppFun $a $B⌝
+    let a' : Q($A) := a
+    ⌜HasRevAppFun.revAppFun $a' $B⌝
 
     instance reflect : HasRevAppFun U :=
     ⟨λ a B => mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFun a B) (mkRevAppFun a B)⟩
@@ -935,24 +985,24 @@ namespace Lean
              [hFun_VW : mkHasFunctors V W VW] [hFun_UW : mkHasFunctors U W UW] [mkHasIdentity W]
              [h : mkHasCompFun U V W]
 
-    def mkDefCompFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_}
-                     (F : mkHasFunctors.mkFunInst hFun_UV.h A B)
-                     (G : mkHasFunctors.mkFunInst hFun_VW.h B C) :
+    def mkDefCompFun' (A : _⌈U⌉_) (B : _⌈V⌉_) (C : _⌈W⌉_)
+                      (F : mkHasFunctors.mkFunInst hFun_UV.h A B)
+                      (G : mkHasFunctors.mkFunInst hFun_VW.h B C) :
       A _⟶{⌜λ a => $G ($F a)⌝} C :=
     let _ := h.h
     ⌜HasCompFun.defCompFun $F $G⌝
-  
-    def mkCompFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_}
-                  (F : mkHasFunctors.mkFunInst hFun_UV.h A B)
-                  (G : mkHasFunctors.mkFunInst hFun_VW.h B C) :
-      A _⟶ C :=
+
+    def mkDefCompFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_} (F : A _⟶ B) (G : B _⟶ C) :=
+    mkDefCompFun' A B C F G
+
+    def mkCompFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_} (F : A _⟶ B) (G : B _⟶ C) : A _⟶ C :=
     let _ := h.h
-    ⌜HasCompFun.compFun $F $G⌝
+    let F' : Q($A ⟶ $B) := F
+    let G' : Q($B ⟶ $C) := G
+    ⌜HasCompFun.compFun $F' $G'⌝
 
     instance reflect : HasCompFun U V W :=
-    ⟨λ {A B C} F G => mkHasFunctors.mkDefFun.reflect'
-                        (mkDefCompFun (U := U) (V := V) (W := W) (A := A) (B := B) (C := C) F G)
-                        (mkCompFun    (U := U) (V := V) (W := W) (A := A) (B := B) (C := C) F G)⟩
+    ⟨λ F G => mkHasFunctors.mkDefFun.reflect' (mkDefCompFun F G) (mkCompFun F G)⟩
 
   end mkHasCompFun
 
@@ -977,24 +1027,24 @@ namespace Lean
              [hFun_UVW : mkHasFunctors U VW UVW] [hFun_UW : mkHasFunctors U W UW] [mkHasIdentity W]
              [h : mkHasSwapFun U V W]
 
-    def mkDefSwapFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_}
-                     (F : mkHasFunctors.mkFunInst hFun_UVW.h A (B _⟶ C))
-                     (b : Q($B)) :
+    def mkDefSwapFun' (A : _⌈U⌉_) (B : _⌈V⌉_) (C : _⌈W⌉_)
+                      (F : mkHasFunctors.mkFunInst hFun_UVW.h A (B _⟶ C))
+                      (b : Q($B)) :
       A _⟶{⌜λ a => $F a $b⌝} C :=
     let _ := h.h
     ⌜HasSwapFun.defSwapFun $F $b⌝
-  
-    def mkSwapFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_}
-                  (F : mkHasFunctors.mkFunInst hFun_UVW.h A (B _⟶ C))
-                  (b : Q($B)) :
-      A _⟶ C :=
+
+    def mkDefSwapFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_} (F : A _⟶ B _⟶ C) (b : B) :=
+    mkDefSwapFun' A B C F b
+
+    def mkSwapFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_} (F : A _⟶ B _⟶ C) (b : B) : A _⟶ C :=
     let _ := h.h
-    ⌜HasSwapFun.swapFun $F $b⌝
+    let F' : Q($A ⟶ $B ⟶ $C) := F
+    let b' : Q($B) := b
+    ⌜HasSwapFun.swapFun $F' $b'⌝
 
     instance reflect : HasSwapFun U V W :=
-    ⟨λ {A B C} F G => mkHasFunctors.mkDefFun.reflect'
-                        (mkDefSwapFun (U := U) (V := V) (W := W) (A := A) (B := B) (C := C) F G)
-                        (mkSwapFun    (U := U) (V := V) (W := W) (A := A) (B := B) (C := C) F G)⟩
+    ⟨λ F b => mkHasFunctors.mkDefFun.reflect' (mkDefSwapFun F b) (mkSwapFun F b)⟩
 
   end mkHasSwapFun
 
@@ -1016,15 +1066,17 @@ namespace Lean
     variable {U V UV UUV : _Universe} [hFun_UV : mkHasFunctors U V UV]
              [hFun_UUV : mkHasFunctors U UV UUV] [mkHasIdentity V] [h : mkHasDupFun U V]
 
-    def mkDefDupFun {A : _⌈U⌉_} {B : _⌈V⌉_} (F : mkHasFunctors.mkFunInst hFun_UUV.h A (A _⟶ B)) :
+    def mkDefDupFun' (A : _⌈U⌉_) (B : _⌈V⌉_) (F : mkHasFunctors.mkFunInst hFun_UUV.h A (A _⟶ B)) :
       A _⟶{⌜λ a => $F a a⌝} B :=
     let _ := h.h
     ⌜HasDupFun.defDupFun $F⌝
   
-    def mkDupFun {A : _⌈U⌉_} {B : _⌈V⌉_} (F : mkHasFunctors.mkFunInst hFun_UUV.h A (A _⟶ B)) :
-      A _⟶ B :=
+    def mkDefDupFun {A : _⌈U⌉_} {B : _⌈V⌉_} (F : A _⟶ A _⟶ B) := mkDefDupFun' A B F
+
+    def mkDupFun {A : _⌈U⌉_} {B : _⌈V⌉_} (F : A _⟶ A _⟶ B) : A _⟶ B :=
     let _ := h.h
-    ⌜HasDupFun.dupFun $F⌝
+    let F' : Q($A ⟶ $A ⟶ $B) := F
+    ⌜HasDupFun.dupFun $F'⌝
 
     instance reflect : HasDupFun U V :=
     ⟨λ F => mkHasFunctors.mkDefFun.reflect' (mkDefDupFun F) (mkDupFun F)⟩
@@ -1053,24 +1105,24 @@ namespace Lean
              [hFun_VW : mkHasFunctors V W VW] [hFun_UVW : mkHasFunctors U VW UVW]
              [hFun_UW : mkHasFunctors U W UW] [mkHasIdentity W] [h : mkHasSubstFun U V W]
 
-    def mkDefSubstFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_}
-                      (F : mkHasFunctors.mkFunInst hFun_UV.h A B)
-                      (G : mkHasFunctors.mkFunInst hFun_UVW.h A (B _⟶ C)) :
+    def mkDefSubstFun' (A : _⌈U⌉_) (B : _⌈V⌉_) (C : _⌈W⌉_)
+                       (F : mkHasFunctors.mkFunInst hFun_UV.h A B)
+                       (G : mkHasFunctors.mkFunInst hFun_UVW.h A (B _⟶ C)) :
       A _⟶{⌜λ a => $G a ($F a)⌝} C :=
     let _ := h.h
     ⌜HasSubstFun.defSubstFun $F $G⌝
-  
-    def mkSubstFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_}
-                   (F : mkHasFunctors.mkFunInst hFun_UV.h A B)
-                   (G : mkHasFunctors.mkFunInst hFun_UVW.h A (B _⟶ C)) :
-      A _⟶ C :=
+
+    def mkDefSubstFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_} (F : A _⟶ B) (G : A _⟶ B _⟶ C) :=
+    mkDefSubstFun' A B C F G
+
+    def mkSubstFun {A : _⌈U⌉_} {B : _⌈V⌉_} {C : _⌈W⌉_} (F : A _⟶ B) (G : A _⟶ B _⟶ C) : A _⟶ C :=
     let _ := h.h
-    ⌜HasSubstFun.substFun $F $G⌝
+    let F' : Q($A ⟶ $B) := F
+    let G' : Q($A ⟶ $B ⟶ $C) := G
+    ⌜HasSubstFun.substFun $F' $G'⌝
 
     instance reflect : HasSubstFun U V W :=
-    ⟨λ {A B C} F G => mkHasFunctors.mkDefFun.reflect'
-                        (mkDefSubstFun (U := U) (V := V) (W := W) (A := A) (B := B) (C := C) F G)
-                        (mkSubstFun    (U := U) (V := V) (W := W) (A := A) (B := B) (C := C) F G)⟩
+    ⟨λ F G => mkHasFunctors.mkDefFun.reflect' (mkDefSubstFun F G) (mkSubstFun F G)⟩
 
   end mkHasSubstFun
 
@@ -1092,6 +1144,215 @@ namespace Lean
     def hasCongrArg' : Expr := ⌜($hFun.h).toHasCongrArg⌝
     instance : mkHasCongrArg U U := ⟨hasCongrArg' U⟩
 
+    instance reflect : HasInternalFunctors U := ⟨⟩
+
   end mkHasInternalFunctors
+
+
+
+  def mkHasLinearFunOp' {u_U v_U iu iuv : Level} (U : ⌜Universe.{u_U, v_U}⌝)
+                        (hId : mkHasIdentity'' U iu iuv) (hFun : mkHasInternalFunctors' U hId) :=
+  ⌜HasLinearFunOp $U⌝
+
+  def mkHasLinearFunOp (U : _Universe) [hId : mkHasIdentity U] [hFun : mkHasInternalFunctors U] :
+    ClassExpr :=
+  ⟨mkHasLinearFunOp' U.U hId.h.h hFun.h⟩
+
+  namespace mkHasLinearFunOp
+
+    variable {U : _Universe} [hId : mkHasIdentity U] [hFun : mkHasInternalFunctors U]
+             [h : mkHasLinearFunOp U]
+
+    def mkDefIdFun (A : _⌈U⌉_) : A _⟶{⌜id⌝} A :=
+    let _ := h.h
+    ⌜HasIdFun.defIdFun $A⌝
+  
+    def mkIdFun (A : _⌈U⌉_) : A _⟶ A :=
+    let _ := h.h
+    ⌜HasLinearFunOp.idFun $A⌝
+
+    def mkDefRevAppFun' (A : _⌈U⌉_) (a : Q($A)) (B : _⌈U⌉_) : (A _⟶ B) _⟶{⌜λ F => F $a⌝} B :=
+    let _ := h.h
+    ⌜HasRevAppFun.defRevAppFun $a $B⌝
+
+    def mkDefRevAppFun {A : _⌈U⌉_} (a : A) (B : _⌈U⌉_) := mkDefRevAppFun' A a B
+
+    def mkRevAppFun {A : _⌈U⌉_} (a : A) (B : _⌈U⌉_) : (A _⟶ B) _⟶ B :=
+    let _ := h.h
+    let a' : Q($A) := a
+    ⌜HasLinearFunOp.revAppFun $a' $B⌝
+
+    def mkDefRevAppFunFunType (A B : _⌈U⌉_) :=
+    let _ := h.h
+    A _⟶{⌜λ a => HasLinearFunOp.revAppFun a $B⌝} ((A _⟶ B) _⟶ B)
+
+    def mkDefRevAppFunFun (A B : _⌈U⌉_) : mkDefRevAppFunFunType A B :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defRevAppFunFun $A $B⌝
+
+    def mkRevAppFunFun (A B : _⌈U⌉_) : (A _⟶ B) _⟶ B :=
+    let _ := h.h
+    ⌜HasLinearFunOp.revAppFunFun $A $B⌝
+
+    def mkDefCompFun' (A B C : _⌈U⌉_)
+                      (F : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h A B)
+                      (G : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h B C) :
+      A _⟶{⌜λ a => $G ($F a)⌝} C :=
+    let _ := h.h
+    ⌜HasCompFun.defCompFun $F $G⌝
+
+    def mkDefCompFun {A B C : _⌈U⌉_} (F : A _⟶ B) (G : B _⟶ C) := mkDefCompFun' A B C F G
+
+    def mkCompFun {A B C : _⌈U⌉_} (F : A _⟶ B) (G : B _⟶ C) : A _⟶ C :=
+    let _ := h.h
+    let F' : Q($A ⟶ $B) := F
+    let G' : Q($B ⟶ $C) := G
+    ⌜$G' • $F'⌝
+
+    def mkDefCompFunFunType (A B : _⌈U⌉_) (F : A _⟶ B) (C : _⌈U⌉_) :=
+    let _ := h.h
+    let F' : Q($A ⟶ $B) := F
+    (B _⟶ C) _⟶{⌜λ G => G • $F'⌝} (A _⟶ C)
+
+    def mkDefCompFunFun' (A B : _⌈U⌉_)
+                         (F : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h A B)
+                         (C : _⌈U⌉_) :
+      mkDefCompFunFunType A B F C :=
+    let _ := h.h
+    ⌜HasCompFunFun.defCompFunFun $F $C⌝
+
+    def mkDefCompFunFun {A B : _⌈U⌉_} (F : A _⟶ B) (C : _⌈U⌉_) := mkDefCompFunFun' A B F C
+
+    def mkCompFunFun {A B : _⌈U⌉_} (F : A _⟶ B) (C : _⌈U⌉_) : (B _⟶ C) _⟶ (A _⟶ C) :=
+    let _ := h.h
+    let F' : Q($A ⟶ $B) := F
+    ⌜HasLinearFunOp.compFunFun $F' $C⌝
+
+    def mkDefCompFunFunFunType (A B C : _⌈U⌉_) :=
+    let _ := h.h
+    (A _⟶ B) _⟶{⌜λ F => HasLinearFunOp.compFunFun F $C⌝} ((B _⟶ C) _⟶ (A _⟶ C))
+
+    def mkDefCompFunFunFun (A B C : _⌈U⌉_) : mkDefCompFunFunFunType A B C :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defCompFunFunFun $A $B $C⌝
+
+    def mkCompFunFunFun (A B C : _⌈U⌉_) : (A _⟶ B) _⟶ (B _⟶ C) _⟶ (A _⟶ C) :=
+    let _ := h.h
+    ⌜HasLinearFunOp.compFunFunFun $A $B $C⌝
+
+    def mkDefSwapFun' (A B C : _⌈U⌉_)
+                      (F : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h A (B _⟶ C))
+                      (b : Q($B)) :
+      A _⟶{⌜λ a => $F a $b⌝} C :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defSwapFun $F $b⌝
+
+    def mkDefSwapFun {A B C : _⌈U⌉_} (F : A _⟶ B _⟶ C) (b : B) :=
+    mkDefSwapFun' A B C F b
+
+    def mkSwapFun {A B C : _⌈U⌉_} (F : A _⟶ B _⟶ C) (b : B) : A _⟶ C :=
+    let _ := h.h
+    let F' : Q($A ⟶ $B ⟶ $C) := F
+    let b' : Q($B) := b
+    ⌜HasLinearFunOp.swapFun $F' $b'⌝
+
+    def mkDefSwapFunFunType (A B C : _⌈U⌉_) (F : A _⟶ B _⟶ C) :=
+    let _ := h.h
+    let F' : Q($A ⟶ $B ⟶ $C) := F
+    B _⟶{⌜λ b => HasLinearFunOp.swapFun $F' b⌝} (A _⟶ C)
+
+    def mkDefSwapFunFun' (A B C : _⌈U⌉_)
+                         (F : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h A (B _⟶ C)) :
+      mkDefSwapFunFunType A B C F :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defSwapFunFun $F⌝
+
+    def mkDefSwapFunFun {A B C : _⌈U⌉_} (F : A _⟶ B _⟶ C) :=
+    mkDefSwapFunFun' A B C F
+
+    def mkSwapFunFun {A B C : _⌈U⌉_} (F : A _⟶ B _⟶ C) : B _⟶ A _⟶ C :=
+    let _ := h.h
+    let F' : Q($A ⟶ $B ⟶ $C) := F
+    ⌜HasLinearFunOp.swapFunFun $F'⌝
+
+    def mkDefSwapFunFunFunType (A B C : _⌈U⌉_) :=
+    let _ := h.h
+    (A _⟶ B _⟶ C) _⟶{⌜λ F => HasLinearFunOp.swapFunFun F⌝} (B _⟶ A _⟶ C)
+
+    def mkDefSwapFunFunFun (A B C : _⌈U⌉_) : mkDefSwapFunFunFunType A B C :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defSwapFunFunFun $A $B $C⌝
+
+    def mkSwapFunFunFun (A B C : _⌈U⌉_) : (A _⟶ B _⟶ C) _⟶ (B _⟶ A _⟶ C) :=
+    let _ := h.h
+    ⌜HasLinearFunOp.swapFunFunFun $A $B $C⌝
+
+    def mkDefRevCompFunFunType (A B C : _⌈U⌉_) (G : B _⟶ C) :=
+    let _ := h.h
+    let G' : Q($B ⟶ $C) := G
+    (A _⟶ B) _⟶{⌜λ F => HasLinearFunOp.compFun F $G'⌝} (A _⟶ C)
+
+    def mkDefRevCompFunFun' (A B C : _⌈U⌉_)
+                            (G : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h B C) :
+      mkDefRevCompFunFunType A B C G :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defRevCompFunFun $A $G⌝
+
+    def mkDefRevCompFunFun (A : _⌈U⌉_) {B C : _⌈U⌉_} (G : B _⟶ C) := mkDefRevCompFunFun' A B C G
+
+    def mkRevCompFunFun (A : _⌈U⌉_) {B C : _⌈U⌉_} (G : B _⟶ C) : (A _⟶ B) _⟶ (A _⟶ C) :=
+    let _ := h.h
+    let G' : Q($B ⟶ $C) := G
+    ⌜HasLinearFunOp.revCompFunFun $A $G'⌝
+
+    def mkDefRevCompFunFunFunType (A B C : _⌈U⌉_) :=
+    let _ := h.h
+    (B _⟶ C) _⟶{⌜λ G => HasLinearFunOp.revCompFunFun $A G⌝} ((A _⟶ B) _⟶ (A _⟶ C))
+
+    def mkDefRevCompFunFunFun (A B C : _⌈U⌉_) : mkDefRevCompFunFunFunType A B C :=
+    let _ := h.h
+    ⌜HasLinearFunOp.defRevCompFunFunFun $A $B $C⌝
+
+    def mkRevCompFunFunFun (A B C : _⌈U⌉_) : (B _⟶ C) _⟶ (A _⟶ B) _⟶ (A _⟶ C) :=
+    let _ := h.h
+    ⌜HasLinearFunOp.revCompFunFunFun $A $B $C⌝
+
+    instance reflect : HasLinearFunOp U :=
+    { defIdFun         := λ A => mkHasFunctors.mkDefFun.reflect' (mkDefIdFun A) (mkIdFun A),
+      defRevAppFun     := λ a B => mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFun a B) (mkRevAppFun a B),
+      defRevAppFunFun  := λ A B => mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFunFun A B) (mkRevAppFunFun (h := h) A B),
+      defCompFun       := λ F G => mkHasFunctors.mkDefFun.reflect' (mkDefCompFun F G) (mkCompFun F G),
+      defCompFunFun    := λ F C => mkHasFunctors.mkDefFun.reflect' (mkDefCompFunFun F C) (mkCompFunFun F C),
+      defCompFunFunFun := λ A B C => mkHasFunctors.mkDefFun.reflect' (mkDefCompFunFunFun A B C) (mkCompFunFunFun A B C) }
+
+  end mkHasLinearFunOp
+
+
+
+  namespace mkHasLinearFunOp
+
+    def mkHasLinearFunExt' {u_U v_U iu iuv : Level} (U : ⌜Universe.{u_U, v_U}⌝)
+                           (hId : mkHasIdentity'' U iu iuv) (hFun : mkHasInternalFunctors' U hId)
+                           (hFunOp : mkHasLinearFunOp' U hId hFun) :=
+    ⌜HasLinearFunOp.HasLinearFunExt $U⌝
+
+    def mkHasLinearFunExt (U : _Universe) [hId : mkHasIdentity U] [hFun : mkHasInternalFunctors U]
+                          [hFunOp : mkHasLinearFunOp U] :
+      ClassExpr :=
+    ⟨mkHasLinearFunExt' U.U hId.h.h hFun.h hFunOp.h⟩
+
+    namespace mkHasLinearFunExt
+
+      variable {U : _Universe} [hId : mkHasIdentity U] [hFun : mkHasInternalFunctors U]
+               [hFunOp : mkHasLinearFunOp U] [h : mkHasLinearFunExt U]
+
+      def mkRightId {A B : _⌈U⌉_} (F : A _⟶ B) :=
+      let _ := h.h
+      let F' : Q($A ⟶ $B) := F
+      ⌜HasLinearFunOp.HasLinearFunExt.rightId $F'⌝
+
+    end mkHasLinearFunExt
+
+  end mkHasLinearFunOp
 
 end Lean

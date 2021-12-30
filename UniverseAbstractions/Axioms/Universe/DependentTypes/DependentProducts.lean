@@ -68,7 +68,7 @@ namespace HasDependentProducts
 
     def defSigmaCompFunProp (A : U) {B : U} (φ : B ⟶ ⌊W⌋) : (A ⟶ B) ⟶{λ F => Σ (φ ⊙ F)} ⌊W⌋ :=
     typeFun h.Sigma A ⊙ HasRevCompFunFun.revCompFunFun A φ
-    ◄ HasInstanceEquivalences.trans byArgDef byDef
+    ◄ byDefDef
 
     @[reducible] def sigmaCompFunProp (A : U) {B : U} (φ : B ⟶ ⌊W⌋) : (A ⟶ B) ⟶ ⌊W⌋ := defSigmaCompFunProp A φ
 

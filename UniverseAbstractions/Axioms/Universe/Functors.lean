@@ -65,11 +65,6 @@ namespace HasFunctors
 
   variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
 
-  instance (priority := low) IsFunApp.refl {A : U} {B : V} (F : A ⟶ B) (a : A) : IsFunApp A (F a) :=
-  { F := F,
-    a := a,
-    e := HasRefl.refl (F a) }
-
   structure DefFun (A : U) (B : V) (f : A → B) where
   (F           : A ⟶ B)
   (eff (a : A) : F a ≃ f a)
@@ -77,7 +72,7 @@ namespace HasFunctors
   notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
 
   variable {A : U} {B : V}
-  
+
   def toDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) : A ⟶{f} B := ⟨F, h⟩
 
   def toDefFun               (F : A ⟶ B)    : A ⟶{apply F} B := toDefFun' F (λ a => HasRefl.refl (F a))
@@ -111,6 +106,20 @@ namespace HasFunctors
     fromDefFun (castDefFun F h) = fromDefFun F :=
   rfl
 
+  namespace IsFunApp
+
+    instance (priority := low) refl (F : A ⟶ B) (a : A) : IsFunApp A (F a) :=
+    { F := F,
+      a := a,
+      e := HasRefl.refl (F a) }
+
+    def fromDef {f : A → B} (F : A ⟶{f} B) (a : A) : IsFunApp A (f a) :=
+    { F := fromDefFun F,
+      a := a,
+      e := byDef }
+
+  end IsFunApp
+
   def defAppFun (F : A ⟶ B) : A ⟶{λ a => F a} B := F
   @[reducible] def appFun (F : A ⟶ B) : A ⟶ B := defAppFun F
 
@@ -141,11 +150,23 @@ namespace HasCongrArg
     G ((fromDefFun F) a) ≃ G (f a) :=
   congrArg G byDef
 
-  def byArgDef₂ {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
-                [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
-                {f : A → B} {F : A ⟶{f} B} {G : B ⟶ C} {H : C ⟶ D} {a : A} :
-    H (G ((fromDefFun F) a)) ≃ H (G (f a)) :=
-  congrArg H byArgDef
+  def byDefDef {X XU : Universe} [HasFunctors X U XU] {A : X} {B : U} {C : V}
+               {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {a : A} :
+    (fromDefFun G) ((fromDefFun F) a) ≃ g (f a) :=
+  byDef • byArgDef
+
+  def byArgDefDef {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
+                  [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
+                  {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {H : C ⟶ D} {a : A} :
+    H ((fromDefFun G) ((fromDefFun F) a)) ≃ H (g (f a)) :=
+  congrArg H byDefDef
+
+  def byDefDefDef {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
+                  [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
+                  {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {h : C → D} {H : C ⟶{h} D}
+                  {a : A} :
+    (fromDefFun H) ((fromDefFun G) ((fromDefFun F) a)) ≃ h (g (f a)) :=
+  byDef • byArgDefDef
 
 end HasCongrArg
 
@@ -177,54 +198,83 @@ namespace HasCongrFun
 
     end
 
-    -- This definition might seem a little silly: it includes a hypothesis that isn't actually used
-    -- in the definition. However, this is quite useful when `IsExtensional` is used as the type of
-    -- an axiom. When implementing the axiom, the hypothesis is then accessible in a generic way,
-    -- so the implementation shrinks to a proof of `F₁ ≃ F₂` given `∀ a, F₁ a ≃ F₂ a`. If functors
-    -- are extensional, then this proof is completely generic (see `Trivial.lean`). In general it
-    -- can be regarded as a proof that the instance of `F₁ a ≃ F₂ a` is natural in `a`.
+    section
 
-    def IsExtensional {A : U} {B : V} (F₁ F₂ : A ⟶ B) (h : ∀ a, F₁ a ≃ F₂ a) := F₁ ≃ F₂
-    notation:25 F₁:26 " ≃{" h:0 "} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ h
-    notation:25 F₁:26 " ≃{" h:0 " ▻|} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ (λ _ => h • HasFunctors.byDef)
+      variable {A : U} {B : V}
 
-    def IsExtensional' {A : U} {B : V} (F₁ F₂ : A ⟶ B) {f : A → B}
-                       (hf₁ : ∀ a, F₁ a ≃ f a) (hf₂ : ∀ a, f a ≃ F₂ a) :=
-    IsExtensional F₁ F₂ (λ a => hf₂ a • hf₁ a)
-    notation:25 F₁:26 " ≃{▻ " h:0 "} " F₂:26 => HasCongrFun.IsExtensional' F₁ F₂ (λ _ => HasFunctors.byDef) h
-    notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 "} " F₂:26 => HasCongrFun.IsExtensional' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) h
+      -- This definition might seem a little silly: it includes a hypothesis that isn't actually used
+      -- in the definition. However, this is quite useful when `IsExtensional` is used as the type of
+      -- an axiom. When implementing the axiom, the hypothesis is then accessible in a generic way,
+      -- so the implementation shrinks to a proof of `F₁ ≃ F₂` given `∀ a, F₁ a ≃ F₂ a`. If functors
+      -- are extensional, then this proof is completely generic (see `Trivial.lean`). In general it
+      -- can be regarded as a proof that the instance of `F₁ a ≃ F₂ a` is natural in `a`.
 
-    def IsExtensional'' {A : U} {B : V} (F₁ F₂ : A ⟶ B) {f : A → B}
-                        (hf₁ : ∀ a, F₁ a ≃ f a) (hf₂ : ∀ a, F₂ a ≃ f a) :=
-    IsExtensional F₁ F₂ (λ a => (hf₂ a)⁻¹ • hf₁ a)
-    notation:25 F₁:26 " ≃{" h:0 " ◅} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ h (λ _ => HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{" h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ h (λ _ => hf₂ • HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{▻-◅} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{" hf₁:0 " ▻-◅} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) (λ _ => HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{▻-◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{" hf₁:0 " ▻-◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
+      def IsExtensional (F₁ F₂ : A ⟶ B) (h : ∀ a, F₁ a ≃ F₂ a) := F₁ ≃ F₂
+      notation:25 F₁:26 " ≃{" h:0 "} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ h
+      notation:25 F₁:26 " ≃{" h:0 " ▻|} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ (λ _ => h • HasFunctors.byDef)
 
-    def IsExtensional''' {A : U} {B : V} (F₁ F₂ : A ⟶ B) {f₁ f₂ : A → B} (h : ∀ a, f₁ a ≃ f₂ a)
-                         (hf₁ : ∀ a, F₁ a ≃ f₁ a) (hf₂ : ∀ a, F₂ a ≃ f₂ a) :=
-    IsExtensional F₁ F₂ (λ a => (hf₂ a)⁻¹ • h a • hf₁ a)
-    notation:25 F₁:26 " ≃{▻ " h:0 " ◅}" F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 " ◅} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => hf₁ • HasFunctors.byDef) (λ _ => HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{▻ " h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
-    notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => hf₁ • HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
-    notation:25 F₁:26 " ≃⦃ " A':0 " ▻⟶ " B':0 " ⦄" F₂:26 => HasCongrFun.IsExtensional''' (A := A') (B := B') F₁ F₂ (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
+      def IsExtensional' (F₁ F₂ : A ⟶ B) {f : A → B}
+                         (hf₁ : ∀ a, F₁ a ≃ f a) (hf₂ : ∀ a, f a ≃ F₂ a) :=
+      IsExtensional F₁ F₂ (λ a => hf₂ a • hf₁ a)
+      notation:25 F₁:26 " ≃{▻ " h:0 "} " F₂:26 => HasCongrFun.IsExtensional' F₁ F₂ (λ _ => HasFunctors.byDef) h
+      notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 "} " F₂:26 => HasCongrFun.IsExtensional' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) h
 
-    def IsDefExtensional {A : U} {B : V} {f₁ f₂ : A → B} (F₁ : A ⟶{f₁} B) (F₂ : A ⟶{f₂} B)
-                         (h : ∀ a, f₁ a ≃ f₂ a) :=
-    fromDefFun F₁ ≃{▻ h ◅} fromDefFun F₂
+      def IsExtensional'' (F₁ F₂ : A ⟶ B) {f : A → B}
+                          (hf₁ : ∀ a, F₁ a ≃ f a) (hf₂ : ∀ a, F₂ a ≃ f a) :=
+      IsExtensional F₁ F₂ (λ a => (hf₂ a)⁻¹ • hf₁ a)
+      notation:25 F₁:26 " ≃{" h:0 " ◅} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ h (λ _ => HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{" h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ h (λ _ => hf₂ • HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{▻-◅} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{" hf₁:0 " ▻-◅} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) (λ _ => HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{▻-◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{" hf₁:0 " ▻-◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional'' F₁ F₂ (λ _ => hf₁ • HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
 
-    -- TODO: This currently doesn't work well. When defining instances of `IsExtApp`,
-    -- `f₁` and `f₂` are not picked up automatically.
-    class IsExtApp {A : U} {B : V} {f₁ f₂ : A → B} (a : A) (eb : f₁ a ≃ f₂ a) where
+      def IsExtensional''' (F₁ F₂ : A ⟶ B) {f₁ f₂ : A → B} (h : ∀ a, f₁ a ≃ f₂ a)
+                           (hf₁ : ∀ a, F₁ a ≃ f₁ a) (hf₂ : ∀ a, F₂ a ≃ f₂ a) :=
+      IsExtensional F₁ F₂ (λ a => (hf₂ a)⁻¹ • h a • hf₁ a)
+      notation:25 F₁:26 " ≃{▻ " h:0 " ◅}" F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 " ◅} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => hf₁ • HasFunctors.byDef) (λ _ => HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{▻ " h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
+      notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => hf₁ • HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
+      notation:25 F₁:26 " ≃⦃" A':0 " ▻ " h:0 " ◅ " B':0 "⦄ " F₂:26 => HasCongrFun.IsExtensional''' (A := A') (B := B') F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
+
+      def IsDefExtensional {f₁ f₂ : A → B} (F₁ : A ⟶{f₁} B) (F₂ : A ⟶{f₂} B)
+                           (h : ∀ a, f₁ a ≃ f₂ a) :=
+      fromDefFun F₁ ≃{▻ h ◅} fromDefFun F₂
+
+    end
+
+    class IsExtApp (A : outParam U) {B : V} {b₁ b₂ : B} (h : b₁ ≃ b₂) where
     {F₁ F₂ : A ⟶ B}
-    {h     : ∀ a, f₁ a ≃ f₂ a}
-    {hf₁   : ∀ a, F₁ a ≃ f₁ a}
-    {hf₂   : ∀ a, F₂ a ≃ f₂ a}
-    (e     : IsExtensional''' F₁ F₂ h hf₁ hf₂)
+    (e     : F₁ ≃ F₂)
+    (a     : A)
+    (e₁    : F₁ a ≃ b₁)
+    (e₂    : F₂ a ≃ b₂)
+
+    namespace IsExtApp
+
+      def fromExt {A : U} {B : V} {F₁ F₂ : A ⟶ B} {f₁ f₂ : A → B} {h : ∀ a, f₁ a ≃ f₂ a}
+                  {hf₁ : ∀ a, F₁ a ≃ f₁ a} {hf₂ : ∀ a, F₂ a ≃ f₂ a}
+                  (e : IsExtensional''' F₁ F₂ h hf₁ hf₂) (a : A) :
+        IsExtApp A (h a) :=
+      { e  := e,
+        a  := a,
+        e₁ := hf₁ a,
+        e₂ := hf₂ a }
+
+      variable (A : U) {B : V} {b₁ b₂ : B} (h : b₁ ≃ b₂) [h : IsExtApp A h]
+
+      instance isFunApp₁ : IsFunApp A b₁ :=
+      { F := h.F₁,
+        a := h.a,
+        e := h.e₁ }
+
+      instance isFunApp₂ : IsFunApp A b₂ :=
+      { F := h.F₂,
+        a := h.a,
+        e := h.e₂ }
+
+    end IsExtApp
 
   end
 
@@ -251,14 +301,14 @@ namespace HasCongrFun
       (fromDefFun F) a b c ≃ (f a) b c :=
     congrFun byFunDef c
 
+    def byDef₃ {A : U} {B C D : V} {f : A → B → C → D} {F'' : ∀ a b, C ⟶{f a b} D} {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D)}
+               {F : A ⟶{λ a => F' a} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
+      (fromDefFun F) a b c ≃ f a b c :=
+    byDef • congrFun byDef₂ c
+
     def byFunDef₃ {A : U} {B C D E : V} {f : A → (B ⟶ C ⟶ D ⟶ E)} {F : A ⟶{f} (B ⟶ C ⟶ D ⟶ E)} {a : A} {b : B} {c : C} {d : D} :
       (fromDefFun F) a b c d ≃ (f a) b c d :=
     congrFun byFunDef₂ d
-
-    def byDef₃ {A : U} {B C D : V} {f : A → B → C → D} {F'' : ∀ a b, C ⟶{f a b} D} {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D)}
-              {F : A ⟶{λ a => F' a} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
-      (fromDefFun F) a b c ≃ f a b c :=
-    byDef₂ • byFunDef₂
 
   end
 

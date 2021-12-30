@@ -97,11 +97,11 @@ namespace HasInternalProducts
      F a)
   (elimEqExtExt {A B C : U} (F : A ⟶ B ⟶ C) :
      revCompFunFun B (elimFun F) • introFunFun A B
-     ≃{byDef • byArgDef ▻ λ a => elimEqExt F a}
+     ≃{byDefDef ▻ λ a => elimEqExt F a}
      F)
   (elimEqExtExtExt (A B C : U) :
      compFunFun (introFunFun A B) (B ⟶ C) • revCompFunFunFun B (A ⊓ B) C • elimFunFun A B C
-     ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻ λ F => elimEqExtExt F ◅}
+     ≃{byDefDefDef • byArgDef ▻ λ F => elimEqExtExt F ◅}
      idFun (A ⟶ B ⟶ C))
 
 end HasInternalProducts

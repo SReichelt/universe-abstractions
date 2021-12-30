@@ -93,10 +93,10 @@ is a term in simply-typed lambda calculus, or, as we state it, its definition is
 applications (proposition \ref{prp:functoriality}). We then generalize this result by including
 further categorical structures, which corresponds to enriching the lambda calculus with more types.
 
-A particularly useful consequence arises from certain extensionality conditions that hold for
-categories: if for two functors $F,G : \C \to \D$ we have an isomorphism between $F(a)$ and $G(a)$
-for a sufficiently `generic' $a$ (which we make precise), then we can algorithmically construct a
-natural isomorphism between $F$ and $G$ (theorem \ref{thm:extensionality}).
+Functors constructed in this way way are extensional, which means that if for two functors
+$F,G : \C \to \D$ we have an isomorphism between $F(a)$ and $G(a)$ for a sufficiently `generic' $a$
+(which we make precise), then we can algorithmically construct a natural isomorphism between $F$ and
+$G$ (theorem \ref{thm:extensionality}).
 
 The main goal is to automate proofs of isomorphism invariance in a similar way, but this is work in
 progress.
@@ -784,8 +784,8 @@ a universe with linear functor operations.)
 \end{proof}
 
 \begin{conjecture}
-  Theorem \ref{thm:funop} generalizes at least to $n$-groupoids and possibly
-  also to $n$-categories.
+  Theorem \ref{thm:funop} generalizes to $\infty$-groupoids and to
+  $(\infty,1)$-categories.
 \end{conjecture}
 
 \begin{conjecture}

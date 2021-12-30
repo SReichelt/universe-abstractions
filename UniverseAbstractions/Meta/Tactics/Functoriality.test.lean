@@ -30,14 +30,16 @@ universe u v iu iuv
 
 namespace Test
 
+  open HasFunctors HasCongrFun
+
   variable {U : Universe.{u, v}} [HasIdentity.{u, iu, v, iuv} U] [HasInternalFunctors U] [HasFullFunOp U]
            (A B C D : U)
 
-  def testRaw (F : A ⟶ B) : A ⟶ B := makeFunctor (HasFunctors.apply F)
+  def testRaw (F : A ⟶ B) : A ⟶ B := makeFunctor (apply F)
   #print testRaw
-  def testRawEff (F : A ⟶ B) (a : A) : (testRaw A B F) a ≃ F a := HasFunctors.byDef
+  def testRawEff (F : A ⟶ B) (a : A) : (testRaw A B F) a ≃ F a := byDef
 
-  def testRawFunct (F : A ⟶ B) : A ⟶{HasFunctors.apply F} B :=
+  def testRawFunct (F : A ⟶ B) : A ⟶{apply F} B :=
   by functoriality
   #print testRawFunct
 
@@ -66,22 +68,22 @@ namespace Test
   def testFun (F : A ⟶ B) : A ⟶ B := Λ a => F a
   #print testFun
 
-  def testAppFun (F : A ⟶ B) : A ⟶ B := Λ a => (HasFunctors.appFun F) a
+  def testAppFun (F : A ⟶ B) : A ⟶ B := Λ a => (appFun F) a
   #print testAppFun
   def testAppFunEff (F : A ⟶ B) (a : A) :
-    (testAppFun A B F) a ≃ (HasFunctors.appFun F) a :=
-  HasFunctors.byDef
+    (testAppFun A B F) a ≃ (appFun F) a :=
+  byDef
 
-  def apply {A B : U} (F : A ⟶ B) (a : A) := F a
-  def testIndirFun (F : A ⟶ B) : A ⟶ B := Λ a => apply F a
+  def app {A B : U} (F : A ⟶ B) (a : A) := F a
+  def testIndirFun (F : A ⟶ B) : A ⟶ B := Λ a => app F a
   #print testIndirFun
 
   def testFromToDefFun : (A ⟶ B) ⟶ (A ⟶ B) :=
-  Λ F => HasFunctors.fromDefFun (HasFunctors.toDefFun F)
+  Λ F => fromDefFun (toDefFun F)
   #print testFromToDefFun
   def testFromToDefPiEff (F : A ⟶ B) :
     testFromToDefFun A B F ≃ F :=
-  HasFunctors.byDef
+  byDef
 
   def testApp (a : A) : (A ⟶ B) ⟶ B := Λ F => F a
   #print testApp
@@ -89,7 +91,7 @@ namespace Test
   def testTestApp : A ⟶ (A ⟶ B) ⟶ B := Λ a => testApp A B a
   #print testTestApp
 
-  def testIndirApp (a : A) : (A ⟶ B) ⟶ B := Λ F => apply F a
+  def testIndirApp (a : A) : (A ⟶ B) ⟶ B := Λ F => app F a
   #print testIndirApp
 
   def testFixSnd (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := Λ a => F a b
@@ -108,7 +110,7 @@ namespace Test
   #print testComp
   def testCompEff (F : A ⟶ B) (G : B ⟶ C) (a : A) :
     (testComp A B C F G) a ≃ G (F a) :=
-  HasFunctors.byDef
+  byDef
 
   def testTestComp : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C) := Λ F G => testComp A B C F G
   #print testTestComp
@@ -116,7 +118,7 @@ namespace Test
   def testRevTestComp : (B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) := Λ G F => testComp A B C F G
   #print testRevTestComp
 
-  def comp {A B C : U} (F : A ⟶ B) (G : B ⟶ C) (a : A) := apply G (apply F a)
+  def comp {A B C : U} (F : A ⟶ B) (G : B ⟶ C) (a : A) := app G (app F a)
   def testIndirComp (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := Λ a => comp F G a
   #print testIndirComp
 
@@ -124,7 +126,7 @@ namespace Test
   #print testCompComp
   def testCompCompEff (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
     (testCompComp A B C D F G H) a ≃ H (G (F a)) :=
-  HasFunctors.byDef
+  byDef
 
   def testCompCompFunct (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : A ⟶{λ a => H (G (F a))} D :=
   by functoriality
@@ -134,7 +136,7 @@ namespace Test
   #print testTestCompComp
   def testTestCompCompEff (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) :
     (testTestCompComp A B C D) F G H ≃ testCompComp A B C D F G H :=
-  HasCongrFun.byDef₃
+  byDef₃
 
   def testTestCompCompFunct (F : A ⟶ B) (H : C ⟶ D) : (B ⟶ C) ⟶{λ G => testCompComp A B C D F G H} (A ⟶ D) :=
   by functoriality
@@ -144,19 +146,19 @@ namespace Test
   #print testComp₂
   def testComp₂Eff (F : A ⟶ B ⟶ C) (G : C ⟶ D) (a : A) (b : B) :
     testComp₂ A B C D F G a b ≃ G (F a b) :=
-  HasCongrFun.byDef₂
+  byDef₂
 
   def testTestComp₂ : (A ⟶ B ⟶ C) ⟶ (C ⟶ D) ⟶ (A ⟶ B ⟶ D) := Λ F G => testComp₂ A B C D F G
   #print testTestComp₂
   def testTestComp₂Eff (F : A ⟶ B ⟶ C) (G : C ⟶ D) :
     (testTestComp₂ A B C D) F G ≃ testComp₂ A B C D F G :=
-  HasCongrFun.byDef₂
+  byDef₂
 
   def testRevTestComp₂ : (C ⟶ D) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ B ⟶ D) := Λ G F => testComp₂ A B C D F G
   #print testRevTestComp₂
   def testRevTestComp₂Eff (G : C ⟶ D) (F : A ⟶ B ⟶ C) :
     (testRevTestComp₂ A B C D) G F ≃ testComp₂ A B C D F G :=
-  HasCongrFun.byDef₂
+  byDef₂
 
   def testRevTestComp₂Funct : (C ⟶ D) ⟶{λ G => Λ F => testComp₂ A B C D F G} ((A ⟶ B ⟶ C) ⟶ (A ⟶ B ⟶ D)) :=
   by functoriality
@@ -166,7 +168,7 @@ namespace Test
   #print testRevAppApp
   def testRevAppAppEff (a : A) (F : A ⟶ B) (G : B ⟶ C) :
     (testRevAppApp A B C) a F G ≃ G (F a) :=
-  HasCongrFun.byDef₃
+  byDef₃
 
   def testDup (F : A ⟶ A ⟶ B) : A ⟶ B := Λ a => F a a
   #print testDup

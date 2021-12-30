@@ -137,7 +137,7 @@ namespace HasFunctors
 
   def defDependentTypeProp (B : V) (C : W) : ⌊U⌋ ⟶{λ A => (A ⟶ B) ⟶ C} ⌊UVW⌋ :=
   revTypeFun h₂.Fun C ⊙ revTypeFun h₁.Fun B
-  ◄ HasInstanceEquivalences.trans byArgDef byDef
+  ◄ byDefDef
 
   @[reducible] def dependentTypeProp (B : V) (C : W) : ⌊U⌋ ⟶ ⌊UVW⌋ :=
   defDependentTypeProp U B C
@@ -247,7 +247,7 @@ namespace HasDependentFunctors
 
     def defPiCompFunProp (A : U) {B : U} (φ : B ⟶ ⌊W⌋) : (A ⟶ B) ⟶{λ F => Π (φ ⊙ F)} ⌊W⌋ :=
     typeFun h.Pi A ⊙ HasRevCompFunFun.revCompFunFun A φ
-    ◄ HasInstanceEquivalences.trans byArgDef byDef
+    ◄ byDefDef
 
     @[reducible] def piCompFunProp (A : U) {B : U} (φ : B ⟶ ⌊W⌋) : (A ⟶ B) ⟶ ⌊W⌋ := defPiCompFunProp A φ
 

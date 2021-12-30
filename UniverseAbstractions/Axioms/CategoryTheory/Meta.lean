@@ -48,19 +48,17 @@ namespace MetaRelation
       class IsAssociativeExt [h : IsAssociative R] where
       (assocExt {a b c : α} (f : R a b) (g : R b c) (d : α) :
          transFun R f d • transFun R g d
-         ≃{byDef • byArgDef ▻ λ h => assoc f g h ◅}
+         ≃{byDefDef ▻ λ h => assoc f g h ◅}
          transFun R (g • f) d)
       (assocExtExt {a b : α} (f : R a b) (c d : α) :
          revCompFunFun (R c d) (transFun R f d) • transFunFun R b c d
-         ≃{byDef • byArgDef ▻ λ g => assocExt f g d ◅ byDef • byArgDef}
+         ≃{byDefDef ▻ λ g => assocExt f g d ◅ byDefDef}
          transFunFun R a c d • transFun R f c)
       (assocExtExtExt (a b c d : α) :
          compFunFun (transFunFun R b c d) (R c d ⟶ R a d) •
          revCompFunFunFun (R c d) (R b d) (R a d) •
          transFunFun R a b d
-         ≃{byDef • byArgDef • byArgDef₂ • byArgDef ▻
-           λ f => assocExtExt f c d
-           ◅ byDef • byArgDef}
+         ≃{byDefDefDef • byArgDef ▻ λ f => assocExtExt f c d ◅ byDefDef}
          revCompFunFun (R b c) (transFunFun R a c d) • transFunFun R a b c)
 
       def IsAssociativeExt.translate {h₁ h₂ : IsAssociative R} [IsAssociativeExt R (h := h₁)] :
@@ -226,10 +224,10 @@ namespace MetaRelation
       class IsGroupoidEquivalenceExt [h : IsGroupoidEquivalence R] extends
         IsCategoricalPreorder.IsCategoricalPreorderExt R where
       (leftInvExt  (a b : α) : substFun (symmFun R a b) (transFunFun    R a b a)
-                               ≃{byDef • byArgDef • byFunDef ▻ λ f => h.leftInv  f ◅}
+                               ≃{byDefDef • byFunDef ▻ λ f => h.leftInv  f ◅}
                                constFun (R a b) (HasRefl.refl a))
       (rightInvExt (a b : α) : substFun (symmFun R a b) (revTransFunFun R b a b)
-                               ≃{byDef • byArgDef • byFunDef ▻ λ f => h.rightInv f ◅}
+                               ≃{byDefDef • byFunDef ▻ λ f => h.rightInv f ◅}
                                constFun (R a b) (HasRefl.refl b))
 
       def IsGroupoidEquivalenceExt.translate {h₁ h₂ : IsGroupoidEquivalence R}
@@ -244,19 +242,19 @@ namespace MetaRelation
 
       def symmInvExt (a b : α) :
         symmFun R b a • symmFun R a b
-        ≃{byDef • byArgDef ▻ λ f => symmInv R f ◅}
+        ≃{byDefDef ▻ λ f => symmInv R f ◅}
         idFun (R a b) :=
       sorry
 
       def transInvExt {a b : α} (f : R a b) (c : α) :
         symmFun R a c • transFun R f c
-        ≃{byDef • byArgDef ▻ λ g => transInv R f g ◅ byDef • byArgDef}
+        ≃{byDefDef ▻ λ g => transInv R f g ◅ byDefDef}
         revTransFun R c f⁻¹ • symmFun R b c :=
       sorry
 
       def transInvExtExt (a b c : α) :
         revCompFunFun (R b c) (symmFun R a c) • transFunFun R a b c
-        ≃{byDef • byArgDef ▻ λ f => transInvExt R f c ◅ byDef • byArgDef • byArgDef₂ • byArgDef}
+        ≃{byDefDef ▻ λ f => transInvExt R f c ◅ byDefDefDef • byArgDef}
         compFunFun (symmFun R b c) (R c a) • revTransFunFun R c b a • symmFun R a b :=
       sorry
 
@@ -428,7 +426,7 @@ namespace MetaFunctor
          transFun S (F f) c • F.baseFun b c)
       (transEqExtExt (a b c : α) :
          revCompFunFun (R b c) (F.baseFun a c) • transFunFun R a b c
-         ≃{byDef • byArgDef ▻ λ f => transEqExt f c ◅ byDef • byArgDef • byArgDef}
+         ≃{byDefDef ▻ λ f => transEqExt f c ◅ byDefDef • byArgDef}
          compFunFun (F.baseFun b c) (S a c) • transFunFun S a b c • F.baseFun a b)
 
       def IsTransFunctorExt.translate {h₁ h₂ : IsTransFunctor F}

@@ -37,7 +37,7 @@ namespace HasInternalTop
   def defElimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
     A ⟶{λ a => elimFun a} (Top U ⟶ A) :=
   swapFunFun (elimFun (idFun A))
-  ◄ elimFunEq (F := swapFun (elimFun (idFun A)) _) (byDef • byFunDef • byDef)
+  ◄ elimFunEq (F := swapFun (elimFun (idFun A)) _) (byDef₂ • byDef)
 
   @[reducible] def elimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
     A ⟶ Top U ⟶ A :=

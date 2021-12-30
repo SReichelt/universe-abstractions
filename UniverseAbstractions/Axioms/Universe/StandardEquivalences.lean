@@ -58,8 +58,7 @@ namespace HasLinearFunOp
   ⟨λ F => rightId F •
           defCongrArg (defRevCompFunFun B F) he.rightExt.invExt •
           compAssoc e.invFun e.toFun F •
-          byDef •
-          byArgDef⟩
+          byDefDef⟩
 
   instance funDomainDesc.isExt {A B : U} (e : A ⮂ B)
                                [he : EquivDesc.IsExtensional e] (C : U) :
@@ -73,8 +72,7 @@ namespace HasLinearFunOp
   ⟨λ F => leftId F •
           defCongrArg (HasCompFunFun.defCompFunFun F A) he.leftExt.invExt •
           (compAssoc F e.toFun e.invFun)⁻¹ •
-          byDef •
-          byArgDef⟩
+          byDefDef⟩
 
   instance funCodomainDesc.isExt {A B : U} (e : A ⮂ B)
                                  [he : EquivDesc.IsExtensional e] (C : U) :

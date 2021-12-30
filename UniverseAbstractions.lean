@@ -30,6 +30,7 @@ import UniverseAbstractions.Lemmas.DerivedProductFunctors
 import UniverseAbstractions.Meta.TypedExpr
 import UniverseAbstractions.Meta.Reflect
 import UniverseAbstractions.Meta.Tactics.Functoriality
+import UniverseAbstractions.Meta.Tactics.Extensionality
 
 import UniverseAbstractions.Instances.Utils.Trivial
 import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory

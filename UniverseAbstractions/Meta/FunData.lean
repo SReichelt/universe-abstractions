@@ -75,24 +75,39 @@ namespace Lean
   end DefFunData
 
 
-  structure FunEquivData extends DefFunData where
-  [hId_UV : mkHasIdentity UV]
-
+  structure FunEquivData where
+  {U    : _Universe}
+  [hId  : mkHasIdentity U]
+  [hFun : mkHasInternalFunctors U]
+  (A B  : _⌈U⌉_)
+  
   namespace FunEquivData
 
     def mkFreshMVar : MetaM FunEquivData := do
-      let φ' ← DefFunData.mkFreshMVar
-      let hId_UV : mkHasIdentity φ'.UV ← mkHasIdentity.mkFreshMVar
-      pure ⟨φ'⟩
+      let U ← _Universe.mkFreshMVar
+      let hId : mkHasIdentity U ← mkHasIdentity.mkFreshMVar
+      let hFun : mkHasInternalFunctors U ← InstanceExpr.mkFreshMVar
+      let A : _⌈U⌉_ ← _Universe.mkFreshTypeMVar
+      let B : _⌈U⌉_ ← _Universe.mkFreshTypeMVar
+      pure ⟨A, B⟩
 
     def instantiate (φ : FunEquivData) : MetaM FunEquivData := do
-      let φ' ← φ.toDefFunData.instantiate
-      let hId_UV : mkHasIdentity φ'.UV ← φ.hId_UV.instantiate
-      pure ⟨φ'⟩
+      let U ← φ.U.instantiate
+      let hId : mkHasIdentity U ← φ.hId.instantiate
+      let hFun : mkHasInternalFunctors U ← φ.hFun.instantiate
+      let A : _⌈U⌉_ ← _Universe.instantiateTypeMVars φ.A
+      let B : _⌈U⌉_ ← _Universe.instantiateTypeMVars φ.B
+      pure ⟨A, B⟩
 
     variable (φ : FunEquivData)
 
-    instance : mkHasIdentity φ.UV := φ.hId_UV
+    instance : mkHasIdentity φ.U := φ.hId
+    instance : mkHasInternalFunctors φ.U := φ.hFun
+
+    def toDefFunData : DefFunData := ⟨⟨φ.A, φ.B⟩⟩
+
+    def mkFun      := φ.A _⟶ φ.B
+    def mkFunArrow := ⌜$(_⌈φ.A⌉) → $(_⌈φ.B⌉)⌝
 
   end FunEquivData
 
@@ -204,7 +219,7 @@ namespace Lean
     variable {φ : FunEquivData}
 
     def EquivTypeTerm {a : φ.A} (t₁ t₂ : DependentTerm (α := _⌈φ.A⌉) a _⌈φ.B⌉) :
-      DependentTerm (α := _⌈φ.A⌉) a (mkHasIdentity.univ φ.V).LeanUniv :=
+      DependentTerm (α := _⌈φ.A⌉) a (mkHasIdentity.univ φ.U).LeanUniv :=
     ⟨t₁.n, _⌈mkHasInstanceEquivalences._Equiv (A := φ.B) t₁.b t₂.b⌉⟩
 
     def construct {a : φ.A} (t₁ t₂ : DependentTerm (α := _⌈φ.A⌉) a _⌈φ.B⌉)
@@ -218,28 +233,13 @@ namespace Lean
 
       def a' : FVar _⌈φ.A⌉ := h.a
 
-      def f₁ : FunctorLambdaAbstraction φ.toDefFunData := ⟨h.n, h.a', h.b₁⟩
-      def f₂ : FunctorLambdaAbstraction φ.toDefFunData := ⟨h.n, h.a', h.b₂⟩
+      def f₁ : FunctorLambdaAbstraction φ.toDefFunData := ⟨h.n, h.a, h.b₁⟩
+      def f₂ : FunctorLambdaAbstraction φ.toDefFunData := ⟨h.n, h.a, h.b₂⟩
 
       def term : DependentlyTypedTerm (EquivTypeTerm h.f₁.term h.f₂.term) := ⟨⟨h.n, h.e⟩⟩
       def fn := h.term.toFunction
 
-      def appliedEquiv (F₁ : h.f₁.FunDef) (F₂ : h.f₂.FunDef) :
-        F₁.F.F h.a _≃ F₂.F.F h.a :=
-      let e : ⌈h.b₁ ≃ h.b₂⌉ := some h.e
-      let e₁ : ⌈F₁.F.F h.a _≃_ h.b₁⌉ := F₁.F.eff h.a
-      let e₂ : ⌈F₂.F.F h.a _≃_ h.b₂⌉ := F₂.F.eff h.a
-      mkHasInstanceEquivalences.materialize (e₂⁻¹ • e • e₁)
-
-      def applyEquiv (F₁ : h.f₁.FunDef) (F₂ : h.f₂.FunDef) (a : φ.A) :
-        ⌈F₁.F.F a _≃_ F₂.F.F a⌉ :=
-      some (h.a'.apply'' (h.appliedEquiv F₁ F₂) a)
-
     end
-
-    structure EquivDef (h : FunEquivLambdaAbstraction φ)
-                       (F₁ : h.f₁.FunDef) (F₂ : h.f₂.FunDef) where
-    (e : F₁.F.F ≃{h.applyEquiv F₁ F₂} F₂.F.F)
 
   end FunEquivLambdaAbstraction
 
