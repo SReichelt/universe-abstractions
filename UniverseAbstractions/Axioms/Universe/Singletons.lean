@@ -31,7 +31,7 @@ def HasTop.topEquivalence (α : Sort u) (V : Universe.{v}) [HasTop V] :
   h := MetaRelation.unitEquivalence α (HasTop.top V) }
 
 class HasTop.HasTopEq (U : Universe.{u}) [HasTop.{u} U] [HasIdentity.{u, iu} U] where
-(topEq (t' : Top U) : t' ≃ top U)
+(topEq (t : Top U) : t ≃ top U)
 
 namespace HasTop.HasTopEq
 

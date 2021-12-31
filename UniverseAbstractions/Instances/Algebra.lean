@@ -31,14 +31,15 @@ namespace CommSemigroup
   @[reducible] def typeClass : SimpleTypeClass.{u + 1, u + 1} := CommSemigroup.{u}
   @[reducible] def univ : Universe.{u + 1, u + 2} := Bundled.univ typeClass.{u}
 
-  instance inst (A : univ) : CommSemigroup ⌈A⌉ := Bundled.inst A
+  instance inst (A : univ.{u}) : CommSemigroup.{u} A := Bundled.inst A
 
-  instance hasInstanceEquivalences : HasInstanceEquivalences univ prop := ⟨λ A => @Eq.isEquivalence ⌈A⌉⟩
+  instance hasInstanceEquivalences : HasInstanceEquivalences univ.{u} prop :=
+  ⟨λ A => @Eq.isEquivalence A⟩
 
   class IsHom {A B : univ} (f : A → B) : Prop where
   (h_op (a b : A) : f (op a b) = op (f a) (f b))
 
-  instance hasFunctoriality : HasFunctoriality typeClass typeClass prop := ⟨IsHom⟩
+  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} := ⟨IsHom⟩
 
   @[simp] theorem simp_op_arg' {A B : univ} (F : A ⟶' B) (a₁ a₂ : A) :
     F.f ((inst A).op a₁ a₂) = (inst B).op (F.f a₁) (F.f a₂) :=
@@ -48,7 +49,8 @@ namespace CommSemigroup
   have h₁ : F.f = G.f := funext h;
   by induction F; induction G; subst h₁; simp
 
-  instance hasFunctorInstances : HasFunctorInstances.{u + 1, u + 1, 0} typeClass.{u} :=
+  instance hasFunctorialityInstances :
+    HasFunctorialityInstances univ.{u} univ.{v} typeClass.{max u v} :=
   ⟨λ A B => { op       := λ F G   => ⟨λ a => (inst B).op (F.f a) (G.f a),
                                       ⟨λ a₁ a₂ => by simp;
                                                      rw [op_assoc, op_assoc];
@@ -60,12 +62,13 @@ namespace CommSemigroup
               op_assoc := λ F G H => funExt' λ a => (inst B).op_assoc (F.f a) (G.f a) (H.f a),
               op_comm  := λ F G   => funExt' λ a => (inst B).op_comm (F.f a) (G.f a) }⟩
 
-  instance hasFunctors : HasFunctors univ univ univ := Bundled.hasFunctors.{u + 1, u + 1, 0} typeClass.{u}
+  def defFun {A B : univ} {f : A → B} (isHom : IsHom f) : A ⟶{f} B :=
+  Bundled.HasFunctorialityInstances.defFun isHom
 
-  instance hasCongrArg : HasCongrArg univ univ :=
+  instance hasCongrArg : HasCongrArg univ.{u} univ.{v} :=
   ⟨λ F => congrArg F.f⟩
 
-  instance hasInternalFunctors : HasInternalFunctors univ := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors univ.{u} := ⟨⟩
 
   @[simp] theorem simp_op_arg {A B : univ} (F : A ⟶ B) (a₁ a₂ : A) : F (op a₁ a₂) = op (F a₁) (F a₂) :=
   simp_op_arg' F a₁ a₂
@@ -77,7 +80,7 @@ namespace CommSemigroup
   funExt' h
 
   -- TODO: Can we make everything `by simp` again?
-  instance hasLinearFunOp : HasLinearFunOp univ :=
+  instance hasLinearFunOp : HasLinearFunOp univ.{u} :=
   { defIdFun         := λ A     => defFun ⟨λ a₁ a₂ => rfl⟩,
     defRevAppFun     := λ a B   => defFun ⟨λ F₁ F₂ => rfl⟩,
     defRevAppFunFun  := λ A B   => defFun ⟨λ a₁ a₂ => funExt λ F => simp_op_arg F a₁ a₂⟩,

@@ -73,6 +73,10 @@ namespace MetaRelation
     symm  := e.symm
     trans := e.trans }
 
+  instance setoidEquivalence (α : Sort u) [s : Setoid α] :
+    IsEquivalence (nativeRelation s.r) :=
+  nativeEquivalence s.iseqv
+
   def unitRelation (α : Sort u) {V : Universe.{v}} (B : V) :
     MetaRelation α V :=
   λ _ _ => B

@@ -39,5 +39,6 @@ import UniverseAbstractions.Instances.Utils.Bundled
 import UniverseAbstractions.Instances.Basic
 import UniverseAbstractions.Instances.FunctorUniverse
 import UniverseAbstractions.Instances.CoFunctorUniverse
+import UniverseAbstractions.Instances.Setoid
 import UniverseAbstractions.Instances.Algebra
 import UniverseAbstractions.Instances.Category
