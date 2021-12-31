@@ -171,7 +171,7 @@ class HasEquivalences (U : Universe.{u}) (V : Universe.{v})
 
 namespace HasEquivalences
 
-  open MetaRelation HasCongrFun
+  open MetaRelation HasFunctors HasCongrFun
 
   variable {U V UU VV UV VU U_V : Universe} [HasIdentity U] [HasIdentity V]
            [HasFunctors U V UV] [HasFunctors V U VU] [HasEquivalences U V U_V]
@@ -189,6 +189,12 @@ namespace HasEquivalences
 
     def to  (a : A) : B := (toFun  E) a
     def inv (b : B) : A := (invFun E) b
+
+    instance to.isFunApp {E : A ⟷ B} {a : A} : IsFunApp A (to E a) :=
+    IsFunApp.refl (toFun E) a
+
+    instance inv.isFunApp {E : A ⟷ B} {b : B} : IsFunApp B (inv E b) :=
+    IsFunApp.refl (invFun E) b
 
     def leftInv  (a : A) : inv E (to E a) ≃ a := (desc E).left.inv  a
     def rightInv (b : B) : to E (inv E b) ≃ b := (desc E).right.inv b
@@ -247,7 +253,7 @@ class HasInternalEquivalences (U : Universe.{u}) [HasIdentity U] [HasInternalFun
 
 namespace HasInternalEquivalences
 
-  open MetaRelation HasLinearFunOp HasEquivalences
+  open MetaRelation HasFunctors HasLinearFunOp HasEquivalences
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
            [HasLinearFunExt U] [HasInternalEquivalences U]
@@ -255,6 +261,11 @@ namespace HasInternalEquivalences
   @[reducible] def toFunFun (A B : U) : (A ⟷ B) ⟶ (A ⟶ B) := defToFunFun A B
 
   variable {A B : U}
+
+  instance toFun.isFunApp {E : A ⟷ B} : IsFunApp (A ⟷ B) (toFun E) :=
+  { F := toFunFun A B,
+    a := E,
+    e := byDef }
 
   instance descIsExt     (E : A ⟷ B) : EquivDesc.IsExtensional (desc     E) := isExt E
   instance symmDescIsExt (E : A ⟷ B) : EquivDesc.IsExtensional (symmDesc E) := EquivDesc.IsExtensional.symmExt (desc E)
@@ -278,7 +289,7 @@ class HasEquivOp (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
 
 namespace HasEquivOp
 
-  open MetaRelation HasFunctors HasLinearFunOp HasEquivalences HasInternalEquivalences
+  open MetaRelation HasFunctors HasCongrArg HasLinearFunOp HasEquivalences HasInternalEquivalences
 
   section
 
@@ -302,6 +313,37 @@ namespace HasEquivOp
                       [HasLinearFunOp U] [HasLinearFunExt U]
                       [hEquiv : HasInternalEquivalences U] [HasEquivOp U] extends
     HasSymmFun hEquiv.Equiv, HasTransFun hEquiv.Equiv
+
+  namespace HasEquivOpFun
+
+    variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
+             [HasLinearFunExt U] [hEquiv : HasInternalEquivalences U] [HasEquivOp U]
+             [HasEquivOpFun U]
+
+    instance symm.isFunApp {A B : U} {E : A ⟷ B} : IsFunApp (A ⟷ B) (symm E) :=
+    HasSymmFun.symm.isFunApp hEquiv.Equiv
+
+    instance trans.isFunApp {A B C : U} {E : A ⟷ B} {F : B ⟷ C} : IsFunApp (B ⟷ C) (trans E F) :=
+    HasTransFun.trans.isFunApp hEquiv.Equiv
+
+    instance trans.isFunApp₂ {A B C : U} {E : A ⟷ B} {F : B ⟷ C} :
+      IsFunApp₂ (A ⟷ B) (B ⟷ C) (trans E F) :=
+    HasTransFun.trans.isFunApp₂ hEquiv.Equiv
+
+    def defInvFunFun (A B : U) : (A ⟷ B) ⟶{λ E => invFun E} (B ⟶ A) :=
+    toFunFun B A • HasSymmFun.symmFun hEquiv.Equiv A B
+    ◄ byToFunDef • byDefDef
+
+    @[reducible] def invFunFun (A B : U) : (A ⟷ B) ⟶ (B ⟶ A) := defInvFunFun A B
+
+    variable {A B : U}
+
+    instance invFun.isFunApp {E : A ⟷ B} : IsFunApp (A ⟷ B) (invFun E) :=
+    { F := invFunFun A B,
+      a := E,
+      e := byDef }
+
+  end HasEquivOpFun
 
 end HasEquivOp
 

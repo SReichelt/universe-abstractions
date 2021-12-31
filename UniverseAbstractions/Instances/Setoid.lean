@@ -24,11 +24,15 @@ namespace Setoid
 
   instance inst (A : univ.{u}) : Setoid.{max 1 u} A := Bundled.inst A
 
+  -- Instance equivalences
+
   instance hasEquivalenceRelation (A : univ.{u}) : HasEquivalenceRelation A prop :=
   ⟨nativeRelation (inst A).r⟩
 
   instance hasInstanceEquivalences : HasInstanceEquivalences univ.{u} prop :=
   ⟨hasEquivalenceRelation⟩
+
+  -- Functors
 
   def IsFun {A B : univ} (f : A → B) : Prop :=
   ∀ {a₁ a₂ : A}, a₁ ≈ a₂ → f a₁ ≈ f a₂
@@ -132,6 +136,8 @@ namespace Setoid
 
   instance hasStandardFunctors : HasStandardFunctors univ.{u} := ⟨⟩
 
+  -- Singletons
+
   instance unitSetoid : Setoid.{u} PUnit.{u} :=
   { r     := λ _ _ => True,
     iseqv := { refl  := λ _   => trivial,
@@ -156,6 +162,8 @@ namespace Setoid
   instance hasInternalBot : HasInternalBot univ.{u} :=
   { defElimFun := λ A => defFun False.elim }
 
+  -- Products
+
   instance prodSetoid (A : univ.{u}) (B : univ.{v}) : Setoid.{max 1 u v} (PProd A B) :=
   { r     := λ p₁ p₂ => p₁.fst ≈ p₂.fst ∧ p₁.snd ≈ p₂.snd,
     iseqv := { refl  := λ p   => ⟨Setoid.refl  p.fst,         Setoid.refl  p.snd⟩,
@@ -170,6 +178,8 @@ namespace Setoid
     defIntroFunFun := λ A B   => defFun (λ h b => ⟨h, Setoid.refl b⟩),
     defElimFun     := λ F     => defFun (λ h   => isFun₂ F h.left h.right),
     defElimFunFun  := λ A B C => defFun (λ h p => h p.fst p.snd) }
+
+  -- Equivalences
 
   instance equivSetoid (A : univ.{u}) (B : univ.{v}) : Setoid.{max 1 u v} (A ⮂ B) :=
   { r     := λ e₁ e₂ => e₁.toFun ≈ e₂.toFun,

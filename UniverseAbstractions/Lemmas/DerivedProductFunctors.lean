@@ -73,8 +73,6 @@ namespace HasInternalProducts
      a := a,
      e := byDef }⟩
 
-  -- TODO: Define `IsFunApp` instances.
-
   def defRevElimFun [HasLinearFunOp U] {A B C : U} (F : B ⟶ A ⟶ C) :
     A ⊓ B ⟶{λ P => F (snd P) (fst P)} C :=
   elimFun (swapFunFun F)
@@ -87,6 +85,12 @@ namespace HasInternalProducts
   ◄ byDefDef
 
   @[reducible] def revElimFunFun [HasLinearFunOp U] (A B C : U) : (B ⟶ A ⟶ C) ⟶ (A ⊓ B ⟶ C) := defRevElimFunFun A B C
+
+  instance revElimFun.isFunApp [HasLinearFunOp U] {A B C : U} {F : B ⟶ A ⟶ C} :
+    IsFunApp (B ⟶ A ⟶ C) (revElimFun F) :=
+  { F := revElimFunFun A B C,
+    a := F,
+    e := byDef }
 
   def invElim [HasLinearFunOp U] {A B C : U} (F : A ⊓ B ⟶ C) (a : A) (b : B) : C := F (intro a b)
 
@@ -106,8 +110,20 @@ namespace HasInternalProducts
   compFunFun (introFunFun A B) (B ⟶ C) • revCompFunFunFun B (A ⊓ B) C
   ◄ byDefDef
 
+  instance invElimFun.isFunApp [HasLinearFunOp U] {A B C : U} {F : A ⊓ B ⟶ C} {a : A} :
+    IsFunApp A (invElimFun F a) :=
+  { F := invElimFunFun F,
+    a := a,
+    e := byDef }
+
   @[reducible] def invElimFunFunFun [HasLinearFunOp U] (A B C : U) : (A ⊓ B ⟶ C) ⟶ (A ⟶ B ⟶ C) :=
   defInvElimFunFunFun A B C
+
+  instance invElimFunFun.isFunApp [HasLinearFunOp U] {A B C : U} {F : A ⊓ B ⟶ C} :
+    IsFunApp (A ⊓ B ⟶ C) (invElimFunFun F) :=
+  { F := invElimFunFunFun A B C,
+    a := F,
+    e := byDef }
 
   def defReplaceFstFun [HasLinearFunOp U] {A B : U} (F : A ⟶ B) (C : U) :
     A ⊓ C ⟶{λ P => intro (F (fst P)) (snd P)} B ⊓ C :=
@@ -125,21 +141,33 @@ namespace HasInternalProducts
   @[reducible] def replaceFstFunFun [HasLinearFunOp U] (A B C : U) : (A ⟶ B) ⟶ (A ⊓ C ⟶ B ⊓ C) :=
   defReplaceFstFunFun A B C
 
-  def defReplaceSndFun [HasLinearFunOp U] {A B : U} (F : A ⟶ B) (C : U) :
-    C ⊓ A ⟶{λ P => intro (fst P) (F (snd P))} C ⊓ B :=
-  revElimFun (revIntroFunFun C B • F)
+  instance replaceFstFun.isFunApp [HasLinearFunOp U] {A B C : U} {F : A ⟶ B} :
+    IsFunApp (A ⟶ B) (replaceFstFun F C) :=
+  { F := replaceFstFunFun A B C,
+    a := F,
+    e := byDef }
+
+  def defReplaceSndFun [HasLinearFunOp U] (A : U) {B C : U} (F : B ⟶ C) :
+    A ⊓ B ⟶{λ P => intro (fst P) (F (snd P))} A ⊓ C :=
+  revElimFun (revIntroFunFun A C • F)
   ◄ byDef₂ • byFunDef
 
-  @[reducible] def replaceSndFun [HasLinearFunOp U] {A B : U} (F : A ⟶ B) (C : U) : C ⊓ A ⟶ C ⊓ B :=
-  defReplaceSndFun F C
+  @[reducible] def replaceSndFun [HasLinearFunOp U] (A : U) {B C : U} (F : B ⟶ C) : A ⊓ B ⟶ A ⊓ C :=
+  defReplaceSndFun A F
 
   def defReplaceSndFunFun [HasLinearFunOp U] (A B C : U) :
-    (A ⟶ B) ⟶{λ F => replaceSndFun F C} (C ⊓ A ⟶ C ⊓ B) :=
-  revElimFunFun C A (C ⊓ B) • revCompFunFun A (revIntroFunFun C B)
+    (B ⟶ C) ⟶{λ F => replaceSndFun A F} (A ⊓ B ⟶ A ⊓ C) :=
+  revElimFunFun A B (A ⊓ C) • revCompFunFun B (revIntroFunFun A C)
   ◄ byDefDef
 
-  @[reducible] def replaceSndFunFun [HasLinearFunOp U] (A B C : U) : (A ⟶ B) ⟶ (C ⊓ A ⟶ C ⊓ B) :=
+  @[reducible] def replaceSndFunFun [HasLinearFunOp U] (A B C : U) : (B ⟶ C) ⟶ (A ⊓ B ⟶ A ⊓ C) :=
   defReplaceSndFunFun A B C
+
+  instance replaceSndFun.isFunApp [HasLinearFunOp U] {A B C : U} {F : B ⟶ C} :
+    IsFunApp (B ⟶ C) (replaceSndFun A F) :=
+  { F := replaceSndFunFun A B C,
+    a := F,
+    e := byDef }
 
   def defCommFun [HasLinearFunOp U] (A B : U) : A ⊓ B ⟶{λ P => intro (snd P) (fst P)} B ⊓ A :=
   elimFun (revIntroFunFun B A)
@@ -188,6 +216,12 @@ namespace HasInternalProducts
   @[reducible] def mergeFunFun [HasFullFunOp U] {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ C) ⟶ (A ⟶ B ⊓ C) :=
   defMergeFunFun F C
 
+  instance mergeFun.isFunApp [HasFullFunOp U] {A B C : U} {F : A ⟶ B} {G : A ⟶ C} :
+    IsFunApp (A ⟶ C) (mergeFun F G) :=
+  { F := mergeFunFun F C,
+    a := G,
+    e := byDef }
+
   def defMergeFunFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⟶{λ F => mergeFunFun F C} ((A ⟶ C) ⟶ (A ⟶ B ⊓ C)) :=
   compFunFun (revCompFunFun A (revIntroFunFun B C)) (A ⟶ B ⊓ C) •
   substFunFunFun A B (B ⊓ C)
@@ -195,6 +229,12 @@ namespace HasInternalProducts
 
   @[reducible] def mergeFunFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ B ⊓ C) :=
   defMergeFunFunFun A B C
+
+  instance mergeFunFun.isFunApp [HasFullFunOp U] {A B C : U} {F : A ⟶ B} :
+    IsFunApp (A ⟶ B) (mergeFunFun F C) :=
+  { F := mergeFunFunFun A B C,
+    a := F,
+    e := byDef }
 
   def distr [HasAffineFunOp U] {A B C : U} (F : A ⟶ B ⊓ C) : (A ⟶ B) ⊓ (A ⟶ C) :=
   intro (fstFun B C • F) (sndFun B C • F)
@@ -205,6 +245,12 @@ namespace HasInternalProducts
 
   @[reducible] def distrFun [HasFullFunOp U] (A B C : U) : (A ⟶ B ⊓ C) ⟶ (A ⟶ B) ⊓ (A ⟶ C) := defDistrFun A B C
 
+  instance distr.isFunApp [HasFullFunOp U] {A B C : U} {F : A ⟶ B ⊓ C} :
+    IsFunApp (A ⟶ B ⊓ C) (distr F) :=
+  { F := distrFun A B C,
+    a := F,
+    e := byDef }
+
   def invDistrFun [HasFullFunOp U] {A B C : U} (P : (A ⟶ B) ⊓ (A ⟶ C)) : A ⟶ B ⊓ C :=
   mergeFun (fst P) (snd P)
 
@@ -214,6 +260,12 @@ namespace HasInternalProducts
 
   @[reducible] def invDistrFunFun [HasFullFunOp U] (A B C : U) : (A ⟶ B) ⊓ (A ⟶ C) ⟶ (A ⟶ B ⊓ C) :=
   defInvDistrFunFun A B C
+
+  instance invDistrFun.isFunApp [HasFullFunOp U] {A B C : U} {P : (A ⟶ B) ⊓ (A ⟶ C)} :
+    IsFunApp ((A ⟶ B) ⊓ (A ⟶ C)) (invDistrFun P) :=
+  { F := invDistrFunFun A B C,
+    a := P,
+    e := byDef }
 
   def defProdTopIntroFun [HasInternalTop U] (A : U) : A ⟶{λ a => intro (top U) a} Top U ⊓ A :=
   defIntroFun (top U) A

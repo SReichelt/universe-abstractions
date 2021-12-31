@@ -29,6 +29,8 @@ namespace CategoryTheory.IsCategory
 
   instance inst (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W A := Bundled.inst A
 
+  -- Instance equivalences
+
   variable [hIsoUniv : IsIsoUniverse W]
 
   instance hasEquivalenceRelation (A : univ.{u} W) : HasEquivalenceRelation A W :=
@@ -36,6 +38,8 @@ namespace CategoryTheory.IsCategory
 
   instance hasInstanceEquivalences : HasInstanceEquivalences (univ.{u} W) W :=
   ⟨hasEquivalenceRelation⟩
+
+  -- Functors
 
   variable [hFunUniv : IsFunUniverse W]
 

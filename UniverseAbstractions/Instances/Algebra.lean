@@ -17,7 +17,7 @@ universe u v
 
 
 
--- TODO: Use a universe as the base, to make everything stackable.
+-- TODO: Use a universe as the base, to make everything stackable, and to hopefully enable extension to vector spaces etc.
 
 class CommSemigroup (α : Type u) : Type u where
 (op                   : α → α → α)
@@ -33,8 +33,12 @@ namespace CommSemigroup
 
   instance inst (A : univ.{u}) : CommSemigroup.{u} A := Bundled.inst A
 
+  -- Instance equivalences
+
   instance hasInstanceEquivalences : HasInstanceEquivalences univ.{u} prop :=
   ⟨λ A => @Eq.isEquivalence A⟩
+
+  -- Functors
 
   class IsHom {A B : univ} (f : A → B) : Prop where
   (h_op (a b : A) : f (op a b) = op (f a) (f b))

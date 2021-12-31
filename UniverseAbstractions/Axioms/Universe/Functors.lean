@@ -779,7 +779,7 @@ namespace MetaRelation
       a := g,
       e := byDef }
 
-    instance (priority := low) trans.isMultiFunApp [HasSwapFun V V V] {a b c : α} {f : R a b} {g : R b c} :
+    instance (priority := low) trans.isFunApp₂ [HasSwapFun V V V] {a b c : α} {f : R a b} {g : R b c} :
       IsFunApp₂ (R a b) (R b c) (g • f) :=
     ⟨{ F := revTransFun R a g,
        a := f,
