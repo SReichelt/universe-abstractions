@@ -1,4 +1,5 @@
 import UniverseAbstractions.Axioms.Universes
+import UniverseAbstractions.Axioms.MetaProperties
 
 import UniverseAbstractions.MathlibFragments.Data.Notation
 
@@ -147,3 +148,15 @@ namespace DependentMetaRelation
   class IsDependentEquivalence [h : IsEquivalence R] extends IsDependentPreorder S, HasDependentSymm S
 
 end DependentMetaRelation
+
+
+
+def NaturalityRelation {α : Sort u} {β : Sort v} {W : Universe.{w}}
+                       (IsFun : FunctorialityProperty α β W) :=
+MetaRelation (BundledFunctor IsFun) W
+
+structure BundledQuantification {W : Universe.{w}} {α : Sort u} {β : Sort v}
+                                {IsFun : FunctorialityProperty α β W}
+                                (IsNat : NaturalityRelation IsFun) : Sort (max 1 u v w) where
+{F G   : BundledFunctor IsFun}
+(isNat : IsNat F G)

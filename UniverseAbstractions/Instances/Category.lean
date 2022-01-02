@@ -10,9 +10,10 @@ import UniverseAbstractions.Instances.Utils.Bundled
 
 
 set_option autoBoundImplicitLocal false
-set_option pp.universes true
+--set_option pp.universes true
+set_option synthInstance.maxHeartbeats 10000
 
-universe u v w ww iw
+universe u w ww iw
 
 
 
@@ -23,7 +24,7 @@ namespace CategoryTheory.IsCategory
   def typeClass (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
     SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
   def univ (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    Universe.{max 1 u w, (max 1 u w ww iw) + 1} := Bundled.univ (typeClass.{u} W)
+    Universe.{max 1 u w, max ((max 1 u w) + 1) ww iw} := Bundled.univ (typeClass.{u} W)
 
   variable {W : Universe.{w, ww}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
 
@@ -34,7 +35,7 @@ namespace CategoryTheory.IsCategory
   variable [hIsoUniv : IsIsoUniverse W]
 
   instance hasEquivalenceRelation (A : univ.{u} W) : HasEquivalenceRelation A W :=
-  ⟨(hIsoUniv.hasIsomorphisms A).Iso⟩
+  ⟨(hIsoUniv.hasIsomorphisms A).hasIsoRel.Iso⟩
 
   instance hasInstanceEquivalences : HasInstanceEquivalences (univ.{u} W) W :=
   ⟨hasEquivalenceRelation⟩
@@ -43,35 +44,30 @@ namespace CategoryTheory.IsCategory
 
   variable [hFunUniv : IsFunUniverse W]
 
-  instance hasFunctoriality : HasFunctoriality (univ.{u} W) (univ.{v} W) :=
-  ⟨λ {A B : univ W} (φ : A → B) => (hFunUniv.hasCategoryFunctors A B).Fun φ⟩
+  instance hasFunctoriality : HasFunctoriality (univ.{u} W) (univ.{u} W) W :=
+  ⟨λ {A B : univ W} => (hFunUniv.hasFunProp A B).Fun⟩
 
-  def bundledFunctor {A B : univ W} (F : A ⟶' B) :
-    BundledFunctor (hFunUniv.hasCategoryFunctors A B).Fun :=
-  { φ := F.f,
-    F := F.isFun }
-
-  instance isCategoryFunctor {A B : univ W} (F : A ⟶' B) :
-    IsCategoryFunctor (α := A) (β := B) F.f :=
-  HasCategoryFunctors.isCategoryFunctor (bundledFunctor F)
-
-  instance funIsCategory (A : univ.{u} W) (B : univ.{v} W) :
-    IsCategory.{max 1 u v w, w, ww, iw} W (A ⟶' B) :=
-  { Hom                         := λ (F G : A ⟶' B) => sorry, --NaturalTransformation F G,
-    homIsPreorder               := sorry,
-    homHasTransFun              := sorry,
-    homIsCategoricalPreorder    := sorry,
-    homIsCategoricalPreorderExt := sorry }
+  variable [hNatUniv : IsNatUniverse W]
 
   instance hasFunctorialityInstances :
-    HasFunctorialityInstances.{max 1 u w, max 1 v w, w} (univ.{u} W) (univ.{v} W) (typeClass.{max u v} W) :=
-  ⟨funIsCategory⟩
+    HasFunctorialityInstances.{max 1 u w, max 1 u w, w} (univ.{u} W) (univ.{u} W) (typeClass.{u} W) :=
+  ⟨λ A B => HasNaturalityRelation.funIsCategory A B⟩
 
-  -- TODO: Why can't we use `v` for the second argument?
+  def toDefFun {A B : univ.{u} W} (F : A ⟶' B) : A ⟶{F.f} B :=
+  Bundled.HasFunctorialityInstances.toDefFun F
+
   instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) :=
-  ⟨λ F => sorry⟩
+  ⟨λ {_ _} F {_ _} e => (IsIsoFunctor.preFunctor F.f) e⟩
 
   instance hasInternalFunctors : HasInternalFunctors (univ.{u} W) := ⟨⟩
+
+  instance hasIdFun : HasIdFun (univ.{u} W) := ⟨λ A => toDefFun (IsFunUniverse.idFun A)⟩
+
+  instance hasConstFun : HasConstFun (univ.{u} W) (univ.{u} W) :=
+  ⟨λ A {B} b => toDefFun (IsFunUniverse.constFun A b)⟩
+
+  instance hasCompFun : HasCompFun (univ.{u} W) (univ.{u} W) (univ.{u} W) :=
+  ⟨λ F G => toDefFun (IsFunUniverse.compFun F G)⟩
 
   instance hasLinearFunOp : HasLinearFunOp (univ.{u} W) := sorry
 

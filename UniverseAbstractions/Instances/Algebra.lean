@@ -43,7 +43,7 @@ namespace CommSemigroup
   class IsHom {A B : univ} (f : A → B) : Prop where
   (h_op (a b : A) : f (op a b) = op (f a) (f b))
 
-  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} := ⟨IsHom⟩
+  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} prop := ⟨IsHom⟩
 
   @[simp] theorem simp_op_arg' {A B : univ} (F : A ⟶' B) (a₁ a₂ : A) :
     F.f ((inst A).op a₁ a₂) = (inst B).op (F.f a₁) (F.f a₂) :=
@@ -55,14 +55,14 @@ namespace CommSemigroup
 
   instance hasFunctorialityInstances :
     HasFunctorialityInstances univ.{u} univ.{v} typeClass.{max u v} :=
-  ⟨λ A B => { op       := λ F G   => ⟨λ a => (inst B).op (F.f a) (G.f a),
-                                      ⟨λ a₁ a₂ => by simp;
-                                                     rw [op_assoc, op_assoc];
-                                                     apply congrArg;
-                                                     rw [←op_assoc, ←op_assoc];
-                                                     apply congrFun;
-                                                     apply congrArg;
-                                                     rw [op_comm]⟩⟩,
+  ⟨λ A B => { op       := λ F G   => { f     := λ a => (inst B).op (F.f a) (G.f a),
+                                       isFun := ⟨λ a₁ a₂ => by simp;
+                                                               rw [op_assoc, op_assoc];
+                                                               apply congrArg;
+                                                               rw [←op_assoc, ←op_assoc];
+                                                               apply congrFun;
+                                                               apply congrArg;
+                                                               rw [op_comm]⟩ },
               op_assoc := λ F G H => funExt' λ a => (inst B).op_assoc (F.f a) (G.f a) (H.f a),
               op_comm  := λ F G   => funExt' λ a => (inst B).op_comm (F.f a) (G.f a) }⟩
 

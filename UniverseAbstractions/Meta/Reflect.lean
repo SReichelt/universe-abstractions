@@ -25,7 +25,7 @@ namespace Lean
   (α : ⌜Sort u⌝)
 
   def exprUniverse {β : Type} (inst : β → _Sort) : Universe :=
-  { A    := β,
+  { a    := β,
     inst := ⟨λ b => (inst b).α⟩ }
 
 

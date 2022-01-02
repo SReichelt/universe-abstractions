@@ -40,7 +40,7 @@ namespace Setoid
   def IsFun₂ {A B C : univ} (f : A → B → C) : Prop :=
   ∀ {a₁ a₂ : A} {b₁ b₂ : B}, a₁ ≈ a₂ → b₁ ≈ b₂ → f a₁ b₁ ≈ f a₂ b₂
 
-  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} := ⟨IsFun⟩
+  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} prop := ⟨IsFun⟩
 
   def FunEquiv {α : Sort u} {φ : α → univ} (f₁ f₂ : ∀ a, φ a) : Prop :=
   ∀ a, f₁ a ≈ f₂ a
@@ -60,12 +60,12 @@ namespace Setoid
 
   def defFun {A B : univ} {f : A → B} (isFun : IsFun f) : A ⟶{f} B :=
   Bundled.HasFunctorialityInstances.defFun isFun
-  
+
   def defFun₂ {A B C : univ} {f : A → B → C} (isFun : IsFun₂ f) :
     A ⟶{λ a => (defFun (isFun (Setoid.refl a)))} (B ⟶ C) :=
   defFun (λ h b => (isFun h) (Setoid.refl b))
 
-  instance hasCongrArg : HasCongrArg univ.{u} univ.{v} := ⟨HasFunctoriality.Fun.isFun⟩
+  instance hasCongrArg : HasCongrArg univ.{u} univ.{v} := ⟨BundledFunctor.isFun⟩
   instance hasCongrFun : HasCongrFun univ.{u} univ.{v} := ⟨id⟩
 
   instance hasInternalFunctors : HasInternalFunctors univ.{u} := ⟨⟩

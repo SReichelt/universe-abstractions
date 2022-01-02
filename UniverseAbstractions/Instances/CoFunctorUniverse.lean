@@ -14,7 +14,7 @@ universe u v w wv iu iv
 
 def coFunctorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v}) {VU : Universe.{v}} [HasFunctors V U VU] :
   Universe.{v} :=
-{ A    := ⌈V⌉,
+{ a    := V,
   inst := ⟨λ B => ⌈B ⟶ A⌉⟩ }
 
 namespace coFunctorUniverse

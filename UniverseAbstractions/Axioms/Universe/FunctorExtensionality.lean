@@ -282,10 +282,18 @@ end HasFullFunOp
 class HasLinearFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
   HasInternalFunctors U, HasLinearFunOp U, HasLinearFunOp.HasLinearFunExt U
 
+class HasAffineFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
+  HasInternalFunctors U, HasAffineFunOp U, HasAffineFunOp.HasAffineFunExt U
+
+instance HasAffineFunctors.hasLinearFunctors (U : Universe) [HasIdentity.{u, iu} U]
+                                               [HasAffineFunctors U] :
+  HasLinearFunctors U :=
+⟨⟩
+
 class HasStandardFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
   HasInternalFunctors U, HasFullFunOp U, HasFullFunOp.HasFullFunExt U
 
-instance HasStandardFunctors.hasLinearFunctors (U : Universe) [HasIdentity.{u, iu} U]
+instance HasStandardFunctors.hasAffineFunctors (U : Universe) [HasIdentity.{u, iu} U]
                                                [HasStandardFunctors U] :
-  HasLinearFunctors U :=
+  HasAffineFunctors U :=
 ⟨⟩

@@ -22,7 +22,7 @@ universe u v vv w vw iu iv iw ivw
 -- TODO: Lift universe level restriction on `UV`.
 def functorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] :
   Universe.{v, vv} :=
-{ A    := ⌈V⌉,
+{ a    := V,
   inst := ⟨λ B => ⌈A ⟶ B⌉⟩ }
 
 namespace functorUniverse
