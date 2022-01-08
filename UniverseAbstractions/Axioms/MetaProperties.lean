@@ -60,12 +60,3 @@ namespace DependentMetaProperty
   instance [HasInst P] [h : HasDependentInst Q] (A : U) : HasInst (instProp Q A) := ⟨h.inst⟩
 
 end DependentMetaProperty
-
-
-
-def FunctorialityProperty (α : Sort u) (β : Sort v) (W : Universe.{w}) := MetaProperty (α → β) W
-
-structure BundledFunctor {W : Universe.{w}} {α : Sort u} {β : Sort v}
-                         (IsFun : FunctorialityProperty α β W) : Sort (max 1 u v w) where
-{f     : α → β}
-(isFun : IsFun f)

@@ -7,6 +7,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 
 
 set_option autoBoundImplicitLocal false
+set_option maxHeartbeats 100000
 set_option synthInstance.maxHeartbeats 1000
 --set_option pp.universes true
 
@@ -190,14 +191,14 @@ namespace CategoryTheory
 
 
   class IsIsoUniverse (V : Universe.{v}) [HasIdentity.{v, iv} V] [HasStandardFunctors V] where
-  [hasIsomorphisms    (α : Sort u) [IsCategory V α] : HasIsomorphisms α]
+  [hasIsomorphisms (α : Sort (max 1 u v iv)) [IsCategory V α] : HasIsomorphisms α]
 
   namespace IsIsoUniverse
 
     variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasStandardFunctors V]
-             [h : IsIsoUniverse V]
+             [h : IsIsoUniverse.{u} V]
 
-    instance (α : Sort u) [IsCategory V α] : HasIsomorphisms α := h.hasIsomorphisms α
+    instance (α : Sort (max 1 u v iv)) [IsCategory V α] : HasIsomorphisms α := h.hasIsomorphisms α
 
   end IsIsoUniverse
 
@@ -206,9 +207,14 @@ namespace CategoryTheory
   class IsIsoFunctor {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
                      {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
                      [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-                     (φ : α → β) extends
+                     (φ : α → β) [hφ : IsCategoryFunctor φ] extends
     IsGroupoidFunctor φ (hα := HasIsomorphisms.isoGroupoid α)
-                        (hβ := HasIsomorphisms.isoGroupoid β)
+                        (hβ := HasIsomorphisms.isoGroupoid β) where
+  (homIsoCongr {a b : α} (e : a ⇿ b) : HasIsoRel.toHom (F e) ≃ hφ.F (HasIsoRel.toHom e))
+  (homIsoCongrExt (a b : α) :
+     hβIso.hasIsoRel.isIsoRel.toHomMetaFunctor.baseFun (φ a) (φ b) • F.baseFun a b
+     ≃{▻ λ e => homIsoCongr e ◅}
+     hφ.F.baseFun a b • hαIso.hasIsoRel.isIsoRel.toHomMetaFunctor.baseFun a b)
 
   namespace IsIsoFunctor
 
@@ -218,7 +224,7 @@ namespace CategoryTheory
 
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
                [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-               (φ : α → β) [h : IsIsoFunctor φ]
+               (φ : α → β) [IsCategoryFunctor φ] [h : IsIsoFunctor φ]
 
       def isMorphismFunctor : IsMorphismFunctor φ (hα := HasIsoRel.isoMorphisms α)
                                                   (hβ := HasIsoRel.isoMorphisms β) :=
@@ -230,136 +236,79 @@ namespace CategoryTheory
 
     end
 
-    instance idFun (α : Sort u) [hα : IsCategory W α] [HasIsomorphisms α] :
-      IsIsoFunctor (@id α) :=
-    { toIsGroupoidFunctor := IsGroupoidFunctor.idFun α (hα := HasIsomorphisms.isoGroupoid α) }
-
-    instance constFun (α : Sort u) {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                      [HasIsomorphisms α] [HasIsomorphisms β] (b : β) :
-      IsIsoFunctor (Function.const α b) :=
-    { toIsGroupoidFunctor := IsGroupoidFunctor.constFun α b (hα := HasIsomorphisms.isoGroupoid α)
-                                                            (hβ := HasIsomorphisms.isoGroupoid β) }
-
-    instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
-                     [hα : IsCategory W α] [hβ : IsCategory W β] [hγ : IsCategory W γ]
-                     [HasIsomorphisms α] [HasIsomorphisms β] [HasIsomorphisms γ]
-                     (φ : α → β) (ψ : β → γ)
-                     [hφ : IsIsoFunctor φ] [hψ : IsIsoFunctor ψ] :
-      IsIsoFunctor (ψ ∘ φ) :=
-    { toIsGroupoidFunctor := IsGroupoidFunctor.compFun φ ψ (hα := HasIsomorphisms.isoGroupoid α)
-                                                           (hβ := HasIsomorphisms.isoGroupoid β)
-                                                           (hγ := HasIsomorphisms.isoGroupoid γ) }
-
   end IsIsoFunctor
 
-  class IsHomIsoFun {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-                    {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                    [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] (φ : α → β) where
-  [isHomFun : IsCategoryFunctor φ]
-  [isIsoFun : IsIsoFunctor      φ] 
-  (isoFunEq {a b : α} (e : a ⇿ b) :
-     hβIso.hasIsoRel.isIsoRel.toHomMetaFunctor ((IsIsoFunctor.preFunctor φ) e) ≃
-     isHomFun.F (hαIso.hasIsoRel.isIsoRel.toHomMetaFunctor e))
-  (isoFunEqExt (a b : α) :
-     hβIso.hasIsoRel.isIsoRel.toHomMetaFunctor.baseFun (φ a) (φ b) • (IsIsoFunctor.preFunctor φ).baseFun a b
-     ≃{▻ λ e => isoFunEq e ◅}
-     isHomFun.F.baseFun a b • hαIso.hasIsoRel.isIsoRel.toHomMetaFunctor.baseFun a b)
-
-  namespace IsHomIsoFun
-
-    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-             {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [HasIsomorphisms α] [HasIsomorphisms β] (φ : α → β) [h : IsHomIsoFun φ]
-
-    instance : IsCategoryFunctor φ := h.isHomFun
-    instance : IsIsoFunctor      φ := h.isIsoFun
-
-  end IsHomIsoFun
-
   class HasFunctorialityProperty {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-                                 (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
-                                 [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] where
-  (Fun : FunctorialityProperty α β W)
-  [isHomIsoFun {φ : α → β} : Fun φ → IsHomIsoFun φ]
+                                 (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β] where
+  (Fun (φ : α → β) [hφ : IsCategoryFunctor φ] : W)
 
   namespace HasFunctorialityProperty
 
     variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
 
-    def Functor (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
-                [HasIsomorphisms α] [HasIsomorphisms β]
-                [h : HasFunctorialityProperty α β] :=
-    BundledFunctor h.Fun
+    structure Functor (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                      [h : HasFunctorialityProperty α β] : Sort (max 1 u v w iw) where
+    {φ  : α → β}
+    [hφ : IsCategoryFunctor φ]
+    (F  : h.Fun φ)
 
     namespace Functor
 
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-               [HasIsomorphisms α] [HasIsomorphisms β]
                [h : HasFunctorialityProperty α β] (F : Functor α β)
 
-      instance : IsHomIsoFun F.f := h.isHomIsoFun F.isFun
+      instance : IsCategoryFunctor F.φ := F.hφ
 
     end Functor
 
-    variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [HasIsomorphisms α] [HasIsomorphisms β]
-             [h : HasFunctorialityProperty α β]
-
-    instance {φ : α → β} (isFun : h.Fun φ) : IsHomIsoFun φ := h.isHomIsoFun isFun
-
-    structure DefFun (φ : α → β) [isHomFun : IsCategoryFunctor φ] [isIsoFun : IsIsoFunctor φ] where
-    (isFun : h.Fun φ)
-    (homFunEq {a b : α} (f : a ⇾ b) : (h.isHomIsoFun isFun).isHomFun.F f ≃ isHomFun.F f)
-    (homFunEqExt (a b : α) :
-       (h.isHomIsoFun isFun).isHomFun.F.baseFun a b ≃{λ f => homFunEq f} isHomFun.F.baseFun a b)
-    (isoFunEq {a b : α} (e : a ⇿ b) :
-       (IsIsoFunctor.preFunctor φ (h := (h.isHomIsoFun isFun).isIsoFun)) e ≃
-       (IsIsoFunctor.preFunctor φ (h := isIsoFun)) e)
-    (isoFunEqExt (a b : α) :
-       (IsIsoFunctor.preFunctor φ (h := (h.isHomIsoFun isFun).isIsoFun)).baseFun a b
-       ≃{λ e => isoFunEq e}
-       (IsIsoFunctor.preFunctor φ (h := isIsoFun)).baseFun a b)
-
-    namespace DefFun
-
-      def toFunctor {φ : α → β} [IsCategoryFunctor φ] [IsIsoFunctor φ] (F : DefFun φ) :
-        Functor α β :=
-      ⟨F.isFun⟩
-
-    end DefFun
-
   end HasFunctorialityProperty
 
+  class HasIsoFunctoriality {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+                            (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                            [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] extends
+    HasFunctorialityProperty α β where
+  [isIsoFun (F : HasFunctorialityProperty.Functor α β) : IsIsoFunctor F.φ]
+
+  namespace HasIsoFunctoriality
+
+    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+             (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+             [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] [h : HasIsoFunctoriality α β]
+
+    instance (F : HasFunctorialityProperty.Functor α β) : IsIsoFunctor F.φ := h.isIsoFun F
+
+  end HasIsoFunctoriality
+
   class IsFunUniverse (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-                      [hIsoUniv : IsIsoUniverse W] where
-  [hasFunProp (α β : Sort u) [IsCategory W α] [IsCategory W β] : HasFunctorialityProperty α β]
-  (defIdFun (α : Sort u) [IsCategory W α] : HasFunctorialityProperty.DefFun (@id α))
-  (defConstFun (α : Sort u) {β : Sort u} [IsCategory W α] [IsCategory W β] (b : β) :
-     HasFunctorialityProperty.DefFun (Function.const α b))
-  (defCompFun {α β γ : Sort u} [IsCategory W α] [IsCategory W β] [IsCategory W γ]
-              (F : HasFunctorialityProperty.Functor α β) (G : HasFunctorialityProperty.Functor β γ) :
-     HasFunctorialityProperty.DefFun (G.f ∘ F.f))
+                      [hIsoUniv : IsIsoUniverse.{u} W] where
+  [hasFunProp (α β : Sort (max 1 u w iw)) [IsCategory W α] [IsCategory W β] : HasIsoFunctoriality α β]
+  (idIsFun (α : Sort (max 1 u w iw)) [IsCategory W α] : (hasFunProp α α).Fun id)
+  (constIsFun (α : Sort (max 1 u w iw)) {β : Sort (max 1 u w iw)} [IsCategory W α] [IsCategory W β] (b : β) :
+     (hasFunProp α β).Fun (Function.const α b))
+  (compIsFun {α β γ : Sort (max 1 u w iw)} [IsCategory W α] [IsCategory W β] [IsCategory W γ]
+             (F : HasFunctorialityProperty.Functor α β) (G : HasFunctorialityProperty.Functor β γ) :
+     (hasFunProp α γ).Fun (G.φ ∘ F.φ))
 
   namespace IsFunUniverse
 
     open HasFunctorialityProperty
 
-    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W] [IsIsoUniverse W]
-             [h : IsFunUniverse W]
+    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W] [IsIsoUniverse.{u} W]
+             [h : IsFunUniverse.{u} W]
 
-    instance (α β : Sort u) [IsCategory W α] [IsCategory W β] : HasFunctorialityProperty α β :=
+    instance (α β : Sort (max 1 u w iw)) [IsCategory W α] [IsCategory W β] : HasIsoFunctoriality α β :=
     h.hasFunProp α β
 
-    def idFun (α : Sort u) [IsCategory W α] : Functor α α := DefFun.toFunctor (h.defIdFun α)
+    def idFun (α : Sort (max 1 u w iw)) [IsCategory W α] : Functor α α := ⟨h.idIsFun α⟩
 
-    def constFun (α : Sort u) {β : Sort u} [IsCategory W α] [IsCategory W β] (b : β) :
+    def constFun (α : Sort (max 1 u w iw)) {β : Sort (max 1 u w iw)} [IsCategory W α] [IsCategory W β] (b : β) :
       Functor α β :=
-    DefFun.toFunctor (h.defConstFun α b)
+    ⟨h.constIsFun α b⟩
 
-    def compFun {α β γ : Sort u} [IsCategory W α] [IsCategory W β] [IsCategory W γ]
+    def compFun {α β γ : Sort (max 1 u w iw)} [IsCategory W α] [IsCategory W β] [IsCategory W γ]
                 (F : Functor α β) (G : Functor β γ) :
       Functor α γ :=
-    DefFun.toFunctor (h.defCompFun F G)
+    ⟨h.compIsFun F G⟩
 
   end IsFunUniverse
 
@@ -367,53 +316,268 @@ namespace CategoryTheory
 
   structure NatDesc {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
                     {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                    [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
                     (φ ψ : α → β) [IsMorphismFunctor φ] [IsMorphismFunctor ψ] where
-  (η     : MetaQuantification hβ.Hom φ ψ)
-  [isNat : IsNaturalTransformation η]
+  (nat   : MetaQuantification hβ.Hom φ ψ)
+  [isNat : IsNaturalTransformation nat]
+
+  namespace NatDesc
+
+    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+             {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+             {φ ψ : α → β} [IsMorphismFunctor φ] [IsMorphismFunctor ψ] (η : NatDesc φ ψ)
+
+    instance : IsNaturalTransformation η.nat := η.isNat
+
+  end NatDesc
 
   class HasNaturalityRelation {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-                              [hIsoUniv : IsIsoUniverse W] [hFunUniv : IsFunUniverse W]
-                              (α β : Sort u) [hα : IsCategory W α] [hβ : IsCategory W β] where
-  (Nat : NaturalityRelation (hFunUniv.hasFunProp α β).Fun)
-  (desc {F G : HasFunctorialityProperty.Functor α β} (η : Nat F G) : NatDesc F.f G.f)
-  -- TODO: Incorporate naturality proofs, as with `IsExtensional`.
-  [natIsPreorder               : IsPreorder                                     Nat]
+                              [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
+                              (α β : Sort (max 1 u w iw)) [hα : IsCategory W α] [hβ : IsCategory W β] where
+  (Nat : MetaRelation (HasFunctorialityProperty.Functor α β) W)
+  (desc {F G : HasFunctorialityProperty.Functor α β} (η : Nat F G) : NatDesc F.φ G.φ)
+  (defNatFun (F G : HasFunctorialityProperty.Functor α β) (a : α) :
+     Nat F G ⟶{λ η => (desc η).nat a} hβ.Hom (F.φ a) (G.φ a))
+
+  namespace HasNaturalityRelation
+
+    open HasFunctors HasFunctorialityProperty
+
+    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+             [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
+             {α β : Sort (max 1 u w iw)} [hα : IsCategory W α] [hβ : IsCategory W β]
+             [h : HasNaturalityRelation.{u} α β]
+
+    @[reducible] def natFun (F G : Functor α β) (a : α) :
+      h.Nat F G ⟶ hβ.Hom (F.φ a) (G.φ a) :=
+    defNatFun F G a
+
+    instance {F G : Functor α β} (η : h.Nat F G) (a : α) :
+      IsFunApp (h.Nat F G) ((desc η).nat a) :=
+    { F := natFun F G a,
+      a := η,
+      e := byDef }
+
+    def FunNatDesc (F G : Functor α β) := NatDesc F.φ G.φ
+
+    structure DefNat {F G : Functor α β} (desc : FunNatDesc F G) where
+    (η             : h.Nat F G)
+    (natEq (a : α) : (h.desc η).nat a ≃ desc.nat a)
+
+    def byNatDef {F G : Functor α β} {desc : FunNatDesc F G} {η : DefNat desc} (a : α) :
+      (h.desc η.η).nat a ≃ desc.nat a :=
+    η.natEq a
+
+    def NatEquiv {F G : Functor α β} (η ε : h.Nat F G)
+                 (h : ∀ a, (h.desc η).nat a ≃ (h.desc ε).nat a) :=
+    η ≃ ε
+
+  end HasNaturalityRelation
+
+  class HasNatOp {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+                 [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
+                 (α β : Sort (max 1 u w iw)) [hα : IsCategory W α] [hβ : IsCategory W β] extends
+    HasNaturalityRelation.{u} α β where
+  (defRefl (F : HasFunctorialityProperty.Functor α β) :
+     HasNaturalityRelation.DefNat ⟨MetaQuantification.refl hβ.Hom F.φ⟩)
+  (defTrans {F G H : HasFunctorialityProperty.Functor α β} (η : Nat F G) (ε : Nat G H) :
+     HasNaturalityRelation.DefNat ⟨MetaQuantification.trans hβ.Hom (desc η).nat (desc ε).nat⟩)
+
+  namespace HasNatOp
+
+    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+             [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
+             {α β : Sort (max 1 u w iw)} [hα : IsCategory W α] [hβ : IsCategory W β]
+             [h : HasNatOp.{u} α β]
+
+    def refl (F : HasFunctorialityProperty.Functor α β) : h.Nat F F := (h.defRefl F).η
+
+    def trans {F G H : HasFunctorialityProperty.Functor α β} (η : h.Nat F G) (ε : h.Nat G H) :
+      h.Nat F H :=
+    (h.defTrans η ε).η
+
+    instance natIsPreorder : IsPreorder h.Nat :=
+    { refl  := refl,
+      trans := trans }
+
+  end HasNatOp
+
+  class HasNaturality {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+                      [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
+                      (α β : Sort (max 1 u w iw)) [hα : IsCategory W α] [hβ : IsCategory W β] extends
+    HasNatOp.{u} α β where
   [natHasTransFun              : HasTransFun                                    Nat]
   [natIsCategoricalPreorder    : IsCategoricalPreorder                          Nat]
   [natIsCategoricalPreorderExt : IsCategoricalPreorder.IsCategoricalPreorderExt Nat]
 
-  namespace HasNaturalityRelation
+  namespace HasNaturality
+
+    open HasFunctorialityProperty HasNaturalityRelation
 
     variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-             [IsIsoUniverse W] [IsFunUniverse W]
+             [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
 
-    variable (α β : Sort u) [hα : IsCategory W α] [hβ : IsCategory W β]
-             [h : HasNaturalityRelation α β]
+    section
 
-    instance funHasMorphisms : HasMorphisms W (HasFunctorialityProperty.Functor α β) := ⟨h.Nat⟩
+      variable (α β : Sort (max 1 u w iw)) [hα : IsCategory W α] [hβ : IsCategory W β]
+               [h : HasNaturality.{u} α β]
 
-    instance funIsCategory : IsCategory W (HasFunctorialityProperty.Functor α β) :=
-    { homIsPreorder               := h.natIsPreorder,
-      homHasTransFun              := h.natHasTransFun,
-      homIsCategoricalPreorder    := h.natIsCategoricalPreorder,
-      homIsCategoricalPreorderExt := h.natIsCategoricalPreorderExt }
+      instance : IsPreorder                                     h.Nat := h.natIsPreorder
+      instance : HasTransFun                                    h.Nat := h.natHasTransFun
+      instance : IsCategoricalPreorder                          h.Nat := h.natIsCategoricalPreorder
+      instance : IsCategoricalPreorder.IsCategoricalPreorderExt h.Nat := h.natIsCategoricalPreorderExt
 
-  end HasNaturalityRelation
+      instance funHasMorphisms : HasMorphisms W (Functor α β) := ⟨h.Nat⟩
+
+      instance funIsCategory : IsCategory.{max 1 u w iw} W (Functor α β) :=
+      { homIsPreorder               := HasNatOp.natIsPreorder,
+        homHasTransFun              := h.natHasTransFun,
+        homIsCategoricalPreorder    := h.natIsCategoricalPreorder,
+        homIsCategoricalPreorderExt := h.natIsCategoricalPreorderExt }
+
+    end
+
+    section
+
+      variable {α : Sort (max 1 u w iw)} (a : α) (β : Sort (max 1 u w iw))
+               [hα : IsCategory W α] [hβ : IsCategory W β] [h : HasNaturality.{u} α β]
+
+      def revApp (F : Functor α β) : β := F.φ a
+
+      def revAppPreFun : PreFunctor h.Nat hβ.Hom (revApp a β) :=
+      ⟨λ F₁ F₂ => natFun F₁ F₂ a⟩
+
+      instance revAppPreFunIsReflFunctor : IsReflFunctor (revAppPreFun.{u} a β) := ⟨λ F => byNatDef a • byDef⟩
+
+      instance revAppPreFunIsTransFunctor : IsTransFunctor (revAppPreFun.{u} a β) :=
+      ⟨λ η ε => (HasTransFun.congrArgTrans hβ.Hom byDef byDef)⁻¹ • byNatDef a • byDef⟩
+
+      instance revAppPreFunIsPreorderFunctor : IsPreorderFunctor (revAppPreFun.{u} a β) := ⟨⟩
+
+      instance revAppPreFunIsTransFunctorExt : IsTransFunctorExt (revAppPreFun.{u} a β) :=
+      { transEqExt    := λ η F₃ => sorry,
+        transEqExtExt := λ F₁ F₂ F₃ => sorry }
+
+      instance : IsCategoryFunctor (revApp.{u} a β) :=
+      { F         := revAppPreFun.{u} a β,
+        hPreorder := revAppPreFunIsPreorderFunctor a β,
+        hTransExt := revAppPreFunIsTransFunctorExt a β }
+
+      def RevAppFunType := (hFunUniv.hasFunProp (Functor α β) β).Fun (revApp.{u} a β)
+
+      def revAppFun (revAppIsFun : RevAppFunType.{u} a β) : Functor (Functor α β) β :=
+      { F := revAppIsFun }
+
+    end
+
+    section
+
+      variable (α β : Sort max 1 u w iw) [hα : IsCategory W α] [hβ : IsCategory W β]
+               [h₁ : HasNaturality.{u} α β] [h₂ : HasNaturality.{u, w, iw} (Functor α β) β]
+               (revAppIsFun : ∀ a : α, RevAppFunType.{u} a β)
+
+      def revAppCongrArgDesc {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
+        FunNatDesc (revAppFun.{u} a₁ β (revAppIsFun a₁)) (revAppFun.{u} a₂ β (revAppIsFun a₂)) :=
+      { nat   := λ F => IsMorphismFunctor.F (φ := F.φ) f,
+        isNat := { isNatural    := ⟨λ {F₁ F₂} η =>
+                                    ((h₁.desc η).isNat.isNatural.nat f •
+                                     HasTransFun.congrArgTransRight hβ.Hom byDef (IsMorphismFunctor.F (φ := F₂.φ) f))⁻¹ •
+                                    HasTransFun.congrArgTransLeft hβ.Hom (IsMorphismFunctor.F (φ := F₁.φ) f) byDef⟩,
+                   isNaturalExt := sorry } }
+
+      variable (defRevAppCongrArg : ∀ {a₁ a₂ : α} (f : a₁ ⇾ a₂), DefNat (revAppCongrArgDesc α β revAppIsFun f))
+
+      def revAppCongrArg {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
+        revAppFun.{u} a₁ β (revAppIsFun a₁) ⇾ revAppFun.{u} a₂ β (revAppIsFun a₂) :=
+      (defRevAppCongrArg f).η
+
+      def RevAppEquivReflType (a : α) :=
+      NatEquiv (revAppCongrArg.{u} α β revAppIsFun defRevAppCongrArg (HasRefl.refl a))
+               (HasRefl.refl (revAppFun.{u} a β (revAppIsFun a)))
+               (λ F => (byNatDef F)⁻¹ •
+                       IsReflFunctor.reflEq (F := IsMorphismFunctor.F (φ := F.φ)) a •
+                       byNatDef F)
+
+      def RevAppEquivTransType {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) :=
+      NatEquiv (revAppCongrArg.{u} α β revAppIsFun defRevAppCongrArg (g • f))
+               (revAppCongrArg.{u} α β revAppIsFun defRevAppCongrArg g • revAppCongrArg α β revAppIsFun defRevAppCongrArg f)
+               (λ F => (HasTransFun.congrArgTrans hβ.Hom (byNatDef F) (byNatDef F) •
+                        byNatDef F)⁻¹ •
+                       IsTransFunctor.transEq (F := IsMorphismFunctor.F (φ := F.φ)) f g •
+                       byNatDef F)
+
+      variable (defRevAppCongrArgFun : ∀ a₁ a₂ : α, (a₁ ⇾ a₂) ⟶{λ f => revAppCongrArg α β revAppIsFun defRevAppCongrArg f} (revAppFun.{u} a₁ β (revAppIsFun a₁) ⇾ revAppFun.{u} a₂ β (revAppIsFun a₂)))
+
+      @[reducible] def revAppCongrArgFun (a₁ a₂ : α) :
+        (a₁ ⇾ a₂) ⟶ (revAppFun.{u} a₁ β (revAppIsFun a₁) ⇾ revAppFun.{u} a₂ β (revAppIsFun a₂)) :=
+      defRevAppCongrArgFun a₁ a₂
+
+      variable (revAppEquivRefl : ∀ a : α, RevAppEquivReflType α β revAppIsFun defRevAppCongrArg a)
+               (revAppEquivTrans : ∀ {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃), RevAppEquivTransType α β revAppIsFun defRevAppCongrArg f g)
+
+      instance revAppFunIsCategoryFunctor : IsCategoryFunctor (λ a : α => revAppFun.{u} a β (revAppIsFun a)) :=
+      { F         := ⟨revAppCongrArgFun.{u} α β revAppIsFun defRevAppCongrArg defRevAppCongrArgFun⟩,
+        hPreorder := { reflEq  := λ a   => revAppEquivRefl a • byDef,
+                       transEq := λ f g => HasTransFun.congrArgTrans h₂.Nat byDef⁻¹ byDef⁻¹ •
+                                           revAppEquivTrans f g •
+                                           byDef },
+        hTransExt := sorry }
+
+      def RevAppFunFunType :=
+      (hFunUniv.hasFunProp α (Functor (Functor α β) β)).Fun (λ a : α => revAppFun.{u} a β (revAppIsFun a))
+        (hφ := revAppFunIsCategoryFunctor.{u} α β revAppIsFun defRevAppCongrArg defRevAppCongrArgFun
+                                              revAppEquivRefl revAppEquivTrans)
+
+      def revAppFunFun (revAppFunIsFun : RevAppFunFunType.{u} α β revAppIsFun defRevAppCongrArg defRevAppCongrArgFun
+                                                              revAppEquivRefl revAppEquivTrans) :
+        Functor α (Functor (Functor α β) β) :=
+      { F := revAppFunIsFun }
+
+    end
+
+    class HasRevAppFun (α β : Sort max 1 u w iw) [hα : IsCategory W α] [hβ : IsCategory W β]
+                       [h₁ : HasNaturality.{u} α β]
+                       [h₂ : HasNaturality.{u, w, iw} (Functor α β) β] where
+    (revAppIsFun (a : α) : RevAppFunType.{u} a β)
+    (defRevAppCongrArg {a₁ a₂ : α} (f : a₁ ⇾ a₂) : DefNat (revAppCongrArgDesc α β revAppIsFun f))
+    (defRevAppCongrArgFun (a₁ a₂ : α) :
+       (a₁ ⇾ a₂)
+       ⟶{λ f => revAppCongrArg α β revAppIsFun defRevAppCongrArg f}
+       (revAppFun.{u} a₁ β (revAppIsFun a₁) ⇾ revAppFun.{u} a₂ β (revAppIsFun a₂)))
+    (revAppEquivRefl (a : α) : RevAppEquivReflType α β revAppIsFun defRevAppCongrArg a)
+    (revAppEquivTrans {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) :
+       RevAppEquivTransType α β revAppIsFun defRevAppCongrArg f g)
+    (revAppFunIsFun : RevAppFunFunType.{u} α β revAppIsFun defRevAppCongrArg defRevAppCongrArgFun
+                                           revAppEquivRefl revAppEquivTrans)
+
+  end HasNaturality
 
   class IsNatUniverse (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-                      [hIsoUniv : IsIsoUniverse W] [hFunUniv : IsFunUniverse W] where
-  [hasNaturalityRelation (α β : Sort u) [hα : IsCategory W α] [hβ : IsCategory W β] :
-     HasNaturalityRelation α β]
+                      [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W] where
+  [hasNatRel (α β : Sort (max 1 u w iw)) [hα : IsCategory W α] [hβ : IsCategory W β] :
+     HasNaturality.{u} α β]
+  [hasRevAppFun (α β : Sort max 1 u w iw) [hα : IsCategory W α] [hβ : IsCategory W β] :
+     HasNaturality.HasRevAppFun.{u} α β]
 
   namespace IsNatUniverse
 
-    variable (W : Universe.{w}) [HasIdentity.{w, iw} W] [HasStandardFunctors W]
-             [hIsoUniv : IsIsoUniverse W] [hFunUniv : IsFunUniverse W] [h : IsNatUniverse W]
+    open HasFunctorialityProperty
 
-    instance (α β : Sort u) [hα : IsCategory W α] [hβ : IsCategory W β] :
-      HasNaturalityRelation α β :=
-    h.hasNaturalityRelation α β
+    variable {W : Universe.{w}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
+             [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
+             [h : IsNatUniverse.{u} W]
+
+    instance (α β : Sort (max 1 u w iw)) [hα : IsCategory W α] [hβ : IsCategory W β] :
+      HasNaturality.{u} α β :=
+    h.hasNatRel α β
+
+    def revAppFun {α : Sort (max 1 u w iw)} (a : α) (β : Sort (max 1 u w iw))
+                  [hα : IsCategory W α] [hβ : IsCategory W β] :
+      Functor (Functor α β) β :=
+    { F := (h.hasRevAppFun α β).revAppIsFun a }
+
+    def revAppFunFun (α β : Sort max 1 u w iw) [hα : IsCategory W α] [hβ : IsCategory W β] :
+      Functor α (Functor (Functor α β) β) :=
+    { F := (h.hasRevAppFun α β).revAppFunIsFun }
 
   end IsNatUniverse
 

@@ -22,17 +22,18 @@ namespace CategoryTheory.IsCategory
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder
 
   def typeClass (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
+    SimpleTypeClass.{max 1 u w iw, max 1 u w ww iw} := IsCategory.{max 1 u w iw, w, ww, iw} W
   def univ (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    Universe.{max 1 u w, max ((max 1 u w) + 1) ww iw} := Bundled.univ (typeClass.{u} W)
+    Universe.{max 1 u w iw, max ((max 1 u w iw) + 1) ww} := Bundled.univ (typeClass.{u} W)
 
   variable {W : Universe.{w, ww}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
 
-  instance inst (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W A := Bundled.inst A
+  instance inst (A : univ.{u} W) : IsCategory.{max 1 u w iw, w, ww, iw} W A := A.inst
+  instance (A : univ.{u} W) : IsCategory.{max 1 u w iw, w, ww, iw} W A.a := A.inst
 
   -- Instance equivalences
 
-  variable [hIsoUniv : IsIsoUniverse W]
+  variable [hIsoUniv : IsIsoUniverse.{u} W]
 
   instance hasEquivalenceRelation (A : univ.{u} W) : HasEquivalenceRelation A W :=
   ⟨(hIsoUniv.hasIsomorphisms A).hasIsoRel.Iso⟩
@@ -42,33 +43,39 @@ namespace CategoryTheory.IsCategory
 
   -- Functors
 
-  variable [hFunUniv : IsFunUniverse W]
+  variable [hFunUniv : IsFunUniverse.{u} W] [hNatUniv : IsNatUniverse.{u} W]
 
-  instance hasFunctoriality : HasFunctoriality (univ.{u} W) (univ.{u} W) W :=
-  ⟨λ {A B : univ W} => (hFunUniv.hasFunProp A B).Fun⟩
+  instance hasFunctorInstances :
+    HasFunctorInstances (univ.{u} W) (univ.{u} W) (typeClass.{u} W) :=
+  { Fun     := λ A B => HasFunctorialityProperty.Functor A B,
+    apply   := HasFunctorialityProperty.Functor.φ,
+    funInst := λ A B => HasNaturality.funIsCategory.{u, w, iw} A B }
 
-  variable [hNatUniv : IsNatUniverse W]
-
-  instance hasFunctorialityInstances :
-    HasFunctorialityInstances.{max 1 u w, max 1 u w, w} (univ.{u} W) (univ.{u} W) (typeClass.{u} W) :=
-  ⟨λ A B => HasNaturalityRelation.funIsCategory A B⟩
-
-  def toDefFun {A B : univ.{u} W} (F : A ⟶' B) : A ⟶{F.f} B :=
-  Bundled.HasFunctorialityInstances.toDefFun F
+  def toDefFun {A B : univ.{u} W} (F : A ⟶ B) : A ⟶{F.φ} B :=
+  HasFunctors.toDefFun F
 
   instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) :=
-  ⟨λ {_ _} F {_ _} e => (IsIsoFunctor.preFunctor F.f) e⟩
+  ⟨λ {_ _} F {_ _} e => (IsIsoFunctor.preFunctor F.φ) e⟩
 
   instance hasInternalFunctors : HasInternalFunctors (univ.{u} W) := ⟨⟩
 
-  instance hasIdFun : HasIdFun (univ.{u} W) := ⟨λ A => toDefFun (IsFunUniverse.idFun A)⟩
+  instance hasLinearFunOp : HasLinearFunOp (univ.{u} W) :=
+  { defIdFun         := λ A => toDefFun (IsFunUniverse.idFun.{u} A.a),
+                                 -- TODO: Why doesn't `toDefFun` work here?
+    defRevAppFun     := λ a B => { F   := IsNatUniverse.revAppFun.{u} a B.a,
+                                   eff := λ F => HasInstanceEquivalences.refl (F a) },
+    defRevAppFunFun  := λ A B => { F   := IsNatUniverse.revAppFunFun.{u} A.a B.a,
+                                   eff := λ a => HasInstanceEquivalences.refl (IsNatUniverse.revAppFun.{u} a B.a) },
+    defCompFun       := λ F G => toDefFun (IsFunUniverse.compFun.{u} F G),
+    defCompFunFun    := sorry,
+    defCompFunFunFun := sorry }
 
-  instance hasConstFun : HasConstFun (univ.{u} W) (univ.{u} W) :=
-  ⟨λ A {B} b => toDefFun (IsFunUniverse.constFun A b)⟩
+  instance hasAffineFunOp : HasAffineFunOp (univ.{u} W) :=
+  { defConstFun    := λ A {B} b => toDefFun (IsFunUniverse.constFun.{u} A.a b),
+    defConstFunFun := sorry }
 
-  instance hasCompFun : HasCompFun (univ.{u} W) (univ.{u} W) (univ.{u} W) :=
-  ⟨λ F G => toDefFun (IsFunUniverse.compFun F G)⟩
-
-  instance hasLinearFunOp : HasLinearFunOp (univ.{u} W) := sorry
+  instance hasFullFunOp : HasFullFunOp (univ.{u} W) :=
+  { defDupFun    := sorry,
+    defDupFunFun := sorry }
 
 end CategoryTheory.IsCategory

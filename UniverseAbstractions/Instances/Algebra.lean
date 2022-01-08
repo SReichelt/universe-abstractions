@@ -31,7 +31,7 @@ namespace CommSemigroup
   @[reducible] def typeClass : SimpleTypeClass.{u + 1, u + 1} := CommSemigroup.{u}
   @[reducible] def univ : Universe.{u + 1, u + 2} := Bundled.univ typeClass.{u}
 
-  instance inst (A : univ.{u}) : CommSemigroup.{u} A := Bundled.inst A
+  instance inst (A : univ.{u}) : CommSemigroup.{u} A := A.inst
 
   -- Instance equivalences
 
@@ -43,13 +43,13 @@ namespace CommSemigroup
   class IsHom {A B : univ} (f : A → B) : Prop where
   (h_op (a b : A) : f (op a b) = op (f a) (f b))
 
-  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} prop := ⟨IsHom⟩
+  instance hasFunctoriality : HasFunctoriality univ.{u} univ.{v} := ⟨IsHom⟩
 
-  @[simp] theorem simp_op_arg' {A B : univ} (F : A ⟶' B) (a₁ a₂ : A) :
+  @[simp] theorem simp_op_arg' {A B : univ} (F : HasFunctoriality.Fun A B) (a₁ a₂ : A) :
     F.f ((inst A).op a₁ a₂) = (inst B).op (F.f a₁) (F.f a₂) :=
   F.isFun.h_op a₁ a₂
 
-  theorem funExt' {A B : univ} {F G : A ⟶' B} (h : ∀ a, F.f a = G.f a) : F = G :=
+  theorem funExt' {A B : univ} {F G : HasFunctoriality.Fun A B} (h : ∀ a, F.f a = G.f a) : F = G :=
   have h₁ : F.f = G.f := funext h;
   by induction F; induction G; subst h₁; simp
 

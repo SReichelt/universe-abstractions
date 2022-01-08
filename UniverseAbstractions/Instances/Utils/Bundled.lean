@@ -14,16 +14,15 @@ universe u v w uv cu cv cuv iuw
 
 
 
-class HasFunctoriality (U : Universe.{u}) (V : Universe.{v}) (W : outParam Universe.{w}) where
-(IsFun {A : U} {B : V} : (A → B) → W)
+class HasFunctoriality (U : Universe.{u}) (V : Universe.{v}) where
+(IsFun {A : U} {B : V} : (A → B) → Sort w)
 
 namespace HasFunctoriality
 
-  def Fun {U : Universe.{u}} {V : Universe.{v}} {W : Universe.{w}} [h : HasFunctoriality U V W]
-          (A : U) (B : V) : Sort (max 1 u v w) :=
-  BundledFunctor (h.IsFun (A := A) (B := B))
-
-  infixr:20 " ⟶' " => HasFunctoriality.Fun
+  structure Fun {U : Universe.{u}} {V : Universe.{v}} [h : HasFunctoriality.{u, v, w} U V]
+                (A : U) (B : V) : Sort (max 1 u v w) where
+  (f     : A → B)
+  (isFun : h.IsFun f)
 
 end HasFunctoriality
 
@@ -47,37 +46,33 @@ namespace Bundled
   { Fun   := λ A B => type (h.funInst A B),
     apply := h.apply }
 
-  class HasFunctorialityInstances (U : Universe.{u}) (V : Universe.{v}) {W : Universe.{w}}
-                                  [h : HasFunctoriality U V W]
+  class HasFunctorialityInstances (U : Universe.{u}) (V : Universe.{v})
+                                  [h : HasFunctoriality.{u, v, w} U V]
                                   (φ : outParam SimpleTypeClass.{max 1 u v w, cuv}) where
-  (funInst (A : U) (B : V) : φ (A ⟶' B))
+  (funInst (A : U) (B : V) : φ (HasFunctoriality.Fun A B))
 
   namespace HasFunctorialityInstances
 
-    instance hasFunctorInstances (U : Universe.{u}) (V : Universe.{v}) {W : Universe.{w}}
-                                 [HasFunctoriality U V W]
+    instance hasFunctorInstances (U : Universe.{u}) (V : Universe.{v})
+                                 [h : HasFunctoriality.{u, v, w} U V]
                                  (φ : outParam SimpleTypeClass.{max 1 u v w, cuv})
                                  [h : HasFunctorialityInstances U V φ] :
       HasFunctorInstances U V φ :=
     { Fun     := HasFunctoriality.Fun,
-      apply   := BundledFunctor.f,
+      apply   := HasFunctoriality.Fun.f,
       funInst := h.funInst }
 
-    def defFun {U : Universe.{u}} {V : Universe.{v}} {W : Universe.{w}}
-               [h : HasFunctoriality U V W] {φ : SimpleTypeClass.{max 1 u v w, cuv}}
-               [HasFunctorialityInstances U V φ] [HasIdentity V]
-               {A : U} {B : V} {f : A → B} (isFun : h.IsFun f) :
-      A ⟶{f} B :=
-    { F   := { f     := f,
-               isFun := isFun },
-      eff := λ a => HasRefl.refl (f a) }
-
-    def toDefFun {U : Universe.{u}} {V : Universe.{v}} {W : Universe.{w}}
-                 [h : HasFunctoriality U V W] {φ : SimpleTypeClass.{max 1 u v w, cuv}}
-                 [HasFunctorialityInstances U V φ] [HasIdentity V]
-                 {A : U} {B : V} (F : A ⟶' B) :
+    def toDefFun {U : Universe.{u}} {V : Universe.{v}} [h : HasFunctoriality.{u, v, w} U V]
+                 {φ : SimpleTypeClass.{max 1 u v w, cuv}} [HasFunctorialityInstances U V φ]
+                 [HasIdentity V] {A : U} {B : V} (F : A ⟶ B) :
       A ⟶{F.f} B :=
-    defFun F.isFun
+    HasFunctors.toDefFun F
+
+    def defFun {U : Universe.{u}} {V : Universe.{v}} [h : HasFunctoriality.{u, v, w} U V]
+               {φ : SimpleTypeClass.{max 1 u v w, cuv}} [HasFunctorialityInstances U V φ]
+               [HasIdentity V] {A : U} {B : V} {f : A → B} (isFun : h.IsFun f) :
+      A ⟶{f} B :=
+    toDefFun ⟨f, isFun⟩
 
   end HasFunctorialityInstances
 

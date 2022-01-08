@@ -75,7 +75,7 @@ namespace HasFunctors
 
   def toDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) : A ⟶{f} B := ⟨F, h⟩
 
-  def toDefFun               (F : A ⟶ B)    : A ⟶{apply F} B := toDefFun' F (λ a => HasRefl.refl (F a))
+  def toDefFun               (F : A ⟶ B)    : A ⟶{apply F} B := toDefFun' F (λ a => HasInstanceEquivalences.refl (F a))
   def fromDefFun {f : A → B} (F : A ⟶{f} B) : A ⟶ B          := F.F
 
   def byDef {f : A → B} {F : A ⟶{f} B} {a : A} : (fromDefFun F) a ≃ f a := F.eff a
@@ -111,7 +111,7 @@ namespace HasFunctors
     instance (priority := low) refl (F : A ⟶ B) (a : A) : IsFunApp A (F a) :=
     { F := F,
       a := a,
-      e := HasRefl.refl (F a) }
+      e := HasInstanceEquivalences.refl (F a) }
 
     def fromDef {f : A → B} (F : A ⟶{f} B) (a : A) : IsFunApp A (f a) :=
     { F := fromDefFun F,

@@ -59,12 +59,14 @@ namespace CategoryTheory
   namespace IsCategory
 
     variable {V : Universe.{v, vv}} [HasIdentity.{v, iv} V] [HasLinearFunctors V] {α : Sort u}
-             [hCat : IsCategory V α]
+             [h : IsCategory V α]
 
-    instance : IsPreorder               hCat.Hom := hCat.homIsPreorder
-    instance : HasTransFun              hCat.Hom := hCat.homHasTransFun
-    instance : IsCategoricalPreorder    hCat.Hom := hCat.homIsCategoricalPreorder
-    instance : IsCategoricalPreorderExt hCat.Hom := hCat.homIsCategoricalPreorderExt
+    instance : HasRefl                  h.Hom := h.homIsPreorder.toHasRefl
+    instance : HasTrans                 h.Hom := h.homIsPreorder.toHasTrans
+    instance : IsPreorder               h.Hom := h.homIsPreorder
+    instance : HasTransFun              h.Hom := h.homHasTransFun
+    instance : IsCategoricalPreorder    h.Hom := h.homIsCategoricalPreorder
+    instance : IsCategoricalPreorderExt h.Hom := h.homIsCategoricalPreorderExt
 
     instance isSemicategory : IsSemicategory V α := ⟨⟩
 
@@ -84,13 +86,16 @@ namespace CategoryTheory
   namespace IsGroupoid
 
     variable {V : Universe.{v, vv}} [HasIdentity.{v, iv} V] [HasStandardFunctors V] {α : Sort u}
-             [hGrp : IsGroupoid V α]
+             [h : IsGroupoid V α]
 
-    instance : IsEquivalence            hGrp.Hom := hGrp.homIsEquivalence
-    instance : HasTransFun              hGrp.Hom := hGrp.homHasTransFun
-    instance : HasSymmFun               hGrp.Hom := hGrp.homHasSymmFun
-    instance : IsGroupoidEquivalence    hGrp.Hom := hGrp.homIsGroupoidEquivalence
-    instance : IsGroupoidEquivalenceExt hGrp.Hom := hGrp.homIsGroupoidEquivalenceExt
+    instance : HasRefl                  h.Hom := h.homIsEquivalence.toHasRefl
+    instance : HasSymm                  h.Hom := h.homIsEquivalence.toHasSymm
+    instance : HasTrans                 h.Hom := h.homIsEquivalence.toHasTrans
+    instance : IsEquivalence            h.Hom := h.homIsEquivalence
+    instance : HasTransFun              h.Hom := h.homHasTransFun
+    instance : HasSymmFun               h.Hom := h.homHasSymmFun
+    instance : IsGroupoidEquivalence    h.Hom := h.homIsGroupoidEquivalence
+    instance : IsGroupoidEquivalenceExt h.Hom := h.homIsGroupoidEquivalenceExt
 
     instance isCategory : IsCategory V α := ⟨⟩
 
