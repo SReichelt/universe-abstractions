@@ -130,7 +130,7 @@ namespace MetaRelation
 
     def refl (a : α) : HalfInv R (HasRefl.refl a) (HasRefl.refl a) := idId R a
 
-    variable [HasInternalFunctors V] [HasLinearFunOp V] [HasTransFun R]
+    variable [HasInternalFunctors V] [HasCongrFun V V] [HasTransFun R]
 
     def trans {a b c : α} {f₁ : R a b} {g₁ : R b a} (e₁ : HalfInv R f₁ g₁)
                           {f₂ : R b c} {g₂ : R c b} (e₂ : HalfInv R f₂ g₂) :
@@ -141,6 +141,20 @@ namespace MetaRelation
                           (assoc f₁ f₂ g₂)⁻¹) g₁ •
     assoc (f₂ • f₁) g₂ g₁
 
+    def unique {a b : α} {f : R a b} {g₁ g₂ : R b a} (h₁ : HalfInv R f g₁) (h₂ : HalfInv R g₂ f) :
+      g₂ ≃ g₁ :=
+    congrArgTransRightId R h₂ g₁ •
+    assoc g₂ f g₁ •
+    (congrArgTransLeftId R g₂ h₁)⁻¹
+
+    def congrArgLeft {a b : α} {f : R a b} {g₁ g₂ : R b a} (hg : g₁ ≃ g₂) (h : HalfInv R f g₂) :
+      HalfInv R f g₁ :=
+    h • congrArgTransLeft R f hg
+
+    def congrArgRight {a b : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) {g : R b a} (h : HalfInv R f₂ g) :
+      HalfInv R f₁ g :=
+    h • congrArgTransRight R hf g
+
   end HalfInv
 
   class IsInv [IsPreorder R] {a b : α} (f : R a b) (g : R b a) where
@@ -148,6 +162,8 @@ namespace MetaRelation
   (rightInv : HalfInv R g f)
 
   namespace IsInv
+
+    open IsAssociative IsCategoricalPreorder
 
     variable [IsPreorder R] [IsCategoricalPreorder R]
 
@@ -159,13 +175,27 @@ namespace MetaRelation
     { leftInv  := h.rightInv,
       rightInv := h.leftInv }
 
-    variable [HasInternalFunctors V] [HasLinearFunOp V] [HasTransFun R]
+    variable [HasInternalFunctors V] [HasCongrFun V V] [HasTransFun R]
 
     instance trans {a b c : α} (f₁ : R a b) (g₁ : R b a) [h₁ : IsInv R f₁ g₁]
                                (f₂ : R b c) (g₂ : R c b) [h₂ : IsInv R f₂ g₂] :
       IsInv R (f₂ • f₁) (g₁ • g₂) :=
     { leftInv  := HalfInv.trans R h₁.leftInv  h₂.leftInv,
       rightInv := HalfInv.trans R h₂.rightInv h₁.rightInv }
+
+    def unique {a b : α} (f : R a b) (g₁ g₂ : R b a) [h₁ : IsInv R f g₁] [h₂ : IsInv R f g₂] :
+      g₂ ≃ g₁ :=
+    HalfInv.unique R h₁.leftInv h₂.rightInv
+
+    def congrArgLeft {a b : α} (f : R a b) {g₁ g₂ : R b a} (hg : g₁ ≃ g₂) [h : IsInv R f g₂] :
+      IsInv R f g₁ :=
+    { leftInv  := HalfInv.congrArgLeft  R hg h.leftInv,
+      rightInv := HalfInv.congrArgRight R hg h.rightInv }
+
+    def congrArgRight {a b : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) (g : R b a) [h : IsInv R f₂ g] :
+      IsInv R f₁ g :=
+    { leftInv  := HalfInv.congrArgRight R hf h.leftInv,
+      rightInv := HalfInv.congrArgLeft  R hf h.rightInv }
 
   end IsInv
 
@@ -187,6 +217,18 @@ namespace MetaRelation
 
       variable [HasInternalFunctors V] [HasTransFun R]
 
+      def invEq [HasCongrFun V V] {a b : α} (f : R a b) (g : R b a) [h : IsInv R f g] : f⁻¹ ≃ g :=
+      IsInv.unique R f g f⁻¹
+
+      def reflInv [HasCongrFun V V] (a : α) : (HasRefl.refl (R := R) a)⁻¹ ≃ HasRefl.refl (R := R) a :=
+      invEq R (HasRefl.refl a) (HasRefl.refl a)
+
+      def symmInv [HasCongrFun V V] {a b : α} (f : R a b) : (f⁻¹)⁻¹ ≃ f :=
+      invEq R f⁻¹ f
+
+      def transInv [HasLinearFunOp V] {a b c : α} (f : R a b) (g : R b c) : (g • f)⁻¹ ≃ f⁻¹ • g⁻¹ :=
+      invEq R (g • f) (f⁻¹ • g⁻¹)
+
       def cancelLeft [HasCongrArg V V] {a b c : α} (f : R a b) (g : R c b) :
         g • (g⁻¹ • f) ≃ f :=
       congrArgTransLeftId R f (rightInv g) • (assoc f g⁻¹ g)⁻¹
@@ -202,18 +244,6 @@ namespace MetaRelation
       def cancelRightInv [HasCongrFun V V] {a b c : α} (f : R a b) (g : R b c) :
         (g • f) • f⁻¹ ≃ g :=
       congrArgTransRightId R (rightInv f) g • assoc f⁻¹ f g
-
-      def invEq [HasCongrFun V V] {a b : α} (f : R a b) (g : R b a) [h : IsInv R f g] : f⁻¹ ≃ g :=
-      cancelRightInv R f g • (leftId f⁻¹ • congrArgTransLeft R f⁻¹ h.leftInv)⁻¹
-
-      def reflInv [HasCongrFun V V] (a : α) : (HasRefl.refl (R := R) a)⁻¹ ≃ HasRefl.refl (R := R) a :=
-      invEq R (HasRefl.refl a) (HasRefl.refl a)
-
-      def symmInv [HasCongrFun V V] {a b : α} (f : R a b) : (f⁻¹)⁻¹ ≃ f :=
-      invEq R f⁻¹ f
-
-      def transInv [HasLinearFunOp V] {a b c : α} (f : R a b) (g : R b c) : (g • f)⁻¹ ≃ f⁻¹ • g⁻¹ :=
-      invEq R (g • f) (f⁻¹ • g⁻¹)
 
     end
 
@@ -376,7 +406,13 @@ namespace MetaFunctor
     instance coeFun : CoeFun (MetaFunctor R S) (λ _ => ∀ {a b}, R a b → S a b) :=
     ⟨λ F {a b} => apply (F.baseFun a b)⟩
 
-    variable [HasIdentity.{w, iw} W] (F : MetaFunctor R S)
+    variable [HasIdentity.{w, iw} W]
+
+    def fromDefFun {f : ∀ a b, R a b → S a b} (F : ∀ a b, R a b ⟶{f a b} S a b) :
+      MetaFunctor R S :=
+    ⟨λ a b => F a b⟩
+
+    variable (F : MetaFunctor R S)
 
     class IsReflFunctor  [hR : HasRefl  R] [hS : HasRefl  S] where
     (reflEq  (a     : α)                         : F (hR.refl a) ≃ hS.refl a)

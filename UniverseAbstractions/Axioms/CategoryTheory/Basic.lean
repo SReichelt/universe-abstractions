@@ -70,7 +70,7 @@ namespace CategoryTheory
 
     instance isSemicategory : IsSemicategory V α := ⟨⟩
 
-    def idHom (a : α) : a ⇾ a := HasRefl.refl a
+    @[reducible] def idHom (a : α) : a ⇾ a := HasRefl.refl a
 
   end IsCategory
 

@@ -12,15 +12,13 @@ universe u u' v w vw iv iw
 
 
 
-namespace MetaRelation
+section MetaRelation
 
-  open IsCategoricalPreorder IsGroupoidEquivalence
+  open MetaRelation IsCategoricalPreorder IsGroupoidEquivalence
 
   variable {α : Sort u} {V : Universe.{v}} [HasIdentity V] (R : MetaRelation α V)
 
-  section HasTrivialIdentity
-
-    open HasTrivialIdentity
+  namespace HasTrivialIdentity
 
     variable [HasTrivialIdentity V]
 
@@ -37,9 +35,7 @@ namespace MetaRelation
 
   end HasTrivialIdentity
 
-  section HasTrivialExtensionality
-
-    open HasTrivialExtensionality
+  namespace HasTrivialExtensionality
 
     variable [HasInternalFunctors V] [HasTrivialExtensionality V V]
 
@@ -68,13 +64,11 @@ end MetaRelation
 
 
 
-namespace MetaFunctor
+section MetaFunctor
 
-  open MetaRelation
+  open MetaRelation MetaFunctor
 
-  section HasTrivialIdentity
-
-    open HasTrivialIdentity
+  namespace HasTrivialIdentity
 
     variable {α : Sort u} {V W VW : Universe} [HasIdentity W] [HasTrivialIdentity W]
              [HasFunctors V W VW] {R : MetaRelation α V} {S : MetaRelation α W}
@@ -89,9 +83,7 @@ namespace MetaFunctor
 
   end HasTrivialIdentity
 
-  section HasTrivialExtensionality
-
-    open HasTrivialExtensionality
+  namespace HasTrivialExtensionality
 
     variable {α : Sort u} {V : Universe} [HasIdentity V] [HasInternalFunctors V]
              [HasTrivialExtensionality V V] {R S : MetaRelation α V} (F : MetaFunctor R S)
@@ -113,13 +105,11 @@ end MetaFunctor
 
 
 
-namespace MetaQuantification
+section MetaQuantification
 
-  open MetaRelation MetaFunctor IsNatural
+  open MetaRelation MetaFunctor MetaQuantification IsNatural
 
-  section HasTrivialIdentity
-
-    open HasTrivialIdentity
+  namespace HasTrivialIdentity
 
     variable {α : Sort u} {β : Sort u'} {V : Universe.{v}} {W : Universe.{w}}
              {VW : Universe.{vw}} [HasFunctors V W VW] [HasIdentity.{w, iw} W]
@@ -132,9 +122,7 @@ namespace MetaQuantification
 
   end HasTrivialIdentity
 
-  section HasTrivialExtensionality
-
-    open HasTrivialExtensionality
+  namespace HasTrivialExtensionality
 
     variable {α : Sort u} {β : Sort u'} {W : Universe.{w}} [HasIdentity.{w, iw} W]
              [HasInternalFunctors W] [HasTrivialExtensionality W W]
