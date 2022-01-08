@@ -74,16 +74,35 @@ namespace type
 
   instance hasFunProp (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasFunctorialityProperty α β :=
-  { IsFun := λ _ _ => PUnit }
+  { Fun               := IsCategoryFunctor,
+    isCategoryFunctor := id }
+
+  def isoPreFunctor {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                    (φ : α → β) [hφ : IsCategoryFunctor φ] :
+    PreFunctor (isoRel α) (isoRel β) φ :=
+  ⟨λ a b e => IsoDesc.map φ e⟩
+
+  instance isIsoFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                    (F : HasFunctorialityProperty.Functor α β) :
+    IsIsoFunctor F.φ :=
+  { F              := isoPreFunctor F.φ,
+    homIsoCongr    := λ _   => rfl,
+    homIsoCongrExt := λ _ _ => rfl }
 
   instance hasIsoFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasIsoFunctoriality α β :=
-  { isIsoFun := sorry }
+  { isIsoFun := isIsoFun }
+
+  def defFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+             {φ : α → β} [hφ : IsCategoryFunctor φ] :
+    HasFunctorialityProperty.DefFun φ :=
+  { F  := hφ,
+    eq := λ a b => HasInstanceEquivalences.refl (hφ.F.baseFun a b) }
 
   instance isFunUniverse : IsFunUniverse.{u} type.{u} :=
-  { hasFunProp := hasIsoFun,
-    idIsFun    := sorry,
-    constIsFun := sorry,
-    compIsFun  := sorry }
+  { hasFunProp  := hasIsoFun,
+    defIdFun    := λ _               => defFun,
+    defConstFun := λ _ {_} [_] [_] _ => defFun,
+    defCompFun  := λ _ _             => defFun }
 
 end type

@@ -22,14 +22,14 @@ namespace CategoryTheory.IsCategory
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder
 
   def typeClass (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    SimpleTypeClass.{max 1 u w iw, max 1 u w ww iw} := IsCategory.{max 1 u w iw, w, ww, iw} W
+    SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
   def univ (W : Universe.{w, ww}) [HasIdentity.{w, iw} W] [HasStandardFunctors W] :
-    Universe.{max 1 u w iw, max ((max 1 u w iw) + 1) ww} := Bundled.univ (typeClass.{u} W)
+    Universe.{max 1 u w, max ((max 1 u w) + 1) iw ww} := Bundled.univ (typeClass.{u} W)
 
   variable {W : Universe.{w, ww}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
 
-  instance inst (A : univ.{u} W) : IsCategory.{max 1 u w iw, w, ww, iw} W A := A.inst
-  instance (A : univ.{u} W) : IsCategory.{max 1 u w iw, w, ww, iw} W A.a := A.inst
+  instance inst (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W A := A.inst
+  instance (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W A.a := A.inst
 
   -- Instance equivalences
 
@@ -54,8 +54,7 @@ namespace CategoryTheory.IsCategory
   def toDefFun {A B : univ.{u} W} (F : A ⟶ B) : A ⟶{F.φ} B :=
   HasFunctors.toDefFun F
 
-  instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) :=
-  ⟨λ {_ _} F {_ _} e => (IsIsoFunctor.preFunctor F.φ) e⟩
+  instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) := ⟨IsFunUniverse.mapIso⟩
 
   instance hasInternalFunctors : HasInternalFunctors (univ.{u} W) := ⟨⟩
 

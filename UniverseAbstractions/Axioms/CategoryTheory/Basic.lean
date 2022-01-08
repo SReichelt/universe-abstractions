@@ -112,6 +112,12 @@ namespace CategoryTheory
 
     variable {W : Universe.{w, ww}} [HasIdentity.{w, iw} W]
 
+    @[reducible] def preFunctor [HasInternalFunctors W] {α : Sort u} {β : Sort v}
+                                [hα : HasMorphisms W α] [hβ : HasMorphisms W β]
+                                (φ : α → β) [hφ : IsMorphismFunctor φ] :
+      PreFunctor hα.Hom hβ.Hom φ :=
+    hφ.F
+
     instance idFun [HasInternalFunctors W] [HasLinearFunOp W] (α : Sort u) [hα : HasMorphisms W α] :
       IsMorphismFunctor (@id α) :=
     ⟨MetaFunctor.idFun.metaFunctor hα.Hom⟩
@@ -189,13 +195,20 @@ namespace CategoryTheory
 
     section
 
-      variable [HasLinearFunctors W] {α : Sort u} {β : Sort v} [IsCategory W α] [IsCategory W β]
+      variable [HasLinearFunctors W] {α : Sort u} {β : Sort v}
+               [hα : IsCategory W α] [hβ : IsCategory W β]
                (φ : α → β) [h : IsCategoryFunctor φ]
 
       instance : IsPreorderFunctor                h.F := h.hPreorder
       instance : IsTransFunctor.IsTransFunctorExt h.F := h.hTransExt
 
       instance isSemicategoryFunctor : IsSemicategoryFunctor φ := ⟨⟩
+
+      def mapHalfInv {a b : α} {f : a ⇾ b} {g : b ⇾ a} (hfg : HalfInv hα.Hom f g) :
+        HalfInv hβ.Hom (h.F f) (h.F g) :=
+      h.hPreorder.reflEq a •
+      HasCongrArg.congrArg (h.F.baseFun a a) hfg •
+      (h.hPreorder.transEq f g)⁻¹
 
     end
 
@@ -233,12 +246,22 @@ namespace CategoryTheory
 
   namespace IsGroupoidFunctor
 
+    open IsCategoryFunctor
+
     variable {W : Universe.{w, ww}} [HasIdentity.{w, iw} W] [HasStandardFunctors W]
 
     section
 
-      variable {α : Sort u} {β : Sort v} [IsGroupoid W α] [IsGroupoid W β]
-               (φ : α → β) [h : IsGroupoidFunctor φ]
+      variable {α : Sort u} {β : Sort v} [hα : IsGroupoid W α] [hβ : IsGroupoid W β] (φ : α → β)
+
+      def fromCategoryFunctor [hφ : IsCategoryFunctor φ] : IsGroupoidFunctor φ :=
+      { hEquivalence := { symmEq := λ {a b} e =>
+                                    HalfInv.unique hβ.Hom (leftInv (hφ.F e))
+                                                          (mapHalfInv φ (rightInv e)) },
+        hSymmExt     := sorry,
+        hTransExt    := hφ.hTransExt }
+
+      variable [h : IsGroupoidFunctor φ]
 
       instance : IsEquivalenceFunctor             h.F := h.hEquivalence
       instance : IsSymmFunctor.IsSymmFunctorExt   h.F := h.hSymmExt
