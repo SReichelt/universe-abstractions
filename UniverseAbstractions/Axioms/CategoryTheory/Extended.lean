@@ -737,21 +737,31 @@ namespace CategoryTheory
         hPreorder := revAppPreFunIsPreorderFunctor a β,
         hTransExt := revAppPreFunIsTransFunctorExt a β }
 
-      def DefRevAppFunType := (hFunUniv.hasFun (Functor α β) β).DefFun (revApp.{u} a β)
-
-      def revAppFun (defRevAppFun : DefRevAppFunType.{u} a β) : Functor (Functor α β) β :=
-      DefFun.toFunctor defRevAppFun
-
     end
+
+    class HasRevAppFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
+                       [h : HasNaturality.{u} α β] where
+    (defRevAppFun (a : α) : HasFunProp.DefFun (revApp.{u} a β))
+
+    namespace HasRevAppFun
+
+      variable (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
+               [h₁ : HasNaturality.{u} α β] [h₂ : HasNaturality.{u, w, iw} (Functor α β) β]
+               [h : HasRevAppFun.{u} α β]
+
+      def revAppFun (a : α) : Functor (Functor α β) β :=
+      DefFun.toFunctor (h.defRevAppFun a)
+
+    end HasRevAppFun
 
     section
 
       variable (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
                [h₁ : HasNaturality.{u} α β] [h₂ : HasNaturality.{u, w, iw} (Functor α β) β]
-               (defRevAppFun : ∀ a : α, DefRevAppFunType.{u} a β)
+               [hApp : HasRevAppFun.{u} α β]
 
       def revAppCongrArgDesc {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
-        NatDesc (revAppFun.{u} a₁ β (defRevAppFun a₁)) (revAppFun.{u} a₂ β (defRevAppFun a₂)) :=
+        NatDesc (HasRevAppFun.revAppFun.{u} α β a₁) (HasRevAppFun.revAppFun.{u} α β a₂) :=
       { nat   := λ F => IsFunUniverse.mapHom F f,
         isNat := { isNatural    := ⟨λ {F₁ F₂} η =>
                                     ((h₁.desc η).isNat.isNatural.nat f •
@@ -763,38 +773,38 @@ namespace CategoryTheory
                                                                   (DefFun.byDef (α := Functor α β) (hφ := revAppIsFun a₂ β) byDef)⟩,
                    isNaturalExt := sorry } }
 
-      variable (defRevAppCongrArg : ∀ {a₁ a₂ : α} (f : a₁ ⇾ a₂), DefNat (revAppCongrArgDesc α β defRevAppFun f))
+      variable (defRevAppCongrArg : ∀ {a₁ a₂ : α} (f : a₁ ⇾ a₂), DefNat (revAppCongrArgDesc α β f))
 
       def revAppCongrArg {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
-        revAppFun.{u} a₁ β (defRevAppFun a₁) ⇾ revAppFun.{u} a₂ β (defRevAppFun a₂) :=
+        HasRevAppFun.revAppFun.{u} α β a₁ ⇾ HasRevAppFun.revAppFun.{u} α β a₂ :=
       (defRevAppCongrArg f).η
 
       def RevAppEquivReflType (a : α) :=
-      NatEquiv (revAppCongrArg.{u} α β defRevAppFun defRevAppCongrArg (idHom a))
-               (idHom (revAppFun.{u} a β (defRevAppFun a)))
+      NatEquiv (revAppCongrArg.{u} α β defRevAppCongrArg (idHom a))
+               (idHom (HasRevAppFun.revAppFun.{u} α β a))
                (λ F => (byNatDef F)⁻¹ •
                        IsReflFunctor.reflEq (F := IsMorphismFunctor.preFunctor F.φ) a •
                        byNatDef F)
 
       def RevAppEquivTransType {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) :=
-      NatEquiv (revAppCongrArg.{u} α β defRevAppFun defRevAppCongrArg (g • f))
-               (revAppCongrArg.{u} α β defRevAppFun defRevAppCongrArg g • revAppCongrArg α β defRevAppFun defRevAppCongrArg f)
+      NatEquiv (revAppCongrArg.{u} α β defRevAppCongrArg (g • f))
+               (revAppCongrArg.{u} α β defRevAppCongrArg g • revAppCongrArg α β defRevAppCongrArg f)
                (λ F => (HasTransFun.congrArgTrans hβ.Hom (byNatDef F) (byNatDef F) •
                         byNatDef F)⁻¹ •
                        IsTransFunctor.transEq (F := IsMorphismFunctor.preFunctor F.φ) f g •
                        byNatDef F)
 
-      variable (defRevAppCongrArgFun : ∀ a₁ a₂ : α, (a₁ ⇾ a₂) ⟶{λ f => revAppCongrArg α β defRevAppFun defRevAppCongrArg f} (revAppFun.{u} a₁ β (defRevAppFun a₁) ⇾ revAppFun.{u} a₂ β (defRevAppFun a₂)))
+      variable (defRevAppCongrArgFun : ∀ a₁ a₂ : α, (a₁ ⇾ a₂) ⟶{λ f => revAppCongrArg α β defRevAppCongrArg f} (HasRevAppFun.revAppFun.{u} α β a₁ ⇾ HasRevAppFun.revAppFun.{u} α β a₂))
 
       @[reducible] def revAppCongrArgFun (a₁ a₂ : α) :
-        (a₁ ⇾ a₂) ⟶ (revAppFun.{u} a₁ β (defRevAppFun a₁) ⇾ revAppFun.{u} a₂ β (defRevAppFun a₂)) :=
+        (a₁ ⇾ a₂) ⟶ (HasRevAppFun.revAppFun.{u} α β a₁ ⇾ HasRevAppFun.revAppFun.{u} α β a₂) :=
       defRevAppCongrArgFun a₁ a₂
 
-      variable (revAppEquivRefl : ∀ a : α, RevAppEquivReflType α β defRevAppFun defRevAppCongrArg a)
-               (revAppEquivTrans : ∀ {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃), RevAppEquivTransType α β defRevAppFun defRevAppCongrArg f g)
+      variable (revAppEquivRefl : ∀ a : α, RevAppEquivReflType α β defRevAppCongrArg a)
+               (revAppEquivTrans : ∀ {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃), RevAppEquivTransType α β defRevAppCongrArg f g)
 
-      instance revAppFunIsFun : IsCategoryFunctor (λ a : α => revAppFun.{u} a β (defRevAppFun a)) :=
-      { F         := ⟨revAppCongrArgFun.{u} α β defRevAppFun defRevAppCongrArg defRevAppCongrArgFun⟩,
+      instance revAppFunIsFun : IsCategoryFunctor (λ a : α => HasRevAppFun.revAppFun.{u} α β a) :=
+      { F         := ⟨revAppCongrArgFun.{u} α β defRevAppCongrArg defRevAppCongrArgFun⟩,
         hPreorder := { reflEq  := λ a   => revAppEquivRefl a • byDef,
                        transEq := λ f g => HasTransFun.congrArgTrans h₂.Nat byDef⁻¹ byDef⁻¹ •
                                            revAppEquivTrans f g •
@@ -802,46 +812,43 @@ namespace CategoryTheory
         hTransExt := sorry }
 
       def DefRevAppFunFunType :=
-      (hFunUniv.hasFun α (Functor (Functor α β) β)).DefFun (λ a : α => revAppFun.{u} a β (defRevAppFun a))
-        (hφ := revAppFunIsFun.{u} α β defRevAppFun defRevAppCongrArg defRevAppCongrArgFun revAppEquivRefl revAppEquivTrans)
+      (hFunUniv.hasFun α (Functor (Functor α β) β)).DefFun (λ a : α => HasRevAppFun.revAppFun.{u} α β a)
+        (hφ := revAppFunIsFun.{u} α β defRevAppCongrArg defRevAppCongrArgFun revAppEquivRefl revAppEquivTrans)
 
-      def revAppFunFun (defRevAppFunFun : DefRevAppFunFunType.{u} α β defRevAppFun defRevAppCongrArg defRevAppCongrArgFun
+      def revAppFunFun (defRevAppFunFun : DefRevAppFunFunType.{u} α β defRevAppCongrArg defRevAppCongrArgFun
                                                                   revAppEquivRefl revAppEquivTrans) :
         Functor α (Functor (Functor α β) β) :=
       DefFun.toFunctor defRevAppFunFun
-        (hφ := revAppFunIsFun.{u} α β defRevAppFun defRevAppCongrArg defRevAppCongrArgFun revAppEquivRefl revAppEquivTrans)
+        (hφ := revAppFunIsFun.{u} α β defRevAppCongrArg defRevAppCongrArgFun revAppEquivRefl revAppEquivTrans)
 
     end
 
-    class HasRevAppFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
-                       [h₁ : HasNaturality.{u} α β]
-                       [h₂ : HasNaturality.{u, w, iw} (Functor α β) β] where
-    (defRevAppFun (a : α) : DefRevAppFunType.{u} a β)
-    (defRevAppCongrArg {a₁ a₂ : α} (f : a₁ ⇾ a₂) : DefNat (revAppCongrArgDesc α β defRevAppFun f))
+    class HasRevAppFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
+                          [h₁ : HasNaturality.{u} α β]
+                          [h₂ : HasNaturality.{u, w, iw} (Functor α β) β] extends
+      HasRevAppFun.{u} α β where
+    (defRevAppCongrArg {a₁ a₂ : α} (f : a₁ ⇾ a₂) : DefNat (revAppCongrArgDesc α β f))
     (defRevAppCongrArgFun (a₁ a₂ : α) :
        (a₁ ⇾ a₂)
-       ⟶{λ f => revAppCongrArg α β defRevAppFun defRevAppCongrArg f}
-       (revAppFun.{u} a₁ β (defRevAppFun a₁) ⇾ revAppFun.{u} a₂ β (defRevAppFun a₂)))
-    (revAppEquivRefl (a : α) : RevAppEquivReflType α β defRevAppFun defRevAppCongrArg a)
+       ⟶{λ f => revAppCongrArg α β defRevAppCongrArg f}
+       (HasRevAppFun.revAppFun.{u} α β a₁ ⇾ HasRevAppFun.revAppFun.{u} α β a₂))
+    (revAppEquivRefl (a : α) : RevAppEquivReflType α β defRevAppCongrArg a)
     (revAppEquivTrans {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) :
-       RevAppEquivTransType α β defRevAppFun defRevAppCongrArg f g)
-    (defRevAppFunFun : DefRevAppFunFunType.{u} α β defRevAppFun defRevAppCongrArg defRevAppCongrArgFun
+       RevAppEquivTransType α β defRevAppCongrArg f g)
+    (defRevAppFunFun : DefRevAppFunFunType.{u} α β defRevAppCongrArg defRevAppCongrArgFun
                                                revAppEquivRefl revAppEquivTrans)
 
-    namespace HasRevAppFun
+    namespace HasRevAppFunFun
 
       variable (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
                [h₁ : HasNaturality.{u} α β] [h₂ : HasNaturality.{u, w, iw} (Functor α β) β]
-               [h : HasRevAppFun.{u} α β]
-
-      def revAppFun (a : α) : Functor (Functor α β) β :=
-      HasNaturality.revAppFun.{u} a β (h.defRevAppFun a)
+               [h : HasRevAppFunFun.{u} α β]
 
       def revAppFunFun : Functor α (Functor (Functor α β) β) :=
-      HasNaturality.revAppFunFun.{u} α β h.defRevAppFun h.defRevAppCongrArg h.defRevAppCongrArgFun
+      HasNaturality.revAppFunFun.{u} α β h.defRevAppCongrArg h.defRevAppCongrArgFun
                                      h.revAppEquivRefl h.revAppEquivTrans h.defRevAppFunFun
 
-    end HasRevAppFun
+    end HasRevAppFunFun
 
   end HasNaturality
 
@@ -849,8 +856,8 @@ namespace CategoryTheory
                       [hIsoUniv : IsIsoUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W] where
   [hasNat (α β : Sort (max 1 u w)) [hα : IsCategory W α] [hβ : IsCategory W β] :
      HasNaturality.{u} α β]
-  [hasRevAppFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
-     HasNaturality.HasRevAppFun.{u} α β]
+  [hasRevAppFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+     HasNaturality.HasRevAppFunFun.{u} α β]
 
   namespace IsNatUniverse
 
@@ -865,8 +872,8 @@ namespace CategoryTheory
     h.hasNat α β
 
     instance (α β : Sort (max 1 u w)) [hα : IsCategory W α] [hβ : IsCategory W β] :
-      HasNaturality.HasRevAppFun.{u} α β :=
-    h.hasRevAppFun α β
+      HasNaturality.HasRevAppFunFun.{u} α β :=
+    h.hasRevAppFunFun α β
 
     def revAppFun {α : Sort (max 1 u w)} (a : α) (β : Sort (max 1 u w))
                   [hα : IsCategory W α] [hβ : IsCategory W β] :
@@ -875,7 +882,7 @@ namespace CategoryTheory
 
     def revAppFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
       Functor α (Functor (Functor α β) β) :=
-    HasNaturality.HasRevAppFun.revAppFunFun α β
+    HasNaturality.HasRevAppFunFun.revAppFunFun α β
 
   end IsNatUniverse
 

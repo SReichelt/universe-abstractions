@@ -115,7 +115,7 @@ namespace type
   def isoPreFunctor {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
                     (φ : α → β) [hφ : IsCategoryFunctor φ] :
     PreFunctor (isoRel α) (isoRel β) φ :=
-  ⟨λ a b e => IsoDesc.map φ e⟩
+  ⟨λ _ _ => IsoDesc.map φ⟩
 
   instance isIsoFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
                     (F : HasFunProp.Functor α β) :
@@ -216,8 +216,21 @@ namespace type
   { natHasTransFun              := HasTrivialFunctoriality.hasTransFun (natRel α β),
     natIsCategoricalPreorderExt := HasTrivialExtensionality.isCategoricalPreorderExt (natRel α β) }
 
+  instance hasRevAppFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+    HasNaturality.HasRevAppFun.{u + 1} α β :=
+  { defRevAppFun := λ _   => HasFunProp.HasTrivialFunctorialityCondition.defFun }
+
+  instance hasRevAppFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+    HasNaturality.HasRevAppFunFun.{u + 1} α β :=
+                                     -- TODO: Lean bug?
+  { defRevAppCongrArg    := λ _   => sorry, --HasNatRel.HasTrivialNaturalityCondition.defNat,
+    defRevAppCongrArgFun := λ _ _ => HasTrivialFunctoriality.defFun,
+    revAppEquivRefl      := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    revAppEquivTrans     := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    defRevAppFunFun      := HasFunProp.HasTrivialFunctorialityCondition.defFun (hφ := HasNaturality.revAppFunIsFun.{u + 1} α β _ _ _ _) }
+
   instance isNatUniverse : IsNatUniverse.{u + 1} type.{u} :=
-  { hasNat       := hasNaturality,
-    hasRevAppFun := sorry }
+  { hasNat          := hasNaturality,
+    hasRevAppFunFun := hasRevAppFunFun }
 
 end type
