@@ -42,3 +42,4 @@ import UniverseAbstractions.Instances.CoFunctorUniverse
 import UniverseAbstractions.Instances.Setoid
 import UniverseAbstractions.Instances.Algebra
 import UniverseAbstractions.Instances.Category
+import UniverseAbstractions.Instances.MorphismUniverses.Type

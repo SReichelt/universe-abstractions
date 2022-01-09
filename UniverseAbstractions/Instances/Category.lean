@@ -36,7 +36,7 @@ namespace CategoryTheory.IsCategory
   variable [hIsoUniv : IsIsoUniverse.{u} W]
 
   instance hasEquivalenceRelation (A : univ.{u} W) : HasEquivalenceRelation A W :=
-  ⟨(hIsoUniv.hasIsomorphisms A).hasIsoRel.Iso⟩
+  ⟨(hIsoUniv.hasIso A).Iso⟩
 
   instance hasInstanceEquivalences : HasInstanceEquivalences (univ.{u} W) W :=
   ⟨hasEquivalenceRelation⟩
@@ -47,8 +47,8 @@ namespace CategoryTheory.IsCategory
 
   instance hasFunctorInstances :
     HasFunctorInstances (univ.{u} W) (univ.{u} W) (typeClass.{u} W) :=
-  { Fun     := λ A B => HasFunctorialityProperty.Functor A B,
-    apply   := HasFunctorialityProperty.Functor.φ,
+  { Fun     := λ A B => HasFunProp.Functor A B,
+    apply   := HasFunProp.Functor.φ,
     funInst := λ A B => HasNaturality.funIsCategory.{u, w, iw} A B }
 
   def toDefFun {A B : univ.{u} W} (F : A ⟶ B) : A ⟶{F.φ} B :=
