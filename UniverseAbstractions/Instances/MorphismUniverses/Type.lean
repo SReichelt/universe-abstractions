@@ -218,11 +218,11 @@ namespace type
 
   instance hasRevAppFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasRevAppFun.{u + 1} α β :=
-  { defRevAppFun := λ _   => HasFunProp.HasTrivialFunctorialityCondition.defFun }
+  { defRevAppFun := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun }
 
   instance hasRevAppFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasRevAppFunFun.{u + 1} α β :=
-                                     -- TODO: Lean bug?
+                                     -- TODO: Lean bug? Or is it due to a `sorry`?
   { defRevAppCongrArg    := λ _   => sorry, --HasNatRel.HasTrivialNaturalityCondition.defNat,
     defRevAppCongrArgFun := λ _ _ => HasTrivialFunctoriality.defFun,
     revAppEquivRefl      := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
