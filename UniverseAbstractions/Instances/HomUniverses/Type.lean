@@ -3,6 +3,7 @@ import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory
 import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Axioms.CategoryTheory.Extended
+import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
 
 
 
@@ -36,72 +37,9 @@ namespace type
 
   open MetaRelation MetaFunctor CategoryTheory IsCategory HasIsoRel
 
-  theorem IsInv.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {f : a ⇾ b} {g : b ⇾ a}
-                    (h₁ h₂ : IsInv hα.Hom f g) :
-    h₁ = h₂ :=
-  match h₁, h₂ with
-  | ⟨_, _⟩, ⟨_, _⟩ => rfl
+  instance isHomUniverse : IsHomUniverse type.{u} := ⟨⟩
 
-  theorem IsoDesc.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b} :
-    e₁.toHom = e₂.toHom → e₁.invHom = e₂.invHom → e₁ = e₂ :=
-  match e₁, e₂ with
-  | { toHom := to₁, invHom := inv₁, isInv := isInv₁ }, { toHom := to₂, invHom := inv₂, isInv := isInv₂ } =>
-    λ (hTo : to₁ = to₂) (hInv : inv₁ = inv₂) => by subst hTo; subst hInv;
-                                                   have invExt := IsInv.ext isInv₁ isInv₂;
-                                                   subst invExt; rfl
-
-  theorem IsoDesc.ext' {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b}
-                       (h : e₁.toHom = e₂.toHom) :
-    e₁ = e₂ :=
-  IsoDesc.ext h (IsoDesc.toInvEquiv (e₁ := e₁) (e₂ := e₂) h)
-
-  def isoRel (α : Type u) [hα : IsCategory type.{u} α] : MetaRelation α type.{u} := IsoDesc
-
-  instance hasIsoRel (α : Type u) [hα : IsCategory type.{u} α] : HasIsoRel α :=
-  { Iso         := isoRel α,
-    desc        := id,
-    defToHomFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    toHomInj    := IsoDesc.ext' }
-
-  instance hasTrivialIsomorphismCondition (α : Type u) [hα : IsCategory type.{u} α] :
-    HasTrivialIsomorphismCondition α :=
-  ⟨λ e => { e    := e,
-            toEq := rfl }⟩
-
-  instance isoIsEquivalence (α : Type u) [hα : IsCategory type.{u} α] :
-    IsEquivalence (isoRel α) :=
-  HasIsoOp.isoIsEquivalence α
-
-  instance isoInv {α : Type u} [hα : IsCategory type.{u} α] {a b : α} (e : IsoDesc a b) :
-    IsInv (isoRel α) e (IsoDesc.symm e) :=
-  { leftInv  := IsoDesc.ext e.isInv.leftInv  e.isInv.leftInv,
-    rightInv := IsoDesc.ext e.isInv.rightInv e.isInv.rightInv }
-
-  -- We need to replicate `HasIsoRel.toHomMetaFunctor` here to avoid an error from Lean that seems to be a bug.
-  def toHomMetaFunctor (α : Type u) [hα : IsCategory type.{u} α] : MetaFunctor (isoRel α) hα.Hom :=
-  ⟨λ _ _ => IsoDesc.toHom⟩
-
-  instance toHomIsPreorderFunctor (α : Type u) [hα : IsCategory type.{u} α] :
-    IsPreorderFunctor (toHomMetaFunctor α) :=
-  { reflEq  := λ _   => rfl,
-    transEq := λ _ _ => rfl }
-
-  instance hasIsoGroupoid (α : Type u) [hα : IsCategory type.{u} α] : HasIsoGroupoid α :=
-  { isoInv                 := isoInv,
-    isoHasSymmFun          := HasTrivialFunctoriality.hasSymmFun (isoRel α),
-    isoHasTransFun         := HasTrivialFunctoriality.hasTransFun (isoRel α),
-    toHomIsPreorderFunctor := toHomIsPreorderFunctor α }
-
-  instance isoIsGroupoidEquivalence (α : Type u) [hα : IsCategory type.{u} α] :
-    IsGroupoidEquivalence (isoRel α) :=
-  HasIsoGroupoid.isoIsGroupoidEquivalence α
-
-  instance hasIsomorphisms (α : Type u) [hα : IsCategory type.{u} α] : HasIsomorphisms α :=
-  { toHomIsTransFunctorExt      := HasTrivialExtensionality.isTransFunctorExt (toHomMetaFunctor α),
-    isoIsGroupoidEquivalenceExt := HasTrivialExtensionality.isGroupoidEquivalenceExt (isoRel α) }
-
-  instance isIsoUniverse : IsIsoUniverse.{u + 1} type.{u} :=
-  { hasIso := hasIsomorphisms }
+  -- Functors
 
   def funProp (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     MetaProperty (α → β) type.{u} :=
@@ -112,22 +50,6 @@ namespace type
   { Fun               := funProp α β,
     isCategoryFunctor := id }
 
-  def isoPreFunctor {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                    (φ : α → β) [hφ : IsCategoryFunctor φ] :
-    PreFunctor (isoRel α) (isoRel β) φ :=
-  ⟨λ _ _ => IsoDesc.map φ⟩
-
-  instance isIsoFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                    (F : HasFunProp.Functor α β) :
-    IsIsoFunctor F.φ :=
-  { F              := isoPreFunctor F.φ,
-    homIsoCongr    := λ _   => rfl,
-    homIsoCongrExt := λ _ _ => rfl }
-
-  instance hasIsoFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    HasIsoFunctoriality α β :=
-  { isIsoFun := isIsoFun }
-
   instance hasTrivialFunctorialityCondition (α β : Type u) [hα : IsCategory type.{u} α]
                                                            [hβ : IsCategory type.{u} β] :
     HasFunProp.HasTrivialFunctorialityCondition α β :=
@@ -135,27 +57,14 @@ namespace type
                                        eq := λ _ _ => rfl }⟩
 
   instance isFunUniverse : IsFunUniverse.{u + 1} type.{u} :=
-  { hasFun      := hasIsoFun,
-    defIdFun    := λ _               => HasFunProp.HasTrivialFunctorialityCondition.defFun,
+  { hasFun := hasFunProp }
+
+  instance isFunUniverse.hasAffineFunctors : IsFunUniverse.HasAffineFunctors type.{u} :=
+  { defIdFun    := λ _               => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defConstFun := λ _ {_} [_] [_] _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defCompFun  := λ _ _             => HasFunProp.HasTrivialFunctorialityCondition.defFun }
 
-  theorem IsNatural.ext {α β : Type u} {R : MetaRelation α type.{u}} {S : MetaRelation β type.{u}}
-                        (φ ψ : α → β) {φ ψ : α → β} {F : PreFunctor R S φ} {G : PreFunctor R S ψ}
-                        {η : MetaQuantification S φ ψ} [hTrans : HasTrans S]
-                        (h₁ h₂ : MetaQuantification.IsNatural F G η) :
-    h₁ = h₂ :=
-  match h₁, h₂ with
-  | ⟨_⟩, ⟨_⟩ => rfl
-
-  theorem IsNaturalExt.ext {α β : Type u} {R : MetaRelation α type.{u}} {S : MetaRelation β type.{u}}
-                           (φ ψ : α → β) {φ ψ : α → β} {F : PreFunctor R S φ} {G : PreFunctor R S ψ}
-                           {η : MetaQuantification S φ ψ} [hTrans : HasTrans S] [hTransFun : HasTransFun S]
-                           [hNat : MetaQuantification.IsNatural F G η]
-                           (h₁ h₂ : MetaQuantification.IsNatural.IsNaturalExt F G η) :
-    h₁ = h₂ :=
-  match h₁, h₂ with
-  | ⟨_⟩, ⟨_⟩ => rfl
+  -- Natural transformations
 
   theorem IsNaturalTransformation.ext {α β : Type u} [hα : HasMorphisms type.{u} α] [hβ : IsSemicategory type.{u} β]
                                       {φ ψ : α → β} [hφ : IsMorphismFunctor (hα := hα) (hβ := hβ.toHasMorphisms) φ]
@@ -163,13 +72,7 @@ namespace type
                                       (η : MetaQuantification hβ.Hom φ ψ) (h₁ h₂ : IsNaturalTransformation η) :
     h₁ = h₂ :=
   match h₁, h₂ with
-  | { isNatural := isNat₁, isNaturalExt := isNatExt₁ }, { isNatural := isNat₂, isNaturalExt := isNatExt₂ } =>
-    by have hIsNat : isNat₁ = isNat₂ := IsNatural.ext φ ψ (hTrans := hβ.homHasTrans) isNat₁ isNat₂;
-       subst hIsNat;
-       have hIsNatExt : isNatExt₁ = isNatExt₂ :=
-            IsNaturalExt.ext φ ψ (hTrans := hβ.homHasTrans) (hTransFun := hβ.homHasTransFun) (hNat := isNat₁)
-                             isNatExt₁ isNatExt₂;
-       subst hIsNatExt; rfl
+  | { toIsNatural := ⟨_⟩ }, { toIsNatural := ⟨_⟩ } => rfl
 
   theorem NatDesc.ext {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
                       {F G : HasFunProp.Functor α β} (η₁ η₂ : NatDesc F G) :
@@ -213,8 +116,7 @@ namespace type
 
   instance hasNaturality (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.{u + 1} α β :=
-  { natHasTransFun              := HasTrivialFunctoriality.hasTransFun (natRel α β),
-    natIsCategoricalPreorderExt := HasTrivialExtensionality.isCategoricalPreorderExt (natRel α β) }
+  { natHasTransFun := HasTrivialFunctoriality.hasTransFun (natRel α β) }
 
   instance hasRevAppFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasRevAppFun.{u + 1} α β :=
@@ -222,15 +124,82 @@ namespace type
 
   instance hasRevAppFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasRevAppFunFun.{u + 1} α β :=
-                                     -- TODO: Lean bug? Or is it due to a `sorry`?
-  { defRevAppCongrArg    := λ _   => sorry, --HasNatRel.HasTrivialNaturalityCondition.defNat,
+  { defRevAppCongrArg    := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
     defRevAppCongrArgFun := λ _ _ => HasTrivialFunctoriality.defFun,
     revAppEquivRefl      := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
     revAppEquivTrans     := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv,
     defRevAppFunFun      := HasFunProp.HasTrivialFunctorialityCondition.defFun (hφ := HasNaturality.revAppFunIsFun.{u + 1} α β _ _ _ _) }
 
   instance isNatUniverse : IsNatUniverse.{u + 1} type.{u} :=
-  { hasNat          := hasNaturality,
-    hasRevAppFunFun := hasRevAppFunFun }
+  { hasNat := hasNaturality }
+
+  instance isNatUniverse.hasLinearFunctors : IsNatUniverse.HasLinearFunctors type.{u} :=
+  { hasRevAppFunFun := hasRevAppFunFun }
+  theorem IsInv.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {f : a ⇾ b} {g : b ⇾ a}
+                    (h₁ h₂ : IsInv hα.Hom f g) :
+    h₁ = h₂ :=
+  match h₁, h₂ with
+  | ⟨_, _⟩, ⟨_, _⟩ => rfl
+
+  -- Isomorphisms
+
+  theorem IsoDesc.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b} :
+    e₁.toHom = e₂.toHom → e₁.invHom = e₂.invHom → e₁ = e₂ :=
+  match e₁, e₂ with
+  | { toHom := to₁, invHom := inv₁, isInv := isInv₁ }, { toHom := to₂, invHom := inv₂, isInv := isInv₂ } =>
+    λ (hTo : to₁ = to₂) (hInv : inv₁ = inv₂) => by subst hTo; subst hInv;
+                                                   have invExt := IsInv.ext isInv₁ isInv₂;
+                                                   subst invExt; rfl
+
+  theorem IsoDesc.ext' {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b}
+                       (h : e₁.toHom = e₂.toHom) :
+    e₁ = e₂ :=
+  IsoDesc.ext h (IsoDesc.toInvEquiv (e₁ := e₁) (e₂ := e₂) h)
+
+  def isoRel (α : Type u) [hα : IsCategory type.{u} α] : MetaRelation α type.{u} := IsoDesc
+
+  instance hasIsoRel (α : Type u) [hα : IsCategory type.{u} α] : HasIsoRel α :=
+  { Iso         := isoRel α,
+    desc        := id,
+    defToHomFun := λ _ _ => HasTrivialFunctoriality.defFun,
+    toHomInj    := IsoDesc.ext' }
+
+  instance hasTrivialIsomorphismCondition (α : Type u) [hα : IsCategory type.{u} α] :
+    HasTrivialIsomorphismCondition α :=
+  ⟨λ e => { e    := e,
+            toEq := rfl }⟩
+
+  instance isoIsEquivalence (α : Type u) [hα : IsCategory type.{u} α] :
+    IsEquivalence (isoRel α) :=
+  HasIsoOp.isoIsEquivalence α
+
+  instance hasIsomorphisms (α : Type u) [hα : IsCategory type.{u} α] : HasIsomorphisms α :=
+  { isoHasSymmFun  := HasTrivialFunctoriality.hasSymmFun (isoRel α),
+    isoHasTransFun := HasTrivialFunctoriality.hasTransFun (isoRel α) }
+
+  def isoPreFunctor {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                    (φ : α → β) [hφ : IsCategoryFunctor φ] :
+    PreFunctor (isoRel α) (isoRel β) φ :=
+  ⟨λ _ _ => IsoDesc.map φ⟩
+
+  instance isIsoFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                    (F : HasFunProp.Functor α β) :
+    IsIsoFunctor F.φ :=
+  { F          := isoPreFunctor F.φ,
+    toHomCongr := λ _ => rfl }
+
+  instance hasIsoFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+    HasIsoFunctoriality α β :=
+  { isIsoFun := isIsoFun }
+
+  instance hasIsoNat (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+    HasIsoNaturality α β :=
+  { defNatIso    := λ _ _   => HasTrivialIsomorphismCondition.defIso,
+    defNatIsoFun := λ _ _ _ => HasTrivialFunctoriality.defFun }
+
+  instance isIsoUniverse : IsIsoUniverse.{u + 1} type.{u} :=
+  { hasIso    := hasIsomorphisms,
+    hasIsoFun := hasIsoFun,
+    hasIsoNat := hasIsoNat }
 
 end type

@@ -4,6 +4,7 @@ import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
+import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Basic
 
 
 
@@ -14,19 +15,19 @@ set_option autoBoundImplicitLocal false
 
 namespace HasLinearFunOp.HasLinearFunExt
 
-  open MetaRelation IsCategoricalPreorder CategoryTheory
+  open MetaRelation IsCategoricalPreorder CategoryTheory IsCategory
 
-  variable {U : Universe} [HasIdentity U] [h : HasLinearFunctors U]
+  variable {U : Universe} [hHomUniv : IsHomUniverse U] [h : HasLinearFunExt U]
 
   -- The axioms for composition and identity imply that types and functors form a (potentially
   -- higher) category.
 
-  instance isCategoricalPreorder : IsCategoricalPreorder h.Fun :=
-  { assoc          := h.compAssoc,
-    rightId        := h.rightId,
-    leftId         := h.leftId }
+  instance isCategoricalPreorder : IsCategoricalPreorder hHomUniv.Fun :=
+  { assoc   := h.compAssoc,
+    rightId := h.rightId,
+    leftId  := h.leftId }
 
-  instance isCategoricalPreorderExt : IsCategoricalPreorderExt h.Fun :=
+  instance isCategoricalPreorderExt : IsCategoricalPreorderExt hHomUniv.Fun :=
   { assocExt       := h.compAssocExt,
     assocExtExt    := h.compAssocExtExt,
     assocExtExtExt := h.compAssocExtExtExt,
@@ -34,10 +35,12 @@ namespace HasLinearFunOp.HasLinearFunExt
     leftIdExt      := h.leftIdExt }
 
   instance isCategory : IsCategory U U :=
-  { Hom                         := h.Fun,
-    homIsPreorder               := isPreorder,
-    homHasTransFun              := hasTransFun,
-    homIsCategoricalPreorder    := isCategoricalPreorder,
-    homIsCategoricalPreorderExt := isCategoricalPreorderExt }
+  { Hom                      := hHomUniv.Fun,
+    homIsPreorder            := isPreorder,
+    homHasTransFun           := hasTransFun,
+    homIsCategoricalPreorder := isCategoricalPreorder }
+
+  instance isCategoryExt : IsCategoryExt U :=
+  { homIsCategoricalPreorderExt := isCategoricalPreorderExt }
 
 end HasLinearFunOp.HasLinearFunExt

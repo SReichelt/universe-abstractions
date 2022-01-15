@@ -1,6 +1,8 @@
 import UniverseAbstractions.Instances.Utils.Trivial
 import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
+import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Meta
+import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Basic
 
 
 
