@@ -11,8 +11,8 @@ import UniverseAbstractions.Instances.Utils.Bundled
 
 
 set_option autoBoundImplicitLocal false
---set_option pp.universes true
 set_option synthInstance.maxHeartbeats 10000
+--set_option pp.universes true
 
 universe u w ww iw
 
@@ -70,15 +70,17 @@ namespace CategoryTheory.IsCategory
     defCompFunFunFun := sorry }
 
   instance hasAffineFunOp [HasSubLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
-                          [IsNatUniverse.HasLinearFunctors W] :
+                          [IsNatUniverse.HasAffineFunctors W] :
     HasAffineFunOp (univ.{u} W) :=
   { defConstFun    := λ A {B} b => toDefFun (IsFunUniverse.HasAffineFunctors.constFun.{u} A.a b),
-    defConstFunFun := sorry }
+    defConstFunFun := λ A B => { F   := IsNatUniverse.HasAffineFunctors.constFunFun.{u} A.a B.a,
+                                 eff := λ b => HasInstanceEquivalences.refl (IsFunUniverse.HasAffineFunctors.constFun.{u} A.a b) } }
 
   instance hasFullFunOp [HasSubLinearFunOp W] [HasNonLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
-                        [IsNatUniverse.HasLinearFunctors W] :
+                        [IsNatUniverse.HasFullFunctors W] :
     HasFullFunOp (univ.{u} W) :=
-  { defDupFun    := sorry,
-    defDupFunFun := sorry }
+  { defDupFun    := λ F => toDefFun (IsNatUniverse.HasFullFunctors.dupFun.{u} F),
+    defDupFunFun := λ A B => { F   := IsNatUniverse.HasFullFunctors.dupFunFun.{u} A.a B.a,
+                               eff := λ F => HasInstanceEquivalences.refl (IsNatUniverse.HasFullFunctors.dupFun.{u} F) } }
 
 end CategoryTheory.IsCategory

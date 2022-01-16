@@ -100,6 +100,46 @@ namespace CategoryTheory
 
     end HasTrivialFunctorialityCondition
 
+    class HasIdFun (α : Sort u) [hα : IsCategory W α] [hFunαα : HasFunProp α α] where 
+    (defIdFun : DefFun (@id α))
+
+    namespace HasIdFun
+
+      instance trivial (α : Sort u) [IsCategory W α] [HasFunProp α α]
+                       [HasTrivialFunctorialityCondition α α] :
+        HasIdFun α :=
+      ⟨HasTrivialFunctorialityCondition.defFun⟩
+
+    end HasIdFun
+
+    class HasConstFun [HasSubLinearFunOp W] (α : Sort u) (β : Sort v) [hα : IsCategory W α]
+                      [hβ : IsCategory W β] [hFunαβ : HasFunProp α β] where
+    (defConstFun (b : β) : DefFun (Function.const α b))
+
+    namespace HasConstFun
+
+      instance trivial [HasSubLinearFunOp W] (α : Sort u) (β : Sort v) [IsCategory W α]
+                       [IsCategory W β] [HasFunProp α β] [HasTrivialFunctorialityCondition α β] :
+        HasConstFun α β :=
+      ⟨λ _ => HasTrivialFunctorialityCondition.defFun⟩
+
+    end HasConstFun
+
+    class HasCompFun (α : Sort u) (β : Sort u') (γ : Sort u'') [hα : IsCategory W α]
+                     [hβ : IsCategory W β] [hγ : IsCategory W γ] [hFunαβ : HasFunProp α β]
+                     [hFunβγ : HasFunProp β γ] [hFunαγ : HasFunProp α γ] where
+    (defCompFun (F : α ⮕ β) (G : β ⮕ γ) : DefFun (G.φ ∘ F.φ))
+
+    namespace HasCompFun
+
+      instance trivial (α : Sort u) (β : Sort u') (γ : Sort u'') [IsCategory W α] [IsCategory W β]
+                       [IsCategory W γ] [HasFunProp α β] [HasFunProp β γ] [HasFunProp α γ]
+                       [HasTrivialFunctorialityCondition α γ] :
+        HasCompFun α β γ :=
+      ⟨λ _ _ => HasTrivialFunctorialityCondition.defFun⟩
+
+    end HasCompFun
+
   end HasFunProp
 
   class IsFunUniverse (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W] where
@@ -120,22 +160,28 @@ namespace CategoryTheory
 
     class HasLinearFunctors (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
                             [hFunUniv : IsFunUniverse.{u} W] where
-    (defIdFun (α : Sort (max 1 u w)) [IsCategory W α] : HasFunProp.DefFun (@id α))
-    (defCompFun {α β γ : Sort (max 1 u w)} [IsCategory W α] [IsCategory W β] [IsCategory W γ]
-                (F : α ⮕ β) (G : β ⮕ γ) :
-       HasFunProp.DefFun (G.φ ∘ F.φ))
+    [hasIdFun (α : Sort (max 1 u w)) [IsCategory W α] : HasIdFun α]
+    [hasCompFun (α β γ : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] [IsCategory W γ] :
+       HasCompFun α β γ]
 
     namespace HasLinearFunctors
 
       variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] [IsFunUniverse.{u} W]
                [h : HasLinearFunctors W]
 
-      def idFun (α : Sort (max 1 u w)) [IsCategory W α] : α ⮕ α := DefFun.toFunctor (h.defIdFun α)
+      instance (α : Sort (max 1 u w)) [IsCategory W α] : HasIdFun α := h.hasIdFun α
+
+      instance (α β γ : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] [IsCategory W γ] :
+        HasCompFun α β γ :=
+      h.hasCompFun α β γ
+
+      def idFun (α : Sort (max 1 u w)) [IsCategory W α] : α ⮕ α :=
+      DefFun.toFunctor (h.hasIdFun α).defIdFun
 
       def compFun {α β γ : Sort (max 1 u w)} [IsCategory W α] [IsCategory W β] [IsCategory W γ]
                   (F : α ⮕ β) (G : β ⮕ γ) :
         α ⮕ γ :=
-      DefFun.toFunctor (h.defCompFun F G)
+      DefFun.toFunctor ((h.hasCompFun α β γ).defCompFun F G)
 
     end HasLinearFunctors
 
@@ -143,17 +189,19 @@ namespace CategoryTheory
                             [hFunUniv : IsFunUniverse.{u} W]
                             [HasSubLinearFunOp W] extends
       HasLinearFunctors W where
-    (defConstFun (α : Sort (max 1 u w)) {β : Sort (max 1 u w)} [IsCategory W α] [IsCategory W β] (b : β) :
-       HasFunProp.DefFun (Function.const α b))
+    [hasConstFun (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] : HasConstFun α β]
 
     namespace HasAffineFunctors
 
       variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] [IsFunUniverse.{u} W]
                [HasSubLinearFunOp W] [h : HasAffineFunctors W]
 
+      instance (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] : HasConstFun α β :=
+      h.hasConstFun α β
+
       def constFun (α : Sort (max 1 u w)) {β : Sort (max 1 u w)} [IsCategory W α] [IsCategory W β] (b : β) :
         α ⮕ β :=
-      DefFun.toFunctor (h.defConstFun α b)
+      DefFun.toFunctor ((h.hasConstFun α β).defConstFun b)
 
     end HasAffineFunctors
 
@@ -290,7 +338,7 @@ namespace CategoryTheory
       variable (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
                [HasFunProp α β]
 
-      instance [HasNatRel α β] [h : HasTrivialNaturalityCondition α β] : HasNatOp α β :=
+      instance trivial [HasNatRel α β] [HasTrivialNaturalityCondition α β] : HasNatOp α β :=
       { defRefl  := λ _   => HasTrivialNaturalityCondition.defNat,
         defTrans := λ _ _ => HasTrivialNaturalityCondition.defNat }
 
@@ -315,8 +363,7 @@ namespace CategoryTheory
         nat (ε • η) a ≃ nat ε a • nat η a :=
       byNatDef a
 
-      def natAssoc {F G H I : α ⮕ β} (η : Nat F G) (ε : Nat G H) (θ : Nat H I)
-                   (a : α) :
+      def natAssoc {F G H I : α ⮕ β} (η : Nat F G) (ε : Nat G H) (θ : Nat H I) (a : α) :
         nat ((θ • ε) • η) a ≃ nat (θ • (ε • η)) a :=
       (congrArgTransRight hβ.Hom (natTransEq η ε a) (nat θ a) •
        natTransEq (ε • η) θ a)⁻¹ •
@@ -358,7 +405,7 @@ namespace CategoryTheory
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β] [HasFunProp α β]
 
-    instance [HasNatOp α β] [h : HasTrivialNatEquiv α β] : HasNatOpEquiv α β :=
+    instance trivial [HasNatOp α β] [HasTrivialNatEquiv α β] : HasNatOpEquiv α β :=
     { assoc   := λ _ _ _ => HasTrivialNatEquiv.natEquiv,
       rightId := λ _     => HasTrivialNatEquiv.natEquiv,
       leftId  := λ _     => HasTrivialNatEquiv.natEquiv }
@@ -487,14 +534,14 @@ namespace CategoryTheory
                [HasFunProp α β] [HasNaturality α β] [HasFunProp (α ⮕ β) β]
                [h : HasRevAppFun α β]
 
-      def revAppFun (a : α) : (α ⮕ β) ⮕ β :=
-      DefFun.toFunctor (h.defRevAppFun a)
+      def revAppFun (a : α) : (α ⮕ β) ⮕ β := DefFun.toFunctor (h.defRevAppFun a)
 
       def mapRevNat {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
         MetaQuantification hβ.Hom (revAppFun α β a₁).φ (revAppFun α β a₂).φ :=
       λ F => mapHom F f
 
-      instance mapRevNat.isNat {a₁ a₂ : α} (f : a₁ ⇾ a₂) : IsNaturalTransformation (mapRevNat α β f) :=
+      instance mapRevNat.isNat {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
+        IsNaturalTransformation (mapRevNat α β f) :=
       { nat := λ {F₁ F₂} η => (naturality η f •
                                congrArgTransRight hβ.Hom
                                                   (DefFun.byMapHomDef (hφ := revAppIsFun a₁ β) byDef)
@@ -586,6 +633,52 @@ namespace CategoryTheory
 
     end
 
+    section
+
+      variable [HasSubLinearFunOp W] (α : Sort u) (β : Sort v)
+               [hα : IsCategory W α] [hβ : IsCategory W β] [HasFunProp α β] [h : HasConstFun α β]
+
+      def constFun (b : β) : α ⮕ β := DefFun.toFunctor (h.defConstFun b)
+
+      def mapConstNat {b₁ b₂ : β} (g : b₁ ⇾ b₂) :
+        MetaQuantification hβ.Hom (constFun α β b₁).φ (constFun α β b₂).φ :=
+      λ _ => g
+
+      instance mapConstNat.isNat {b₁ b₂ : β} (g : b₁ ⇾ b₂) :
+        IsNaturalTransformation (mapConstNat α β g) :=
+      { nat := λ _ => (rightId g •
+                       congrArgTransRight hβ.Hom (DefFun.byMapHomDef (hφ := IsCategoryFunctor.constFun α b₁) byDef) g)⁻¹ •
+                      (leftId g •
+                       congrArgTransLeft hβ.Hom g (DefFun.byMapHomDef (hφ := IsCategoryFunctor.constFun α b₂) byDef)) }
+
+      def constNatDesc {b₁ b₂ : β} (g : b₁ ⇾ b₂) :
+        NatDesc (constFun α β b₁) (constFun α β b₂) :=
+      { nat   := mapConstNat       α β g,
+        isNat := mapConstNat.isNat α β g }
+
+      def constFunFunDesc : FunFunDesc h.defConstFun :=
+      { natDesc        := constNatDesc α β,
+        natDescReflEq  := λ b   _ => HasInstanceEquivalences.refl (idHom b),
+        natDescTransEq := λ f g _ => HasInstanceEquivalences.refl (g • f) }
+
+    end
+
+    class HasConstFunFun [HasSubLinearFunOp W] (α : Sort u) (β : Sort v)
+                         [hα : IsCategory W α] [hβ : IsCategory W β] [hFunαβ : HasFunProp α β]
+                         [hNatαβ : HasNaturality α β] [hFunβαβ : HasFunProp β (α ⮕ β)]
+                         [h : HasConstFun α β] where
+    (defConstFunFun : DefFunFun (constFunFunDesc α β))
+
+    namespace HasConstFunFun
+
+      variable [HasSubLinearFunOp W] (α : Sort u) (β : Sort v) [hα : IsCategory W α]
+               [hβ : IsCategory W β] [HasFunProp α β] [HasNaturality α β] [HasFunProp β (α ⮕ β)]
+               [HasConstFun α β] [h : HasConstFunFun α β]
+
+      def constFunFun : β ⮕ (α ⮕ β) := DefFunFun.toFunctor h.defConstFunFun
+
+    end HasConstFunFun
+
     class HasDupFun [HasNonLinearFunOp W] (α : Sort u) (β : Sort v)
                     [hα : IsCategory W α] [hβ : IsCategory W β] [hFunαβ : HasFunProp α β]
                     [hNatαβ : HasNaturality α β] [hFunααβ : HasFunProp α (α ⮕ β)] where
@@ -597,8 +690,7 @@ namespace CategoryTheory
                [hα : IsCategory W α] [hβ : IsCategory W β] [HasFunProp α β]
                [HasNaturality α β] [HasFunProp α (α ⮕ β)] [h : HasDupFun α β]
 
-      def dupFun (F : α ⮕ α ⮕ β) : α ⮕ β :=
-      DefFun.toFunctor (h.defDupFun F)
+      def dupFun (F : α ⮕ α ⮕ β) : α ⮕ β := DefFun.toFunctor (h.defDupFun F)
 
       variable [HasNaturality α (α ⮕ β)]
 
@@ -678,14 +770,17 @@ namespace CategoryTheory
     end
 
     class HasLinearFunctors (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
-                            [hFunUniv : IsFunUniverse.{u} W] [hNatUniv : IsNatUniverse.{u} W] where
+                            [hFunUniv : IsFunUniverse.{u} W]
+                            [hFunLin : IsFunUniverse.HasLinearFunctors W]
+                            [hNatUniv : IsNatUniverse.{u} W] where
     [hasRevAppFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
        HasNaturality.HasRevAppFunFun α β]
 
     namespace HasLinearFunctors
 
       variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-               [IsFunUniverse.{u} W] [IsNatUniverse.{u} W] [h : HasLinearFunctors W]
+               [IsFunUniverse.{u} W] [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.{u} W]
+               [h : HasLinearFunctors W]
 
       instance (α β : Sort (max 1 u w)) [hα : IsCategory W α] [hβ : IsCategory W β] :
         HasNaturality.HasRevAppFunFun α β :=
@@ -703,16 +798,57 @@ namespace CategoryTheory
     end HasLinearFunctors
 
     class HasAffineFunctors (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
-                            [HasSubLinearFunOp W]
-                            [hFunUniv : IsFunUniverse.{u} W] [hNatUniv : IsNatUniverse.{u} W] extends
-      HasLinearFunctors W
+                            [HasSubLinearFunOp W] [hFunUniv : IsFunUniverse.{u} W]
+                            [hFunAff : IsFunUniverse.HasAffineFunctors W]
+                            [hNatUniv : IsNatUniverse.{u} W] extends
+      HasLinearFunctors W where
+    [hasConstFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+       HasNaturality.HasConstFunFun α β]
+
+    namespace HasAffineFunctors
+
+      variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] [HasSubLinearFunOp W]
+               [IsFunUniverse.{u} W] [IsFunUniverse.HasAffineFunctors W] [IsNatUniverse.{u} W]
+               [h : HasAffineFunctors W]
+
+      instance (α β : Sort (max 1 u w)) [hα : IsCategory W α] [hβ : IsCategory W β] :
+        HasNaturality.HasConstFunFun α β :=
+      h.hasConstFunFun α β
+
+      def constFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+        β ⮕ (α ⮕ β) :=
+      HasNaturality.HasConstFunFun.constFunFun α β
+
+    end HasAffineFunctors
 
     class HasFullFunctors (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
                           [HasSubLinearFunOp W] [HasNonLinearFunOp W]
-                          [hFunUniv : IsFunUniverse.{u} W] [hNatUniv : IsNatUniverse.{u} W] extends
+                          [hFunUniv : IsFunUniverse.{u} W]
+                          [hFunAff : IsFunUniverse.HasAffineFunctors W]
+                          [hNatUniv : IsNatUniverse.{u} W] extends
       HasAffineFunctors W where
     [hasDupFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
        HasNaturality.HasDupFunFun α β]
+
+    namespace HasFullFunctors
+
+      variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] [HasSubLinearFunOp W]
+               [HasNonLinearFunOp W] [IsFunUniverse.{u} W] [IsFunUniverse.HasAffineFunctors W]
+               [IsNatUniverse.{u} W] [h : HasFullFunctors W]
+
+      instance (α β : Sort (max 1 u w)) [hα : IsCategory W α] [hβ : IsCategory W β] :
+        HasNaturality.HasDupFunFun α β :=
+      h.hasDupFunFun α β
+
+      def dupFun {α β : Sort max 1 u w} [hα : IsCategory W α] [hβ : IsCategory W β] (F : α ⮕ α ⮕ β) :
+        α ⮕ β :=
+      HasNaturality.HasDupFun.dupFun α β F
+
+      def dupFunFun (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+        (α ⮕ α ⮕ β) ⮕ (α ⮕ β) :=
+      HasNaturality.HasDupFunFun.dupFunFun α β
+
+    end HasFullFunctors
 
   end IsNatUniverse
 

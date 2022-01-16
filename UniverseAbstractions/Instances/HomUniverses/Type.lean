@@ -60,9 +60,9 @@ namespace type
   { hasFun := hasFunProp }
 
   instance isFunUniverse.hasAffineFunctors : IsFunUniverse.HasAffineFunctors type.{u} :=
-  { defIdFun    := λ _               => HasFunProp.HasTrivialFunctorialityCondition.defFun,
-    defConstFun := λ _ {_} [_] [_] _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
-    defCompFun  := λ _ _             => HasFunProp.HasTrivialFunctorialityCondition.defFun }
+  { hasIdFun    := λ α     => HasFunProp.HasIdFun.trivial    α,
+    hasConstFun := λ α β   => HasFunProp.HasConstFun.trivial α β,
+    hasCompFun  := λ α β γ => HasFunProp.HasCompFun.trivial  α β γ }
 
   -- Natural transformations
 
@@ -133,6 +133,10 @@ namespace type
   { defRevAppFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defRevAppFunFun := defFunFun }
 
+  instance hasConstFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+    HasNaturality.HasConstFunFun.{u + 1} α β :=
+  { defConstFunFun := defFunFun }
+
   instance hasDupFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasDupFunFun.{u + 1} α β :=
   { defDupFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
@@ -143,6 +147,7 @@ namespace type
 
   instance isNatUniverse.hasFullFunctors : IsNatUniverse.HasFullFunctors type.{u} :=
   { hasRevAppFunFun := hasRevAppFunFun,
+    hasConstFunFun  := hasConstFunFun,
     hasDupFunFun    := hasDupFunFun }
 
   -- Isomorphisms
