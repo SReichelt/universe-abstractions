@@ -758,7 +758,7 @@ namespace MetaRelation
     variable [HasCongrFun V V]
 
     def defRevTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
-      (R a b) ⟶{λ f => g • f} (R a c) :=
+      R a b ⟶{λ f => g • f} R a c :=
     swapFun (transFunFun R a b c) g
     ◄ byDef₂
 

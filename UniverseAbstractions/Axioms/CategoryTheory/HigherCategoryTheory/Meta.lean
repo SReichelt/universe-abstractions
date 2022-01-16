@@ -18,8 +18,9 @@ universe u u' v w w' iv iw
 
 namespace MetaRelation
 
-  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasFullFunOp
+  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp HasFullFunOp
        HasTransFun HasSymmFun
+       IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
 
   variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
            (R : MetaRelation α V)
@@ -54,8 +55,6 @@ namespace MetaRelation
 
   namespace IsCategoricalPreorder
 
-    open IsAssociative
-
     variable [HasLinearFunOp V] [IsPreorder R] [HasTransFun R]
 
     class IsCategoricalPreorderExt [h : IsCategoricalPreorder R] extends
@@ -73,8 +72,6 @@ namespace MetaRelation
   end IsCategoricalPreorder
 
   namespace IsGroupoidEquivalence
-
-    open IsAssociative IsCategoricalPreorder
 
     variable [HasFullFunOp V] [IsEquivalence R] [HasTransFun R] [HasSymmFun R]
 
@@ -119,8 +116,6 @@ namespace MetaRelation
 
   namespace opposite
 
-    open IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
-
     instance isAssociativeExt [HasLinearFunOp V] [HasLinearFunExt V] [HasTrans R] [IsAssociative R]
                               [HasTransFun R] [hAssocExt : IsAssociativeExt R] :
       IsAssociativeExt (opposite R) :=
@@ -148,8 +143,6 @@ namespace MetaRelation
   end opposite
 
   namespace lift
-
-    open IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
 
     variable {ω : Sort w} (l : ω → α)
 
@@ -181,8 +174,8 @@ end MetaRelation
 
 namespace MetaFunctor
 
-  open MetaRelation HasSymmFun HasTransFun HasFunctors HasCongrArg HasLinearFunOp HasLinearFunExt
-       HasSubLinearFunOp HasAffineFunOp HasAffineFunExt
+  open MetaRelation HasSymmFun HasTransFun IsCategoricalPreorder IsGroupoidEquivalence
+       HasFunctors HasCongrArg HasLinearFunOp HasLinearFunExt HasSubLinearFunOp HasAffineFunOp HasAffineFunExt
 
   section
 
@@ -280,14 +273,14 @@ namespace MetaFunctor
 
     instance isSymmFunctorExt [HasFullFunOp V] [HasAffineFunExt V] [HasSymm R] [HasSymmFun R]
                               [IsEquivalence S] [IsGroupoidEquivalence S] [HasSymmFun S]
-                              [HasTransFun S] [IsGroupoidEquivalence.IsGroupoidEquivalenceExt S] :
+                              [HasTransFun S] [IsGroupoidEquivalenceExt S] :
       IsSymmFunctor.IsSymmFunctorExt (metaFunctor R S c) :=
     sorry
     --{ symmEqExt := λ a b => _ • (leftConst (constFun (R a b) (HasRefl.refl (R := S) c)) (HasRefl.refl c))⁻¹ • leftConst (symmFun R a b) (HasRefl.refl c) }
 
     instance isTransFunctorExt [HasAffineFunOp V] [HasAffineFunExt V] [HasTrans R] [HasTransFun R]
                                [IsPreorder S] [IsCategoricalPreorder S] [HasTransFun S]
-                               [IsCategoricalPreorder.IsCategoricalPreorderExt S] :
+                               [IsCategoricalPreorderExt S] :
       IsTransFunctor.IsTransFunctorExt (metaFunctor R S c) :=
     sorry
     --{ transEqExt    := λ {a b} f d => (leftConst (constFun (R b d) c) c)⁻¹ • leftConst (transFun R f d) c,
@@ -370,8 +363,6 @@ namespace MetaFunctor
   end compFun
 
   namespace symmFun
-
-    open IsGroupoidEquivalence
 
     variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
              [HasFullFunOp V] (R : MetaRelation α V) [IsEquivalence R] [IsGroupoidEquivalence R]

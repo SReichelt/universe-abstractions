@@ -301,9 +301,9 @@ namespace MetaFunctor
   namespace idFun
 
     variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
-             [HasLinearFunOp V] (R : MetaRelation α V)
+             [HasIdFun V] (R : MetaRelation α V)
 
-    def metaFunctor : MetaFunctor R R := ⟨λ a b => idFun (R a b)⟩
+    def metaFunctor : MetaFunctor R R := ⟨λ a b => HasIdFun.idFun (R a b)⟩
 
     instance isReflFunctor [HasRefl R] : IsReflFunctor (metaFunctor R) :=
     ⟨λ _ => byDef⟩
@@ -311,7 +311,10 @@ namespace MetaFunctor
     instance isSymmFunctor [HasSymm R] [HasSymmFun R] : IsSymmFunctor (metaFunctor R) :=
     ⟨λ _ => (congrArgSymm R byDef)⁻¹ • byDef⟩
 
-    instance isTransFunctor [HasTrans R] [HasTransFun R] : IsTransFunctor (metaFunctor R) :=
+    variable [HasCongrFun V V]
+
+    instance isTransFunctor [HasTrans R] [HasTransFun R] :
+      IsTransFunctor (metaFunctor R) :=
     ⟨λ _ _ => (congrArgTrans R byDef byDef)⁻¹ • byDef⟩
 
     instance isPreorderFunctor [IsPreorder R] [HasTransFun R] :
@@ -337,15 +340,17 @@ namespace MetaFunctor
     rfl
 
     variable {α : Sort u} {β : Sort u'} {V : Universe.{v}} [HasIdentity.{v, iv} V]
-             [HasInternalFunctors V] [HasAffineFunOp V]
+             [HasInternalFunctors V] [HasConstFun V V]
              (R : MetaRelation α V) (S : MetaRelation β V) (c : β)
 
     def metaFunctor [HasRefl S] : MetaFunctor R (constRelation S c) :=
-    ⟨λ a b => constFun (R a b) (HasRefl.refl c)⟩
+    ⟨λ a b => HasConstFun.constFun (R a b) (HasRefl.refl c)⟩
 
     instance isReflFunctor [HasRefl R] [HasRefl S] :
       IsReflFunctor (metaFunctor R S c) :=
     ⟨λ _ => byDef⟩
+
+    variable [HasCongrFun V V]
 
     instance isSymmFunctor [HasSymm R] [IsEquivalence S]
                            [IsGroupoidEquivalence S] [HasSymmFun S] [HasTransFun S] :
@@ -374,11 +379,10 @@ namespace MetaFunctor
   namespace compFun
 
     variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
-             [HasLinearFunOp V] {R S T : MetaRelation α V}
-             (F : MetaFunctor R S) (G : MetaFunctor S T)
+             [HasCompFun V V V] {R S T : MetaRelation α V} (F : MetaFunctor R S) (G : MetaFunctor S T)
 
     def metaFunctor : MetaFunctor R T :=
-    ⟨λ a b => G.baseFun a b • F.baseFun a b⟩
+    ⟨λ a b => G.baseFun a b ⊙ F.baseFun a b⟩
 
     instance isReflFunctor [HasRefl R] [HasRefl S] [HasRefl T]
                            [hF : IsReflFunctor F] [hG : IsReflFunctor G] :
@@ -392,6 +396,8 @@ namespace MetaFunctor
                   hG.symmEq (F e) •
                   HasCongrArg.congrArg (G.baseFun b a) (hF.symmEq e) •
                   byDef⟩
+
+    variable [HasCongrFun V V]
 
     instance isTransFunctor [HasTrans R] [HasTrans S] [HasTrans T] [HasTransFun T]
                             [hF : IsTransFunctor F] [hG : IsTransFunctor G] :

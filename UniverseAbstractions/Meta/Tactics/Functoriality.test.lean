@@ -11,7 +11,7 @@ set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 --set_option pp.all true
 
-universe u v iu iuv
+universe u v w iu iuv
 
 
 
@@ -30,7 +30,7 @@ universe u v iu iuv
 
 namespace Test
 
-  open HasFunctors HasCongrFun
+  open MetaRelation HasFunctors HasCongrFun
 
   variable {U : Universe.{u, v}} [HasIdentity.{u, iu, v, iuv} U] [HasInternalFunctors U] [HasFullFunOp U]
            (A B C D : U)
@@ -214,5 +214,10 @@ namespace Test
   def testProdDistr : (A ⟶ B ⊓ C) ⟶ (A ⟶ B) ⊓ (A ⟶ C) :=
   Λ F => HasProducts.intro (Λ a => HasProducts.fst (F a)) (Λ a => HasProducts.snd (F a))
   #print testProdDistr
+
+  variable {α : Sort w} (R : MetaRelation α U) [HasTrans R] [HasTransFun R]
+
+  def testTransFun (a b c : α) (A : U) (F : A ⟶ R a b) (G : A ⟶ R b c) : A ⟶ R a c := Λ a => G a • F a
+  #print testTransFun
 
 end Test

@@ -75,7 +75,7 @@ namespace type
   | { toIsNatural := ⟨_⟩ }, { toIsNatural := ⟨_⟩ } => rfl
 
   theorem NatDesc.ext {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                      {F G : HasFunProp.Functor α β} (η₁ η₂ : NatDesc F G) :
+                      {F G : α ⮕ β} (η₁ η₂ : NatDesc F G) :
     (∀ a, η₁.nat a = η₂.nat a) → η₁ = η₂ :=
   match η₁, η₂ with
   | { nat := nat₁, isNat := isNat₁ }, { nat := nat₂, isNat := isNat₂ } =>
@@ -87,7 +87,7 @@ namespace type
               subst hIsNat; rfl
 
   def natRel (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    MetaRelation (HasFunProp.Functor α β) type.{u} :=
+    MetaRelation (α ⮕ β) type.{u} :=
   NatDesc
 
   instance hasNaturalityRelation (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
@@ -118,30 +118,40 @@ namespace type
     HasNaturality.{u + 1} α β :=
   { natHasTransFun := HasTrivialFunctoriality.hasTransFun (natRel α β) }
 
-  instance hasRevAppFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    HasNaturality.HasRevAppFun.{u + 1} α β :=
-  { defRevAppFun := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun }
+  def defFunFun {α β γ : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                [hγ : IsCategory type.{u} γ] {φ : α → β → γ} [hφ : ∀ a, IsCategoryFunctor (φ a)]
+                {F : ∀ a, HasFunProp.DefFun (φ a)} {desc : HasNaturality.FunFunDesc F} :
+    HasNaturality.DefFunFun desc :=
+  { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
+    defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun,
+    natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    defFunFun  := HasFunProp.HasTrivialFunctorialityCondition.defFun (hφ := HasNaturality.DefFunFunBase.isCategoryFunctor _) }
 
   instance hasRevAppFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasRevAppFunFun.{u + 1} α β :=
-  { defRevAppCongrArg    := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
-    defRevAppCongrArgFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    revAppEquivRefl      := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
-    revAppEquivTrans     := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv,
-    defRevAppFunFun      := HasFunProp.HasTrivialFunctorialityCondition.defFun (hφ := HasNaturality.revAppFunIsFun.{u + 1} α β _ _ _ _) }
+  { defRevAppFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
+    defRevAppFunFun := defFunFun }
+
+  instance hasDupFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+    HasNaturality.HasDupFunFun.{u + 1} α β :=
+  { defDupFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
+    defDupFunFun := defFunFun }
 
   instance isNatUniverse : IsNatUniverse.{u + 1} type.{u} :=
   { hasNat := hasNaturality }
 
-  instance isNatUniverse.hasLinearFunctors : IsNatUniverse.HasLinearFunctors type.{u} :=
-  { hasRevAppFunFun := hasRevAppFunFun }
+  instance isNatUniverse.hasFullFunctors : IsNatUniverse.HasFullFunctors type.{u} :=
+  { hasRevAppFunFun := hasRevAppFunFun,
+    hasDupFunFun    := hasDupFunFun }
+
+  -- Isomorphisms
+
   theorem IsInv.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {f : a ⇾ b} {g : b ⇾ a}
                     (h₁ h₂ : IsInv hα.Hom f g) :
     h₁ = h₂ :=
   match h₁, h₂ with
   | ⟨_, _⟩, ⟨_, _⟩ => rfl
-
-  -- Isomorphisms
 
   theorem IsoDesc.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b} :
     e₁.toHom = e₂.toHom → e₁.invHom = e₂.invHom → e₁ = e₂ :=
@@ -183,7 +193,7 @@ namespace type
   ⟨λ _ _ => IsoDesc.map φ⟩
 
   instance isIsoFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                    (F : HasFunProp.Functor α β) :
+                    (F : α ⮕ β) :
     IsIsoFunctor F.φ :=
   { F          := isoPreFunctor F.φ,
     toHomCongr := λ _ => rfl }

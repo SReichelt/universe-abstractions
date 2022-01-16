@@ -46,7 +46,7 @@ namespace CategoryTheory.IsCategory
 
   instance hasFunctorInstances :
     HasFunctorInstances (univ.{u} W) (univ.{u} W) (typeClass.{u} W) :=
-  { Fun     := λ A B => HasFunProp.Functor A B,
+  { Fun     := λ A B => A ⮕ B,
     apply   := HasFunProp.Functor.φ,
     funInst := λ A B => HasNaturality.funIsCategory A B }
 

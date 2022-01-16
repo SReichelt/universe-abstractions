@@ -657,9 +657,9 @@ namespace Lean
           let A₂ : _⌈U₂⌉_ ← A₂.instantiate
           let A₃ : _⌈U₃⌉_ ← A₃.instantiate
           let hFunApp₃' : mkIsFunApp₃' A₁ A₂ A₃ B b' ← hFunApp₃'.instantiate
-          pure [⟨A₁, ← mkIsFunApp.reflect A₁ b'⟩,
+          pure [⟨A₃, ← mkIsFunApp.reflect A₃ b'⟩,
                 ⟨A₂, ← mkIsFunApp.reflect A₂ b'⟩,
-                ⟨A₃, ← mkIsFunApp.reflect A₃ b'⟩]
+                ⟨A₁, ← mkIsFunApp.reflect A₁ b'⟩]
         | none =>
           let hFunApp₂'? : Option (mkIsFunApp₂' A₁ A₂ B b) ← InstanceExpr.synthesize?
           match hFunApp₂'? with
@@ -673,8 +673,8 @@ namespace Lean
             let A₁ : _⌈U₁⌉_ ← A₁.instantiate
             let A₂ : _⌈U₂⌉_ ← A₂.instantiate
             let hFunApp₂' : mkIsFunApp₂' A₁ A₂ B b' ← hFunApp₂'.instantiate
-            pure [⟨A₁, ← mkIsFunApp.reflect A₁ b'⟩,
-                  ⟨A₂, ← mkIsFunApp.reflect A₂ b'⟩]
+            pure [⟨A₂, ← mkIsFunApp.reflect A₂ b'⟩,
+                  ⟨A₁, ← mkIsFunApp.reflect A₁ b'⟩]
           | none =>
             let hFunApp' : mkIsFunApp' A₁ B b ← InstanceExpr.synthesize
             let U₁ ← U₁.instantiate

@@ -120,7 +120,6 @@ namespace CategoryTheory
     instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
                       [hα : HasMorphisms W α] [hβ : IsCategory W β] (b : β) :
       IsMorphismFunctor (Function.const α b) :=
-    let _ : HasAffineFunOp W := ⟨⟩;
     ⟨MetaFunctor.constFun.metaFunctor hα.Hom hβ.Hom b⟩
 
     instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
@@ -157,7 +156,6 @@ namespace CategoryTheory
     instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
                       [hα : IsSemicategory W α] [hβ : IsCategory W β] (b : β) :
       IsSemicategoryFunctor (Function.const α b) :=
-    let _ : HasAffineFunOp W := ⟨⟩;
     { hTrans := MetaFunctor.constFun.isTransFunctor hα.Hom hβ.Hom b }
 
     instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
@@ -205,7 +203,6 @@ namespace CategoryTheory
     instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
                       [hα : IsCategory W α] [hβ : IsCategory W β] (b : β) :
       IsCategoryFunctor (Function.const α b) :=
-    let _ : HasAffineFunOp W := ⟨⟩;
     { hPreorder := MetaFunctor.constFun.isPreorderFunctor hα.Hom hβ.Hom b }
 
     instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
@@ -254,7 +251,6 @@ namespace CategoryTheory
     instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
                       [hα : IsGroupoid W α] [hβ : IsGroupoid W β] (b : β) :
       IsGroupoidFunctor (Function.const α b) :=
-    let _ : HasAffineFunOp W := ⟨⟩;
     { hEquivalence := MetaFunctor.constFun.isEquivalenceFunctor hα.Hom hβ.Hom b }
 
     instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}

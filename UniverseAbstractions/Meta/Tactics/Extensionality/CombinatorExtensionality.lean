@@ -193,24 +193,21 @@ namespace HasFullFunOp.HasFullFunExt
 
   @[reducible] def compFunDefExt_a_id_F_fun_G_fun {A B C : U} (F : A ⟶ (A ⟶ B)) (G : A ⟶ (B ⟶ C)) :
     (Λ a => (G a • F a) a) ≃⦃A ▻ λ a => (HasCompFun.defCompFun (F a) (G a)).eff a ◅ C⦄ (Λ a => (G a) ((F a) a)) :=
-  dupSubstAssoc F G
+  dupSubstAssoc' F G
 
   @[reducible] def compFunDefExt_a_fun_F_fun_G_fun {X A B C : U} (F : X ⟶ (A ⟶ B)) (G : X ⟶ (B ⟶ C)) (H : X ⟶ A) :
     (Λ x => (G x • F x) (H x)) ≃⦃X ▻ λ x => (HasCompFun.defCompFun (F x) (G x)).eff (H x) ◅ C⦄ (Λ x => (G x) ((F x) (H x))) :=
-  substAssoc H F G
+  substAssoc' H F G
 
   -- `compFunFun`
 
   @[reducible] def compFunFunDefExt_G_id_F_fun {A B C : U} (F : (B ⟶ C) ⟶ (A ⟶ B)) :
     (Λ G => (compFunFun (F G) C) G) ≃⦃B ⟶ C ▻ λ G => (HasCompFunFun.defCompFunFun (F G) C).eff G ◅ A ⟶ C⦄ (Λ G => G • F G) :=
-  substAltDef F (revCompFunFunFun A B C) •
-  defCongrArg (defDupFunFun (B ⟶ C) (A ⟶ C))
-              (defCongrArg (HasCompFunFun.defCompFunFun F ((B ⟶ C) ⟶ (A ⟶ C)))
-                           (swapSwapExt (compFunFunFun A B C))⁻¹)
+  HasRefl.refl (dupFun (compFunFunFun A B C • F))
 
   @[reducible] def compFunFunDefExt_G_fun_F_fun {X A B C : U} (F : X ⟶ (A ⟶ B)) (G : X ⟶ (B ⟶ C)) :
     (Λ x => (compFunFun (F x) C) (G x)) ≃⦃X ▻ λ x => (HasCompFunFun.defCompFunFun (F x) C).eff (G x) ◅ A ⟶ C⦄ (Λ x => G x • F x) :=
-  substCompFun F G
+  HasRefl.refl (substFun G (compFunFunFun A B C • F))
 
   -- `constFun`
 

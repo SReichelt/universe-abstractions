@@ -143,11 +143,11 @@ end HasLinearFunOp
 
 
 
-namespace HasFullFunOp
+namespace HasNonLinearFunOp
 
   open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasNonLinearFunOp
 
-  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasFullFunOp U]
+  variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U] [HasNonLinearFunOp U]
 
   -- The S combinator (see https://en.wikipedia.org/wiki/SKI_combinator_calculus), which in our case says
   -- that if we can functorially construct a functor `G a : B ⟶ C` and an argument `F a : B` from `a`,
@@ -305,4 +305,4 @@ namespace HasFullFunOp
     IsFunApp (((A ⟶ B) ⟶ A ⟶ C ⟶ D) ⟶ (A ⟶ B) ⟶ (A ⟶ C) ⟶ A ⟶ D) (revBiCompFunFunFunFun A B C D) :=
   compFun.isFunApp
 
-end HasFullFunOp
+end HasNonLinearFunOp

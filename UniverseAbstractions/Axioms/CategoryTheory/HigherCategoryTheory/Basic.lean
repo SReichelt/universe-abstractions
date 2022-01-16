@@ -21,13 +21,14 @@ namespace CategoryTheory
   namespace IsSemicategory
 
     variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv} V]
+             (α : Sort u) [hα : IsSemicategory V α]
 
-    class IsSemicategoryExt (α : Sort u) [hα : IsSemicategory V α] where
+    class IsSemicategoryExt where
     [homIsAssociativeExt : IsAssociativeExt hα.Hom]
 
     namespace IsSemicategoryExt
 
-      variable (α : Sort u) [hα : IsSemicategory V α] [h : IsSemicategoryExt α]
+      variable [h : IsSemicategoryExt α]
 
       instance : IsAssociativeExt hα.Hom := h.homIsAssociativeExt
 
@@ -38,13 +39,14 @@ namespace CategoryTheory
   namespace IsCategory
 
     variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv} V]
+             (α : Sort u) [hα : IsCategory V α]
 
-    class IsCategoryExt (α : Sort u) [hα : IsCategory V α] where
+    class IsCategoryExt where
     [homIsCategoricalPreorderExt : IsCategoricalPreorderExt hα.Hom]
 
     namespace IsCategoryExt
 
-      variable (α : Sort u) [hα : IsCategory V α] [h : IsCategoryExt α]
+      variable [h : IsCategoryExt α]
 
       instance : IsCategoricalPreorderExt hα.Hom := h.homIsCategoricalPreorderExt
 
@@ -57,17 +59,17 @@ namespace CategoryTheory
   namespace IsGroupoid
 
     variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv} V] [HasSubLinearFunOp V]
-             [HasNonLinearFunOp V]
+             [HasNonLinearFunOp V] (α : Sort u) [hα : IsGroupoid V α]
 
     instance : HasAffineFunOp V := ⟨⟩
     instance : HasFullFunOp   V := ⟨⟩
 
-    class IsGroupoidExt (α : Sort u) [hα : IsGroupoid V α] where
+    class IsGroupoidExt where
     [homIsGroupoidEquivalenceExt : IsGroupoidEquivalenceExt hα.Hom]
 
     namespace IsGroupoidExt
 
-      variable (α : Sort u) [hα : IsGroupoid V α] [h : IsGroupoidExt α]
+      variable [h : IsGroupoidExt α]
 
       instance : IsGroupoidEquivalenceExt hα.Hom := h.homIsGroupoidEquivalenceExt
 
@@ -201,7 +203,6 @@ namespace CategoryTheory
                         (α : Sort u) {β : Sort v} [hα : IsGroupoid W α] [hβ : IsGroupoid W β]
                         [hβExt : IsGroupoidExt β] (b : β) :
         IsGroupoidFunctorExt (Function.const α b) :=
-      let _ : HasFullFunOp W := ⟨⟩
       { toIsCategoryFunctorExt := IsCategoryFunctorExt.constFun α b,
         hSymmExt               := MetaFunctor.constFun.isSymmFunctorExt hα.Hom hβ.Hom b }
 

@@ -381,6 +381,13 @@ namespace HasFullFunOp.HasFullFunExt
                 compAssoc G (compFunFun F (A ⟶ C) • revCompFunFunFun A B C) (dupFunFun A C))⁻¹) •
   (dupDup (compFunFun F (A ⟶ C) • revCompFunFunFun A B C • G))⁻¹
 
+  def dupSubstAssoc' {A B C : U} (F : A ⟶ A ⟶ B) (G : A ⟶ B ⟶ C) :
+    dupFun (substFun G (compFunFunFun A B C • F))
+    ≃{byDef₃ • byFunDef₂ • byFunDef ▻-◅ byArgDef}
+    substFun (dupFun F) G :=
+  dupSubstAssoc F G •
+  defCongrArg (defDupFunFun A C) (substCompFun F G)
+
   def substAssocLemma {A A' B C : U} (F : A ⟶ B) (G : A' ⟶ B ⟶ C) (D : U) :
     (revCompFunFun A' (compFunFun F D) • compFunFun G (B ⟶ D)) • revCompFunFunFun B C D
     ≃{byDefDef • byDefDef ▻
@@ -414,6 +421,13 @@ namespace HasFullFunOp.HasFullFunExt
                                         (compFunFun G (B ⟶ D))
                                         (revCompFunFun A (compFunFun F D)))⁻¹) •
                (rightDup (compFunFun G (B ⟶ D) • revCompFunFunFun B C D • H) (compFunFun F D))⁻¹)
+
+  def substAssoc' {A B C D : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) (H : A ⟶ C ⟶ D) :
+    substFun F (substFun H (compFunFunFun B C D • G))
+    ≃{byDef₃ • byFunDef₂ • byFunDef ▻-◅ byArgDef}
+    substFun (substFun F G) H :=
+  substAssoc F G H •
+  defCongrArg (defSubstFunFun F D) (substCompFun G H)
 
 end HasFullFunOp.HasFullFunExt
 
