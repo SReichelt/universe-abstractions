@@ -126,12 +126,21 @@ namespace type
     defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun,
     natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
     natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv,
-    defFunFun  := HasFunProp.HasTrivialFunctorialityCondition.defFun (hφ := HasNaturality.DefFunFunBase.isCategoryFunctor _) }
+    defFunFun  := HasFunProp.HasTrivialFunctorialityCondition.defFun
+                    (hφ := HasNaturality.DefFunFunBase.isCategoryFunctor _) }
 
   instance hasRevAppFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasRevAppFunFun.{u + 1} α β :=
   { defRevAppFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defRevAppFunFun := defFunFun }
+
+  instance hasCompFunFunFun (α β γ : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                            [hγ : IsCategory type.{u} γ] :
+    HasNaturality.HasCompFunFunFun.{u + 1} α β γ :=
+  { defCompFunFun    := λ _   => defFunFun,
+    defRevCompFunFun := λ _   => defFunFun,
+    compNatEq        := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    defCompFunFunFun := defFunFun (hφ := λ _ => HasNaturality.DefFunFunBase.isCategoryFunctor _) }
 
   instance hasConstFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.HasConstFunFun.{u + 1} α β :=
@@ -146,9 +155,10 @@ namespace type
   { hasNat := hasNaturality }
 
   instance isNatUniverse.hasFullFunctors : IsNatUniverse.HasFullFunctors type.{u} :=
-  { hasRevAppFunFun := hasRevAppFunFun,
-    hasConstFunFun  := hasConstFunFun,
-    hasDupFunFun    := hasDupFunFun }
+  { hasRevAppFunFun  := hasRevAppFunFun,
+    hasCompFunFunFun := hasCompFunFunFun,
+    hasConstFunFun   := hasConstFunFun,
+    hasDupFunFun     := hasDupFunFun }
 
   -- Isomorphisms
 

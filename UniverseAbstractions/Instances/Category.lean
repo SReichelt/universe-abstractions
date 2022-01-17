@@ -66,8 +66,10 @@ namespace CategoryTheory.IsCategory
     defRevAppFunFun  := λ A B => { F   := IsNatUniverse.HasLinearFunctors.revAppFunFun.{u} A.a B.a,
                                    eff := λ a => HasInstanceEquivalences.refl (IsNatUniverse.HasLinearFunctors.revAppFun.{u} a B.a) },
     defCompFun       := λ F G => toDefFun (IsFunUniverse.HasLinearFunctors.compFun.{u} F G),
-    defCompFunFun    := sorry,
-    defCompFunFunFun := sorry }
+    defCompFunFun    := λ F C => { F   := IsNatUniverse.HasLinearFunctors.compFunFun.{u} F C.a,
+                                   eff := λ G => HasInstanceEquivalences.refl (IsFunUniverse.HasLinearFunctors.compFun.{u} F G) },
+    defCompFunFunFun := λ A B C => { F   := IsNatUniverse.HasLinearFunctors.compFunFunFun.{u} A.a B.a C.a,
+                                     eff := λ F => HasInstanceEquivalences.refl (IsNatUniverse.HasLinearFunctors.compFunFun.{u} F C.a) } }
 
   instance hasAffineFunOp [HasSubLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
                           [IsNatUniverse.HasAffineFunctors W] :
