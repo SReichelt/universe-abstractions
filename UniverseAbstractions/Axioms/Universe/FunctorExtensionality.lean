@@ -58,7 +58,7 @@ namespace HasLinearFunOp
   (leftId  {A B : U} (F : A ⟶ B) : idFun B • F ≃{byDef    ▻|} F)
   (rightIdExt (A B : U) : compFunFun    (idFun A) B ≃{▻ λ F => rightId F ◅} idFun (A ⟶ B))
   (leftIdExt  (A B : U) : revCompFunFun A (idFun B) ≃{▻ λ F => leftId  F ◅} idFun (A ⟶ B))
-  (swapRevApp {A B : U} (F : A ⟶ B) : swapFun (revAppFunFun A B) F ≃{byDef • byFunDef ▻|} appFun F)
+  (swapRevApp {A B : U} (F : A ⟶ B) : swapFun (revAppFunFun A B) F ≃{byDef • byFunDef ▻-◅} appFun F)
   (swapRevAppExt (A B : U) : swapFunFun (revAppFunFun A B) ≃{▻ λ F => swapRevApp F ◅} appFunFun A B)
   (swapCompFun {A B : U} (F : A ⟶ B) (a : A) (C : U) :
      swapFun (compFunFun F C) a ≃{byDef₂ ▻-◅} revAppFun (F a) C)

@@ -1,5 +1,4 @@
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Meta.Tactics.Functoriality
 
 
 
@@ -31,12 +30,34 @@ namespace CategoryTheory
   open MetaRelation MetaFunctor MetaQuantification HasTransFun HasSymmFun
        IsAssociative IsCategoricalPreorder IsGroupoidEquivalence IsSymmFunctor IsTransFunctor
        IsCategory
-       HasFunctors HasCongrArg HasCongrFun HasLinearFunOp
+       HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasNonLinearFunOp
+
+  structure FunDesc {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+                    {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+                    (φ : α → β) where
+  (F  : PreFunctor hα.Hom hβ.Hom φ)
+  [hF : IsCategoryFunctor ⟨F⟩]
+
+  namespace FunDesc
+
+    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+             {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β] {φ : α → β}
+
+    @[reducible] def morFun (F : FunDesc φ) : MorphismFunctor α β := ⟨F.F⟩
+
+    instance (F : FunDesc φ) : IsCategoryFunctor (morFun F) := F.hF
+
+    instance (F : FunDesc φ) : IsReflFunctor  F.F := F.hF.toIsReflFunctor
+    instance (F : FunDesc φ) : IsTransFunctor F.F := F.hF.toIsTransFunctor
+
+    def FunDescEq (F G : FunDesc φ) := ∀ a b, F.F.baseFun a b ≃ G.F.baseFun a b
+
+  end FunDesc
 
   class HasFunProp {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
                    (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β] where
   (Fun : MetaProperty (α → β) W)
-  [isCategoryFunctor {φ : α → β} (F : Fun φ) : IsCategoryFunctor φ]
+  (desc {φ : α → β} : Fun φ → FunDesc φ)
 
   namespace HasFunProp
 
@@ -54,58 +75,86 @@ namespace CategoryTheory
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
                [h : HasFunProp α β] (F : α ⮕ β)
 
-      instance isCategoryFunctor : IsCategoryFunctor F.φ := h.isCategoryFunctor F.F
+      def desc : FunDesc F.φ := h.desc F.F
+      @[reducible] def preFun : PreFunctor hα.Hom hβ.Hom F.φ := (desc F).F
+      @[reducible] def morFun : MorphismFunctor α β := ⟨preFun F⟩
 
       @[reducible] def mapHom {a b : α} (f : a ⇾ b) : F.φ a ⇾ F.φ b :=
-      (IsMorphismFunctor.preFunctor F.φ) f
+      (preFun F) f
 
       def reflEq (a : α) : mapHom F (idHom a) ≃ idHom (F.φ a) :=
-      IsReflFunctor.reflEq (F := IsMorphismFunctor.preFunctor F.φ) a
+      IsReflFunctor.reflEq (F := preFun F) a
 
       def transEq {a b c : α} (f : a ⇾ b) (g : b ⇾ c) :
         mapHom F (g • f) ≃ mapHom F g • mapHom F f :=
-      IsTransFunctor.transEq (F := IsMorphismFunctor.preFunctor F.φ) f g
+      IsTransFunctor.transEq (F := preFun F) f g
 
       def mapHomCongrArg {a b : α} {f₁ f₂ : a ⇾ b} (e : f₁ ≃ f₂) :
         mapHom F f₁ ≃ mapHom F f₂ :=
-      HasCongrArg.congrArg ((IsMorphismFunctor.preFunctor F.φ).baseFun a b) e
+      HasCongrArg.congrArg ((preFun F).baseFun a b) e
 
     end Functor
 
     structure DefFun {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                     [h : HasFunProp α β] (φ : α → β) [hφ : IsCategoryFunctor φ] where
-    (F            : h.Fun φ)
-    (eq (a b : α) : (h.isCategoryFunctor F).F.baseFun a b ≃ hφ.F.baseFun a b)
+                     [h : HasFunProp α β] {φ : α → β} (desc : FunDesc φ) where
+    (F  : h.Fun φ)
+    (eq : FunDesc.FunDescEq (h.desc F) desc)
 
     namespace DefFun
 
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-               [h : HasFunProp α β] {φ : α → β} [hφ : IsCategoryFunctor φ]
+               [h : HasFunProp α β] {φ : α → β} {desc : FunDesc φ}
 
-      @[reducible] def toFunctor (F : DefFun φ) : α ⮕ β := ⟨F.F⟩
+      @[reducible] def toFunctor (F : DefFun desc) : α ⮕ β := ⟨F.F⟩
 
-      def byMapHomDef {F : DefFun φ} {a b : α} {f : a ⇾ b} {g : φ a ⇾ φ b} (h : hφ.F f ≃ g) :
+      def byFunDesc {F : DefFun desc} {a b : α} :
+        (Functor.preFun (toFunctor F)).baseFun a b ≃ desc.F.baseFun a b :=
+      F.eq a b
+
+      def byMapHomDef {F : DefFun desc} {a b : α} {f : a ⇾ b} {g : φ a ⇾ φ b} (h : desc.F f ≃ g) :
         Functor.mapHom (toFunctor F) f ≃ g :=
       h • HasCongrFun.congrFun (F.eq a b) f
 
     end DefFun
 
+    @[reducible] def DefFun' {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+                             [h : HasFunProp α β] (F : MorphismFunctor α β)
+                             [hF : IsCategoryFunctor F] :=
+    DefFun ⟨F.F⟩
+
+    namespace DefFun'
+
+      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+               [h : HasFunProp α β] {F : MorphismFunctor α β} [hF : IsCategoryFunctor F]
+
+      @[reducible] def toFunctor (F' : DefFun' F) : α ⮕ β := DefFun.toFunctor F'
+
+      def byFunDesc {F' : DefFun' F} {a b : α} :
+        (Functor.preFun (toFunctor F')).baseFun a b ≃ F.F.baseFun a b :=
+      DefFun.byFunDesc
+
+      def byMapHomDef {F' : DefFun' F} {a b : α} {f : a ⇾ b} {g : F.φ a ⇾ F.φ b} (h : F.F f ≃ g) :
+        Functor.mapHom (toFunctor F') f ≃ g :=
+      DefFun.byMapHomDef h
+
+    end DefFun'
+
     class HasTrivialFunctorialityCondition (α : Sort u) (β : Sort v)
                                            [hα : IsCategory W α] [hβ : IsCategory W β]
                                            [h : HasFunProp α β] where
-    (functor (φ : α → β) [hφ : IsCategoryFunctor φ] : DefFun φ)
+    (functor {φ : α → β} (desc : FunDesc φ) : DefFun desc)
 
     namespace HasTrivialFunctorialityCondition
 
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
                [HasFunProp α β] [h : HasTrivialFunctorialityCondition α β]
       
-      def defFun {φ : α → β} [hφ : IsCategoryFunctor φ] : DefFun φ := h.functor φ
+      def defFun {φ : α → β} {desc : FunDesc φ} : DefFun desc := h.functor desc
 
     end HasTrivialFunctorialityCondition
 
     class HasIdFun (α : Sort u) [hα : IsCategory W α] [hFunαα : HasFunProp α α] where 
-    (defIdFun : DefFun (@id α))
+    (defIdFun : DefFun' (MorphismFunctor.idFun α))
 
     namespace HasIdFun
 
@@ -118,7 +167,7 @@ namespace CategoryTheory
 
     class HasConstFun [HasSubLinearFunOp W] (α : Sort u) (β : Sort v) [hα : IsCategory W α]
                       [hβ : IsCategory W β] [hFunαβ : HasFunProp α β] where
-    (defConstFun (b : β) : DefFun (Function.const α b))
+    (defConstFun (b : β) : DefFun' (MorphismFunctor.constFun α b))
 
     namespace HasConstFun
 
@@ -132,7 +181,8 @@ namespace CategoryTheory
     class HasCompFun (α : Sort u) (β : Sort u') (γ : Sort u'') [hα : IsCategory W α]
                      [hβ : IsCategory W β] [hγ : IsCategory W γ] [hFunαβ : HasFunProp α β]
                      [hFunβγ : HasFunProp β γ] [hFunαγ : HasFunProp α γ] where
-    (defCompFun (F : α ⮕ β) (G : β ⮕ γ) : DefFun (G.φ ∘ F.φ))
+    (defCompFun (F : α ⮕ β) (G : β ⮕ γ) :
+       DefFun' (MorphismFunctor.compFun (Functor.morFun F) (Functor.morFun G)))
 
     namespace HasCompFun
 
@@ -217,8 +267,8 @@ namespace CategoryTheory
                     {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
                     [hFunProp : HasFunProp α β] (F G : α ⮕ β) :
     Sort (max 1 u w iw) where
-  (nat   : MetaQuantification hβ.Hom F.φ G.φ)
-  [isNat : IsNaturalTransformation nat]
+  (η     : Quantification (HasFunProp.Functor.morFun F) (HasFunProp.Functor.morFun G))
+  [isNat : IsNaturalTransformation η]
 
   namespace NatDesc
 
@@ -227,7 +277,7 @@ namespace CategoryTheory
              [hFunProp : HasFunProp α β]
              {F G : α ⮕ β} (η : NatDesc F G)
 
-    instance : IsNaturalTransformation η.nat := η.isNat
+    instance : IsNaturalTransformation η.η := η.isNat
 
   end NatDesc
 
@@ -237,7 +287,7 @@ namespace CategoryTheory
   (Nat : MetaRelation (α ⮕ β) W)
   (desc {F G : α ⮕ β} (η : Nat F G) : NatDesc F G)
   (defNatFun (F G : α ⮕ β) (a : α) :
-     Nat F G ⟶{λ η => (desc η).nat a} (F.φ a ⇾ G.φ a))
+     Nat F G ⟶{λ η => (desc η).η a} (F.φ a ⇾ G.φ a))
 
   namespace HasNatRel
 
@@ -250,7 +300,7 @@ namespace CategoryTheory
                [hFunProp : HasFunProp α β] [h : HasNatRel α β]
 
       @[reducible] def nat {F G : α ⮕ β} (η : h.Nat F G) (a : α) : F.φ a ⇾ G.φ a :=
-      (h.desc η).nat a
+      (h.desc η).η a
 
       @[reducible] def natFun (F G : α ⮕ β) (a : α) : h.Nat F G ⟶ (F.φ a ⇾ G.φ a) :=
       h.defNatFun F G a
@@ -265,15 +315,15 @@ namespace CategoryTheory
       defCongrArg (defNatFun F G a) e
 
       def naturality {F G : α ⮕ β} (η : h.Nat F G) {a b : α} (f : a ⇾ b) :
-        mapHom G f • nat η a ≃ nat η b • mapHom F f :=
+        nat η b • mapHom F f ≃ mapHom G f • nat η a :=
       (h.desc η).isNat.nat f
 
       structure DefNat {F G : α ⮕ β} (desc : NatDesc F G) where
       (η             : h.Nat F G)
-      (natEq (a : α) : nat η a ≃ desc.nat a)
+      (natEq (a : α) : nat η a ≃ desc.η a)
 
       def byNatDef {F G : α ⮕ β} {desc : NatDesc F G} {η : DefNat desc} (a : α) :
-        nat η.η a ≃ desc.nat a :=
+        nat η.η a ≃ desc.η a :=
       η.natEq a
 
       def NatEquiv {F G : α ⮕ β} (η₁ η₂ : h.Nat F G)
@@ -281,7 +331,7 @@ namespace CategoryTheory
       η₁ ≃ η₂
 
       def DefNatEquiv {F G : α ⮕ β} {desc₁ desc₂ : NatDesc F G} (η₁ : DefNat desc₁)
-                      (η₂ : DefNat desc₂) (hNat : ∀ a, desc₁.nat a ≃ desc₂.nat a) :=
+                      (η₂ : DefNat desc₂) (hNat : ∀ a, desc₁.η a ≃ desc₂.η a) :=
       NatEquiv η₁.η η₂.η (λ a => (byNatDef a)⁻¹ • hNat a • byNatDef a)
 
     end
@@ -326,14 +376,14 @@ namespace CategoryTheory
                  (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
                  [hFunProp : HasFunProp α β] extends
     HasNatRel α β where
-  (defRefl (F : α ⮕ β) :
-     HasNatRel.DefNat ⟨MetaQuantification.refl hβ.Hom F.φ⟩)
+  (defRefl (F : α ⮕ β) : HasNatRel.DefNat { η     := Quantification.refl (HasFunProp.Functor.morFun F),
+                                            isNat := IsNaturalTransformation.refl (HasFunProp.Functor.morFun F)})
   (defTrans {F G H : α ⮕ β} (η : Nat F G) (ε : Nat G H) :
-     HasNatRel.DefNat ⟨MetaQuantification.trans hβ.Hom (desc η).nat (desc ε).nat⟩)
+     HasNatRel.DefNat ⟨Quantification.trans (desc η).η (desc ε).η⟩)
 
   namespace HasNatOp
 
-    open HasNatRel
+    open HasFunProp HasFunProp.Functor HasNatRel
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
 
@@ -357,17 +407,17 @@ namespace CategoryTheory
     section
 
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-               [HasFunProp α β] [h : HasNatOp α β]
+               [hFunProp : HasFunProp α β] [h : HasNatOp α β]
 
       def natReflEq (F : α ⮕ β) (a : α) :
         nat (HasRefl.refl F) a ≃ idHom (F.φ a) :=
       byNatDef a
 
-      def natTransEq {F G H : α ⮕ β} (η : Nat F G) (ε : Nat G H) (a : α) :
+      def natTransEq {F G H : α ⮕ β} (η : h.Nat F G) (ε : h.Nat G H) (a : α) :
         nat (ε • η) a ≃ nat ε a • nat η a :=
       byNatDef a
 
-      def natAssoc {F G H I : α ⮕ β} (η : Nat F G) (ε : Nat G H) (θ : Nat H I) (a : α) :
+      def natAssoc {F G H I : α ⮕ β} (η : h.Nat F G) (ε : h.Nat G H) (θ : h.Nat H I) (a : α) :
         nat ((θ • ε) • η) a ≃ nat (θ • (ε • η)) a :=
       (congrArgTransRight hβ.Hom (natTransEq η ε a) (nat θ a) •
        natTransEq (ε • η) θ a)⁻¹ •
@@ -375,16 +425,14 @@ namespace CategoryTheory
       (congrArgTransLeft hβ.Hom (nat η a) (natTransEq ε θ a) •
        natTransEq η (θ • ε) a)
 
-      def natRightId {F G : α ⮕ β} (η : Nat F G) (a : α) :
+      def natRightId {F G : α ⮕ β} (η : h.Nat F G) (a : α) :
         nat (η • HasRefl.refl F) a ≃ nat η a :=
-      rightId (nat η a) •
-      congrArgTransRight hβ.Hom (natReflEq F a) (nat η a) •
+      cancelRightId hβ.Hom (natReflEq F a) (nat η a) •
       natTransEq (HasRefl.refl F) η a
 
-      def natLeftId {F G : α ⮕ β} (η : Nat F G) (a : α) :
+      def natLeftId {F G : α ⮕ β} (η : h.Nat F G) (a : α) :
         nat (HasRefl.refl G • η) a ≃ nat η a :=
-      leftId (nat η a) •
-      congrArgTransLeft hβ.Hom (nat η a) (natReflEq G a) •
+      cancelLeftId hβ.Hom (nat η a) (natReflEq G a) •
       natTransEq η (HasRefl.refl G) a
 
     end
@@ -410,9 +458,9 @@ namespace CategoryTheory
              (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β] [HasFunProp α β]
 
     instance trivial [HasNatOp α β] [HasTrivialNatEquiv α β] : HasNatOpEquiv α β :=
-    { assoc   := λ _ _ _ => HasTrivialNatEquiv.natEquiv,
-      rightId := λ _     => HasTrivialNatEquiv.natEquiv,
-      leftId  := λ _     => HasTrivialNatEquiv.natEquiv }
+    { assoc     := λ _ _ _   => HasTrivialNatEquiv.natEquiv,
+      rightId   := λ _       => HasTrivialNatEquiv.natEquiv,
+      leftId    := λ _       => HasTrivialNatEquiv.natEquiv }
 
     variable [h : HasNatOpEquiv α β]
 
@@ -458,15 +506,15 @@ namespace CategoryTheory
       variable {α : Sort u} {β : Sort u'} {γ : Sort u''}
                [hα : IsCategory W α] [hβ : IsCategory W β] [hγ : IsCategory W γ]
                [hFunβγ : HasFunProp β γ] [hNatβγ : HasNaturality β γ]
-               {φ : α → β → γ} [hφ : ∀ a, IsCategoryFunctor (φ a)]
+               {φ : α → β → γ} {Φ : ∀ a, FunDesc (φ a)}
 
-      structure FunFunDesc (F : ∀ a, HasFunProp.DefFun (φ a)) where
+      structure FunFunDesc (F : ∀ a, HasFunProp.DefFun (Φ a)) where
       (natDesc {a₁ a₂ : α} : (a₁ ⇾ a₂) → NatDesc (DefFun.toFunctor (F a₁)) (DefFun.toFunctor (F a₂)))
-      (natDescReflEq (a : α) (b : β) : (natDesc (idHom a)).nat b ≃ idHom (φ a b))
+      (natDescReflEq (a : α) (b : β) : (natDesc (idHom a)).η b ≃ idHom (φ a b))
       (natDescTransEq {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) (b : β) :
-         (natDesc (g • f)).nat b ≃ (natDesc g).nat b • (natDesc f).nat b)
+         (natDesc (g • f)).η b ≃ (natDesc g).η b • (natDesc f).η b)
 
-      structure DefFunFunBase {F : ∀ a, HasFunProp.DefFun (φ a)} (desc : FunFunDesc F) where
+      structure DefFunFunBase {F : ∀ a, HasFunProp.DefFun (Φ a)} (desc : FunFunDesc F) where
       (defNat {a₁ a₂ : α} (f : a₁ ⇾ a₂) : DefNat (desc.natDesc f))
       (defNatFun (a₁ a₂ : α) :
          (a₁ ⇾ a₂) ⟶{λ f => (defNat f).η} (DefFun.toFunctor (F a₁) ⇾ DefFun.toFunctor (F a₂)))
@@ -475,37 +523,42 @@ namespace CategoryTheory
                      (desc.natDescReflEq a))
       (natTransEq {a₁ a₂ a₃ : α} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) :
          DefNatEquiv (defNat (g • f)) (HasNatOp.defTrans (defNat f).η (defNat g).η)
-                     (λ b => (congrArgTrans hγ.Hom (byNatDef b) (byNatDef b))⁻¹ • desc.natDescTransEq f g b))
+                     (λ b => (congrArgTrans hγ.Hom (byNatDef b) (byNatDef b))⁻¹ •
+                             desc.natDescTransEq f g b))
 
       namespace DefFunFunBase
 
-        variable {F : ∀ a, HasFunProp.DefFun (φ a)} {desc : FunFunDesc F} (G : DefFunFunBase desc)
+        variable {F : ∀ a, HasFunProp.DefFun (Φ a)} {desc : FunFunDesc F} (G : DefFunFunBase desc)
 
         @[reducible] def natFun (a₁ a₂ : α) :
           (a₁ ⇾ a₂) ⟶ (DefFun.toFunctor (F a₁) ⇾ DefFun.toFunctor (F a₂)) :=
         G.defNatFun a₁ a₂
 
-        instance isCategoryFunctor : IsCategoryFunctor (λ a => DefFun.toFunctor (F a)) :=
-        { F         := ⟨natFun G⟩,
-          hPreorder := { reflEq  := λ a   => G.natReflEq a • byDef,
-                         transEq := λ f g => (congrArgTrans hNatβγ.Nat byDef byDef)⁻¹ •
-                                             G.natTransEq f g •
-                                             byDef } }
+        def funDesc : FunDesc (λ a => DefFun.toFunctor (F a)) :=
+        { F  := ⟨natFun G⟩,
+          hF := { reflEq  := λ a   => G.natReflEq a • byDef,
+                  transEq := λ f g => (congrArgTrans hNatβγ.Nat byDef byDef)⁻¹ •
+                                      G.natTransEq f g •
+                                      byDef } }
 
       end DefFunFunBase
 
-      structure DefFunFun [hFunαβγ : HasFunProp α (β ⮕ γ)] {F : ∀ a, HasFunProp.DefFun (φ a)}
+      structure DefFunFun [hFunαβγ : HasFunProp α (β ⮕ γ)] {F : ∀ a, HasFunProp.DefFun (Φ a)}
                           (desc : FunFunDesc F) extends
         DefFunFunBase desc where
-      (defFunFun : DefFun (λ a => DefFun.toFunctor (F a))
-                          (hφ := DefFunFunBase.isCategoryFunctor toDefFunFunBase))
+      (defFunFun : DefFun (DefFunFunBase.funDesc toDefFunFunBase))
 
       namespace DefFunFun
 
-        variable [HasFunProp α (β ⮕ γ)] {F : ∀ a, HasFunProp.DefFun (φ a)} {desc : FunFunDesc F}
+        variable [HasFunProp α (β ⮕ γ)] {F : ∀ a, HasFunProp.DefFun (Φ a)} {desc : FunFunDesc F}
 
-        def toFunctor (F : DefFunFun desc) : α ⮕ β ⮕ γ :=
-        DefFun.toFunctor F.defFunFun (hφ := DefFunFunBase.isCategoryFunctor F.toDefFunFunBase)
+        def fromTrivialFunctoriality [h : HasTrivialFunctorialityCondition α (β ⮕ γ)]
+                                     (base : DefFunFunBase desc) :
+          DefFunFun desc :=
+        { toDefFunFunBase := base,
+          defFunFun       := HasTrivialFunctorialityCondition.defFun }
+
+        def toFunctor (F : DefFunFun desc) : α ⮕ β ⮕ γ := DefFun.toFunctor F.defFunFun
 
       end DefFunFun
 
@@ -518,19 +571,19 @@ namespace CategoryTheory
 
       def revApp (F : α ⮕ β) : β := F.φ a
 
-      instance revAppIsFun : IsCategoryFunctor (revApp a β) :=
-      { F         := ⟨λ F₁ F₂ => natFun F₁ F₂ a⟩,
-        hPreorder := { reflEq  := λ F   => natReflEq F a • byDef,
-                       transEq := λ η ε => (congrArgTrans hβ.Hom byDef byDef)⁻¹ •
-                                           natTransEq η ε a •
-                                           byDef } }
+      def revAppFunDesc : FunDesc (revApp a β) :=
+      { F  := ⟨λ F₁ F₂ => natFun F₁ F₂ a⟩,
+        hF := { reflEq  := λ F   => natReflEq F a • byDef,
+                transEq := λ η ε => (congrArgTrans hβ.Hom byDef byDef)⁻¹ •
+                                    natTransEq η ε a •
+                                    byDef } }
 
     end
 
     class HasRevAppFun (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
                        [hFunαβ : HasFunProp α β] [hNatαβ : HasNaturality α β]
                        [hFunαββ : HasFunProp (α ⮕ β) β] where
-    (defRevAppFun (a : α) : HasFunProp.DefFun (revApp a β))
+    (defRevAppFun (a : α) : HasFunProp.DefFun (revAppFunDesc a β))
 
     namespace HasRevAppFun
 
@@ -541,22 +594,22 @@ namespace CategoryTheory
       def revAppFun (a : α) : (α ⮕ β) ⮕ β := DefFun.toFunctor (h.defRevAppFun a)
 
       def mapRevNat {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
-        MetaQuantification hβ.Hom (revAppFun α β a₁).φ (revAppFun α β a₂).φ :=
+        Quantification (morFun (revAppFun α β a₁)) (morFun (revAppFun α β a₂)) :=
       λ F => mapHom F f
 
       instance mapRevNat.isNat {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
         IsNaturalTransformation (mapRevNat α β f) :=
       { nat := λ {F₁ F₂} η => (naturality η f •
-                               congrArgTransRight hβ.Hom
-                                                  (DefFun.byMapHomDef (hφ := revAppIsFun a₁ β) byDef)
-                                                  (mapHom F₂ f))⁻¹ •
-                              congrArgTransLeft hβ.Hom
-                                                (mapHom F₁ f)
-                                                (DefFun.byMapHomDef (hφ := revAppIsFun a₂ β) byDef) }
+                               congrArgTransLeft hβ.Hom
+                                                 (mapHom F₁ f)
+                                                 (DefFun.byMapHomDef (desc := revAppFunDesc a₂ β) byDef))⁻¹ •
+                              congrArgTransRight hβ.Hom
+                                                 (DefFun.byMapHomDef (desc := revAppFunDesc a₁ β) byDef)
+                                                 (mapHom F₂ f)}
 
       def revAppNatDesc {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
         NatDesc (revAppFun α β a₁) (revAppFun α β a₂) :=
-      { nat   := mapRevNat       α β f,
+      { η     := mapRevNat       α β f,
         isNat := mapRevNat.isNat α β f }
 
       def revAppFunFunDesc : FunFunDesc h.defRevAppFun :=
@@ -597,21 +650,21 @@ namespace CategoryTheory
         variable [HasNaturality β γ] (F : α ⮕ β)
 
         def mapCompNat {G₁ G₂ : β ⮕ γ} (η : G₁ ⇾ G₂) :
-          MetaQuantification hγ.Hom (compFun α β γ F G₁).φ (compFun α β γ F G₂).φ :=
+          Quantification (morFun (compFun α β γ F G₁)) (morFun (compFun α β γ F G₂)) :=
         λ a => nat η (F.φ a)
 
         instance mapCompNat.isNat {G₁ G₂ : β ⮕ γ} (η : G₁ ⇾ G₂) :
           IsNaturalTransformation (mapCompNat α β γ F η) :=
         { nat := λ {a₁ a₂} f =>
-                 (congrArgTransRight hγ.Hom (DefFun.byMapHomDef (hφ := IsCategoryFunctor.compFun F.φ G₁.φ) byDef)
-                                            (mapCompNat α β γ F η a₂))⁻¹ •
+                 (congrArgTransLeft hγ.Hom (mapCompNat α β γ F η a₁)
+                                           (DefFun'.byMapHomDef (F := MorphismFunctor.compFun (morFun F) (morFun G₂)) byDef))⁻¹ •
                  naturality η (mapHom F f) •
-                 congrArgTransLeft hγ.Hom (mapCompNat α β γ F η a₁)
-                                          (DefFun.byMapHomDef (hφ := IsCategoryFunctor.compFun F.φ G₂.φ) byDef) }
+                 congrArgTransRight hγ.Hom (DefFun'.byMapHomDef (F := MorphismFunctor.compFun (morFun F) (morFun G₁)) byDef)
+                                           (mapCompNat α β γ F η a₂) }
 
         def compNatDesc {G₁ G₂ : β ⮕ γ} (η : G₁ ⇾ G₂) :
           NatDesc (compFun α β γ F G₁) (compFun α β γ F G₂) :=
-        { nat   := mapCompNat       α β γ F η,
+        { η     := mapCompNat       α β γ F η,
           isNat := mapCompNat.isNat α β γ F η }
 
         def compFunFunDesc : FunFunDesc (h.defCompFun F) :=
@@ -626,23 +679,23 @@ namespace CategoryTheory
         variable [HasNaturality α β] (G : β ⮕ γ)
 
         def mapRevCompNat {F₁ F₂ : α ⮕ β} (η : F₁ ⇾ F₂) :
-          MetaQuantification hγ.Hom (compFun α β γ F₁ G).φ (compFun α β γ F₂ G).φ :=
+          Quantification (morFun (compFun α β γ F₁ G)) (morFun (compFun α β γ F₂ G)) :=
         λ a => mapHom G (nat η a)
 
         instance mapRevCompNat.isNat {F₁ F₂ : α ⮕ β} (η : F₁ ⇾ F₂) :
           IsNaturalTransformation (mapRevCompNat α β γ G η) :=
         { nat := λ {a₁ a₂} f =>
-                 (congrArgTransRight hγ.Hom (DefFun.byMapHomDef (hφ := IsCategoryFunctor.compFun F₁.φ G.φ) byDef)
-                                            (mapRevCompNat α β γ G η a₂))⁻¹ •
-                 Functor.transEq G (mapHom F₁ f) (nat η a₂) •
+                 (congrArgTransLeft hγ.Hom (mapRevCompNat α β γ G η a₁)
+                                           (DefFun'.byMapHomDef (F := MorphismFunctor.compFun (morFun F₂) (morFun G)) byDef))⁻¹ •
+                 Functor.transEq G (nat η a₁) (mapHom F₂ f) •
                  mapHomCongrArg G (naturality η f) •
-                 (Functor.transEq G (nat η a₁) (mapHom F₂ f))⁻¹ •
-                 congrArgTransLeft hγ.Hom (mapRevCompNat α β γ G η a₁)
-                                          (DefFun.byMapHomDef (hφ := IsCategoryFunctor.compFun F₂.φ G.φ) byDef) }
+                 (Functor.transEq G (mapHom F₁ f) (nat η a₂))⁻¹ •
+                 congrArgTransRight hγ.Hom (DefFun'.byMapHomDef (F := MorphismFunctor.compFun (morFun F₁) (morFun G)) byDef)
+                                           (mapRevCompNat α β γ G η a₂) }
 
         def revCompNatDesc {F₁ F₂ : α ⮕ β} (η : F₁ ⇾ F₂) :
           NatDesc (compFun α β γ F₁ G) (compFun α β γ F₂ G) :=
-        { nat   := mapRevCompNat       α β γ G η,
+        { η     := mapRevCompNat       α β γ G η,
           isNat := mapRevCompNat.isNat α β γ G η }
 
         def revCompFunFunDesc : FunFunDesc (λ F => h.defCompFun F G) :=
@@ -664,13 +717,13 @@ namespace CategoryTheory
     (defCompFunFun    (F : α ⮕ β) : DefFunFun (compFunFunDesc    α β γ F))
     (defRevCompFunFun (G : β ⮕ γ) : DefFunFun (revCompFunFunDesc α β γ G))
     (compNatEq {F₁ F₂ : α ⮕ β} {G₁ G₂ : β ⮕ γ} (η : F₁ ⇾ F₂) (ε : G₁ ⇾ G₂) :
-       NatEquiv (((defRevCompFunFun G₂).defNat η).η • ((defCompFunFun F₁).defNat ε).η)
-                (((defCompFunFun F₂).defNat ε).η • ((defRevCompFunFun G₁).defNat η).η)
+       NatEquiv (((defCompFunFun F₂).defNat ε).η • ((defRevCompFunFun G₁).defNat η).η)
+                (((defRevCompFunFun G₂).defNat η).η • ((defCompFunFun F₁).defNat ε).η)
                 (λ a => (congrArgTrans hγ.Hom (byNatDef a) (byNatDef a) •
-                         natTransEq ((defRevCompFunFun G₁).defNat η).η ((defCompFunFun F₂).defNat ε).η a)⁻¹ •
+                         natTransEq ((defCompFunFun F₁).defNat ε).η ((defRevCompFunFun G₂).defNat η).η a)⁻¹ •
                         naturality ε (nat η a) •
                         (congrArgTrans hγ.Hom (byNatDef a) (byNatDef a) •
-                         natTransEq ((defCompFunFun F₁).defNat ε).η ((defRevCompFunFun G₂).defNat η).η a)))
+                         natTransEq ((defRevCompFunFun G₁).defNat η).η ((defCompFunFun F₂).defNat ε).η a)))
 
     namespace HasCompFunFun
 
@@ -684,26 +737,22 @@ namespace CategoryTheory
       def revCompFunFun (G : β ⮕ γ) : (α ⮕ β) ⮕ (α ⮕ γ) := DefFunFun.toFunctor (h.defRevCompFunFun G)
 
       def mapCompFunNat {F₁ F₂ : α ⮕ β} (η : F₁ ⇾ F₂) :
-        MetaQuantification hNatαγ.Nat (compFunFun α β γ F₁).φ (compFunFun α β γ F₂).φ :=
+        Quantification (morFun (compFunFun α β γ F₁)) (morFun (compFunFun α β γ F₂)) :=
       λ G => mapHom (revCompFunFun α β γ G) η
 
       instance mapCompFunNat.isNat {F₁ F₂ : α ⮕ β} (η : F₁ ⇾ F₂) :
-        IsNaturalTransformation (φ := (compFunFun α β γ F₁).φ) (mapCompFunNat α β γ η) :=
+        IsNaturalTransformation (mapCompFunNat α β γ η) :=
       { nat := λ {G₁ G₂} ε =>
-               (congrArgTrans hNatαγ.Nat (DefFun.byMapHomDef (hφ := DefFunFunBase.isCategoryFunctor (h.defCompFunFun F₁).toDefFunFunBase) byDef)
-                                         (DefFun.byMapHomDef (hφ := DefFunFunBase.isCategoryFunctor (h.defRevCompFunFun G₂).toDefFunFunBase) byDef))⁻¹ •
+               (congrArgTrans hNatαγ.Nat (DefFun.byMapHomDef (desc := DefFunFunBase.funDesc (h.defRevCompFunFun G₁).toDefFunFunBase) byDef)
+                                         (DefFun.byMapHomDef (desc := DefFunFunBase.funDesc (h.defCompFunFun F₂).toDefFunFunBase) byDef))⁻¹ •
                (h.compNatEq η ε)⁻¹ •
-               congrArgTrans hNatαγ.Nat (DefFun.byMapHomDef (hφ := DefFunFunBase.isCategoryFunctor (h.defRevCompFunFun G₁).toDefFunFunBase) byDef)
-                                        (DefFun.byMapHomDef (hφ := DefFunFunBase.isCategoryFunctor (h.defCompFunFun F₂).toDefFunFunBase) byDef) }
+               congrArgTrans hNatαγ.Nat (DefFun.byMapHomDef (desc := DefFunFunBase.funDesc (h.defCompFunFun F₁).toDefFunFunBase) byDef)
+                                        (DefFun.byMapHomDef (desc := DefFunFunBase.funDesc (h.defRevCompFunFun G₂).toDefFunFunBase) byDef) }
 
       def compFunNatDesc {F₁ F₂ : α ⮕ β} (η : F₁ ⇾ F₂) :
         NatDesc (compFunFun α β γ F₁) (compFunFun α β γ F₂) :=
-      { nat   := mapCompFunNat       α β γ η,
+      { η     := mapCompFunNat       α β γ η,
         isNat := mapCompFunNat.isNat α β γ η }
-
-      instance (F : α ⮕ β) :
-        IsCategoryFunctor (λ G => DefFun.toFunctor (hCompFun.defCompFun F G)) :=
-      DefFunFunBase.isCategoryFunctor (h.defCompFunFun F).toDefFunFunBase
 
       def compFunFunFunDesc : FunFunDesc (λ F : α ⮕ β => (h.defCompFunFun F).defFunFun) :=
       { natDesc        := compFunNatDesc α β γ,
@@ -745,19 +794,19 @@ namespace CategoryTheory
       def constFun (b : β) : α ⮕ β := DefFun.toFunctor (h.defConstFun b)
 
       def mapConstNat {b₁ b₂ : β} (g : b₁ ⇾ b₂) :
-        MetaQuantification hβ.Hom (constFun α β b₁).φ (constFun α β b₂).φ :=
+        Quantification (morFun (constFun α β b₁)) (morFun (constFun α β b₂)) :=
       λ _ => g
 
       instance mapConstNat.isNat {b₁ b₂ : β} (g : b₁ ⇾ b₂) :
         IsNaturalTransformation (mapConstNat α β g) :=
-      { nat := λ _ => (rightId g •
-                       congrArgTransRight hβ.Hom (DefFun.byMapHomDef (hφ := IsCategoryFunctor.constFun α b₁) byDef) g)⁻¹ •
-                      (leftId g •
-                       congrArgTransLeft hβ.Hom g (DefFun.byMapHomDef (hφ := IsCategoryFunctor.constFun α b₂) byDef)) }
+      { nat := λ _ => (leftId g •
+                       congrArgTransLeft hβ.Hom g (DefFun'.byMapHomDef (F := MorphismFunctor.constFun α b₂) byDef))⁻¹ •
+                      (rightId g •
+                       congrArgTransRight hβ.Hom (DefFun'.byMapHomDef (F := MorphismFunctor.constFun α b₁) byDef) g) }
 
       def constNatDesc {b₁ b₂ : β} (g : b₁ ⇾ b₂) :
         NatDesc (constFun α β b₁) (constFun α β b₂) :=
-      { nat   := mapConstNat       α β g,
+      { η     := mapConstNat       α β g,
         isNat := mapConstNat.isNat α β g }
 
       def constFunFunDesc : FunFunDesc h.defConstFun :=
@@ -789,7 +838,7 @@ namespace CategoryTheory
                [hα : IsCategory W α] [hβ : IsCategory W β] [HasFunProp α β] [h : HasNaturality α β]
                [HasFunProp α (α ⮕ β)] (F : α ⮕ α ⮕ β)
 
-      def dup (a : α) : β := (F.φ a).φ a
+      @[reducible] def dup (a : α) : β := (F.φ a).φ a
 
       @[reducible] def mapDupHom {a₁ a₂ : α} (f : a₁ ⇾ a₂) : dup F a₁ ⇾ dup F a₂ :=
       mapHom (F.φ a₂) f • nat (mapHom F f) a₁
@@ -797,49 +846,58 @@ namespace CategoryTheory
       @[reducible] def mapDupHom' {a₁ a₂ : α} (f : a₁ ⇾ a₂) : dup F a₁ ⇾ dup F a₂ :=
       nat (mapHom F f) a₂ • mapHom (F.φ a₁) f
 
-      def mapDupHomEq {a₁ a₂ : α} (f : a₁ ⇾ a₂) : mapDupHom F f ≃ mapDupHom' F f :=
+      def mapDupHomEq {a₁ a₂ : α} (f : a₁ ⇾ a₂) : mapDupHom' F f ≃ mapDupHom F f :=
       naturality (mapHom F f) f
 
+      def mapDupHomArg (a₁ a₂ : α) :=
+      transFunFun hβ.Hom (dup F a₁) ((F.φ a₂).φ a₁) (dup F a₂) •
+      natFun (F.φ a₁) (F.φ a₂) a₁ •
+      (preFun F).baseFun a₁ a₂
+
       def mapDupHomFun (a₁ a₂ : α) : (a₁ ⇾ a₂) ⟶ (dup F a₁ ⇾ dup F a₂) :=
-      Λ f => mapDupHom F f
+      substFun ((preFun (F.φ a₂)).baseFun a₁ a₂) (mapDupHomArg F a₁ a₂)
+
+      def mapDupHomArgDef {a₁ a₂ : α} (f : a₁ ⇾ a₂) :
+        (mapDupHomArg F a₁ a₂) f ≃ transFun hβ.Hom (nat (mapHom F f) a₁) (dup F a₂) :=
+      byDefDef • byArgDef • byDef
 
       def mapDupHomFunDef {a₁ a₂ : α} (f : a₁ ⇾ a₂) : (mapDupHomFun F a₁ a₂) f ≃ mapDupHom F f :=
-      byDef
+      byDef • congrFun (mapDupHomArgDef F f) (mapHom (F.φ a₂) f) • byDef
 
-      instance dupIsFun : IsCategoryFunctor (dup F) :=
-      { F         := ⟨mapDupHomFun F⟩,
-        hPreorder := { reflEq  := λ a =>
-                                  idId hβ.Hom (dup F a) •
-                                  congrArgTrans hβ.Hom (natReflEq (F.φ a) a •
-                                                        natCongrArg (Functor.reflEq F a) a)
-                                                       (Functor.reflEq (F.φ a) a) •
-                                  mapDupHomFunDef F (idHom a),
-                       transEq := λ {a₁ a₂ a₃} f g =>
-                                  (congrArgTrans hβ.Hom (mapDupHomFunDef F f) (mapDupHomFunDef F g))⁻¹ •
-                                  assoc (nat (mapHom F f) a₁) (mapHom (F.φ a₂) f) (mapDupHom F g) •
-                                  defCongrArg (defTransFun (nat (mapHom F f) a₁) (dup F a₃))
-                                              ((assoc (mapHom (F.φ a₂) f)
-                                                      (nat (mapHom F g) a₂)
-                                                      (mapHom (F.φ a₃) g))⁻¹ •
-                                               defCongrArg (defRevTransFun hβ.Hom ((F.φ a₂).φ a₁)
-                                                                                  (mapHom (F.φ a₃) g))
-                                                           (naturality (mapHom F g) f) •
-                                               assoc (nat (mapHom F g) a₁)
-                                                     (mapHom (F.φ a₃) f)
-                                                     (mapHom (F.φ a₃) g)) •
-                                  (assoc (nat (mapHom F f) a₁) (nat (mapHom F g) a₁)
-                                         (mapHom (F.φ a₃) g • mapHom (F.φ a₃) f))⁻¹ •
-                                  congrArgTrans hβ.Hom (natTransEq (mapHom F f) (mapHom F g) a₁ •
-                                                        natCongrArg (Functor.transEq F f g) a₁)
-                                                       (Functor.transEq (F.φ a₃) f g) •
-                                  mapDupHomFunDef F (g • f) } }
+      def dupFunDesc : FunDesc (dup F) :=
+      { F  := ⟨mapDupHomFun F⟩,
+        hF := { reflEq  := λ a =>
+                           idId hβ.Hom (dup F a) •
+                           congrArgTrans hβ.Hom (natReflEq (F.φ a) a •
+                                                 natCongrArg (Functor.reflEq F a) a)
+                                                (Functor.reflEq (F.φ a) a) •
+                           mapDupHomFunDef F (idHom a),
+                transEq := λ {a₁ a₂ a₃} f g =>
+                           (congrArgTrans hβ.Hom (mapDupHomFunDef F f) (mapDupHomFunDef F g))⁻¹ •
+                           assoc (nat (mapHom F f) a₁) (mapHom (F.φ a₂) f) (mapDupHom F g) •
+                           defCongrArg (defTransFun (nat (mapHom F f) a₁) (dup F a₃))
+                                       ((assoc (mapHom (F.φ a₂) f)
+                                               (nat (mapHom F g) a₂)
+                                               (mapHom (F.φ a₃) g))⁻¹ •
+                                        defCongrArg (defRevTransFun hβ.Hom ((F.φ a₂).φ a₁)
+                                                                           (mapHom (F.φ a₃) g))
+                                                    (naturality (mapHom F g) f)⁻¹ •
+                                        assoc (nat (mapHom F g) a₁)
+                                              (mapHom (F.φ a₃) f)
+                                              (mapHom (F.φ a₃) g)) •
+                           (assoc (nat (mapHom F f) a₁) (nat (mapHom F g) a₁)
+                                  (mapHom (F.φ a₃) g • mapHom (F.φ a₃) f))⁻¹ •
+                           congrArgTrans hβ.Hom (natTransEq (mapHom F f) (mapHom F g) a₁ •
+                                                 natCongrArg (Functor.transEq F f g) a₁)
+                                                (Functor.transEq (F.φ a₃) f g) •
+                           mapDupHomFunDef F (g • f) } }
 
     end
 
     class HasDupFun [HasNonLinearFunOp W] (α : Sort u) (β : Sort v)
                     [hα : IsCategory W α] [hβ : IsCategory W β] [hFunαβ : HasFunProp α β]
                     [hNatαβ : HasNaturality α β] [hFunααβ : HasFunProp α (α ⮕ β)] where
-    (defDupFun (F : α ⮕ α ⮕ β) : HasFunProp.DefFun (dup F))
+    (defDupFun (F : α ⮕ α ⮕ β) : HasFunProp.DefFun (dupFunDesc F))
 
     namespace HasDupFun
 
@@ -852,29 +910,29 @@ namespace CategoryTheory
       variable [HasNaturality α (α ⮕ β)]
 
       def mapDupNat {F₁ F₂ : α ⮕ α ⮕ β} (η : F₁ ⇾ F₂) :
-        MetaQuantification hβ.Hom (dupFun α β F₁).φ (dupFun α β F₂).φ :=
+        Quantification (morFun (dupFun α β F₁)) (morFun (dupFun α β F₂)) :=
       λ a => nat (nat η a) a
 
       instance mapDupNat.isNat {F₁ F₂ : α ⮕ α ⮕ β} (η : F₁ ⇾ F₂) :
         IsNaturalTransformation (mapDupNat α β η) :=
       { nat := λ {a₁ a₂} f =>
-               congrArgTransRight hβ.Hom (DefFun.byMapHomDef (hφ := dupIsFun F₁) (mapDupHomFunDef F₁ f))⁻¹
-                                         (mapDupNat α β η a₂) •
-               assoc (nat (mapHom F₁ f) a₁) (mapHom (F₁.φ a₂) f) (mapDupNat α β η a₂) •
+               congrArgTransLeft hβ.Hom (mapDupNat α β η a₁)
+                                        (DefFun.byMapHomDef (desc := dupFunDesc F₂) (mapDupHomFunDef F₂ f))⁻¹ •
+               (assoc (mapDupNat α β η a₁) (nat (mapHom F₂ f) a₁) (mapHom (F₂.φ a₂) f))⁻¹ •
+               congrArgTransRight hβ.Hom (natTransEq (nat η a₁) (mapHom F₂ f) a₁ •
+                                          natCongrArg (naturality η f) a₁ •
+                                          (natTransEq (mapHom F₁ f) (nat η a₂) a₁)⁻¹)
+                                         (mapHom (F₂.φ a₂) f) •
+               assoc (nat (mapHom F₁ f) a₁) (nat (nat η a₂) a₁) (mapHom (F₂.φ a₂) f) •
                congrArgTransLeft hβ.Hom (nat (mapHom F₁ f) a₁)
                                         (naturality (nat η a₂) f) •
-               (assoc (nat (mapHom F₁ f) a₁) (nat (nat η a₂) a₁) (mapHom (F₂.φ a₂) f))⁻¹ •
-               congrArgTransRight hβ.Hom (natTransEq (mapHom F₁ f) (nat η a₂) a₁ •
-                                          natCongrArg (naturality η f) a₁ •
-                                          (natTransEq (nat η a₁) (mapHom F₂ f) a₁)⁻¹)
-                                         (mapHom (F₂.φ a₂) f) •
-               assoc (mapDupNat α β η a₁) (nat (mapHom F₂ f) a₁) (mapHom (F₂.φ a₂) f) •
-               congrArgTransLeft hβ.Hom (mapDupNat α β η a₁)
-                                        (DefFun.byMapHomDef (hφ := dupIsFun F₂) (mapDupHomFunDef F₂ f)) }
+               (assoc (nat (mapHom F₁ f) a₁) (mapHom (F₁.φ a₂) f) (mapDupNat α β η a₂))⁻¹ •
+               congrArgTransRight hβ.Hom (DefFun.byMapHomDef (desc := dupFunDesc F₁) (mapDupHomFunDef F₁ f))
+                                         (mapDupNat α β η a₂) }
 
       def dupNatDesc {F₁ F₂ : α ⮕ α ⮕ β} (η : F₁ ⇾ F₂) :
         NatDesc (dupFun α β F₁) (dupFun α β F₂) :=
-      { nat   := mapDupNat       α β η,
+      { η     := mapDupNat       α β η,
         isNat := mapDupNat.isNat α β η }
 
       def dupFunFunDesc : FunFunDesc h.defDupFun :=

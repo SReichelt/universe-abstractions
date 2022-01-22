@@ -398,9 +398,9 @@ namespace MetaQuantification
                        {φ ψ : α → β} (F : PreFunctor R S φ) (G : PreFunctor R S ψ)
                        (η : MetaQuantification S φ ψ) [h : IsNatural F G η] where
     (natExt (a b : α) :
-       transFun S (η a) (ψ b) • G.baseFun a b
+       revTransFun S (φ a) (η b) • F.baseFun a b
        ≃{byDef ▻ λ f => h.nat f ◅ byDef}
-       revTransFun S (φ a) (η b) • F.baseFun a b)
+       transFun S (η a) (ψ b) • G.baseFun a b)
 
     namespace IsNaturalExt
 
@@ -409,7 +409,7 @@ namespace MetaQuantification
                     {φ : α → β} (F : PreFunctor R S φ) :
         IsNaturalExt F F (MetaQuantification.refl S φ) :=
       ⟨λ a b => defCongrArg (HasCompFunFun.defCompFunFun (F.baseFun a b) (S (φ a) (φ b)))
-                            ((leftIdExt (φ a) (φ b))⁻¹ • rightIdExt (φ a) (φ b))⟩
+                            ((rightIdExt (φ a) (φ b))⁻¹ • leftIdExt (φ a) (φ b))⟩
 
       instance symm [HasFullFunOp W] [IsEquivalence S] [IsGroupoidEquivalence S]
                     [HasTransFun S] [HasSymmFun S] [IsGroupoidEquivalenceExt S]

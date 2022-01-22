@@ -128,7 +128,7 @@ end HasFunctors
 
 
 class HasCongrArg (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [HasFunctors U V UV]
-                  [HasIdentity.{u, iu} U] [HasIdentity.{v, iv} V] where
+                  [hId_U : HasIdentity.{u, iu} U] [hId_V : HasIdentity.{v, iv} V] where
 (congrArg {A : U} {B : V} (F : A ⟶ B) {a₁ a₂ : A} : a₁ ≃ a₂ → F a₁ ≃ F a₂)
 
 namespace HasCongrArg
@@ -171,7 +171,7 @@ namespace HasCongrArg
 end HasCongrArg
 
 class HasCongrFun (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [HasFunctors U V UV]
-                  [HasIdentity.{v, iv} V] [HasIdentity.{uv, iuv} UV] where
+                  [hId_U : HasIdentity.{v, iv} V] [hId_UV : HasIdentity.{uv, iuv} UV] where
 (congrFun {A : U} {B : V} {F₁ F₂ : A ⟶ B} (h : F₁ ≃ F₂) (a : A) : F₁ a ≃ F₂ a)
 
 namespace HasCongrFun

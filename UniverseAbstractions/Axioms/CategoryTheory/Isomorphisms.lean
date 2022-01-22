@@ -13,7 +13,7 @@ namespace CategoryTheory
 
   open MetaRelation MetaFunctor MetaQuantification HasTransFun HasSymmFun IsAssociative
        IsCategoricalPreorder IsGroupoidEquivalence IsCategory
-       HasFunProp HasFunProp.Functor HasNatRel HasNatOp HasNaturality
+       HasFunProp HasFunProp.Functor HasNatRel HasNatOp HasNatOpEquiv HasNaturality
        HasFunctors HasCongrArg
 
   namespace IsCategory
@@ -47,13 +47,13 @@ namespace CategoryTheory
         e₁.invHom ≃ e₂.invHom :=
       (HalfInv.unique hα.Hom e₁.isInv.leftInv (HalfInv.congrArgLeft hα.Hom h e₂.isInv.rightInv))⁻¹
 
-      def map {β : Sort u} [hβ : IsCategory V β] (φ : α → β) [hφ : IsCategoryFunctor φ]
-              {a b : α} (e : IsoDesc a b) :
-        IsoDesc (φ a) (φ b) :=
-      { toHom  := hφ.F e.toHom,
-        invHom := hφ.F e.invHom,
-        isInv  := { leftInv  := mapHalfInv φ e.isInv.leftInv,
-                    rightInv := mapHalfInv φ e.isInv.rightInv } }
+      def map {β : Sort u} [hβ : IsCategory V β] (F : MorphismFunctor α β)
+              [h : IsCategoryFunctor F] {a b : α} (e : IsoDesc a b) :
+        IsoDesc (F.φ a) (F.φ b) :=
+      { toHom  := F.F e.toHom,
+        invHom := F.F e.invHom,
+        isInv  := { leftInv  := mapHalfInv F e.isInv.leftInv,
+                    rightInv := mapHalfInv F e.isInv.rightInv } }
 
     end IsoDesc
 
@@ -278,93 +278,121 @@ namespace CategoryTheory
 
 
 
-  class IsIsoFunctor {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                     {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                     [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-                     (φ : α → β) [hφ : IsCategoryFunctor φ] where
+  structure IsoFunDesc {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+                       {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+                       [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
+                       {φ : α → β} (desc : FunDesc φ) where
   (F : PreFunctor hαIso.Iso hβIso.Iso φ)
-  (toHomCongr {a b : α} (e : a ⇿ b) : HasIsoRel.toHom (F e) ≃ hφ.F (HasIsoRel.toHom e))
+  (toHomCongr {a b : α} (e : a ⇿ b) : HasIsoRel.toHom (F e) ≃ desc.F (HasIsoRel.toHom e))
 
-  namespace IsIsoFunctor
+  namespace IsoFunDesc
 
     open HasIsoRel HasIsoOp HasIsomorphisms
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
              [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-             (φ : α → β) [hφ : IsCategoryFunctor φ] [h : IsIsoFunctor φ]
+             {φ : α → β} {desc : FunDesc φ} (F : IsoFunDesc desc)
 
-    @[reducible] def preFunctor : PreFunctor hαIso.Iso hβIso.Iso φ := h.F
+    def invHomCongr {a b : α} (e : a ⇿ b) : invHom (F.F e) ≃ desc.F (invHom e) :=
+    HalfInv.unique hβ.Hom (desc.hF.reflEq a •
+                           HasCongrArg.congrArg (desc.F.baseFun a a) (leftInv e) •
+                           (desc.hF.transEq (toHom e) (invHom e))⁻¹ •
+                           congrArgTransRight hβ.Hom (F.toHomCongr e) (desc.F (invHom e)))
+                          (rightInv (F.F e))
 
-    def invHomCongr {a b : α} (e : a ⇿ b) : invHom (h.F e) ≃ hφ.F (invHom e) :=
-    HalfInv.unique hβ.Hom (hφ.hPreorder.reflEq a •
-                           HasCongrArg.congrArg (hφ.F.baseFun a a) (leftInv e) •
-                           (hφ.hPreorder.transEq (toHom e) (invHom e))⁻¹ •
-                           congrArgTransRight hβ.Hom (h.toHomCongr e) (hφ.F (invHom e)))
-                          (rightInv (h.F e))
-
-    instance isReflFunctor : IsReflFunctor h.F :=
+    instance isReflFunctor : IsReflFunctor F.F :=
     ⟨λ a => hβIso.toHomInj ((toHomReflEq (φ a))⁻¹ •
-                            hφ.hPreorder.reflEq a •
-                            HasCongrArg.congrArg (hφ.F.baseFun a a) (toHomReflEq a) •
-                            h.toHomCongr (idIso a))⟩
+                            desc.hF.reflEq a •
+                            HasCongrArg.congrArg (desc.F.baseFun a a) (toHomReflEq a) •
+                            F.toHomCongr (idIso a))⟩
 
-    instance isSymmFunctor : IsSymmFunctor h.F :=
-    ⟨λ {a b} e => hβIso.toHomInj ((invHomCongr φ e •
-                                   toHomSymmEq (h.F e))⁻¹ •
-                                  HasCongrArg.congrArg (hφ.F.baseFun b a) (toHomSymmEq e) •
-                                  h.toHomCongr e⁻¹)⟩
+    instance isSymmFunctor : IsSymmFunctor F.F :=
+    ⟨λ {a b} e => hβIso.toHomInj ((invHomCongr F e •
+                                   toHomSymmEq (F.F e))⁻¹ •
+                                  HasCongrArg.congrArg (desc.F.baseFun b a) (toHomSymmEq e) •
+                                  F.toHomCongr e⁻¹)⟩
 
-    instance isTransFunctor : IsTransFunctor h.F :=
-    ⟨λ {a b c} e f => hβIso.toHomInj ((congrArgTrans hβ.Hom (h.toHomCongr e) (h.toHomCongr f) •
-                                       toHomTransEq (h.F e) (h.F f))⁻¹ •
-                                      hφ.hPreorder.transEq (toHom e) (toHom f) •
-                                      HasCongrArg.congrArg (hφ.F.baseFun a c) (toHomTransEq e f) •
-                                      h.toHomCongr (f • e))⟩
+    instance isTransFunctor : IsTransFunctor F.F :=
+    ⟨λ {a b c} e f => hβIso.toHomInj ((congrArgTrans hβ.Hom (F.toHomCongr e) (F.toHomCongr f) •
+                                       toHomTransEq (F.F e) (F.F f))⁻¹ •
+                                      desc.hF.transEq (toHom e) (toHom f) •
+                                      HasCongrArg.congrArg (desc.F.baseFun a c) (toHomTransEq e f) •
+                                      F.toHomCongr (f • e))⟩
 
-    instance isPreorderFunctor    : IsPreorderFunctor    h.F := ⟨⟩
-    instance isEquivalenceFunctor : IsEquivalenceFunctor h.F := ⟨⟩
+    instance isPreorderFunctor    : IsPreorderFunctor    F.F := ⟨⟩
+    instance isEquivalenceFunctor : IsEquivalenceFunctor F.F := ⟨⟩
 
-    instance isMorphismFunctor :
-      IsMorphismFunctor (hα := isoMorphisms α) (hβ := isoMorphisms β) φ :=
-    IsMorphismFunctor.mk (hα := isoMorphisms α) (hβ := isoMorphisms β) h.F
+    @[reducible] def isoFun : MorphismFunctor α β (hα := isoMorphisms α) (hβ := isoMorphisms β) :=
+    let _ := isoMorphisms α;
+    let _ := isoMorphisms β;
+    ⟨F.F⟩
 
     instance isGroupoidFunctor :
-      IsGroupoidFunctor (hα := isoGroupoid α) (hβ := isoGroupoid β) φ :=
-    IsGroupoidFunctor.mk (hα := isoGroupoid α) (hβ := isoGroupoid β)
-                         (hEquivalence := isEquivalenceFunctor φ)
+      IsGroupoidFunctor (hα := isoGroupoid α) (hβ := isoGroupoid β) (isoFun F) :=
+    let _ := isoGroupoid α;
+    let _ := isoGroupoid β;
+    { toIsEquivalenceFunctor := isEquivalenceFunctor F }
 
-  end IsIsoFunctor
-
-
+  end IsoFunDesc
 
   class HasIsoFunctoriality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
                             (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
                             [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
                             [hFunProp : HasFunProp α β] where
-  [isIsoFun (F : α ⮕ β) : IsIsoFunctor F.φ]
+  (desc (F : α ⮕ β) : IsoFunDesc (HasFunProp.Functor.desc F))
 
   namespace HasIsoFunctoriality
 
-    open HasIsoRel
+    open HasIsoRel HasIsoOp
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [HasIsomorphisms α] [HasIsomorphisms β] [HasFunProp α β]
+             [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] [hFun : HasFunProp α β]
              [h : HasIsoFunctoriality α β]
 
-    instance (F : α ⮕ β) : IsIsoFunctor F.φ := h.isIsoFun F
+    section
 
-    @[reducible] def mapIso (F : α ⮕ β) {a b : α} (e : a ⇿ b) : F.φ a ⇿ F.φ b :=
-    (IsIsoFunctor.preFunctor F.φ) e
+      variable (F : α ⮕ β)
+
+      @[reducible] def isoPreFun : PreFunctor hαIso.Iso hβIso.Iso F.φ := (desc F).F
+
+      @[reducible] def isoFun : MorphismFunctor α β (hα := isoMorphisms α) (hβ := isoMorphisms β) :=
+      let _ := isoMorphisms α;
+      let _ := isoMorphisms β;
+      ⟨isoPreFun F⟩
+
+      @[reducible] def mapIso {a b : α} (e : a ⇿ b) : F.φ a ⇿ F.φ b := (isoPreFun F) e
+
+      def isoReflEq (a : α) : mapIso F (idIso a) ≃ idIso (F.φ a) :=
+      (IsoFunDesc.isReflFunctor (h.desc F)).reflEq a
+
+      def isoSymmEq {a b : α} (e : a ⇿ b) :
+        mapIso F e⁻¹ ≃ (mapIso F e)⁻¹ :=
+      (IsoFunDesc.isSymmFunctor (h.desc F)).symmEq e
+
+      def isoTransEq {a b c : α} (e : a ⇿ b) (f : b ⇿ c) :
+        mapIso F (f • e) ≃ mapIso F f • mapIso F e :=
+      (IsoFunDesc.isTransFunctor (h.desc F)).transEq e f
+
+      def mapIsoCongrArg {a b : α} {e₁ e₂ : a ⇿ b} (e : e₁ ≃ e₂) :
+        mapIso F e₁ ≃ mapIso F e₂ :=
+      HasCongrArg.congrArg ((isoPreFun F).baseFun a b) e
+
+    end
 
     def byMapTo  {F : α ⮕ β} {a b : α} {e : a ⇿ b} :
       toHom (mapIso F e) ≃ mapHom F (toHom e) :=
-    (h.isIsoFun F).toHomCongr e
+    (h.desc F).toHomCongr e
 
     def byMapInv {F : α ⮕ β} {a b : α} {e : a ⇿ b} :
       invHom (mapIso F e) ≃ mapHom F (invHom e) :=
-    IsIsoFunctor.invHomCongr F.φ e
+    IsoFunDesc.invHomCongr (h.desc F) e
+
+    def mapHomToMapIso {φ : α → β} {F₁ F₂ : hFun.Fun φ} {a b : α} {e : a ⇿ b} :
+      mapHom ⟨F₁⟩ (toHom e) ≃ mapHom ⟨F₂⟩ (toHom e) →
+      mapIso ⟨F₁⟩ e         ≃ mapIso ⟨F₂⟩ e :=
+    λ h₁ => hβIso.toHomInj (byMapTo⁻¹ • h₁ • byMapTo)
 
   end HasIsoFunctoriality
 
@@ -374,8 +402,7 @@ namespace CategoryTheory
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [HasFunProp α β] [h : HasNaturality α β] [HasIsomorphisms (α ⮕ β)]
-             [HasIsomorphisms β] {F G : α ⮕ β}
+             [hFunProp : HasFunProp α β] [h : HasNaturality α β] {F G : α ⮕ β}
 
     def natHalfInv {η : F ⇾ G} {ε : G ⇾ F} (e : HalfInv h.Nat η ε) (a : α) :
       HalfInv hβ.Hom (nat η a) (nat ε a) :=
@@ -408,7 +435,7 @@ namespace CategoryTheory
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [HasFunProp α β] [HasNaturality α β] [hαβIso : HasIsomorphisms (α ⮕ β)]
+             [hFunProp : HasFunProp α β] [HasNaturality α β] [hαβIso : HasIsomorphisms (α ⮕ β)]
              [hβIso : HasIsomorphisms β] [h : HasIsoNaturality α β]
 
     def natIso {F G : α ⮕ β} (η : F ⇿ G) (a : α) : F.φ a ⇿ G.φ a := (h.defNatIso η a).e
@@ -427,12 +454,12 @@ namespace CategoryTheory
 
     def isoNaturality [HasIsomorphisms α] [HasIsoFunctoriality α β]
                       {F G : α ⮕ β} (η : F ⇿ G) {a b : α} (e : a ⇿ b) :
-      mapIso G e • natIso η a ≃ natIso η b • mapIso F e :=
-    hβIso.toHomInj ((congrArgTrans hβ.Hom byMapTo byToDef •
-                     toHomTransEq (mapIso F e) (natIso η b))⁻¹ •
+      natIso η b • mapIso F e ≃ mapIso G e • natIso η a :=
+    hβIso.toHomInj ((congrArgTrans hβ.Hom byToDef byMapTo •
+                     toHomTransEq (natIso η a) (mapIso G e))⁻¹ •
                     naturality (toHom η) (toHom e) •
-                    (congrArgTrans hβ.Hom byToDef byMapTo •
-                     toHomTransEq (natIso η a) (mapIso G e)))
+                    (congrArgTrans hβ.Hom byMapTo byToDef •
+                     toHomTransEq (mapIso F e) (natIso η b)))
 
     def natIsoReflEq (F : α ⮕ β) (a : α) : natIso (idIso F) a ≃ idIso (F.φ a) :=
     hβIso.toHomInj ((toHomReflEq (F.φ a))⁻¹ •

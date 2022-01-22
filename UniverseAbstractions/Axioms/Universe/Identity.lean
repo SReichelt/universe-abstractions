@@ -6,7 +6,7 @@ import UniverseAbstractions.Axioms.MetaRelations
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v iu iv
+universe u iu uu iuu
 
 
 
@@ -34,8 +34,8 @@ namespace HasInstanceEquivalences
 
 end HasInstanceEquivalences
 
-class HasIdentity (U : Universe.{u}) where
-{IU : Universe.{iu}}
+class HasIdentity (U : Universe.{u, uu}) where
+{IU : Universe.{iu, iuu}}
 [h  : HasInstanceEquivalences U IU]
 
 namespace HasIdentity

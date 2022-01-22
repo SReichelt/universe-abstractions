@@ -22,7 +22,7 @@ import UniverseAbstractions.Lemmas.DerivedFunctors
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u u' v w w' vw iv iw
+universe u u' v w w' vw iv iw ivw
 
 
 
@@ -50,15 +50,15 @@ namespace MetaRelation
 
     variable [HasInternalFunctors V] [HasTransFun R]
 
-    def congrArgTransLeftId [HasCongrArg V V] {a b : α} (f : R a b) {g : R b b}
-                            (hg : g ≃ HasRefl.refl (R := R) b) :
-      g • f ≃ f :=
-    leftId f • congrArgTransLeft R f hg
+    def cancelLeftId [HasCongrArg V V] {a b : α} (f : R a b) {e : R b b}
+                     (he : e ≃ HasRefl.refl (R := R) b) :
+      e • f ≃ f :=
+    leftId f • congrArgTransLeft R f he
 
-    def congrArgTransRightId [HasCongrFun V V] {a b : α} {f : R a a}
-                             (hf : f ≃ HasRefl.refl (R := R) a) (g : R a b) :
-      g • f ≃ g :=
-    rightId g • congrArgTransRight R hf g
+    def cancelRightId [HasCongrFun V V] {a b : α} {e : R a a}
+                      (he : e ≃ HasRefl.refl (R := R) a) (f : R a b) :
+      f • e ≃ f :=
+    rightId f • congrArgTransRight R he f
 
   end IsCategoricalPreorder
 
@@ -84,9 +84,9 @@ namespace MetaRelation
 
     def unique {a b : α} {f : R a b} {g₁ g₂ : R b a} (h₁ : HalfInv R f g₁) (h₂ : HalfInv R g₂ f) :
       g₂ ≃ g₁ :=
-    congrArgTransRightId R h₂ g₁ •
+    cancelRightId R h₂ g₁ •
     assoc g₂ f g₁ •
-    (congrArgTransLeftId R g₂ h₁)⁻¹
+    (cancelLeftId R g₂ h₁)⁻¹
 
     def congrArgLeft {a b : α} {f : R a b} {g₁ g₂ : R b a} (hg : g₁ ≃ g₂) (h : HalfInv R f g₂) :
       HalfInv R f g₁ :=
@@ -170,19 +170,19 @@ namespace MetaRelation
 
     def cancelLeft [HasCongrArg V V] {a b c : α} (f : R a b) (g : R c b) :
       g • (g⁻¹ • f) ≃ f :=
-    congrArgTransLeftId R f (rightInv g) • (assoc f g⁻¹ g)⁻¹
+    cancelLeftId R f (rightInv g) • (assoc f g⁻¹ g)⁻¹
 
     def cancelLeftInv [HasCongrArg V V] {a b c : α} (f : R a b) (g : R b c) :
       g⁻¹ • (g • f) ≃ f :=
-    congrArgTransLeftId R f (leftInv g) • (assoc f g g⁻¹)⁻¹
+    cancelLeftId R f (leftInv g) • (assoc f g g⁻¹)⁻¹
 
     def cancelRight [HasCongrFun V V] {a b c : α} (f : R b a) (g : R b c) :
       (g • f⁻¹) • f ≃ g :=
-    congrArgTransRightId R (leftInv f) g • assoc f f⁻¹ g
+    cancelRightId R (leftInv f) g • assoc f f⁻¹ g
 
     def cancelRightInv [HasCongrFun V V] {a b c : α} (f : R a b) (g : R b c) :
       (g • f) • f⁻¹ ≃ g :=
-    congrArgTransRightId R (rightInv f) g • assoc f⁻¹ f g
+    cancelRightId R (rightInv f) g • assoc f⁻¹ f g
 
   end IsGroupoidEquivalence
 
@@ -490,14 +490,18 @@ namespace MetaQuantification
 
     class IsNatural {φ ψ : α → β} (F : PreFunctor R S φ) (G : PreFunctor R S ψ)
                     (η : MetaQuantification S φ ψ) [hTrans : HasTrans S] where
-    (nat {a b : α} (f : R a b) : hTrans.trans (η a) (G f) ≃ hTrans.trans (F f) (η b))
+    (nat {a b : α} (f : R a b) : hTrans.trans (F f) (η b) ≃ hTrans.trans (η a) (G f))
 
     namespace IsNatural
 
-      instance refl [IsPreorder S] [IsCategoricalPreorder S] {φ : α → β}
-                    (F : PreFunctor R S φ) :
+      def fromEq [IsPreorder S] [IsCategoricalPreorder S] {φ : α → β}
+                 (F₁ F₂ : PreFunctor R S φ) (hEq : ∀ {a b : α} (f : R a b), F₁ f ≃ F₂ f) :
+        IsNatural F₁ F₂ (MetaQuantification.refl S φ) :=
+      ⟨λ {a b} f => (rightId (F₂ f))⁻¹ • hEq f • leftId (F₁ f)⟩
+
+      instance refl [IsPreorder S] [IsCategoricalPreorder S] {φ : α → β} (F : PreFunctor R S φ) :
         IsNatural F F (MetaQuantification.refl S φ) :=
-      ⟨λ f => (leftId (F f))⁻¹ • rightId (F f)⟩
+      ⟨λ f => (rightId (F f))⁻¹ • leftId (F f)⟩
 
       variable [HasInternalFunctors W] [HasCongrFun W W]
 
@@ -505,23 +509,23 @@ namespace MetaQuantification
                     {φ ψ : α → β} {F : PreFunctor R S φ} {G : PreFunctor R S ψ}
                     (η : MetaQuantification S φ ψ) [hη : IsNatural F G η] :
         IsNatural G F (MetaQuantification.symm S η) :=
-      ⟨λ {a b} f => cancelRightInv S (η a) ((η b)⁻¹ • G f) •
-                    (cancelLeftInv S (F f • (η a)⁻¹) (η b) •
-                     congrArgTransRight S (assoc (η a)⁻¹ (F f) (η b)) (η b)⁻¹ •
-                     assoc (η a)⁻¹ (η b • F f) (η b)⁻¹ •
-                     congrArgTransLeft S (η a)⁻¹ (congrArgTransRight S (hη.nat f) (η b)⁻¹ •
-                                                  assoc (η a) (G f) (η b)⁻¹))⁻¹⟩
+      ⟨λ {a b} f => cancelLeftInv S (F f • (η a)⁻¹) (η b) •
+                    congrArgTransRight S (assoc (η a)⁻¹ (F f) (η b)) (η b)⁻¹ •
+                    assoc (η a)⁻¹ (η b • F f) (η b)⁻¹ •
+                    congrArgTransLeft S (η a)⁻¹ (congrArgTransRight S (hη.nat f)⁻¹ (η b)⁻¹ •
+                                                 assoc (η a) (G f) (η b)⁻¹) •
+                    (cancelRightInv S (η a) ((η b)⁻¹ • G f))⁻¹⟩
 
       instance trans [HasTrans S] [IsAssociative S] [HasTransFun S] {φ ψ χ : α → β}
                      {F : PreFunctor R S φ} {G : PreFunctor R S ψ} {H : PreFunctor R S χ}
                      (η : MetaQuantification S φ ψ) (ε : MetaQuantification S ψ χ)
                      [hη : IsNatural F G η] [hε : IsNatural G H ε] :
         IsNatural F H (MetaQuantification.trans S η ε) :=
-      ⟨λ {a b} f => (assoc (R := S) (F f) (η b) (ε b))⁻¹ •
-                    congrArgTransRight S (hη.nat f) (ε b) •
-                    assoc (η a) (G f) (ε b) •
+      ⟨λ {a b} f => assoc (η a) (ε a) (H f) •
                     congrArgTransLeft S (η a) (hε.nat f) •
-                    (assoc (η a) (ε a) (H f))⁻¹⟩
+                    (assoc (η a) (G f) (ε b))⁻¹ •
+                    congrArgTransRight S (hη.nat f) (ε b) •
+                    assoc (R := S) (F f) (η b) (ε b)⟩
 
     end IsNatural
 

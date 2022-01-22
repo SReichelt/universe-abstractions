@@ -16,7 +16,7 @@ namespace CategoryTheory
   open MetaRelation MetaFunctor MetaQuantification HasTransFun HasSymmFun
        IsAssociative IsCategoricalPreorder IsGroupoidEquivalence IsSymmFunctor IsTransFunctor
        IsCategory IsGroupoid IsGroupoidFunctor
-       HasIsoRel HasIsoOp HasIsomorphisms
+       HasFunProp HasFunProp.Functor HasIsoRel HasIsoOp HasIsomorphisms
        HasFunctors HasCongrArg HasCongrFun HasLinearFunOp
 
   namespace IsCategory
@@ -39,8 +39,8 @@ namespace CategoryTheory
         instance : IsGroupoidEquivalenceExt hαIso.Iso := h.isoIsGroupoidEquivalenceExt
 
         def isoGroupoidExt : IsGroupoidExt α (hα := isoGroupoid α) :=
-        IsGroupoidExt.mk (hα := isoGroupoid α)
-                         (homIsGroupoidEquivalenceExt := h.isoIsGroupoidEquivalenceExt)
+        let _ := isoGroupoid α;
+        { homIsGroupoidEquivalenceExt := h.isoIsGroupoidEquivalenceExt }
 
       end HasIsomorphismsExt
 
@@ -65,30 +65,30 @@ namespace CategoryTheory
 
 
 
-  namespace IsIsoFunctor
+  namespace HasIsoFunctoriality
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-             {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+             (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
              [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-             (φ : α → β) [hφ : IsCategoryFunctor φ] [hφIso : IsIsoFunctor φ]
+             [hFunProp : HasFunProp α β] [hIsoFun : HasIsoFunctoriality α β]
 
-    class IsIsoFunctorExt where
-    (toHomCongrExt (a b : α) :
-       (toHomMetaFunctor β).baseFun (φ a) (φ b) • F.baseFun a b
-       ≃{byDef ▻ λ e => hφIso.toHomCongr e ◅ byArgDef}
-       hφ.F.baseFun a b • (toHomMetaFunctor α).baseFun a b)
+    class HasIsoFunctorialityExt where
+    (toHomCongrExt (F : α ⮕ β) (a b : α) :
+       (toHomMetaFunctor β).baseFun (F.φ a) (F.φ b) • (isoPreFun F).baseFun a b
+       ≃{byDef ▻ λ e => (hIsoFun.desc F).toHomCongr e ◅ byArgDef}
+       (preFun F).baseFun a b • (toHomMetaFunctor α).baseFun a b)
 
-    namespace IsIsoFunctorExt
+    namespace HasIsoFunctorialityExt
 
-      variable [h : IsIsoFunctorExt φ]
+      variable [h : HasIsoFunctorialityExt α β]
 
-      instance isGroupoidFunctorExt :
-        IsGroupoidFunctorExt (hα := isoGroupoid α) (hβ := isoGroupoid β) φ :=
+      instance isGroupoidFunctorExt (F : α ⮕ β) :
+        IsGroupoidFunctorExt (hα := isoGroupoid α) (hβ := isoGroupoid β) (isoFun F) :=
       sorry
 
-    end IsIsoFunctorExt
+    end HasIsoFunctorialityExt
 
-  end IsIsoFunctor
+  end HasIsoFunctoriality
 
 
 

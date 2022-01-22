@@ -450,7 +450,7 @@ namespace sort
   def defPi {α : sort.{u}} {V : Universe.{v}} [HasTypeIdentity V] {p : α → V} {φ : α ⟶{p} ⌊V⌋}
             (f : ∀ a, p a) :
     DefPi φ f :=
-  { F   := λ a => HasEquivalences.inv (φ.eff a) (f a),
+  { F   := λ a => HasEquivalences.inv      (φ.eff a) (f a),
     eff := λ a => HasEquivalences.rightInv (φ.eff a) (f a) }
 
   instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasTypeIdentity V] :

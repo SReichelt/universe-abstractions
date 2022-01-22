@@ -14,30 +14,34 @@ set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 10000
 --set_option pp.universes true
 
-universe u w ww iw
+universe u w ww iw iww
 
 
 
 namespace CategoryTheory.IsCategory
 
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder
+       HasFunProp HasFunProp.Functor HasIsoFunctoriality HasIsoNaturality
 
-  def typeClass (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W] :
+  def typeClass (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W] :
     SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
-  def univ (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W] :
+  def univ (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W] :
     Universe.{max 1 u w, max ((max 1 u w) + 1) iw ww} := Bundled.univ (typeClass.{u} W)
 
-  variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+  variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
 
   instance inst (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W A := A.inst
   instance (A : univ.{u} W) : IsCategory.{max 1 u w, w, ww, iw} W A.a := A.inst
+  @[reducible] def CatHom (A : univ.{u} W) := (inst A).Hom
 
   -- Instance equivalences
 
   variable [hFunUniv : IsFunUniverse.{u} W] [hNatUniv : IsNatUniverse.{u} W] [hIsoUniv : IsIsoUniverse.{u} W]
 
+  @[reducible] def CatIso (A : univ.{u} W) := (hIsoUniv.hasIso A).Iso
+
   instance hasEquivalenceRelation (A : univ.{u} W) : HasEquivalenceRelation A W :=
-  ⟨(hIsoUniv.hasIso A).Iso⟩
+  ⟨CatIso A⟩
 
   instance hasInstanceEquivalences : HasInstanceEquivalences (univ.{u} W) W :=
   ⟨hasEquivalenceRelation⟩
@@ -50,10 +54,17 @@ namespace CategoryTheory.IsCategory
     apply   := HasFunProp.Functor.φ,
     funInst := λ A B => HasNaturality.funIsCategory A B }
 
+  instance hasFunctors : HasFunctors (univ.{u} W) (univ.{u} W) (univ.{u} W) :=
+  Bundled.hasFunctors (univ.{u} W) (univ.{u} W)
+
+  def mkFun {A B : univ.{u} W} {φ : A → B} (F : HasFunProp.Fun φ) : A ⟶ B :=
+  HasFunProp.Functor.mk F
+
   def toDefFun {A B : univ.{u} W} (F : A ⟶ B) : A ⟶{F.φ} B :=
   HasFunctors.toDefFun F
 
-  instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) := ⟨HasIsoFunctoriality.mapIso⟩
+  instance hasCongrArg : HasCongrArg (univ.{u} W) (univ.{u} W) := ⟨mapIso⟩
+  instance hasCongrFun : HasCongrFun (univ.{u} W) (univ.{u} W) := ⟨natIso⟩
 
   instance hasInternalFunctors : HasInternalFunctors (univ.{u} W) := ⟨⟩
 
@@ -84,5 +95,29 @@ namespace CategoryTheory.IsCategory
   { defDupFun    := λ F => toDefFun (IsNatUniverse.HasFullFunctors.dupFun.{u} F),
     defDupFunFun := λ A B => { F   := IsNatUniverse.HasFullFunctors.dupFunFun.{u} A.a B.a,
                                eff := λ F => HasInstanceEquivalences.refl (IsNatUniverse.HasFullFunctors.dupFun.{u} F) } }
+
+  def funReflEq {A B : univ.{u} W} {φ : A → B} {F₁ F₂ : HasFunProp.Fun φ} (hEq : FunEq F₁ F₂) :
+    HasCongrFun.IsExtensional (mkFun F₁) (mkFun F₂) (λ a => HasInstanceEquivalences.refl (φ a)) :=
+  sorry
+
+  instance hasLinearFunExt [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
+                           [h : HasLinearFunExt W] :
+    HasLinearFunOp.HasLinearFunExt (univ.{u} W) :=
+  { rightId              := λ {A B} F => funReflEq (λ a b => h.rightId ((HasFunProp.Functor.preFun F).baseFun a b) • _),
+    leftId               := λ {A B} F => funReflEq (λ a b => h.leftId ((HasFunProp.Functor.preFun F).baseFun a b) • defCongrArg (HasCompFunFun.defCompFunFun _ _) DefFun.byFunDesc • DefFun.byFunDesc),
+    rightIdExt           := sorry,
+    leftIdExt            := sorry,
+    swapRevApp           := λ {A B} F => funReflEq (λ a b => h.swapRevApp ((HasFunProp.Functor.preFun F).baseFun a b) • _),
+    swapRevAppExt        := sorry,
+    swapCompFun          := sorry,
+    swapCompFunExt       := sorry,
+    swapCompFunExtExt    := sorry,
+    swapRevCompFun       := sorry,
+    swapRevCompFunExt    := sorry,
+    swapRevCompFunExtExt := sorry,
+    compAssoc            := sorry,
+    compAssocExt         := sorry,
+    compAssocExtExt      := sorry,
+    compAssocExtExtExt   := sorry }
 
 end CategoryTheory.IsCategory
