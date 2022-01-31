@@ -495,9 +495,9 @@ namespace MetaQuantification
     namespace IsNatural
 
       def fromEq [IsPreorder S] [IsCategoricalPreorder S] {φ : α → β}
-                 (F₁ F₂ : PreFunctor R S φ) (hEq : ∀ {a b : α} (f : R a b), F₁ f ≃ F₂ f) :
-        IsNatural F₁ F₂ (MetaQuantification.refl S φ) :=
-      ⟨λ {a b} f => (rightId (F₂ f))⁻¹ • hEq f • leftId (F₁ f)⟩
+                 (F G : PreFunctor R S φ) (hEq : ∀ {a b : α} (f : R a b), F f ≃ G f) :
+        IsNatural F G (MetaQuantification.refl S φ) :=
+      ⟨λ {a b} f => (rightId (G f))⁻¹ • hEq f • leftId (F f)⟩
 
       instance refl [IsPreorder S] [IsCategoricalPreorder S] {φ : α → β} (F : PreFunctor R S φ) :
         IsNatural F F (MetaQuantification.refl S φ) :=

@@ -65,33 +65,6 @@ namespace CategoryTheory
 
 
 
-  namespace HasIsoFunctoriality
-
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-             (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
-             [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-             [hFunProp : HasFunProp α β] [hIsoFun : HasIsoFunctoriality α β]
-
-    class HasIsoFunctorialityExt where
-    (toHomCongrExt (F : α ⮕ β) (a b : α) :
-       (toHomMetaFunctor β).baseFun (F.φ a) (F.φ b) • (isoPreFun F).baseFun a b
-       ≃{byDef ▻ λ e => (hIsoFun.desc F).toHomCongr e ◅ byArgDef}
-       (preFun F).baseFun a b • (toHomMetaFunctor α).baseFun a b)
-
-    namespace HasIsoFunctorialityExt
-
-      variable [h : HasIsoFunctorialityExt α β]
-
-      instance isGroupoidFunctorExt (F : α ⮕ β) :
-        IsGroupoidFunctorExt (hα := isoGroupoid α) (hβ := isoGroupoid β) (isoFun F) :=
-      sorry
-
-    end HasIsoFunctorialityExt
-
-  end HasIsoFunctoriality
-
-
-
   namespace IsIsoUniverse
 
     class IsIsoUniverseExt (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]

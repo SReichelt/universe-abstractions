@@ -174,6 +174,11 @@ namespace Setoid
   instance hasProductInstances : HasProductInstances univ.{u} univ.{v} typeClass.{max u v} :=
   ⟨prodSetoid⟩
 
+  instance hasProductEq : HasProducts.HasProductEq univ.{u} univ.{v} :=
+  { introEq := λ p   => ⟨Setoid.refl p.fst, Setoid.refl p.snd⟩,
+    fstEq   := λ a b => Setoid.refl a,
+    sndEq   := λ a b => Setoid.refl b }
+
   instance hasInternalProducts : HasInternalProducts univ.{u} :=
   { defIntroFun    := λ a B   => defFun (λ h   => ⟨Setoid.refl a, h⟩),
     defIntroFunFun := λ A B   => defFun (λ h b => ⟨h, Setoid.refl b⟩),

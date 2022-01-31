@@ -290,9 +290,9 @@ namespace CategoryTheory
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] {α : Sort u} {β : Sort v}
 
     def fromEq [hα : HasMorphisms W α] [hβ : IsCategory W β] {φ : α → β}
-               (F₁ F₂ : PreFunctor hα.Hom hβ.Hom φ) (hEq : ∀ {a b : α} (f : a ⇾ b), F₁ f ≃ F₂ f) :
-      IsNaturalTransformation (Quantification.refl' F₁ F₂) :=
-    { toIsNatural := IsNatural.fromEq F₁ F₂ hEq }
+               {F G : PreFunctor hα.Hom hβ.Hom φ} (hEq : ∀ {a b : α} (f : a ⇾ b), F f ≃ G f) :
+      IsNaturalTransformation (Quantification.refl' F G) :=
+    { toIsNatural := IsNatural.fromEq F G hEq }
 
     instance refl [hα : HasMorphisms W α] [hβ : IsCategory W β] (F : MorphismFunctor α β) :
       IsNaturalTransformation (Quantification.refl F) :=

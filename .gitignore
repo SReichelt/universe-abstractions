@@ -10,5 +10,6 @@
 /_target
 /leanpkg.path
 /.leanpkg-lock
+/lean-packages
 /build
 /UniverseAbstractions/Scratch

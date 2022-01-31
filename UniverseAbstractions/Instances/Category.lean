@@ -21,7 +21,7 @@ universe u w ww iw iww
 namespace CategoryTheory.IsCategory
 
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder
-       HasFunProp HasFunProp.Functor HasIsoFunctoriality HasIsoNaturality
+       HasFunProp HasFunProp.Functor HasNatRel HasIsoFunctoriality HasIsoNaturality
 
   def typeClass (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W] :
     SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
@@ -96,18 +96,19 @@ namespace CategoryTheory.IsCategory
     defDupFunFun := λ A B => { F   := IsNatUniverse.HasFullFunctors.dupFunFun.{u} A.a B.a,
                                eff := λ F => HasInstanceEquivalences.refl (IsNatUniverse.HasFullFunctors.dupFun.{u} F) } }
 
-  def funReflEq {A B : univ.{u} W} {φ : A → B} {F₁ F₂ : HasFunProp.Fun φ} (hEq : FunEq F₁ F₂) :
-    HasCongrFun.IsExtensional (mkFun F₁) (mkFun F₂) (λ a => HasInstanceEquivalences.refl (φ a)) :=
+  def funReflEq {A B : univ.{u} W} {φ : A → B} {F₁ F₂ : HasFunProp.Fun φ}
+                (hEq : ∀ {a b : A} (f : a ⇾ b), (HasFunProp.desc F₁).F f ≃ (HasFunProp.desc F₂).F f) :
+    mkFun F₁ ≃ mkFun F₂ :=
   sorry
 
   instance hasLinearFunExt [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
                            [h : HasLinearFunExt W] :
     HasLinearFunOp.HasLinearFunExt (univ.{u} W) :=
-  { rightId              := λ {A B} F => funReflEq (λ a b => h.rightId ((HasFunProp.Functor.preFun F).baseFun a b) • _),
-    leftId               := λ {A B} F => funReflEq (λ a b => h.leftId ((HasFunProp.Functor.preFun F).baseFun a b) • defCongrArg (HasCompFunFun.defCompFunFun _ _) DefFun.byFunDesc • DefFun.byFunDesc),
+  { rightId              := λ F => funReflEq (λ f => congrArg _ (DefFun.byMapHomDef byDef) • DefFun.byMapHomDef byDef),
+    leftId               := λ F => funReflEq (λ f => DefFun.byMapHomDef byDef • DefFun.byMapHomDef byDef),
     rightIdExt           := sorry,
     leftIdExt            := sorry,
-    swapRevApp           := λ {A B} F => funReflEq (λ a b => h.swapRevApp ((HasFunProp.Functor.preFun F).baseFun a b) • _),
+    swapRevApp           := λ F => funReflEq (λ f => byNatDef F • DefFun.byMapHomDef byDef • congrArg _ (DefFun.byMapHomDef byDef) • DefFun.byMapHomDef byDef),
     swapRevAppExt        := sorry,
     swapCompFun          := sorry,
     swapCompFunExt       := sorry,

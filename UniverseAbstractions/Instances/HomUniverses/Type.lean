@@ -113,11 +113,6 @@ namespace type
     IsPreorder (natRel α β) :=
   HasNatOp.natIsPreorder α β
 
-  instance natIsCategoricalPreorder (α β : Type u) [hα : IsCategory type.{u} α]
-                                                   [hβ : IsCategory type.{u} β] :
-    IsCategoricalPreorder (natRel α β) :=
-  HasNatOpEquiv.natIsCategoricalPreorder α β
-
   instance hasNaturality (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasNaturality.{u + 1} α β :=
   { natHasTransFun := HasTrivialFunctoriality.hasTransFun (natRel α β) }
@@ -205,24 +200,26 @@ namespace type
   { isoHasSymmFun  := HasTrivialFunctoriality.hasSymmFun  (isoRel α),
     isoHasTransFun := HasTrivialFunctoriality.hasTransFun (isoRel α) }
 
-  def isoPreFunctor {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                    (F : α ⮕ β) :
-    PreFunctor (isoRel α) (isoRel β) F.φ :=
-  ⟨λ _ _ => IsoDesc.map (HasFunProp.Functor.morFun F)⟩
+  instance hasIsoFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
+                     (F : α ⮕ β) :
+    HasIsoFun F :=
+  { defMapIso    := λ _   => HasTrivialIsomorphismCondition.defIso,
+    defMapIsoFun := λ _ _ => HasTrivialFunctoriality.defFun,
+    defIsoFun    := HasFunProp.HasTrivialFunctorialityCondition.defFun
+                      (hα := HasIsomorphisms.isoCategory α) (hβ := HasIsomorphisms.isoCategory β) }
 
-  instance hasIsoFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+  instance hasIsoFunctoriality (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasIsoFunctoriality α β :=
-  { desc := λ F => { F          := isoPreFunctor F,
-                     toHomCongr := λ _ => rfl } }
+  { hasIsoFun := hasIsoFun α β }
 
-  instance hasIsoNat (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
+  instance hasIsoNaturality (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
     HasIsoNaturality α β :=
   { defNatIso    := λ _ _   => HasTrivialIsomorphismCondition.defIso,
     defNatIsoFun := λ _ _ _ => HasTrivialFunctoriality.defFun }
 
   instance isIsoUniverse : IsIsoUniverse.{u + 1} type.{u} :=
   { hasIso    := hasIsomorphisms,
-    hasIsoFun := hasIsoFun,
-    hasIsoNat := hasIsoNat }
+    hasIsoFun := hasIsoFunctoriality,
+    hasIsoNat := hasIsoNaturality }
 
 end type

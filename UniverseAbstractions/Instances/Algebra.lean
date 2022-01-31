@@ -5,6 +5,7 @@ import UniverseAbstractions.Axioms.Universe.Singletons
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Instances.Utils.Bundled
+import UniverseAbstractions.Instances.Utils.Trivial
 
 import UniverseAbstractions.MathlibFragments.CoreExt
 
@@ -53,18 +54,21 @@ namespace CommSemigroup
   have h₁ : F.f = G.f := funext h;
   by induction F; induction G; subst h₁; simp
 
+  instance functorSemigroup (A B : univ) : CommSemigroup (HasFunctoriality.Fun A B) :=
+  { op       := λ F G   => { f     := λ a => (inst B).op (F.f a) (G.f a),
+                             isFun := ⟨λ a₁ a₂ => by simp;
+                                                     rw [op_assoc, op_assoc];
+                                                     apply congrArg;
+                                                     rw [←op_assoc, ←op_assoc];
+                                                     apply congrFun;
+                                                     apply congrArg;
+                                                     rw [op_comm]⟩ },
+    op_assoc := λ F G H => funExt' λ a => (inst B).op_assoc (F.f a) (G.f a) (H.f a),
+    op_comm  := λ F G   => funExt' λ a => (inst B).op_comm (F.f a) (G.f a) }
+
   instance hasFunctorialityInstances :
     HasFunctorialityInstances univ.{u} univ.{v} typeClass.{max u v} :=
-  ⟨λ A B => { op       := λ F G   => { f     := λ a => (inst B).op (F.f a) (G.f a),
-                                       isFun := ⟨λ a₁ a₂ => by simp;
-                                                               rw [op_assoc, op_assoc];
-                                                               apply congrArg;
-                                                               rw [←op_assoc, ←op_assoc];
-                                                               apply congrFun;
-                                                               apply congrArg;
-                                                               rw [op_comm]⟩ },
-              op_assoc := λ F G H => funExt' λ a => (inst B).op_assoc (F.f a) (G.f a) (H.f a),
-              op_comm  := λ F G   => funExt' λ a => (inst B).op_comm (F.f a) (G.f a) }⟩
+  ⟨functorSemigroup⟩
 
   def defFun {A B : univ} {f : A → B} (isHom : IsHom f) : A ⟶{f} B :=
   Bundled.HasFunctorialityInstances.defFun isHom
@@ -91,5 +95,45 @@ namespace CommSemigroup
     defCompFun       := λ F G   => defFun ⟨λ a₁ a₂ => by simp⟩,
     defCompFunFun    := λ F C   => defFun ⟨λ G₁ G₂ => funExt λ a => rfl⟩,
     defCompFunFunFun := λ A B C => defFun ⟨λ F₁ F₂ => funExt λ G => funExt λ a => simp_op_arg G (F₁ a) (F₂ a)⟩ }
+
+  instance hasTrivialExtensionality : HasTrivialExtensionality univ.{u} univ.{v} := ⟨funExt⟩
+
+  instance hasLinearFunctors : HasLinearFunctors univ.{u} := ⟨⟩
+
+  -- Singletons
+
+  instance unitSemigroup : CommSemigroup PUnit :=
+  { op       := λ _ _   => PUnit.unit,
+    op_assoc := λ _ _ _ => rfl,
+    op_comm  := λ _ _   => rfl }
+
+  instance hasTopInstance : HasTopInstance typeClass.{u} := ⟨unitSemigroup⟩
+
+  instance hasTopEq : HasTop.HasTopEq univ.{u} := ⟨λ _ => rfl⟩
+
+  instance emptySemigroup : CommSemigroup PEmpty :=
+  { op       := λ a _   => PEmpty.elim a,
+    op_assoc := λ a _ _ => PEmpty.elim a,
+    op_comm  := λ a _   => PEmpty.elim a }
+
+  instance hasBotInstance : HasBotInstance typeClass.{u} := ⟨emptySemigroup⟩
+
+  instance hasInternalBot : HasInternalBot univ.{u} :=
+  { defElimFun := λ A => defFun ⟨λ a _ => PEmpty.elim a⟩ }
+
+  -- Products
+
+  instance prodSemigroup (A : univ.{u}) (B : univ.{v}) : CommSemigroup (PProd A B) :=
+  { op       := λ a b   => ⟨op a.fst b.fst, op a.snd b.snd⟩,
+    op_assoc := λ a b c => PProd.ext' ⟨op_assoc a.fst b.fst c.fst, op_assoc a.snd b.snd c.snd⟩,
+    op_comm  := λ a b   => PProd.ext' ⟨op_comm a.fst b.fst, op_comm a.snd b.snd⟩ }
+
+  instance hasProductInstances : HasProductInstances univ.{u} univ.{v} typeClass.{max u v} :=
+  ⟨prodSemigroup⟩
+
+  instance hasProductEq : HasProducts.HasProductEq univ.{u} univ.{v} :=
+  { introEq := λ _   => PProd.ext' ⟨rfl, rfl⟩,
+    fstEq   := λ _ _ => rfl,
+    sndEq   := λ _ _ => rfl }
 
 end CommSemigroup

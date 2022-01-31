@@ -376,15 +376,13 @@ namespace sort
     HasTrivialFunctoriality sort.{u} V :=
   ⟨defOutFun⟩
 
-  instance hasCongrArg : HasCongrArg sort.{u} sort.{v} :=
-  ⟨λ f => congrArg f⟩
+  instance hasCongrArg : HasCongrArg sort.{u} sort.{v} := ⟨λ f => congrArg f⟩
 
   instance (priority := low) hasOutCongrArg (V : Universe.{v}) [HasIdentity V] :
     HasCongrArg sort.{u} V :=
   ⟨λ {_ _} f {_ _} e => e ▸ HasRefl.refl _⟩
 
-  instance hasCongrFun : HasCongrFun sort.{u} sort.{v} :=
-  ⟨congrFun⟩
+  instance hasCongrFun : HasCongrFun sort.{u} sort.{v} := ⟨congrFun⟩
 
   instance (priority := low) hasOutCongrFun (V : Universe.{v}) [HasIdentity V] :
     HasCongrFun sort.{u} V :=
@@ -392,8 +390,7 @@ namespace sort
 
   instance hasInternalFunctors : HasInternalFunctors sort.{u} := ⟨⟩
 
-  instance hasTrivialExtensionality : HasTrivialExtensionality sort.{u} sort.{v} :=
-  ⟨funext⟩
+  instance hasTrivialExtensionality : HasTrivialExtensionality sort.{u} sort.{v} := ⟨funext⟩
 
   -- There are top and bottom types that work generically for `sort`.
 
@@ -457,8 +454,7 @@ namespace sort
     HasTrivialDependentFunctoriality sort.{u} V :=
   ⟨defPi⟩
 
-  instance hasDependentCongrFun : HasDependentCongrFun sort.{u} sort.{v} :=
-  ⟨congrFun⟩
+  instance hasDependentCongrFun : HasDependentCongrFun sort.{u} sort.{v} := ⟨congrFun⟩
 
   instance (priority := low) hasDependentOutCongrFun (V : Universe.{v}) [HasIdentity V] :
     HasDependentCongrFun sort.{u} V :=
