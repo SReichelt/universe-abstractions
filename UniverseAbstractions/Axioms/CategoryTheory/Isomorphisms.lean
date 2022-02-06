@@ -3,9 +3,11 @@ import UniverseAbstractions.Axioms.CategoryTheory.Extended
 
 
 set_option autoBoundImplicitLocal false
+set_option maxHeartbeats 100000
+set_option synthInstance.maxHeartbeats 100000
 --set_option pp.universes true
 
-universe u u' v vv w ww iv iw
+universe u u' u'' u''' v vv w ww iv iw
 
 
 
@@ -193,7 +195,7 @@ namespace CategoryTheory
                     (congrArgTransLeft hα.Hom (toHom e) (toHomReflEq b) •
                      toHomTransEq e (idIso b)))
 
-        def isoLeftInv  {a b : α} (e : a ⇿ b) : e⁻¹ • e ≃ idIso a :=
+        def isoLeftInv {a b : α} (e : a ⇿ b) : e⁻¹ • e ≃ idIso a :=
         h.toHomInj ((toHomReflEq a)⁻¹ •
                     leftInv e •
                     (congrArgTransLeft hα.Hom (toHom e) (toHomSymmEq e) •
@@ -423,17 +425,16 @@ namespace CategoryTheory
 
     def mapIsoEq {a b : α} (e : a ⇿ b) :
       mapIso' F e ≃ mapIso F e :=
-    DefFun.byMapHomDef (hα := isoCategory α) (hβ := isoCategory β) byDef
+    DefFun.byMapHomDef (hα := isoCategory α) (hβ := isoCategory β)
 
   end HasIsoFun
 
   class HasIsoFunctoriality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
                             (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
-                            [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-                            [hFunProp : HasFunProp α β]
-                            [hIsoFunProp : HasFunProp α β (hα := HasIsomorphisms.isoCategory α)
-                                                          (hβ := HasIsomorphisms.isoCategory β)]
-                            where
+                            [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] where
+  [hasFunProp    : HasFunProp α β]
+  [hasIsoFunProp : HasFunProp α β (hα := HasIsomorphisms.isoCategory α)
+                                  (hβ := HasIsomorphisms.isoCategory β)]
   [hasIsoFun (F : α ⮕ β) : HasIsoFun F]
 
   namespace HasIsoFunctoriality
@@ -445,15 +446,18 @@ namespace CategoryTheory
     section
 
       variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-               [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] [hFunProp : HasFunProp α β]
-               [HasFunProp α β (hα := isoCategory α) (hβ := isoCategory β)]
+               [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
                [h : HasIsoFunctoriality α β]
+
+      instance : HasFunProp α β := h.hasFunProp
+      instance : HasFunProp α β (hα := HasIsomorphisms.isoCategory α)
+                                (hβ := HasIsomorphisms.isoCategory β) := h.hasIsoFunProp
 
       instance (F : α ⮕ β) : HasIsoFun F := h.hasIsoFun F
 
       def mapIso (F : α ⮕ β) {a b : α} (e : a ⇿ b) : F.φ a ⇿ F.φ b := HasIsoPreFun.mapIso F e
 
-      def mapHomToMapIso {φ : α → β} {F G : hFunProp.Fun φ} {a b : α} {e : a ⇿ b} :
+      def mapHomToMapIso {φ : α → β} {F G : h.hasFunProp.Fun φ} {a b : α} {e : a ⇿ b} :
         mapHom ⟨F⟩ (toHom e) ≃ mapHom ⟨G⟩ (toHom e) →
         mapIso ⟨F⟩ e         ≃ mapIso ⟨G⟩ e :=
       λ h₁ => hβIso.toHomInj ((toHomComm ⟨G⟩ e)⁻¹ • h₁ • (toHomComm ⟨F⟩ e))
@@ -466,16 +470,13 @@ namespace CategoryTheory
 
   structure NatIsoDesc {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
                        {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                       [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
-                       [hFunProp : HasFunProp α β]
-                       [hIsoFunProp : HasFunProp α β (hα := HasIsomorphisms.isoCategory α)
-                                                     (hβ := HasIsomorphisms.isoCategory β)]
-                       [hIsoFun : HasIsoFunctoriality α β] (F G : α ⮕ β) :
+                       [hβIso : HasIsomorphisms β] [hFunProp : HasFunProp α β] (F G : α ⮕ β) :
     Sort (max 1 u w iw) where
-  (η     : Quantification (hα := HasIsoRel.isoMorphisms α)
-                          (hβ := HasIsomorphisms.isoSemicategory β)
-                          (HasIsoPreFun.isoFun F) (HasIsoPreFun.isoFun G))
-  [isNat : IsNaturalTransformation (F := morFun F) (G := morFun G) (λ a => HasIsoRel.toHom (η a))]
+  -- Note: `isInvNat` is redundant (see `construct`), but we include it anyway because in strict
+  -- cases, it contains a much simpler term.
+  (η        : MetaQuantification hβIso.Iso F.φ G.φ)
+  [isToNat  : IsNaturalTransformation (F := morFun F) (G := morFun G) (λ a => HasIsoRel.toHom  (η a))]
+  [isInvNat : IsNaturalTransformation (F := morFun G) (G := morFun F) (λ a => HasIsoRel.invHom (η a))]
 
   namespace NatIsoDesc
 
@@ -483,44 +484,130 @@ namespace CategoryTheory
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] [hFunProp : HasFunProp α β]
-             [HasFunProp α β (hα := isoCategory α) (hβ := isoCategory β)]
-             [hIsoFun : HasIsoFunctoriality α β]
+             [hβIso : HasIsomorphisms β] [hFunProp : HasFunProp α β]
 
-    def strict {φ : α → β} (F G : hFunProp.Fun φ)
-               (hEq : ∀ {a b : α} (f : a ⇾ b), mapHom ⟨F⟩ f ≃ mapHom ⟨G⟩ f) :
+    -- It would be nice if we could just use the corresponding code from `Meta.lean` here.
+    -- However, we are in the special situation that only terms involving `η` are invertible,
+    -- but `mapHom F f` and `mapHom G f` are not. The code in `Meta.lean` currently cannot deal
+    -- with this; all operations that involve invertible elements ultimately rely on `HasSymm` for
+    -- the entire relation.
+
+    def construct {F G : α ⮕ β} (η : MetaQuantification hβIso.Iso F.φ G.φ)
+                  [isToNat : IsNaturalTransformation (F := morFun F) (G := morFun G) (λ a => HasIsoRel.toHom (η a))] :
+      NatIsoDesc F G :=
+    { η        := η,
+      isToNat  := isToNat,
+      isInvNat := { nat := λ {a b} f => (cancelLeftId hβ.Hom (mapHom F f • invHom (η a)) (leftInv (η b)) •
+                                         (assoc (mapHom F f • invHom (η a)) (toHom (η b)) (invHom (η b)))⁻¹) •
+                                        congrArgTransRight hβ.Hom (assoc (invHom (η a)) (mapHom F f) (toHom (η b)))
+                                                                  (invHom (η b)) •
+                                        assoc (invHom (η a)) (toHom (η b) • mapHom F f) (invHom (η b)) •
+                                        congrArgTransLeft hβ.Hom (invHom (η a))
+                                                                 (congrArgTransRight hβ.Hom (isToNat.nat f)⁻¹
+                                                                                            (invHom (η b)) •
+                                                                  assoc (toHom (η a)) (mapHom G f) (invHom (η b))) •
+                                        (cancelRightId hβ.Hom (rightInv (η a)) (invHom (η b) • mapHom G f) •
+                                         assoc (invHom (η a)) (toHom (η a)) (invHom (η b) • mapHom G f))⁻¹ } }
+
+    def strict {φ : α → β} {F G : hFunProp.Fun φ} (hEq : NatDesc.StrictNaturality F G) :
       NatIsoDesc ⟨F⟩ ⟨G⟩ :=
-    { η     := λ a => idIso (φ a),
-      isNat := { toIsNatural := ⟨λ {a b} f => (cancelRightId hβ.Hom (toHomReflEq (φ a)) (mapHom ⟨G⟩ f))⁻¹ •
-                                              hEq f •
-                                              cancelLeftId hβ.Hom (mapHom ⟨F⟩ f) (toHomReflEq (φ b))⟩ } }
+    { η        := λ a => idIso (φ a),
+      isToNat  := { nat := λ {a b} f => (cancelRightId hβ.Hom (toHomReflEq (φ a)) (mapHom ⟨G⟩ f))⁻¹ •
+                                        hEq f •
+                                        cancelLeftId hβ.Hom (mapHom ⟨F⟩ f) (toHomReflEq (φ b)) }
+      isInvNat := { nat := λ {a b} f => (cancelRightId hβ.Hom (invHomReflEq (φ a)) (mapHom ⟨F⟩ f))⁻¹ •
+                                        (hEq f)⁻¹ •
+                                        cancelLeftId hβ.Hom (mapHom ⟨G⟩ f) (invHomReflEq (φ b)) }, }
 
-    variable {F G : α ⮕ β} (desc : NatIsoDesc F G)
+    def refl (F : α ⮕ β) : NatIsoDesc F F :=
+    { η        := MetaQuantification.refl hβIso.Iso F.φ,
+      isToNat  := { nat := λ {a b} f => (cancelRightId hβ.Hom (toHomReflEq (F.φ a)) (mapHom F f))⁻¹ •
+                                        cancelLeftId hβ.Hom (mapHom F f) (toHomReflEq (F.φ b)) },
+      isInvNat := { nat := λ {a b} f => (cancelRightId hβ.Hom (invHomReflEq (F.φ a)) (mapHom F f))⁻¹ •
+                                        cancelLeftId hβ.Hom (mapHom F f) (invHomReflEq (F.φ b)) } }
 
-    @[reducible] def natIso (a : α) : F.φ a ⇿ G.φ a := desc.η a
-    @[reducible] def natToHom (a : α) : F.φ a ⇾ G.φ a := toHom (natIso desc a)
+    def symm {F G : α ⮕ β} (η : NatIsoDesc F G) : NatIsoDesc G F :=
+    { η        := MetaQuantification.symm hβIso.Iso η.η,
+      isToNat  := { nat := λ {a b} f => (congrArgTransRight hβ.Hom (toHomSymmEq (η.η a)) (mapHom F f))⁻¹ •
+                                        η.isInvNat.nat f •
+                                        congrArgTransLeft hβ.Hom (mapHom G f) (toHomSymmEq (η.η b)) },
+      isInvNat := { nat := λ {a b} f => (congrArgTransRight hβ.Hom (invHomSymmEq (η.η a)) (mapHom G f))⁻¹ •
+                                        η.isToNat.nat f •
+                                        congrArgTransLeft hβ.Hom (mapHom F f) (invHomSymmEq (η.η b)) } }
+
+    def trans {F G H : α ⮕ β} (η : NatIsoDesc F G) (ε : NatIsoDesc G H) : NatIsoDesc F H :=
+    { η        := MetaQuantification.trans hβIso.Iso η.η ε.η,
+      isToNat  := { nat := λ {a b} f => (congrArgTransRight hβ.Hom (toHomTransEq (η.η a) (ε.η a)) (mapHom H f))⁻¹ •
+                                        (IsNaturalTransformation.trans _ _ (hη := η.isToNat) (hε := ε.isToNat)).nat f •
+                                        congrArgTransLeft hβ.Hom (mapHom F f) (toHomTransEq (η.η b) (ε.η b)) },
+      isInvNat := { nat := λ {a b} f => (congrArgTransRight hβ.Hom (invHomTransEq (η.η a) (ε.η a)) (mapHom F f))⁻¹ •
+                                        (IsNaturalTransformation.trans _ _ (hη := ε.isInvNat) (hε := η.isInvNat)).nat f •
+                                        congrArgTransLeft hβ.Hom (mapHom H f) (invHomTransEq (η.η b) (ε.η b)) } }
+
+    variable {F G : α ⮕ β} (η : NatIsoDesc F G)
+
+    @[reducible] def natIso    (a : α) : F.φ a ⇿ G.φ a := η.η a
+    @[reducible] def natToHom  (a : α) : F.φ a ⇾ G.φ a := toHom  (natIso η a)
+    @[reducible] def natInvHom (a : α) : G.φ a ⇾ F.φ a := invHom (natIso η a)
 
     def toNatDesc : NatDesc F G :=
-    { η     := natToHom desc
-      isNat := desc.isNat }
+    { η     := natToHom η,
+      isNat := η.isToNat }
 
-    def isoNaturality {a b : α} (e : a ⇿ b) :
-      natIso desc b • mapIso F e ≃ mapIso G e • natIso desc a :=
-    hβIso.toHomInj ((congrArgTransLeft hβ.Hom (natToHom desc a) (toHomComm G e) •
-                     toHomTransEq (natIso desc a) (mapIso G e))⁻¹ •
-                    desc.isNat.nat (toHom e) •
-                    (congrArgTransRight hβ.Hom (toHomComm F e) (natToHom desc b) •
-                     toHomTransEq (mapIso F e) (natIso desc b)))
+    def invNatDesc : NatDesc G F :=
+    { η     := natInvHom η,
+      isNat := η.isInvNat }
 
-    def toIsoNatDesc : NatDesc (hα := isoCategory α) (hβ := isoCategory β)
-                               (isoFunctor F) (isoFunctor G) :=
-    NatDesc.mk (hα := isoCategory α) (hβ := isoCategory β)
-               desc.η
-               (isNat := IsNaturalTransformation.mk (hα := isoMorphisms α) (hβ := isoSemicategory β)
-                                                    (toIsNatural := IsNatural.mk (λ {a b : α} (e : a ⇿ b) =>
-                                                                                  congrArgTransLeft hβIso.Iso (natIso desc a) (mapIsoEq G e)⁻¹ •
-                                                                                  isoNaturality desc e •
-                                                                                  congrArgTransRight hβIso.Iso (mapIsoEq F e) (natIso desc b))))
+    structure IsoDescBuilder [hNat : HasNaturality α β] where
+    (defToNat  : DefNat (toNatDesc  η))
+    (defInvNat : DefNat (invNatDesc η))
+    (leftInv   : NatEquiv (defInvNat.η • defToNat.η) (HasRefl.refl F)
+                          (λ a => (natReflEq F a)⁻¹ •
+                                  leftInv (η.η a) •
+                                  congrArgTrans hβ.Hom byNatDef byNatDef •
+                                  natTransEq defToNat.η defInvNat.η a))
+    (rightInv  : NatEquiv (defToNat.η • defInvNat.η) (HasRefl.refl G)
+                          (λ b => (natReflEq G b)⁻¹ •
+                                  rightInv (η.η b) •
+                                  congrArgTrans hβ.Hom byNatDef byNatDef •
+                                  natTransEq defInvNat.η defToNat.η b))
+
+    namespace IsoDescBuilder
+
+      variable [hNat : HasNaturality α β] (e : IsoDescBuilder η)
+
+      instance isInv : IsInv (funHasMorphisms α β).Hom e.defToNat.η e.defInvNat.η :=
+      { leftInv  := e.leftInv,
+        rightInv := e.rightInv }
+  
+      def isoDesc : IsoDesc F G := ⟨e.defToNat.η, e.defInvNat.η⟩
+
+    end IsoDescBuilder
+
+    section
+
+      variable [hαIso : HasIsomorphisms α]
+               [HasFunProp α β (hα := HasIsomorphisms.isoCategory α) (hβ := HasIsomorphisms.isoCategory β)]
+               [HasIsoFun F] [HasIsoFun G]
+
+      def isoNaturality {a b : α} (e : a ⇿ b) :
+        natIso η b • mapIso F e ≃ mapIso G e • natIso η a :=
+      hβIso.toHomInj ((congrArgTransLeft hβ.Hom (natToHom η a) (toHomComm G e) •
+                      toHomTransEq (natIso η a) (mapIso G e))⁻¹ •
+                     η.isToNat.nat (toHom e) •
+                     (congrArgTransRight hβ.Hom (toHomComm F e) (natToHom η b) •
+                      toHomTransEq (mapIso F e) (natIso η b)))
+
+      def toIsoNatDesc : NatDesc (hα := isoCategory α) (hβ := isoCategory β) (isoFunctor F) (isoFunctor G) :=
+      NatDesc.mk (hα := isoCategory α) (hβ := isoCategory β)
+                η.η
+                (isNat := IsNaturalTransformation.mk (hα := isoMorphisms α) (hβ := isoSemicategory β)
+                                                      (toIsNatural := IsNatural.mk (λ {a b : α} (e : a ⇿ b) =>
+                                                                                    congrArgTransLeft hβIso.Iso (natIso η a) (mapIsoEq G e)⁻¹ •
+                                                                                    isoNaturality η e •
+                                                                                    congrArgTransRight hβIso.Iso (mapIsoEq F e) (natIso η b))))
+
+    end
 
   end NatIsoDesc
 
@@ -546,86 +633,368 @@ namespace CategoryTheory
 
   end HasNaturality
 
-  class HasIsoNaturality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                         (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
-                         [hFunProp : HasFunProp α β] [hNat : HasNaturality α β]
-                         [hβIso : HasIsomorphisms β] [hαβIso : HasIsomorphisms (α ⮕ β)] where
-  (defNatIso {F G : α ⮕ β} (η : F ⇿ G) (a : α) :
+  class HasIsoNat {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+                  {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+                  [hFunProp : HasFunProp α β] [hNat : HasNaturality α β]
+                  [hβIso : HasIsomorphisms β] [hαβIso : HasIsomorphisms (α ⮕ β)]
+                  (F G : α ⮕ β) where
+  (defNatIso (η : F ⇿ G) (a : α) :
      HasIsoRel.DefIso (natIsoDesc (hαβIso.desc η) a))
-  (defNatIsoFun (F G : α ⮕ β) (a : α) :
+  (defNatIsoFun (a : α) :
      (F ⇿ G) ⟶{λ η => (defNatIso η a).e} (F.φ a ⇿ G.φ a))
 
-  namespace HasIsoNaturality
+  namespace HasIsoNat
 
-    open HasIsoRel HasIsoOp HasIsomorphisms HasIsoPreFun
+    open HasIsoRel HasIsoOp HasIsoPreFun
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
              {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-             [HasFunProp α β] [HasNaturality α β] [hβIso : HasIsomorphisms β]
-             [hαβIso : HasIsomorphisms (α ⮕ β)] [h : HasIsoNaturality α β]
 
-    def natIso {F G : α ⮕ β} (η : F ⇿ G) (a : α) : F.φ a ⇿ G.φ a := (h.defNatIso η a).e
+    section
 
-    @[reducible] def natIsoFun (F G : α ⮕ β) (a : α) : (F ⇿ G) ⟶ (F.φ a ⇿ G.φ a) :=
-    h.defNatIsoFun F G a
+      variable [hβIso : HasIsomorphisms β] [HasFunProp α β] [HasNaturality α β]
+               [HasIsomorphisms (α ⮕ β)]
 
-    instance {F G : α ⮕ β} (η : F ⇿ G) (a : α) : IsFunApp (F ⇿ G) (natIso η a) :=
-    { F := natIsoFun F G a,
-      a := η,
-      e := byDef }
+      def natIso {F G : α ⮕ β} [h : HasIsoNat F G] (η : F ⇿ G) (a : α) : F.φ a ⇿ G.φ a :=
+      (h.defNatIso η a).e
 
-    def natIsoCongrArg {F G : α ⮕ β} {η₁ η₂ : F ⇿ G} (e : η₁ ≃ η₂) (a : α) :
-      natIso η₁ a ≃ natIso η₂ a :=
-    defCongrArg (defNatIsoFun F G a) e
+      @[reducible] def natIsoFun (F G : α ⮕ β) [h : HasIsoNat F G] (a : α) :
+        (F ⇿ G) ⟶ (F.φ a ⇿ G.φ a) :=
+      h.defNatIsoFun a
 
-    def natIsoToHomComm {F G : α ⮕ β} (η : F ⇿ G) (a : α) :
-      toHom (natIso η a) ≃ nat (toHom η) a :=
-    byToDef
+      variable {F G : α ⮕ β} [h : HasIsoNat F G]
 
-    def natIsoInvHomComm {F G : α ⮕ β} (η : F ⇿ G) (a : α) :
-      invHom (natIso η a) ≃ nat (invHom η) a :=
-    byInvDef
+      instance (η : F ⇿ G) (a : α) : IsFunApp (F ⇿ G) (natIso η a) :=
+      { F := natIsoFun F G a,
+        a := η,
+        e := byDef }
 
-    def natIsoReflEq (F : α ⮕ β) (a : α) : natIso (idIso F) a ≃ idIso (F.φ a) :=
-    hβIso.toHomInj ((toHomReflEq (F.φ a))⁻¹ •
-                    natReflEq F a •
-                    (natCongrArg (toHomReflEq F) a •
-                     natIsoToHomComm (idIso F) a))
+      def natIsoCongrArg {η₁ η₂ : F ⇿ G} (e : η₁ ≃ η₂) (a : α) :
+        natIso η₁ a ≃ natIso η₂ a :=
+      defCongrArg (h.defNatIsoFun a) e
 
-    def natIsoSymmEq {F G : α ⮕ β} (η : F ⇿ G) (a : α) : natIso η⁻¹ a ≃ (natIso η a)⁻¹ :=
-    hβIso.toHomInj ((natIsoInvHomComm η a •
-                     toHomSymmEq (natIso η a))⁻¹ •
-                    (natCongrArg (toHomSymmEq η) a •
-                     natIsoToHomComm η⁻¹ a))
+      def natIsoToHomComm (η : F ⇿ G) (a : α) :
+        toHom (natIso η a) ≃ nat (toHom η) a :=
+      byToDef
 
-    def natIsoTransEq {F G H : α ⮕ β} (η : F ⇿ G) (ε : G ⇿ H) (a : α) :
-      natIso (ε • η) a ≃ natIso ε a • natIso η a :=
-    hβIso.toHomInj ((congrArgTrans hβ.Hom (natIsoToHomComm η a) (natIsoToHomComm ε a) •
-                     toHomTransEq (natIso η a) (natIso ε a))⁻¹ •
-                    natTransEq (toHom η) (toHom ε) a •
-                    (natCongrArg (toHomTransEq η ε) a •
-                     natIsoToHomComm (ε • η) a))
+      def natIsoInvHomComm (η : F ⇿ G) (a : α) :
+        invHom (natIso η a) ≃ nat (invHom η) a :=
+      byInvDef
 
-    variable [HasIsomorphisms α] [HasFunProp α β (hα := isoCategory α) (hβ := isoCategory β)]
-             [HasIsoFunctoriality α β]
+      def natIsoEq {η₁ η₂ : F ⇿ G} {a : α} :
+        nat (toHom η₁) a ≃ nat (toHom η₂) a → natIso η₁ a ≃ natIso η₂ a :=
+      λ e => hβIso.toHomInj ((natIsoToHomComm η₂ a)⁻¹ • e • natIsoToHomComm η₁ a)
 
-    def natIsoDesc {F G : α ⮕ β} (η : F ⇿ G) : NatIsoDesc F G :=
-    { η     := natIso η,
-      isNat := { nat := λ {a b} f => congrArgTransRight hβ.Hom (natIsoToHomComm η a)⁻¹ (mapHom G f) •
-                                     naturality (toHom η) f •
-                                     congrArgTransLeft hβ.Hom (mapHom F f) (natIsoToHomComm η b) } }
+    end
 
-    def isoNaturality {F G : α ⮕ β} (η : F ⇿ G) {a b : α} (e : a ⇿ b) :
-      natIso η b • mapIso F e ≃ mapIso G e • natIso η a :=
-    NatIsoDesc.isoNaturality (natIsoDesc η) e
+    section
 
-    structure IsoDefNat {F G : α ⮕ β} (desc : NatIsoDesc F G) where
-    (η             : F ⇿ G)
-    (natEq (a : α) : natIso η a ≃ NatIsoDesc.natIso desc a)
+      variable [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] [hIsoFun : HasIsoFunctoriality α β]
+               [HasNaturality α β] [HasIsomorphisms (α ⮕ β)]
 
-    def byIsoNatDef {F G : α ⮕ β} {desc : NatIsoDesc F G} {η : IsoDefNat desc} (a : α) :
-      natIso η.η a ≃ NatIsoDesc.natIso desc a :=
-    η.natEq a
+      section
+
+        variable {F G : α ⮕ β} [h : HasIsoNat F G]
+
+        def natIsoDesc (η : F ⇿ G) : NatIsoDesc F G :=
+        { η        := natIso η,
+          isToNat  := { nat := λ {a b} f => congrArgTransRight hβ.Hom (natIsoToHomComm η a)⁻¹ (mapHom G f) •
+                                            naturality (toHom η) f •
+                                            congrArgTransLeft hβ.Hom (mapHom F f) (natIsoToHomComm η b) },
+          isInvNat := { nat := λ {a b} f => congrArgTransRight hβ.Hom (natIsoInvHomComm η a)⁻¹ (mapHom F f) •
+                                            naturality (invHom η) f •
+                                            congrArgTransLeft hβ.Hom (mapHom G f) (natIsoInvHomComm η b) } }
+
+        def isoNaturality (η : F ⇿ G) {a b : α} (e : a ⇿ b) :
+          natIso η b • mapIso F e ≃ mapIso G e • natIso η a :=
+        NatIsoDesc.isoNaturality (natIsoDesc η) e
+
+        structure DefNatIso (desc : NatIsoDesc F G) where
+        (η             : F ⇿ G)
+        (natEq (a : α) : natIso η a ≃ NatIsoDesc.natIso desc a)
+
+        def byNatIsoDef {desc : NatIsoDesc F G} {η : DefNatIso desc} {a : α} :
+          natIso η.η a ≃ NatIsoDesc.natIso desc a :=
+        η.natEq a
+
+        def byNatIsoToHomDef {desc : NatIsoDesc F G} {η : DefNatIso desc} {a : α} :
+          nat (toHom η.η) a ≃ NatIsoDesc.natToHom desc a :=
+        toHomCongrArg byNatIsoDef • (natIsoToHomComm η.η a)⁻¹
+
+        def byNatIsoInvHomDef {desc : NatIsoDesc F G} {η : DefNatIso desc} {a : α} :
+          nat (invHom η.η) a ≃ NatIsoDesc.natInvHom desc a :=
+        invHomCongrArg byNatIsoDef • (natIsoInvHomComm η.η a)⁻¹
+
+      end
+
+      def byStrictNatIsoDef {φ : α → β} {F G : hIsoFun.hasFunProp.Fun φ} [h : HasIsoNat ⟨F⟩ ⟨G⟩]
+                            {hEq : NatDesc.StrictNaturality F G}
+                            {η : DefNatIso (NatIsoDesc.strict hEq)} {a : α} :
+        natIso η.η a ≃ idIso (φ a) :=
+      byNatIsoDef
+
+      def byStrictNatIsoToHomDef {φ : α → β} {F G : hIsoFun.hasFunProp.Fun φ} [h : HasIsoNat ⟨F⟩ ⟨G⟩]
+                                 {hEq : NatDesc.StrictNaturality F G}
+                                 {η : DefNatIso (NatIsoDesc.strict hEq)} {a : α} :
+        nat (toHom η.η) a ≃ idHom (φ a) :=
+      toHomReflEq (φ a) • byNatIsoToHomDef
+
+      def byStrictNatIsoInvHomDef {φ : α → β} {F G : hIsoFun.hasFunProp.Fun φ} [h : HasIsoNat ⟨F⟩ ⟨G⟩]
+                                  {hEq : NatDesc.StrictNaturality F G}
+                                  {η : DefNatIso (NatIsoDesc.strict hEq)} {a : α} :
+        nat (invHom η.η) a ≃ idHom (φ a) :=
+      invHomReflEq (φ a) • byNatIsoInvHomDef
+
+    end
+
+  end HasIsoNat
+
+  class HasIsoNaturality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+                         (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                         [hβIso : HasIsomorphisms β] [hFunProp : HasFunProp α β] where
+  [hasNat    : HasNaturality α β]
+  [hasNatIso : HasIsomorphisms (α ⮕ β)]
+  [hasIsoNat (F G : α ⮕ β) : HasIsoNat F G]
+
+  namespace HasIsoNaturality
+
+    open HasIsoRel HasIsoOp HasIsomorphisms HasIsoPreFun HasIsoNat
+
+    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+
+    section
+
+      variable (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+               [hβIso : HasIsomorphisms β] [HasFunProp α β] [h : HasIsoNaturality α β]
+
+      instance : HasNaturality α β       := h.hasNat
+      instance : HasIsomorphisms (α ⮕ β) := h.hasNatIso
+
+    end
+
+    section
+
+      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+               [hβIso : HasIsomorphisms β] [HasFunProp α β] [h : HasIsoNaturality α β]
+
+      instance (F G : α ⮕ β) : HasIsoNat F G := h.hasIsoNat F G
+
+      def natIsoReflEq (F : α ⮕ β) (a : α) : natIso (idIso F) a ≃ idIso (F.φ a) :=
+      hβIso.toHomInj ((toHomReflEq (F.φ a))⁻¹ •
+                      natReflEq F a •
+                      (natCongrArg (toHomReflEq F) a •
+                       natIsoToHomComm (idIso F) a))
+
+      def natIsoSymmEq {F G : α ⮕ β} (η : F ⇿ G) (a : α) : natIso η⁻¹ a ≃ (natIso η a)⁻¹ :=
+      hβIso.toHomInj ((natIsoInvHomComm η a •
+                       toHomSymmEq (natIso η a))⁻¹ •
+                      (natCongrArg (toHomSymmEq η) a •
+                       natIsoToHomComm η⁻¹ a))
+
+      def natIsoTransEq {F G H : α ⮕ β} (η : F ⇿ G) (ε : G ⇿ H) (a : α) :
+        natIso (ε • η) a ≃ natIso ε a • natIso η a :=
+      hβIso.toHomInj ((congrArgTrans hβ.Hom (natIsoToHomComm η a) (natIsoToHomComm ε a) •
+                       toHomTransEq (natIso η a) (natIso ε a))⁻¹ •
+                      natTransEq (toHom η) (toHom ε) a •
+                      (natCongrArg (toHomTransEq η ε) a •
+                       natIsoToHomComm (ε • η) a))
+
+    end
+
+    class HasTrivialNaturalityCondition (α : Sort u) (β : Sort v)
+                                        [hα : IsCategory W α] [hβ : IsCategory W β]
+                                        [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β]
+                                        [hIsoFun : HasIsoFunctoriality α β]
+                                        [h : HasIsoNaturality α β] where
+    (natIso {F G : α ⮕ β} (desc : NatIsoDesc F G) : DefNatIso desc)
+
+    namespace HasTrivialNaturalityCondition
+
+      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+               [HasIsomorphisms α] [HasIsomorphisms β] [HasIsoFunctoriality α β]
+               [HasIsoNaturality α β] [h : HasTrivialNaturalityCondition α β]
+
+      def defNatIso {F G : α ⮕ β} {desc : NatIsoDesc F G} : DefNatIso desc := h.natIso desc
+
+    end HasTrivialNaturalityCondition
+
+    section
+
+      variable {α : Sort u} {β : Sort u'} {γ : Sort u''}
+               [hα : IsCategory W α] [hβ : IsCategory W β] [hγ : IsCategory W γ]
+               [hαIso : HasIsomorphisms α] [hβIso : HasIsomorphisms β] [hγIso : HasIsomorphisms γ]
+               [hIsoFunβγ : HasIsoFunctoriality β γ] [hIsoNatβγ : HasIsoNaturality β γ]
+               [hIsoFunαβγ : HasIsoFunctoriality α (β ⮕ γ)]
+
+      structure NatNatIsoDesc (F G : α ⮕ β ⮕ γ) (η : ∀ a, F.φ a ⇿ G.φ a) where
+      (toDesc  : NatNatDesc F G (λ a => toHom  (η a)))
+      (invDesc : NatNatDesc G F (λ a => invHom (η a)))
+
+      namespace NatNatIsoDesc
+
+        def strict {φ : α → β → γ} {F' G' : ∀ a, hIsoFunβγ.hasFunProp.Fun (φ a)}
+                   {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
+                   {η : ∀ a, DefNatIso (NatIsoDesc.strict (hEq a))}
+                   {F : hIsoFunαβγ.hasFunProp.Fun (λ a => ⟨F' a⟩)}
+                   {G : hIsoFunαβγ.hasFunProp.Fun (λ a => ⟨G' a⟩)}
+                   (hNatEq : NatNatDesc.StrictNaturality₂ F G) :
+          NatNatIsoDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
+        { toDesc  := { natEq := λ {a₁ a₂} f b => (cancelRightId hγ.Hom (byStrictNatIsoToHomDef (hEq := hEq a₁))
+                                                                       (nat (mapHom ⟨G⟩ f) b))⁻¹ •
+                                                 hNatEq f b •
+                                                 cancelLeftId hγ.Hom (nat (mapHom ⟨F⟩ f) b)
+                                                                     (byStrictNatIsoToHomDef (hEq := hEq a₂)) },
+          invDesc := { natEq := λ {a₁ a₂} f b => (cancelRightId hγ.Hom (byStrictNatIsoInvHomDef (hEq := hEq a₁))
+                                                                       (nat (mapHom ⟨F⟩ f) b))⁻¹ •
+                                                 (hNatEq f b)⁻¹ •
+                                                 cancelLeftId hγ.Hom (nat (mapHom ⟨G⟩ f) b)
+                                                                     (byStrictNatIsoInvHomDef (hEq := hEq a₂)) } }
+
+        def strict' {φ : α → β → γ} {F' G' : ∀ a, hIsoFunβγ.hasFunProp.Fun (φ a)}
+                    {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
+                    {η : ∀ a, DefNatIso (NatIsoDesc.strict (hEq a))}
+                    {F : hIsoFunαβγ.hasFunProp.Fun (λ a => ⟨F' a⟩)}
+                    {G : hIsoFunαβγ.hasFunProp.Fun (λ a => ⟨G' a⟩)}
+                    (hNatEq : NatNatDesc.StrictNaturality₂' F G) :
+          NatNatIsoDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
+        strict (NatNatDesc.StrictNaturality₂.split hNatEq)
+
+      end NatNatIsoDesc
+
+      variable {F G : α ⮕ β ⮕ γ} {η : ∀ a, F.φ a ⇿ G.φ a}
+
+      structure DefNatNatIsoBase (desc : NatNatIsoDesc F G η) where
+      (toDef  : DefNatNatBase desc.toDesc)
+      (invDef : DefNatNatBase desc.invDesc)
+
+      namespace DefNatNatIsoBase
+
+        variable {desc : NatNatIsoDesc F G η} (ε : DefNatNatIsoBase desc)
+
+        def natIsoDesc : NatIsoDesc F G :=
+        { η        := η,
+          isToNat  := { nat := ε.toDef.natEquiv },
+          isInvNat := { nat := ε.invDef.natEquiv } }
+
+      end DefNatNatIsoBase
+
+      structure DefNatNatIso [hIsoNatαβγ : HasIsoNaturality α (β ⮕ γ)]
+                             (desc : NatNatIsoDesc F G η) extends
+        DefNatNatIsoBase desc where
+      (defNatNatIso : DefNatIso (DefNatNatIsoBase.natIsoDesc toDefNatNatIsoBase))
+
+    end
+
+    section
+
+      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+               [HasIsomorphisms α] [HasIsomorphisms β] [HasFunProp α α]
+               [HasIsoFunctoriality α β] [HasIdFun α] [HasCompFun α α β]
+
+      def rightIdNatDesc (F : α ⮕ β) : NatIsoDesc (F ⭗ HasFunProp.HasIdFun.idFun α) F :=
+      NatIsoDesc.strict (λ _ => mapHomCongrArg F DefFun.byMapHomDef • DefFun.byMapHomDef)
+
+    end
+
+    class HasRightIdNat (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                        [HasIsomorphisms α] [HasIsomorphisms β] [HasFunProp α α]
+                        [HasIsoFunctoriality α β] [HasIsoNaturality α β] [HasIdFun α]
+                        [HasCompFun α α β] where
+    (defRightIdNat (F : α ⮕ β) : DefNatIso (rightIdNatDesc F))
+
+    namespace HasRightIdNat
+
+      variable (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+               [HasIsomorphisms α] [HasIsomorphisms β] [HasFunProp α α]
+               [HasIsoFunctoriality α β] [HasIsoNaturality α β]
+               [HasIsoFunctoriality (α ⮕ β) (α ⮕ β)] [HasIdFun α] [HasCompFun α α β]
+               [HasCompFunFun α α β] [HasIdFun (α ⮕ β)] [h : HasRightIdNat α β]
+
+      def rightIdNatNatDesc :
+        NatNatIsoDesc (HasNaturality.HasCompFunFun.compFunFun α α β (HasFunProp.HasIdFun.idFun α))
+                      (HasFunProp.HasIdFun.idFun (α ⮕ β))
+                      (λ F => (h.defRightIdNat F).η) :=
+      NatNatIsoDesc.strict' (λ η a => { g  := nat η a,
+                                        e₁ := DefFunFun.byFunFunDef,
+                                        e₂ := natCongrArg DefFun.byMapHomDef a })
+
+    end HasRightIdNat
+
+    class HasRightIdNatNat (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                           [HasIsomorphisms α] [HasIsomorphisms β] [HasFunProp α α]
+                           [HasIsoFunctoriality α β] [HasIsoNaturality α β]
+                           [HasIsoFunctoriality (α ⮕ β) (α ⮕ β)] [HasIsoNaturality (α ⮕ β) (α ⮕ β)]
+                           [HasIdFun α] [HasCompFun α α β] [HasCompFunFun α α β] [HasIdFun (α ⮕ β)]
+                           extends
+      HasRightIdNat α β where
+    (defRightIdNatNat : DefNatNatIso (HasRightIdNat.rightIdNatNatDesc α β))
+
+    section
+
+      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+               [HasIsomorphisms α] [HasIsomorphisms β] [HasIsoFunctoriality α β]
+               [HasFunProp β β] [HasCompFun α β β] [HasIdFun β]
+
+      def leftIdNatDesc (F : α ⮕ β) : NatIsoDesc (HasFunProp.HasIdFun.idFun β ⭗ F) F :=
+      NatIsoDesc.strict (λ _ => DefFun.byMapHomDef • DefFun.byMapHomDef)
+
+    end
+
+    class HasLeftIdNat (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                       [HasIsomorphisms α] [HasIsomorphisms β] [HasIsoFunctoriality α β]
+                       [HasFunProp β β] [HasIsoNaturality α β] [HasCompFun α β β] [HasIdFun β] where
+    (defLeftIdNat (F : α ⮕ β) : DefNatIso (leftIdNatDesc F))
+
+    section
+
+      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
+               [HasIsomorphisms α] [HasIsomorphisms β] [HasIsoFunctoriality α β] [HasNaturality α β]
+               [HasFunProp (α ⮕ β) β] [HasNaturality (α ⮕ β) β] [HasFunProp α ((α ⮕ β) ⮕ β)]
+               [HasFunProp ((α ⮕ β) ⮕ β) β] [HasRevAppFunFun α β] [HasRevAppFun (α ⮕ β) β]
+               [HasCompFun α ((α ⮕ β) ⮕ β) β]
+
+      def swapRevAppNatDesc (F : α ⮕ β) :
+        NatIsoDesc (HasNaturality.swapFun α (α ⮕ β) β (HasRevAppFunFun.revAppFunFun α β) F) F :=
+      NatIsoDesc.strict (λ _ => byNatDef •
+                                DefFun.byMapHomDef •
+                                mapHomCongrArg (HasNaturality.HasRevAppFun.revAppFun (α ⮕ β) β F)
+                                               DefFun.byMapHomDef •
+                                DefFun.byMapHomDef)
+
+    end
+
+    class HasSwapRevAppNat (α : Sort u) (β : Sort v) [hα : IsCategory W α] [hβ : IsCategory W β]
+                           [HasIsomorphisms α] [HasIsomorphisms β] [HasIsoFunctoriality α β]
+                           [HasIsoNaturality α β] [HasFunProp (α ⮕ β) β] [HasNaturality (α ⮕ β) β]
+                           [HasFunProp α ((α ⮕ β) ⮕ β)] [HasFunProp ((α ⮕ β) ⮕ β) β]
+                           [HasRevAppFunFun α β] [HasRevAppFun (α ⮕ β) β]
+                           [HasCompFun α ((α ⮕ β) ⮕ β) β] where
+    (defSwapRevAppNat (F : α ⮕ β) : DefNatIso (swapRevAppNatDesc F))
+
+    section
+
+      variable {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
+               [hα : IsCategory W α] [hβ : IsCategory W β] [hγ : IsCategory W γ] [hδ : IsCategory W δ]
+               [HasIsomorphisms α] [HasIsomorphisms δ] [HasIsoFunctoriality α δ]
+               [HasFunProp α β] [HasFunProp α γ] [HasFunProp β γ] [HasFunProp β δ] [HasFunProp γ δ]
+               [HasFunProp.HasCompFun α β γ] [HasFunProp.HasCompFun α β δ]
+               [HasFunProp.HasCompFun α γ δ] [HasFunProp.HasCompFun β γ δ]
+
+      def compAssocNatDesc (F : α ⮕ β) (G : β ⮕ γ) (H : γ ⮕ δ) :
+        NatIsoDesc ((H ⭗ G) ⭗ F) (H ⭗ (G ⭗ F)) :=
+      NatIsoDesc.strict (λ _ => (congrArg _ DefFun.byMapHomDef • DefFun.byMapHomDef)⁻¹ •
+                                DefFun.byMapHomDef • DefFun.byMapHomDef)
+
+    end
+
+    class HasCompAssocNat (α : Sort u) (β : Sort u') (γ : Sort u'') (δ : Sort u''')
+                          [hα : IsCategory W α] [hβ : IsCategory W β] [hγ : IsCategory W γ]
+                          [hδ : IsCategory W δ] [HasIsomorphisms α] [HasIsomorphisms δ]
+                          [HasIsoFunctoriality α δ] [HasIsoNaturality α δ] [HasFunProp α β]
+                          [HasFunProp α γ] [HasFunProp β γ] [HasFunProp β δ] [HasFunProp γ δ]
+                          [HasFunProp.HasCompFun α β γ] [HasFunProp.HasCompFun α β δ]
+                          [HasFunProp.HasCompFun α γ δ] [HasFunProp.HasCompFun β γ δ] where
+    (defCompAssocNat (F : α ⮕ β) (G : β ⮕ γ) (H : γ ⮕ δ) : DefNatIso (compAssocNatDesc F G H))
 
   end HasIsoNaturality
 
@@ -633,22 +1002,65 @@ namespace CategoryTheory
 
   class IsIsoUniverse (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
                       [hFunUniv : IsFunUniverse.{u} W] [hNatUniv : IsNatUniverse.{u} W] where
-  [hasIso (α : Sort (max 1 u w)) [IsCategory W α] : HasIsomorphisms α]
-  [hasIsoFun (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] : HasIsoFunctoriality α β]
-  [hasIsoNat (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] : HasIsoNaturality α β]
+  [hasIso (α : Sort (max 1 u w)) [hα : IsCategory W α] : HasIsomorphisms α]
+  [hasIsoFun {α β : Sort (max 1 u w)} [hα : IsCategory W α] [hβ : IsCategory W β]
+     (F : α ⮕ β) : HasIsoFun F (hIsoFunProp := hFunUniv.hasFun α β
+                                  (hα := HasIsomorphisms.isoCategory α) (hβ := HasIsomorphisms.isoCategory β))]
+  [hasIsoNat {α β : Sort (max 1 u w)} [hα : IsCategory W α] [hβ : IsCategory W β]
+     (F G : α ⮕ β) : HasIsoNat F G]
 
   namespace IsIsoUniverse
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-             [IsFunUniverse.{u} W] [IsNatUniverse.{u} W] [h : IsIsoUniverse.{u} W]
+    section
 
-    instance (α : Sort (max 1 u w)) [IsCategory W α] : HasIsomorphisms α := h.hasIso α
+      variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+               [IsFunUniverse.{u} W] [IsNatUniverse.{u} W] [h : IsIsoUniverse.{u} W]
 
-    instance (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] : HasIsoFunctoriality α β :=
-    h.hasIsoFun α β
+      instance (α : Sort (max 1 u w)) [IsCategory W α] : HasIsomorphisms α := h.hasIso α
 
-    instance (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] : HasIsoNaturality α β :=
-    h.hasIsoNat α β
+      instance hasIsoFunctoriality (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] :
+        HasIsoFunctoriality α β :=
+      { hasIsoFun := h.hasIsoFun }
+
+      instance hasIsoNaturality (α β : Sort (max 1 u w)) [IsCategory W α] [IsCategory W β] :
+        HasIsoNaturality α β :=
+      { hasIsoNat := h.hasIsoNat }
+
+    end
+
+    class HasLinearNaturalIsomorphisms (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
+                                       [hFunUniv : IsFunUniverse.{u} W]
+                                       [hLinFun : IsFunUniverse.HasLinearFunctors W]
+                                       [hNatUniv : IsNatUniverse.{u} W]
+                                       [hNatLinFun : IsNatUniverse.HasLinearFunctors W]
+                                       [hIsoUniv : IsIsoUniverse.{u} W] where
+    [hasRightIdNatNat (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+       HasIsoNaturality.HasRightIdNatNat α β]
+    [hasLeftIdNat (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+       HasIsoNaturality.HasLeftIdNat α β]
+    [hasSwapRevAppNat (α β : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β] :
+       HasIsoNaturality.HasSwapRevAppNat α β]
+    [hasCompAssocNat (α β γ δ : Sort max 1 u w) [hα : IsCategory W α] [hβ : IsCategory W β]
+                     [hγ : IsCategory W γ] [hδ : IsCategory W δ] :
+       HasIsoNaturality.HasCompAssocNat α β γ δ]
+
+    class HasAffineNaturalIsomorphisms (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
+                                       [HasSubLinearFunOp W]
+                                       [hFunUniv : IsFunUniverse.{u} W]
+                                       [hLinFun : IsFunUniverse.HasAffineFunctors W]
+                                       [hNatUniv : IsNatUniverse.{u} W]
+                                       [hNatLinFun : IsNatUniverse.HasAffineFunctors W]
+                                       [hIsoUniv : IsIsoUniverse.{u} W] extends
+      HasLinearNaturalIsomorphisms W
+
+    class HasFullNaturalIsomorphisms (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw} W]
+                                     [HasSubLinearFunOp W] [HasNonLinearFunOp W]
+                                     [hFunUniv : IsFunUniverse.{u} W]
+                                     [hLinFun : IsFunUniverse.HasAffineFunctors W]
+                                     [hNatUniv : IsNatUniverse.{u} W]
+                                     [hNatLinFun : IsNatUniverse.HasFullFunctors W]
+                                     [hIsoUniv : IsIsoUniverse.{u} W] extends
+      HasAffineNaturalIsomorphisms W
 
   end IsIsoUniverse
 

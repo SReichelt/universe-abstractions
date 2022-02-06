@@ -12,6 +12,7 @@ import UniverseAbstractions.Instances.Utils.Bundled
 
 set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 10000
+set_option maxHeartbeats 1000000
 --set_option pp.universes true
 
 universe u w ww iw iww
@@ -21,7 +22,7 @@ universe u w ww iw iww
 namespace CategoryTheory.IsCategory
 
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp IsAssociative IsCategoricalPreorder
-       HasFunProp HasFunProp.Functor HasNatRel HasIsoFunctoriality HasIsoNaturality
+       HasFunProp HasFunProp.Functor HasNatRel HasIsoFunctoriality HasIsoNat
 
   def typeClass (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W] :
     SimpleTypeClass.{max 1 u w, max 1 u w ww iw} := IsCategory.{max 1 u w, w, ww, iw} W
@@ -96,19 +97,14 @@ namespace CategoryTheory.IsCategory
     defDupFunFun := λ A B => { F   := IsNatUniverse.HasFullFunctors.dupFunFun.{u} A.a B.a,
                                eff := λ F => HasInstanceEquivalences.refl (IsNatUniverse.HasFullFunctors.dupFun.{u} F) } }
 
-  def funReflEq {A B : univ.{u} W} {φ : A → B} {F₁ F₂ : HasFunProp.Fun φ}
-                (hEq : ∀ {a b : A} (f : a ⇾ b), (HasFunProp.desc F₁).F f ≃ (HasFunProp.desc F₂).F f) :
-    mkFun F₁ ≃ mkFun F₂ :=
-  sorry
-
   instance hasLinearFunExt [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
-                           [h : HasLinearFunExt W] :
+                           [h : IsIsoUniverse.HasLinearNaturalIsomorphisms W] :
     HasLinearFunOp.HasLinearFunExt (univ.{u} W) :=
-  { rightId              := λ F => funReflEq (λ f => congrArg _ (DefFun.byMapHomDef byDef) • DefFun.byMapHomDef byDef),
-    leftId               := λ F => funReflEq (λ f => DefFun.byMapHomDef byDef • DefFun.byMapHomDef byDef),
-    rightIdExt           := sorry,
+  { rightId              := λ {A B} F => ((h.hasRightIdNatNat A B).defRightIdNat F).η,
+    leftId               := λ {A B} F => ((h.hasLeftIdNat A B).defLeftIdNat F).η,
+    rightIdExt           := λ A B => (h.hasRightIdNatNat A B).defRightIdNatNat.defNatNatIso.η,
     leftIdExt            := sorry,
-    swapRevApp           := λ F => funReflEq (λ f => byNatDef F • DefFun.byMapHomDef byDef • congrArg _ (DefFun.byMapHomDef byDef) • DefFun.byMapHomDef byDef),
+    swapRevApp           := λ {A B} F => ((h.hasSwapRevAppNat A B).defSwapRevAppNat F).η,
     swapRevAppExt        := sorry,
     swapCompFun          := sorry,
     swapCompFunExt       := sorry,
@@ -116,9 +112,29 @@ namespace CategoryTheory.IsCategory
     swapRevCompFun       := sorry,
     swapRevCompFunExt    := sorry,
     swapRevCompFunExtExt := sorry,
-    compAssoc            := sorry,
+    compAssoc            := λ {A B C D} F G H => ((h.hasCompAssocNat A B C D).defCompAssocNat F G H).η,
     compAssocExt         := sorry,
     compAssocExtExt      := sorry,
     compAssocExtExtExt   := sorry }
+
+  instance hasAffineFunExt [HasSubLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
+                           [IsNatUniverse.HasAffineFunctors W]
+                           [h : IsIsoUniverse.HasAffineNaturalIsomorphisms W] :
+    HasAffineFunOp.HasAffineFunExt (univ.{u} W) :=
+  sorry
+
+  instance hasFullFunExt [HasSubLinearFunOp W] [HasNonLinearFunOp W]
+                         [IsFunUniverse.HasAffineFunctors W]
+                         [IsNatUniverse.HasFullFunctors W]
+                         [h : IsIsoUniverse.HasFullNaturalIsomorphisms W] :
+    HasFullFunOp.HasFullFunExt (univ.{u} W) :=
+  sorry
+
+  instance hasStandardFunctors [HasSubLinearFunOp W] [HasNonLinearFunOp W]
+                               [IsFunUniverse.HasAffineFunctors W]
+                               [IsNatUniverse.HasFullFunctors W]
+                               [h : IsIsoUniverse.HasFullNaturalIsomorphisms W] :
+    HasStandardFunctors (univ.{u} W) :=
+  ⟨⟩
 
 end CategoryTheory.IsCategory

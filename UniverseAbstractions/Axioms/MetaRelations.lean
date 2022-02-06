@@ -135,8 +135,8 @@ namespace DependentMetaRelation
   class HasDependentRefl [h : HasRefl R] where
   (refl {A : U} (a : A) : S (h.refl A) a a)
 
-  def reflRel [h : HasRefl R] (A : U) : MetaRelation ⌈A⌉ W := S (h.refl A)
-  instance [HasRefl R] [h : HasDependentRefl S] (A : U) : HasRefl (reflRel S A) := ⟨h.refl⟩
+  def ReflRel [h : HasRefl R] (A : U) : MetaRelation ⌈A⌉ W := S (h.refl A)
+  instance [HasRefl R] [h : HasDependentRefl S] (A : U) : HasRefl (ReflRel S A) := ⟨h.refl⟩
 
   class HasDependentSymm [h : HasSymm R] where
   (symm {A B : U} {F : R A B} {a : A} {b : B} : S F a b → S F⁻¹ b a)

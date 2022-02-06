@@ -112,13 +112,13 @@ namespace EquivDesc
   ⟨f.toFun ⊙ e.toFun, e.invFun ⊙ f.invFun,
    HalfEquivDesc.trans e.left f.left, HalfEquivDesc.trans f.right e.right⟩
 
-  @[reducible] def rel (U : Universe) [HasIdentity U] [HasInternalFunctors U] :
+  @[reducible] def Rel (U : Universe) [HasIdentity U] [HasInternalFunctors U] :
     MetaRelation U sort :=
   EquivDesc
 
   instance isEquivalence (U : Universe) [HasIdentity U] [HasInternalFunctors U]
                          [HasLinearFunOp U] :
-    IsEquivalence (rel U) :=
+    IsEquivalence (Rel U) :=
   { refl  := refl,
     symm  := symm,
     trans := trans }
