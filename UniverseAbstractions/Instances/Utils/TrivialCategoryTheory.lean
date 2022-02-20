@@ -1,8 +1,6 @@
 import UniverseAbstractions.Instances.Utils.Trivial
 import UniverseAbstractions.Axioms.CategoryTheory.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Basic
+import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Meta
 
 
 
@@ -24,6 +22,13 @@ section MetaRelation
 
     variable [HasTrivialIdentity V]
 
+    instance hasReflEq  (hR₁ hR₂ : HasRefl  R) : HasReflEq  hR₁ hR₂ := ⟨λ _   => eq⟩
+    instance hasSymmEq  (hR₁ hR₂ : HasSymm  R) : HasSymmEq  hR₁ hR₂ := ⟨λ _   => eq⟩
+    instance hasTransEq (hR₁ hR₂ : HasTrans R) : HasTransEq hR₁ hR₂ := ⟨λ _ _ => eq⟩
+
+    instance isPreorderEq    (hR₁ hR₂ : IsPreorder    R) : IsPreorderEq    hR₁ hR₂ := ⟨⟩
+    instance isEquivalenceEq (hR₁ hR₂ : IsEquivalence R) : IsEquivalenceEq hR₁ hR₂ := ⟨⟩
+
     instance isAssociative [HasTrans R] : IsAssociative R :=
     { assoc := λ _ _ _ => eq }
 
@@ -35,11 +40,28 @@ section MetaRelation
     { leftInv  := λ _ => eq,
       rightInv := λ _ => eq }
 
+    instance isInv [IsPreorder R] {a b : α} (f : R a b) (g : R b a) : IsInv f g :=
+    { leftInv  := eq,
+      rightInv := eq }
+
   end HasTrivialIdentity
 
   namespace HasTrivialExtensionality
 
     variable [HasInternalFunctors V] [HasTrivialExtensionality V V]
+
+    instance isSymmEqExt (hR₁ hR₂ : HasSymm R)
+                         (hRF₁ : HasSymmFun R (hR := hR₁)) (hRF₂ : HasSymmFun R (hR := hR₂))
+                         [HasSymmEq hR₁ hR₂] :
+      HasSymmEq.HasSymmEqExt hR₁ hR₂ hRF₁ hRF₂ :=
+    { symmEqExt := λ _ _ => funEq }
+
+    instance isTransEqExt (hR₁ hR₂ : HasTrans R)
+                          (hRF₁ : HasTransFun R (hR := hR₁)) (hRF₂ : HasTransFun R (hR := hR₂))
+                          [HasTransEq hR₁ hR₂] :
+      HasTransEq.HasTransEqExt hR₁ hR₂ hRF₁ hRF₂ :=
+    { transEqExt    := λ _ _   => funEq,
+      transEqExtExt := λ _ _ _ => funEq }
 
     instance isAssociativeExt [HasTrans R] [IsAssociative R]
                               [HasTransFun R] [HasLinearFunOp V] :

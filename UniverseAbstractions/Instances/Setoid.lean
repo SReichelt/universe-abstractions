@@ -8,8 +8,6 @@ import UniverseAbstractions.Instances.Utils.Trivial
 
 
 set_option autoBoundImplicitLocal false
--- TODO: This is only necessary due to importing `Trivial`; can it be fixed?
-set_option synthInstance.maxHeartbeats 10000
 
 universe u v w w'
 
@@ -19,10 +17,11 @@ namespace Setoid
 
   open Bundled MetaRelation HasFunctors HasCongrArg HasLinearFunOp
 
-  def typeClass : SimpleTypeClass.{max 1 u, max 1 u} := Setoid.{max 1 u}
-  @[reducible] def univ : Universe.{max 1 u, (max 1 u) + 1} := Bundled.univ typeClass.{u}
+  def typeClass : SimpleTypeClass.{u, max 1 u} := Setoid.{u}
+  @[reducible] def univ : Universe.{u, u + 1} := Bundled.univ typeClass.{u}
+  @[reducible] def tuniv := univ.{max 1 u}
 
-  instance inst (A : univ.{u}) : Setoid.{max 1 u} A := A.inst
+  instance inst (A : univ.{u}) : Setoid.{u} A := A.inst
 
   -- Instance equivalences
 
@@ -53,7 +52,7 @@ namespace Setoid
                trans := λ h i a => (inst B).trans (h a) (i a) } }
 
   instance hasFunctorialityInstances :
-    HasFunctorialityInstances univ.{u} univ.{v} typeClass.{max u v} :=
+    HasFunctorialityInstances univ.{u} univ.{v} typeClass.{max 1 u v} :=
   ⟨funSetoid⟩
 
   def isFun₂ {A B C : univ} (F : A ⟶ B ⟶ C) : IsFun₂ (λ a b => F a b) :=
@@ -69,25 +68,25 @@ namespace Setoid
   instance hasCongrArg : HasCongrArg univ.{u} univ.{v} := ⟨HasFunctoriality.Fun.isFun⟩
   instance hasCongrFun : HasCongrFun univ.{u} univ.{v} := ⟨id⟩
 
-  instance hasInternalFunctors : HasInternalFunctors univ.{u} := ⟨⟩
+  instance hasInternalFunctors : HasInternalFunctors tuniv.{u} := ⟨⟩
 
   instance hasIdFun : HasIdFun univ.{u} := ⟨λ A => defFun id⟩
 
   instance hasConstFun : HasConstFun univ.{u} univ.{v} :=
   ⟨λ A {B} b => defFun (λ a => Setoid.refl b)⟩
 
-  instance hasRevAppFun : HasRevAppFun univ.{u} := ⟨λ a B => defFun (λ h => h a)⟩
+  instance hasRevAppFun : HasRevAppFun tuniv.{u} := ⟨λ a B => defFun (λ h => h a)⟩
 
   instance hasCompFun : HasCompFun univ.{u} univ.{v} univ.{w} :=
   ⟨λ F G => defFun (G.isFun ∘ F.isFun)⟩
 
-  instance hasCompFunFun : HasCompFunFun univ.{u} univ.{v} :=
+  instance hasCompFunFun : HasCompFunFun univ.{u} tuniv.{v} :=
                                      -- Work around Lean defeq problem.
   ⟨λ F C => defFun (λ {G₁ G₂} h a => have h₁ : (G₁ ⊙ F).f a = G₁ (F a) := rfl;
                                      have h₂ : (G₂ ⊙ F).f a = G₂ (F a) := rfl;
                                      h₁ ▸ h₂ ▸ h (F a))⟩
 
-  instance hasRevCompFunFun : HasRevCompFunFun univ.{u} univ.{v} :=
+  instance hasRevCompFunFun : HasRevCompFunFun tuniv.{u} univ.{v} :=
                                            -- Work around Lean defeq problem.
   ⟨λ A {B C} G => defFun (λ {F₁ F₂} h a => have h₁ : (G ⊙ F₁).f a = G (F₁ a) := rfl;
                                            have h₂ : (G ⊙ F₂).f a = G (F₂ a) := rfl;
@@ -111,31 +110,31 @@ namespace Setoid
   instance hasBiCompFun : HasBiCompFun univ.{u} univ.{v} univ.{w} univ.{w'} :=
   ⟨λ F G H => defFun (λ h => isFun₂ H (F.isFun h) (G.isFun h))⟩
 
-  instance hasRevBiCompFunFun : HasRevBiCompFunFun univ.{u} univ.{v} univ.{w'} :=
+  instance hasRevBiCompFunFun : HasRevBiCompFunFun tuniv.{u} univ.{v} univ.{w'} :=
                                      -- Work around Lean defeq problem.
   ⟨λ H F => defFun (λ {G₁ G₂} h a => have h₁ : (HasBiCompFun.biCompFun F G₁ H).f a = H (F a) (G₁ a) := rfl;
                                      have h₂ : (HasBiCompFun.biCompFun F G₂ H).f a = H (F a) (G₂ a) := rfl;
                                      h₁ ▸ h₂ ▸ (H (F a)).isFun (h a))⟩
 
-  instance hasRevBiCompFunFunFun : HasRevBiCompFunFunFun univ.{u} univ.{w'} :=
+  instance hasRevBiCompFunFunFun : HasRevBiCompFunFunFun tuniv.{u} univ.{w'} :=
                                                -- Work around Lean defeq problem.
   ⟨λ A {B C D} H => defFun (λ {F₁ F₂} h G a => have h₁ : ((HasRevBiCompFunFun.revBiCompFunFun H F₁).f G).f a = H (F₁ a) (G a) := rfl;
                                                have h₂ : ((HasRevBiCompFunFun.revBiCompFunFun H F₂).f G).f a = H (F₂ a) (G a) := rfl;
                                                h₁ ▸ h₂ ▸ (H.isFun (h a)) (G a))⟩
 
-  instance hasLinearFunOp : HasLinearFunOp univ.{u} :=
+  instance hasLinearFunOp : HasLinearFunOp tuniv.{u} :=
   { defRevAppFunFun  := λ A B   => defFun (λ h F => F.isFun h),
     defCompFunFunFun := λ A B C => defFun (λ h G a => G.isFun (h a)) }
 
-  instance hasAffineFunOp : HasAffineFunOp univ.{u} :=
+  instance hasAffineFunOp : HasAffineFunOp tuniv.{u} :=
   { defConstFunFun := λ A B => defFun (λ h a => h) }
 
-  instance hasFullFunOp : HasFullFunOp univ.{u} :=
+  instance hasFullFunOp : HasFullFunOp tuniv.{u} :=
   { defDupFunFun := λ A B => defFun (λ h a => h a a) }
 
   instance hasTrivialExtensionality : HasTrivialExtensionality univ.{u} univ.{v} := ⟨id⟩
 
-  instance hasStandardFunctors : HasStandardFunctors univ.{u} := ⟨⟩
+  instance hasStandardFunctors : HasStandardFunctors tuniv.{u} := ⟨⟩
 
   -- Singletons
 
@@ -149,7 +148,7 @@ namespace Setoid
 
   instance hasTopEq : HasTop.HasTopEq univ.{u} := ⟨λ _ => trivial⟩
 
-  instance hasInternalTop : HasInternalTop univ.{u} :=
+  instance hasInternalTop : HasInternalTop tuniv.{u} :=
   { defElimFun := λ a => defFun (λ _ => Setoid.refl a) }
 
   instance emptySetoid : Setoid.{u} PEmpty.{u} :=
@@ -160,7 +159,7 @@ namespace Setoid
 
   instance hasBotInstance : HasBotInstance typeClass.{u} := ⟨emptySetoid⟩
 
-  instance hasInternalBot : HasInternalBot univ.{u} :=
+  instance hasInternalBot : HasInternalBot tuniv.{u} :=
   { defElimFun := λ A => defFun False.elim }
 
   -- Products
@@ -171,7 +170,7 @@ namespace Setoid
                symm  := λ h   => ⟨Setoid.symm  h.left,        Setoid.symm  h.right⟩,
                trans := λ h i => ⟨Setoid.trans h.left i.left, Setoid.trans h.right i.right⟩ } }
 
-  instance hasProductInstances : HasProductInstances univ.{u} univ.{v} typeClass.{max u v} :=
+  instance hasProductInstances : HasProductInstances univ.{u} univ.{v} typeClass.{max 1 u v} :=
   ⟨prodSetoid⟩
 
   instance hasProductEq : HasProducts.HasProductEq univ.{u} univ.{v} :=
@@ -179,7 +178,7 @@ namespace Setoid
     fstEq   := λ a b => Setoid.refl a,
     sndEq   := λ a b => Setoid.refl b }
 
-  instance hasInternalProducts : HasInternalProducts univ.{u} :=
+  instance hasInternalProducts : HasInternalProducts tuniv.{u} :=
   { defIntroFun    := λ a B   => defFun (λ h   => ⟨Setoid.refl a, h⟩),
     defIntroFunFun := λ A B   => defFun (λ h b => ⟨h, Setoid.refl b⟩),
     defElimFun     := λ F     => defFun (λ h   => isFun₂ F h.left h.right),
@@ -194,16 +193,16 @@ namespace Setoid
                trans := λ h i => Setoid.trans h i } }
 
   instance hasEquivalenceInstances :
-    HasEquivalenceInstances univ.{u} univ.{v} typeClass.{max u v} :=
+    HasEquivalenceInstances univ.{u} univ.{v} typeClass.{max 1 u v} :=
   { Equiv     := EquivDesc,
     desc      := id,
     equivInst := equivSetoid }
 
-  instance hasInternalEquivalences : HasInternalEquivalences univ.{u} :=
+  instance hasInternalEquivalences : HasInternalEquivalences tuniv.{u} :=
   { defToFunFun := λ A B => defFun id,
-    isExt       := HasTrivialExtensionality.equivDescExt univ }
+    isExt       := HasTrivialExtensionality.equivDescExt tuniv.{u} }
 
-  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition univ.{u} :=
+  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition tuniv.{u} :=
   ⟨λ e => { E        := e,
             toFunEq  := Setoid.refl e.toFun,
             invFunEq := Setoid.refl e.invFun }⟩

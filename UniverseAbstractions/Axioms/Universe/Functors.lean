@@ -7,7 +7,7 @@ import UniverseAbstractions.Axioms.Universe.Identity
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w uv vw uvw vv iu iv iuv
+universe u v w uv vw uvw vv iu iv iuv ivv
 
 
 
@@ -261,6 +261,14 @@ namespace HasCongrFun
         a  := a,
         e₁ := hf₁ a,
         e₂ := hf₂ a }
+
+      instance invCongrFun [HasCongrFun U V] {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : F₁ ≃ F₂)
+                           (a : A) :
+        IsExtApp A (congrFun e a) :=
+      { e  := e,
+        a  := a,
+        e₁ := HasInstanceEquivalences.refl (F₁ a),
+        e₂ := HasInstanceEquivalences.refl (F₂ a) }
 
       variable (A : U) {B : V} {b₁ b₂ : B} (h : b₁ ≃ b₂) [h : IsExtApp A h]
 
@@ -710,23 +718,27 @@ namespace MetaRelation
   open HasFunctors HasCongrArg HasCongrFun HasSwapFun HasSwapFunFun
 
   variable {α : Sort u} {V : Universe.{v}} {VV : Universe.{vv}} [HasIdentity.{v, iv} V]
-           [HasFunctors V V VV] (R : MetaRelation α V)
+           [HasFunctors V V VV]
 
-  class HasSymmFun [HasSymm R] where
+  class HasSymmFun (R : MetaRelation α V) [hR : HasSymm R] where
   (defSymmFun (a b : α) : R a b ⟶{λ f => f⁻¹} R b a)
 
   namespace HasSymmFun
 
-    variable [HasSymm R] [h : HasSymmFun R]
+    section
 
-    @[reducible] def symmFun (a b : α) : R a b ⟶ R b a := h.defSymmFun a b
+      variable (R : MetaRelation α V) [hR : HasSymm R] [h : HasSymmFun R]
 
-    instance symm.isFunApp {a b : α} {e : R a b} : IsFunApp (R a b) e⁻¹ :=
-    { F := symmFun R a b,
-      a := e,
-      e := byDef }
+      @[reducible] def symmFun (a b : α) : R a b ⟶ R b a := h.defSymmFun a b
 
-    variable [HasCongrArg V V]
+      instance symm.isFunApp {a b : α} {e : R a b} : IsFunApp (R a b) e⁻¹ :=
+      { F := symmFun R a b,
+        a := e,
+        e := byDef }
+
+    end
+
+    variable {R : MetaRelation α V} [HasSymm R] [HasSymmFun R] [HasCongrArg V V]
 
     def congrArgSymm {a b : α} {e₁ e₂ : R a b} (he : e₁ ≃ e₂) :
       e₁⁻¹ ≃ e₂⁻¹ :=
@@ -734,73 +746,84 @@ namespace MetaRelation
 
   end HasSymmFun
 
-  class HasTransFun [HasIdentity VV] [HasFunctors V VV VV] [HasTrans R] where
+  variable [HasIdentity.{vv, ivv} VV] [HasFunctors V VV VV]
+
+  class HasTransFun (R : MetaRelation α V) [hR : HasTrans R] where
   (defTransFun    {a b   : α} (f : R a b) (c : α) : R b c ⟶{λ g => g • f} R a c)
   (defTransFunFun (a b c : α)                     : R a b ⟶{λ f => defTransFun f c} (R b c ⟶ R a c))
 
   namespace HasTransFun
 
-    variable [HasIdentity VV] [HasFunctors V VV VV] [HasTrans R] [h : HasTransFun R]
+    section
 
-    @[reducible] def transFun {a b : α} (f : R a b) (c : α) : R b c ⟶ R a c := h.defTransFun f c
-    @[reducible] def transFunFun (a b c : α) : R a b ⟶ R b c ⟶ R a c := h.defTransFunFun a b c
+      variable (R : MetaRelation α V) [hR : HasTrans R] [h : HasTransFun R]
 
-    instance (priority := low) trans.isFunApp {a b c : α} {f : R a b} {g : R b c} : IsFunApp (R b c) (g • f) :=
-    { F := transFun R f c,
-      a := g,
-      e := byDef }
+      @[reducible] def transFun {a b : α} (f : R a b) (c : α) : R b c ⟶ R a c := h.defTransFun f c
+      @[reducible] def transFunFun (a b c : α) : R a b ⟶ R b c ⟶ R a c := h.defTransFunFun a b c
 
-    instance transFun.isFunApp {a b c : α} {f : R a b} : IsFunApp (R a b) (transFun R f c) :=
-    { F := transFunFun R a b c,
-      a := f,
-      e := byDef }
+      instance (priority := low) trans.isFunApp {a b c : α} {f : R a b} {g : R b c} : IsFunApp (R b c) (g • f) :=
+      { F := transFun R f c,
+        a := g,
+        e := byDef }
 
-    variable [HasCongrFun V V]
+      instance transFun.isFunApp {a b c : α} {f : R a b} : IsFunApp (R a b) (transFun R f c) :=
+      { F := transFunFun R a b c,
+        a := f,
+        e := byDef }
 
-    def defRevTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
-      R a b ⟶{λ f => g • f} R a c :=
-    swapFun (transFunFun R a b c) g
-    ◄ byDef₂
+      variable [HasCongrFun V V]
 
-    @[reducible] def revTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
-      R a b ⟶ R a c :=
-    defRevTransFun R a g
+      def defRevTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
+        R a b ⟶{λ f => g • f} R a c :=
+      swapFun (transFunFun R a b c) g
+      ◄ byDef₂
 
-    def defRevTransFunFun [HasSwapFunFun V V V] (a b c : α) :
-      R b c ⟶{λ g => revTransFun R a g} (R a b ⟶ R a c) :=
-    defSwapFunFun (transFunFun R a b c)
+      @[reducible] def revTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
+        R a b ⟶ R a c :=
+      defRevTransFun R a g
 
-    @[reducible] def revTransFunFun [HasSwapFunFun V V V] (a b c : α) : R b c ⟶ R a b ⟶ R a c :=
-    defRevTransFunFun R a b c
+      def defRevTransFunFun [HasSwapFunFun V V V] (a b c : α) :
+        R b c ⟶{λ g => revTransFun R a g} (R a b ⟶ R a c) :=
+      defSwapFunFun (transFunFun R a b c)
 
-    instance revTransFun.isFunApp [HasSwapFunFun V V V] {a b c : α} {g : R b c} :
-      IsFunApp (R b c) (revTransFun R a g) :=
-    { F := revTransFunFun R a b c,
-      a := g,
-      e := byDef }
+      @[reducible] def revTransFunFun [HasSwapFunFun V V V] (a b c : α) : R b c ⟶ R a b ⟶ R a c :=
+      defRevTransFunFun R a b c
 
-    instance (priority := low) trans.isFunApp₂ [HasSwapFun V V V] {a b c : α} {f : R a b} {g : R b c} :
-      IsFunApp₂ (R a b) (R b c) (g • f) :=
-    ⟨{ F := revTransFun R a g,
-       a := f,
-       e := byDef }⟩
+      instance revTransFun.isFunApp [HasSwapFunFun V V V] {a b c : α} {g : R b c} :
+        IsFunApp (R b c) (revTransFun R a g) :=
+      { F := revTransFunFun R a b c,
+        a := g,
+        e := byDef }
+
+      instance (priority := low) trans.isFunApp₂ [HasSwapFun V V V] {a b c : α} {f : R a b} {g : R b c} :
+        IsFunApp₂ (R a b) (R b c) (g • f) :=
+      ⟨{ F := revTransFun R a g,
+         a := f,
+         e := byDef }⟩
+
+    end
+
+    variable {R : MetaRelation α V} [HasTrans R] [h : HasTransFun R]
 
     def congrArgTransLeft [HasCongrArg V V] {a b c : α} (f : R a b) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
       g₁ • f ≃ g₂ • f :=
     defCongrArg (defTransFun f c) hg
 
-    def congrArgTransRight [HasCongrArg V VV] {a b c : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) (g : R b c) :
+    def congrArgTransRight [HasCongrFun V V] [HasCongrArg V VV]
+                           {a b c : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) (g : R b c) :
       g • f₁ ≃ g • f₂ :=
     defCongrFun (defCongrArg (defTransFunFun a b c) hf) g
 
-    def congrArgTrans [HasCongrArg V V] [HasCongrArg V VV] {a b c : α}
+    def congrArgTrans [HasCongrArg V V] [HasCongrFun V V] [HasCongrArg V VV] {a b c : α}
                       {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
       g₁ • f₁ ≃ g₂ • f₂ :=
-    congrArgTransRight R hf g₂ • congrArgTransLeft R f₁ hg
+    congrArgTransRight hf g₂ • congrArgTransLeft f₁ hg
 
   end HasTransFun
 
   namespace opposite
+
+    variable (R : MetaRelation α V)
 
     instance hasSymmFun [HasSymm R] [h : HasSymmFun R] :
       HasSymmFun (opposite R) :=
@@ -816,7 +839,7 @@ namespace MetaRelation
 
   namespace lift
 
-    variable {ω : Sort w} (l : ω → α)
+    variable (R : MetaRelation α V) {ω : Sort w} (l : ω → α)
 
     instance hasSymmFun [HasSymm R] [h : HasSymmFun R] :
       HasSymmFun (lift R l) :=

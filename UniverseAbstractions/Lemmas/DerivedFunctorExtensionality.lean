@@ -443,11 +443,11 @@ namespace MetaRelation
   namespace opposite
 
     def revTransFunEq [HasTrans R] [HasTransFun R] (a : α) {b c : α} (f : R c b) :
-      revTransFun (opposite R) a f ≃ transFun R f a :=
+      revTransFun (opposite R) a f ≃{▻-◅} transFun R f a :=
     byDef • swapSwap (transFunFun R c b a) f
 
     def revTransFunFunEq [HasTrans R] [HasTransFun R] (a b c : α) :
-      revTransFunFun (opposite R) a b c ≃ transFunFun R c b a :=
+      revTransFunFun (opposite R) a b c ≃{▻ λ f => revTransFunEq R a f ◅} transFunFun R c b a :=
     swapSwapExt (transFunFun R c b a)
 
   end opposite

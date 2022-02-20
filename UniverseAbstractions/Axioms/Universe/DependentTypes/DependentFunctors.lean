@@ -201,7 +201,7 @@ namespace HasDependentTypeFunPi
   def baseEquiv {A₁ A₂ : U} {φ : A₁ ⟶ ⌊V⌋} (E : A₁ ⟷ A₂) : T φ ⟷ T (φ ⊙ invFun E) :=
   let H₁ : ((A₁ ⟶ ⌊V⌋) ⟶ ⌊W⌋) ⟷ ((A₂ ⟶ ⌊V⌋) ⟶ ⌊W⌋) := defPropCongrArg (defDependentTypeProp U ⌊V⌋ ⌊W⌋) E;
   let H₂ : typeFun T A₁ ≃[H₁] typeFun T A₂ := defPiCongrArg h.defTypeFunPi E;
-  let H₃ : typeFun T A₁ ≃ inv H₁ (typeFun T A₂) := DependentEquivalence.toInv H₂;
+  let H₃ : typeFun T A₁ ≃ inv H₁ (typeFun T A₂) := HasEquivalences.toInv H₂;
   let H₄ := congrFun H₃ φ • byDef⁻¹;
   let H₅ : T φ ⟷ (inv H₁ (typeFun T A₂)) φ := H₄;
   -- TODO: To prove this, we need to construct type functors explicitly instead of asserting them as variables.

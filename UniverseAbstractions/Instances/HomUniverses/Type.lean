@@ -2,213 +2,189 @@ import UniverseAbstractions.Instances.Basic
 import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory
 import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Extended
+import UniverseAbstractions.Axioms.CategoryTheory.Functors
+import UniverseAbstractions.Axioms.CategoryTheory.NaturalTransformations
 import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
 
 
 
 set_option autoBoundImplicitLocal false
-set_option synthInstance.maxHeartbeats 10000
---set_option pp.universes true
+set_option synthInstance.maxHeartbeats 5000
+set_option pp.universes true
 
 universe u v w
 
 
 
--- This establishes the universe `type` as a morphism universe, i.e. makes it possible to construct
--- categories with morphisms in `type`, i.e. regular 1-categories.
+-- This establishes the universe `type.{w}` as a morphism universe, which enables the construction
+-- of categories with morphisms in `type`, i.e. regular 1-categories.
 --
--- The type of objects in a category is currently forced to be in the same Lean universe as the
--- type of morphisms. In general, it would be possible to weaken this restriction, but we run into
--- problems when defining functor categories: Since their morphisms, which are natural
--- transformations, need to live in the Lean universe where all morphisms live (at least if we want
--- to have internal functors), the morphism universe needs to be at least as large as the object
--- universe. And having a morphism universe that is even larger doesn't seem useful, so we use the
--- same universe for both.
---
--- Moreover, we cannot include `prop` here because structures like `IsoDesc` cannot be sufficiently
--- polymorphic in Lean. If necessary, a corresponding formalization for `prop` is easy to do. Note,
--- however, that categories with morphisms in `prop` are essentially the same as partially ordered
--- types, and groupoids with morphisms in `prop` are essentially the same as setoids, for which we
--- have a custom universe definition.
+-- Due to the way functors are defined mathematically, the morphism universe always needs to be at
+-- least as large as the universe of the domain, as it needs to hold natural transformation between
+-- functors. We need to use some trickery to make Lean behave well with this restriction.
 
 namespace type
 
-  open MetaRelation MetaFunctor CategoryTheory IsCategory HasIsoRel
+  open MetaRelation MetaFunctor CategoryTheory HasCatProp HasIsoRel
 
   instance isHomUniverse : IsHomUniverse type.{w} := ⟨⟩
 
-  -- Functors
+  @[reducible] def homUniv := type.{max u w}
 
-  def FunProp (α : Type u) (β : Sort v) [hα : IsCategory type.{w} α] [hβ : IsCategory type.{w} β] :
-    MetaProperty (α → β) type.{max u w} :=
-  FunDesc
+  -- This is defeq to `type.{u}` but solves some universe unification issues.
+  abbrev type' := homUniv.{u, 0}
 
-  -- TODO: Is there really no way around the strangely restrictive universe constraint regarding `u`, here and below?
-  --       (In particular, `type.{max u w}` seems like it should work.)
-  instance hasFunProp (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                [hβ : IsCategory type.{u} β] :
-    HasFunProp α β :=
-  { Fun  := FunProp α β,
+  instance hasCat : HasCatProp.{u + 1} homUniv.{u, w} :=
+  { Cat  := CatDesc,
     desc := id }
 
-  def defFun {α : Type u} {β : Sort v} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-             {φ : α → β} (F : FunDesc φ) :
-    HasFunProp.DefFun F :=
+  def defCat {R : BundledRelation.{u + 1} homUniv.{u, w}} (C : CatDesc R) : DefCat C :=
+  { C   := C,
+    hEq := IsPreorderEq.refl R.Hom (hR := C.homIsPreorder) }
+
+  instance hasTrivialCatProp : HasCatProp.HasTrivialCatProp.{u + 1} homUniv.{u, w} := ⟨defCat⟩
+
+  instance isCatUniverse : IsCatUniverse.{u + 1} type'.{u} :=
+  { hasCat := hasCat }
+
+  @[reducible] def Cat := Category.{u + 1} homUniv.{u, w}
+  @[reducible] def Cat' := Cat.{u, 0}
+
+  -- Functors
+
+  -- TODO: It should be possible to make `A` and `B` live in different universes, here and in
+  -- general. Unfortunately, it seems that Lean's universe unification algorithm currently cannot
+  -- handle it.
+  def FunProp (A B : Cat.{u, w}) : MetaProperty (A → B) homUniv.{u, w} := FunDesc
+
+  instance hasFunProp (A B : Cat.{u, w}) : HasFunProp A B :=
+  { Fun  := FunProp A B,
+    desc := id }
+
+  def defFun {A B : Cat.{u, w}} {φ : A → B} (F : FunDesc φ) : HasFunProp.DefFun F :=
   { F  := F,
     eq := λ _ _ => rfl }
 
-  instance hasTrivialFunctorialityCondition (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                                      [hβ : IsCategory type.{u} β] :
-    HasFunProp.HasTrivialFunctorialityCondition α β :=
+  instance hasTrivialFunctorialityCondition (A B : Cat.{u, w}) :
+    HasFunProp.HasTrivialFunctorialityCondition A B :=
   ⟨defFun⟩
 
-  instance isFunUniverse : IsFunUniverse.{u + 1} type.{u} :=
+  instance hasIdFun (A : Cat.{u, w}) : HasFunProp.HasIdFun A :=
+  HasFunProp.HasIdFun.trivial A
+
+  instance hasConstFun (A B : Cat.{u, w}) : HasFunProp.HasConstFun A B :=
+  HasFunProp.HasConstFun.trivial A B
+
+  instance hasCompFun (A B C : Cat.{u, w}) : HasFunProp.HasCompFun A B C :=
+  HasFunProp.HasCompFun.trivial A B C
+
+  instance isFunUniverse : IsFunUniverse.{u + 1} type'.{u} :=
   { hasFun := hasFunProp }
 
-  instance isFunUniverse.hasAffineFunctors : IsFunUniverse.HasAffineFunctors type.{u} :=
-  { hasIdFun    := λ α     => HasFunProp.HasIdFun.trivial    α,
-    hasConstFun := λ α β   => HasFunProp.HasConstFun.trivial α β,
-    hasCompFun  := λ α β γ => HasFunProp.HasCompFun.trivial  α β γ }
+  instance isFunUniverse.hasAffineFunctors : IsFunUniverse.HasAffineFunctors.{u + 1} type'.{u} :=
+  { hasIdFun    := hasIdFun,
+    hasConstFun := hasConstFun,
+    hasCompFun  := hasCompFun }
 
   -- Natural transformations
 
-  theorem IsNaturalTransformation.ext {α : Type u} {β : Sort v} [hα : HasMorphisms type.{w} α]
-                                                                [hβ : IsSemicategory type.{w} β]
-                                      {F G : MorphismFunctor α β} (η : Quantification F G)
-                                      (h₁ h₂ : IsNaturalTransformation η) :
+  theorem IsNatural.ext {α : Sort u} {β : Sort v} {R : MetaRelation α type.{w}} {S : MetaRelation β type.{w}}
+                        [HasTrans S] {φ ψ : α → β} {F : PreFunctor R S φ} {G : PreFunctor R S ψ}
+                        (η : MetaQuantification S φ ψ) (h₁ h₂ : MetaQuantification.IsNatural F G η) :
     h₁ = h₂ :=
   match h₁, h₂ with
-  | { toIsNatural := ⟨_⟩ }, { toIsNatural := ⟨_⟩ } => rfl
+  | ⟨_⟩, ⟨_⟩ => rfl
 
-  theorem NatDesc.ext {α : Type u} {β : Sort v} [hα : IsCategory type.{u} α]
-                                                [hβ : IsCategory type.{u} β]
-                      {F G : α ⮕ β} (η₁ η₂ : NatDesc F G) :
+  theorem NatDesc.ext {A B : Cat.{u, w}} {F G : A ⮕ B} (η₁ η₂ : NatDesc F G) :
     (∀ a, η₁.η a = η₂.η a) → η₁ = η₂ :=
   match η₁, η₂ with
   | { η := nat₁, isNat := isNat₁ }, { η := nat₂, isNat := isNat₂ } =>
     λ h => by have hNat : nat₁ = nat₂ := funext h;
               subst hNat;
-              have hIsNat : isNat₁ = isNat₂ :=
-                   IsNaturalTransformation.ext (hα := hα.toHasMorphisms)
-                                               (hβ := IsCategory.isSemicategory (h := hβ))
-                                               nat₁ isNat₁ isNat₂;
-              subst hIsNat; rfl
+              have hIsNat : isNat₁ = isNat₂ := IsNatural.ext nat₁ isNat₁ isNat₂;
+              subst hIsNat;
+              rfl
 
-  def NatRel (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    MetaRelation (α ⮕ β) type.{u} :=
-  NatDesc
+  def NatRel (A B : Cat.{u, w}) : MetaRelation (A ⮕ B) homUniv.{u, w} := NatDesc
 
-  instance hasNaturalityRelation (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                           [hβ : IsCategory type.{u} β] :
-    HasNatRel.{u + 1} α β :=
-  { Nat       := NatRel α β,
+  instance hasNaturalityRelation (A B : Cat.{u, w}) : HasNatRel A B :=
+  { Nat       := NatRel A B,
     desc      := id,
     defNatFun := λ _ _ _ => HasTrivialFunctoriality.defFun }
 
-  def defNat {α : Type u} {β : Sort v} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-             {F G : α ⮕ β} (η : NatDesc F G) :
-    HasNatRel.DefNat η :=
+  def defNat {A B : Cat.{u, w}} {F G : A ⮕ B} (η : NatDesc F G) : HasNatRel.DefNat η :=
   { η     := η,
     natEq := λ _ => rfl }
 
-  instance hasTrivialNaturalityCondition (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                                   [hβ : IsCategory type.{u} β] :
-    HasNatRel.HasTrivialNaturalityCondition.{u + 1} α β :=
+  instance hasTrivialNaturalityCondition (A B : Cat.{u, w}) :
+    HasNatRel.HasTrivialNaturalityCondition A B :=
   ⟨defNat⟩
 
-  instance hasTrivialNatEquiv (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                        [hβ : IsCategory type.{u} β] :
-    HasNatRel.HasTrivialNatEquiv.{u + 1} α β :=
-  ⟨NatDesc.ext⟩
+  instance hasTrivialNatEquiv (A B : Cat.{u, w}) : HasNatRel.HasTrivialNatEquiv A B := ⟨NatDesc.ext⟩
 
-  instance natIsPreorder (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                   [hβ : IsCategory type.{u} β] :
-    IsPreorder (NatRel α β) :=
-  HasNatOp.natIsPreorder α β
+  instance natIsPreorder (A B : Cat.{u, w}) : IsPreorder (NatRel A B) :=
+  HasNatOp.natIsPreorder A B
 
-  instance hasNaturality (α : Type u) (β : Sort v) [hα : IsCategory type.{u} α]
-                                                   [hβ : IsCategory type.{u} β] :
-    HasNaturality.{u + 1} α β :=
-  { natHasTransFun := HasTrivialFunctoriality.hasTransFun (NatRel α β) }
+  instance hasNaturality (A B : Cat'.{u}) : HasNaturality A B :=
+  { natHasTransFun := HasTrivialFunctoriality.hasTransFun (NatRel A B),
+    defFunCat      := HasTrivialCatProp.defCat }
 
-  def defFunFunBaseBase {α β : Type u} {γ : Sort v} [hα : IsCategory type.{u} α]
-                        [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                        {F : α → (β ⮕ γ)} {desc : HasNaturality.FunFunDesc F} :
+  def defFunFunBaseBase {A B C : Cat'.{u}} {F : A → (B ⮕ C)}
+                        {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFunBaseBase desc :=
   { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
     natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
     natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
 
-  def defFunFunBase {α β : Type u} {γ : Sort v} [hα : IsCategory type.{u} α]
-                    [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                    {F : α → (β ⮕ γ)} {desc : HasNaturality.FunFunDesc F} :
+  def defFunFunBase {A B C : Cat'.{u}} {F : A → (B ⮕ C)} {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFunBase desc :=
   { toDefFunFunBaseBase := defFunFunBaseBase,
     defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun }
 
-  def defFunFun {α β : Type u} {γ : Sort v} [hα : IsCategory type.{u} α]
-                [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                {F : α → (β ⮕ γ)} {desc : HasNaturality.FunFunDesc F} :
+  def defFunFun {A B C : Cat'.{u}} {F : A → (B ⮕ C)} {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFun desc :=
-  { toDefFunFunBase := defFunFunBase,
-    defFunFun       := HasFunProp.HasTrivialFunctorialityCondition.defFun }
+  HasNaturality.DefFunFun.trivial defFunFunBase
 
-  def defNatNatBase {α β : Type u} {γ : Sort v} [hα : IsCategory type.{u} α]
-                    [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                    {F G : α ⮕ β ⮕ γ} {η : ∀ a, F.φ a ⇾ G.φ a}
+  def defNatNatBase {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇾ G a}
                     {desc : HasNaturality.NatNatDesc F G η} :
     HasNaturality.DefNatNatBase desc :=
-  { natEquiv := λ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
+  HasNaturality.DefNatNatBase.trivial
 
-  def defNatNat {α β : Type u} {γ : Sort v} [hα : IsCategory type.{u} α]
-                [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                {F G : α ⮕ β ⮕ γ} {η : ∀ a, F.φ a ⇾ G.φ a}
+  def defNatNat {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇾ G a}
                 {desc : HasNaturality.NatNatDesc F G η} :
     HasNaturality.DefNatNat desc :=
-  { toDefNatNatBase := defNatNatBase,
-    defNatNat       := HasNatRel.HasTrivialNaturalityCondition.defNat }
+  HasNaturality.DefNatNat.trivial defNatNatBase
 
-  def defFunFunFunBase {α β γ : Type u} {δ : Sort v} [hα : IsCategory type.{u} α]
-                       [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                       [hδ : IsCategory type.{u} δ]
-                       {F : α → (β ⮕ γ ⮕ δ)} {desc : HasNaturality.FunFunFunDesc F} :
+  def defFunFunFunBase {A B C D : Cat'.{u}} {F : A → (B ⮕ C ⮕' D)}
+                       {desc : HasNaturality.FunFunFunDesc F} :
     HasNaturality.DefFunFunFunBase desc :=
   { defRevFunFun := λ _ => defFunFunBaseBase,
     defNatNat    := λ _ => defNatNatBase }
 
-  def defFunFunFun {α β γ : Type u} {δ : Sort v} [hα : IsCategory type.{u} α]
-                   [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                   [hδ : IsCategory type.{u} δ]
-                   {F : α → (β ⮕ γ ⮕ δ)} {desc : HasNaturality.FunFunFunDesc F} :
+  def defFunFunFun {A B C D : Cat'.{u}} {F : A → (B ⮕ C ⮕' D)}
+                   {desc : HasNaturality.FunFunFunDesc F} :
     HasNaturality.DefFunFunFun desc :=
-  { toDefFunFunFunBase := defFunFunFunBase,
-    defFunFunFun       := defFunFun }
+  HasNaturality.DefFunFunFun.trivial defFunFunFunBase defFunFunBase
 
-  instance hasRevAppFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    HasNaturality.HasRevAppFunFun α β :=
+  instance hasRevAppFunFun (A B : Cat'.{u}) : HasNaturality.HasRevAppFunFun A B :=
   { defRevAppFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defRevAppFunFun := defFunFun }
 
-  instance hasCompFunFunFun (α β γ : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                            [hγ : IsCategory type.{u} γ] :
-    HasNaturality.HasCompFunFunFun α β γ :=
+  instance hasCompFunFunFun (A B C : Cat'.{u}) : HasNaturality.HasCompFunFunFun A B C :=
   { defCompFunFun    := λ _ => defFunFun,
     defCompFunFunFun := defFunFunFun }
 
-  instance hasConstFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    HasNaturality.HasConstFunFun α β :=
+  instance hasConstFunFun (A B : Cat'.{u}) : HasNaturality.HasConstFunFun A B :=
   { defConstFunFun := defFunFun }
 
-  instance hasDupFunFun (α β : Type u) [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β] :
-    HasNaturality.HasDupFunFun α β :=
+  instance hasDupFunFun (A B : Cat'.{u}) : HasNaturality.HasDupFunFun A B :=
   { defDupFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defDupFunFun := defFunFun }
 
-  instance isNatUniverse : IsNatUniverse.{u + 1} type.{u} :=
+  instance isNatUniverse : IsNatUniverse.{u + 1} type'.{u} :=
   { hasNat := hasNaturality }
 
-  instance isNatUniverse.hasFullFunctors : IsNatUniverse.HasFullFunctors type.{u} :=
+  instance isNatUniverse.hasFullFunctors : IsNatUniverse.HasFullFunctors.{u + 1} type'.{u} :=
   { hasRevAppFunFun  := hasRevAppFunFun,
     hasCompFunFunFun := hasCompFunFunFun,
     hasConstFunFun   := hasConstFunFun,
@@ -216,138 +192,117 @@ namespace type
 
   -- Isomorphisms
 
-  theorem IsInv.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {f : a ⇾ b} {g : b ⇾ a}
-                    (h₁ h₂ : IsInv hα.Hom f g) :
+  theorem IsInv.ext {α : Sort u} {R : MetaRelation α type.{w}} [IsPreorder R]
+                    {a b : α} {f : R a b} {g : R b a} (h₁ h₂ : IsInv (R := R) f g) :
     h₁ = h₂ :=
   match h₁, h₂ with
   | ⟨_, _⟩, ⟨_, _⟩ => rfl
 
-  theorem IsoDesc.ext {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b} :
+  theorem IsoDesc.ext {A : Cat.{u, w}} {a b : A} {e₁ e₂ : IsoDesc a b} :
     e₁.toHom = e₂.toHom → e₁.invHom = e₂.invHom → e₁ = e₂ :=
   match e₁, e₂ with
   | { toHom := to₁, invHom := inv₁, isInv := isInv₁ }, { toHom := to₂, invHom := inv₂, isInv := isInv₂ } =>
     λ (hTo : to₁ = to₂) (hInv : inv₁ = inv₂) => by subst hTo; subst hInv;
                                                    have invExt := IsInv.ext isInv₁ isInv₂;
-                                                   subst invExt; rfl
+                                                   subst invExt;
+                                                   rfl
 
-  theorem IsoDesc.ext' {α : Type u} [hα : IsCategory type.{u} α] {a b : α} {e₁ e₂ : IsoDesc a b}
+  theorem IsoDesc.ext' {A : Cat.{u, w}} {a b : A} {e₁ e₂ : IsoDesc a b}
                        (h : e₁.toHom = e₂.toHom) :
     e₁ = e₂ :=
   IsoDesc.ext h (IsoDesc.toInvEquiv (e₁ := e₁) (e₂ := e₂) h)
 
-  def IsoRel (α : Type u) [hα : IsCategory type.{u} α] : MetaRelation α type.{u} := IsoDesc
+  def IsoRel (A : Cat.{u, w}) : MetaRelation A homUniv.{u, w} := IsoDesc
 
-  instance hasIsoRel (α : Type u) [hα : IsCategory type.{u} α] : HasIsoRel α :=
-  { Iso         := IsoRel α,
+  instance hasIsoRel (A : Cat.{u, w}) : HasIsoRel A :=
+  { Iso         := IsoRel A,
     desc        := id,
     defToHomFun := λ _ _ => HasTrivialFunctoriality.defFun,
     toHomInj    := IsoDesc.ext' }
 
-  def defIso {α : Type u} [hα : IsCategory type.{u} α] {a b : α} (e : IsoDesc a b) :
-    DefIso e :=
+  def defIso {A : Cat.{u, w}} {a b : A} (e : IsoDesc a b) : DefIso e :=
   { e    := e,
     toEq := rfl }
 
-  instance hasTrivialIsomorphismCondition (α : Type u) [hα : IsCategory type.{u} α] :
-    HasTrivialIsomorphismCondition α :=
+  instance hasTrivialIsomorphismCondition (A : Cat.{u, w}) : HasTrivialIsomorphismCondition A :=
   ⟨defIso⟩
 
-  instance isoIsEquivalence (α : Type u) [hα : IsCategory type.{u} α] :
-    IsEquivalence (IsoRel α) :=
-  HasIsoOp.isoIsEquivalence α
+  instance isoIsEquivalence (A : Cat.{u, w}) : IsEquivalence (IsoRel A) :=
+  HasIsoOp.isoIsEquivalence A
 
-  instance hasIsomorphisms (α : Type u) [hα : IsCategory type.{u} α] : HasIsomorphisms α :=
-  { isoHasSymmFun  := HasTrivialFunctoriality.hasSymmFun  (IsoRel α),
-    isoHasTransFun := HasTrivialFunctoriality.hasTransFun (IsoRel α) }
+  instance hasIsomorphisms (A : Cat.{u, w}) : HasIsomorphisms A :=
+  { isoHasSymmFun  := HasTrivialFunctoriality.hasSymmFun  (IsoRel A),
+    isoHasTransFun := HasTrivialFunctoriality.hasTransFun (IsoRel A),
+    defIsoCat      := HasTrivialCatProp.defCat }
 
-  instance hasIsoFun {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                     (F : α ⮕ β) :
-    HasIsoFun F :=
+  -- Lean bug :-(
+  noncomputable instance hasIsoFun {A B : Cat.{u, w}} (F : A ⮕ B) : HasIsoFun F :=
   { defMapIso    := λ _   => HasTrivialIsomorphismCondition.defIso,
     defMapIsoFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    defIsoFun    := HasFunProp.HasTrivialFunctorialityCondition.defFun
-                      (hα := HasIsomorphisms.isoCategory α) (hβ := HasIsomorphisms.isoCategory β) }
+    defIsoFun    := HasFunProp.HasTrivialFunctorialityCondition.defFun }
 
-  instance hasIsoNat {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                     (F G : α ⮕ β) :
-    HasIsoNat F G :=
+  instance hasIsoNat {A B : Cat'.{u}} (F G : A ⮕' B) : HasIsoNat F G :=
   { defNatIso    := λ _ _ => HasTrivialIsomorphismCondition.defIso,
     defNatIsoFun := λ _   => HasTrivialFunctoriality.defFun }
 
-  instance isIsoUniverse : IsIsoUniverse.{u + 1} type.{u} :=
+  noncomputable instance isIsoUniverse : IsIsoUniverse.{u + 1} type'.{u} :=
   { hasIso    := hasIsomorphisms,
     hasIsoFun := hasIsoFun,
     hasIsoNat := hasIsoNat }
 
-  instance hasIsoFunctoriality (α β : Type u) [hα : IsCategory type.{u} α]
-                                              [hβ : IsCategory type.{u} β] :
-    HasIsoFunctoriality α β :=
-  IsIsoUniverse.hasIsoFunctoriality (W := type.{u}) α β
+  noncomputable instance hasIsoFunctoriality (A B : Cat'.{u}) : HasIsoFunctoriality A B :=
+  IsIsoUniverse.hasIsoFunctoriality A B
 
-  instance hasIsoNaturality (α β : Type u) [hα : IsCategory type.{u} α]
-                                           [hβ : IsCategory type.{u} β] :
-    HasIsoNaturality α β :=
-  IsIsoUniverse.hasIsoNaturality (W := type.{u}) α β
+  noncomputable instance hasIsoNaturality (A B : Cat'.{u}) : HasIsoNaturality A B :=
+  IsIsoUniverse.hasIsoNaturality A B
 
-  def natIsoDescBuilder {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                        {F G : α ⮕ β} (η : NatIsoDesc F G) :
+  def natIsoDescBuilder {A B : Cat'.{u}} {F G : A ⮕ B} (η : NatIsoDesc F G) :
     NatIsoDesc.IsoDescBuilder η :=
   { defToNat  := HasNatRel.HasTrivialNaturalityCondition.defNat,
     defInvNat := HasNatRel.HasTrivialNaturalityCondition.defNat,
     leftInv   := HasNatRel.HasTrivialNatEquiv.natEquiv,
     rightInv  := HasNatRel.HasTrivialNatEquiv.natEquiv }
 
-  def defNatIso {α β : Type u} [hα : IsCategory type.{u} α] [hβ : IsCategory type.{u} β]
-                {F G : α ⮕ β} (η : NatIsoDesc F G) :
+  noncomputable def defNatIso {A B : Cat'.{u}} {F G : A ⮕' B} (η : NatIsoDesc F G) :
     HasIsoNat.DefNatIso η :=
   { η     := NatIsoDesc.IsoDescBuilder.isoDesc η (natIsoDescBuilder η),
     natEq := λ _ => rfl }
 
-  instance hasTrivialNatIsoCondition (α β : Type u) [hα : IsCategory type.{u} α]
-                                                    [hβ : IsCategory type.{u} β] :
-    HasIsoNaturality.HasTrivialNaturalityCondition.{u + 1} α β :=
+  noncomputable instance hasTrivialNatIsoCondition (A B : Cat'.{u}) :
+    HasIsoNaturality.HasTrivialNaturalityCondition A B :=
   ⟨defNatIso⟩
 
-  def defNatNatIsoBase {α β γ : Type u} [hα : IsCategory type.{u} α]
-                       [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                       {F G : α ⮕ β ⮕ γ} {η : ∀ a, F.φ a ⇿ G.φ a}
-                       {desc : HasIsoNaturality.NatNatIsoDesc F G η} :
+  noncomputable def defNatNatIsoBase {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇿ G a}
+                                     {desc : HasIsoNaturality.NatNatIsoDesc F G η} :
     HasIsoNaturality.DefNatNatIsoBase desc :=
-  -- Lean bug :-(
-  sorry
-  --{ toDef  := defNatNatBase,
-  --  invDef := defNatNatBase }
+  { toDef  := defNatNatBase,
+    invDef := defNatNatBase }
 
-  def defNatNatIso {α β γ : Type u} [hα : IsCategory type.{u} α]
-                   [hβ : IsCategory type.{u} β] [hγ : IsCategory type.{u} γ]
-                   {F G : α ⮕ β ⮕ γ} {η : ∀ a, F.φ a ⇿ G.φ a}
-                   {desc : HasIsoNaturality.NatNatIsoDesc F G η} :
+  noncomputable def defNatNatIso {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇿ G a}
+                                 {desc : HasIsoNaturality.NatNatIsoDesc F G η} :
     HasIsoNaturality.DefNatNatIso desc :=
-  -- Lean bug :-(
-  sorry
-  --{ toDefNatNatIsoBase := defNatNatIsoBase,
-  --  defNatNatIso       := HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
+  { toDefNatNatIsoBase := defNatNatIsoBase,
+    defNatNatIso       := HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
 
-  instance hasRightIdNatNat (α β : Type u) [hα : IsCategory type.{u} α]
-                                           [hβ : IsCategory type.{u} β] :
-    HasIsoNaturality.HasRightIdNatNat α β :=
-  -- Lean bug :-(
-  sorry
-  --{ defRightIdNat    := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso,
-  --  defRightIdNatNat := defNatNatIso }
+  noncomputable instance hasRightIdNatNat (A B : Cat'.{u}) : IsIsoUniverse.HasRightIdNatNat A B :=
+  { defRightIdNat    := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso,
+    defRightIdNatNat := defNatNatIso }
 
-  instance hasLeftIdNat (α β : Type u) [hα : IsCategory type.{u} α]
-                                       [hβ : IsCategory type.{u} β] :
-    HasIsoNaturality.HasLeftIdNat α β :=
-  -- Lean bug :-(
-  sorry
-  --{ defLeftIdNat := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
+  noncomputable instance hasLeftIdNatNat (A B : Cat'.{u}) : IsIsoUniverse.HasLeftIdNatNat A B :=
+  { defLeftIdNat    := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso,
+    defLeftIdNatNat := defNatNatIso }
 
-  instance isIsoUniverse.hasFullNaturalIsomorphisms :
-    IsIsoUniverse.HasFullNaturalIsomorphisms type.{u} :=
+  noncomputable instance hasSwapRevAppNat (A B : Cat'.{u}) : IsIsoUniverse.HasSwapRevAppNat A B :=
+  { defSwapRevAppNat := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
+
+  noncomputable instance hasCompAssocNat (A B C D : Cat'.{u}) : IsIsoUniverse.HasCompAssocNat A B C D :=
+  { defCompAssocNat := λ _ _ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
+
+  noncomputable instance isIsoUniverse.hasFullNaturalIsomorphisms :
+    IsIsoUniverse.HasFullNaturalIsomorphisms.{u + 1} type'.{u} :=
   { hasRightIdNatNat := hasRightIdNatNat,
-    hasLeftIdNat     := hasLeftIdNat,
-    hasSwapRevAppNat := sorry,
-    hasCompAssocNat  := sorry }
+    hasLeftIdNatNat  := hasLeftIdNatNat,
+    hasSwapRevAppNat := hasSwapRevAppNat,
+    hasCompAssocNat  := hasCompAssocNat }
 
 end type

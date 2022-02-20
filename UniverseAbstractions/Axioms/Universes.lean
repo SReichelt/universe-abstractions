@@ -112,6 +112,7 @@ end boolean
 def sort : Universe.{u, u + 1} := ⟨Sort u⟩
 @[reducible] def prop := sort.{0}
 @[reducible] def type := sort.{u + 1}
+@[reducible] def tsort := sort.{max 1 u}
 
 
 

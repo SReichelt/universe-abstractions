@@ -28,3 +28,13 @@ theorem PProd.ext' {α : Sort u} {β : Sort v} {p q : PProd α β} :
 
 theorem Iff.isEquivalence              : Equivalence Iff     := ⟨Iff.refl, Iff.symm, Iff.trans⟩
 theorem Eq.isEquivalence  (α : Sort u) : Equivalence (@Eq α) := ⟨Eq.refl,  Eq.symm,  Eq.trans⟩
+
+
+
+structure Preorder {α : Sort u} (r : α → α → Prop) : Prop where
+  refl  : ∀ x, r x x
+  trans : ∀ {x y z}, r x y → r y z → r x z
+
+def Preorder.fromEquivalence {α : Sort u} {r : α → α → Prop} :
+  Equivalence r → Preorder r :=
+λ e => ⟨e.refl, e.trans⟩

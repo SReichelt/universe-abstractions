@@ -1,6 +1,7 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.MetaProperties
 
+import UniverseAbstractions.MathlibFragments.CoreExt
 import UniverseAbstractions.MathlibFragments.Data.Notation
 
 
@@ -35,7 +36,7 @@ namespace MetaRelation
     notation:90 g:91 " • " f:90 => MetaRelation.HasTrans.trans f g
     postfix:max "⁻¹" => MetaRelation.HasSymm.symm
 
-    @[reducible] def opposite : MetaRelation α V := λ a b => R b a
+    def opposite : MetaRelation α V := λ a b => R b a
 
     namespace opposite
 
@@ -68,18 +69,22 @@ namespace MetaRelation
 
   def nativeRelation {α : Sort u} (r : α → α → Prop) : MetaRelation α prop := r
 
+  def nativePreorder {α : Sort u} {r : α → α → Prop} (p : Preorder r) :
+    IsPreorder (nativeRelation r) :=
+  { refl  := p.refl,
+    trans := p.trans }
+
   def nativeEquivalence {α : Sort u} {r : α → α → Prop} (e : Equivalence r) :
     IsEquivalence (nativeRelation r) :=
   { refl  := e.refl,
-    symm  := e.symm
+    symm  := e.symm,
     trans := e.trans }
 
   instance setoidEquivalence (α : Sort u) [s : Setoid α] :
     IsEquivalence (nativeRelation s.r) :=
   nativeEquivalence s.iseqv
 
-  def unitRelation (α : Sort u) {V : Universe.{v}} (B : V) :
-    MetaRelation α V :=
+  def unitRelation (α : Sort u) {V : Universe.{v}} (B : V) : MetaRelation α V :=
   λ _ _ => B
 
   def unitEquivalence (α : Sort u) {V : Universe.{v}} {B : V} (b : B) :

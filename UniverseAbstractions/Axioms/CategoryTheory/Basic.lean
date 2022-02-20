@@ -13,7 +13,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Meta
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u u' u'' v vv w ww iv ivv iw
+universe u v vv iv ivv
 
 
 
@@ -25,290 +25,152 @@ namespace CategoryTheory
   class IsHomUniverse (V : Universe.{v, vv}) extends
     HasIdentity.{v, iv, vv, ivv} V, HasInternalFunctors V, HasLinearFunOp V
 
-  class HasMorphisms (V : outParam Universe.{v, vv}) [outParam (IsHomUniverse.{v, vv, iv} V)]
-                     (α : Sort u) : Sort (max 1 u vv) where
+  structure BundledRelation (V : Universe.{v, vv}) : Sort (max (u + 1) vv) where
+  {α   : Sort u}
   (Hom : MetaRelation α V)
 
-  infix:20 " ⇾ " => CategoryTheory.HasMorphisms.Hom
+  section
 
-  class IsSemicategory (V : outParam Universe.{v, vv}) [outParam (IsHomUniverse.{v, vv, iv} V)]
-                       (α : Sort u) extends
-    HasMorphisms V α : Sort (max 1 u v vv iv) where
-  [homHasTrans      : HasTrans      Hom]
-  [homHasTransFun   : HasTransFun   Hom]
-  [homIsAssociative : IsAssociative Hom]
+    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
 
-  namespace IsSemicategory
+    structure SemicatDesc (R : BundledRelation.{u} V) : Sort (max 1 u v iv) where
+    [homHasTrans      : HasTrans      R.Hom]
+    [homHasTransFun   : HasTransFun   R.Hom]
+    [homIsAssociative : IsAssociative R.Hom]
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv} V] {α : Sort u}
-             [h : IsSemicategory V α]
+    structure CatDesc (R : BundledRelation.{u} V) : Sort (max 1 u v iv) where
+    [homIsPreorder            : IsPreorder            R.Hom]
+    [homHasTransFun           : HasTransFun           R.Hom]
+    [homIsCategoricalPreorder : IsCategoricalPreorder R.Hom]
 
-    instance : HasTrans      h.Hom := h.homHasTrans
-    instance : HasTransFun   h.Hom := h.homHasTransFun
-    instance : IsAssociative h.Hom := h.homIsAssociative
+    namespace CatDesc
 
-  end IsSemicategory
+      variable {R : BundledRelation.{u} V} (desc : CatDesc R)
 
-  class IsCategory (V : outParam Universe.{v, vv}) [outParam (IsHomUniverse.{v, vv, iv} V)]
-                   (α : Sort u) extends
-    HasMorphisms V α : Sort (max 1 u v vv iv) where
-  [homIsPreorder            : IsPreorder            Hom]
-  [homHasTransFun           : HasTransFun           Hom]
-  [homIsCategoricalPreorder : IsCategoricalPreorder Hom]
+      def toSemicatDesc : SemicatDesc R :=
+      let _ : IsPreorder            R.Hom := desc.homIsPreorder;
+      let _ : HasTransFun           R.Hom := desc.homHasTransFun;
+      let _ : IsCategoricalPreorder R.Hom := desc.homIsCategoricalPreorder;
+      ⟨⟩
 
-  namespace IsCategory
+    end CatDesc
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv} V] {α : Sort u} [h : IsCategory V α]
+    structure GrpoidDesc (R : BundledRelation.{u} V) : Sort (max 1 u v iv) where
+    [homIsEquivalence         : IsEquivalence         R.Hom]
+    [homHasSymmFun            : HasSymmFun            R.Hom]
+    [homHasTransFun           : HasTransFun           R.Hom]
+    [homIsGroupoidEquivalence : IsGroupoidEquivalence R.Hom]
 
-    instance : HasRefl               h.Hom := h.homIsPreorder.toHasRefl
-    instance : HasTrans              h.Hom := h.homIsPreorder.toHasTrans
-    instance : IsPreorder            h.Hom := h.homIsPreorder
-    instance : HasTransFun           h.Hom := h.homHasTransFun
-    instance : IsCategoricalPreorder h.Hom := h.homIsCategoricalPreorder
+    namespace GrpoidDesc
 
-    instance isSemicategory : IsSemicategory V α := ⟨⟩
+      variable {R : BundledRelation.{u} V} (desc : GrpoidDesc R)
 
-    @[reducible] def idHom (a : α) : a ⇾ a := HasRefl.refl a
+      def toCatDesc : CatDesc R :=
+      let _ : IsEquivalence         R.Hom := desc.homIsEquivalence;
+      let _ : HasTransFun           R.Hom := desc.homHasTransFun;
+      let _ : HasSymmFun            R.Hom := desc.homHasSymmFun;
+      let _ : IsGroupoidEquivalence R.Hom := desc.homIsGroupoidEquivalence;
+      ⟨⟩
 
-  end IsCategory
+    end GrpoidDesc
 
-  class IsGroupoid (V : outParam Universe.{v, vv}) [outParam (IsHomUniverse.{v, vv, iv} V)]
-                   (α : Sort u) extends
-    HasMorphisms V α : Sort (max 1 u v vv iv) where
-  [homIsEquivalence         : IsEquivalence         Hom]
-  [homHasSymmFun            : HasSymmFun            Hom]
-  [homHasTransFun           : HasTransFun           Hom]
-  [homIsGroupoidEquivalence : IsGroupoidEquivalence Hom]
+  end
 
-  namespace IsGroupoid
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv} V] {α : Sort u} [h : IsGroupoid V α]
 
-    instance : HasRefl               h.Hom := h.homIsEquivalence.toHasRefl
-    instance : HasSymm               h.Hom := h.homIsEquivalence.toHasSymm
-    instance : HasTrans              h.Hom := h.homIsEquivalence.toHasTrans
-    instance : IsEquivalence         h.Hom := h.homIsEquivalence
-    instance : HasTransFun           h.Hom := h.homHasTransFun
-    instance : HasSymmFun            h.Hom := h.homHasSymmFun
-    instance : IsGroupoidEquivalence h.Hom := h.homIsGroupoidEquivalence
+  class HasCatProp (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V] where
+  (Cat                              : MetaProperty (BundledRelation.{u} V) V)
+  (desc {R : BundledRelation.{u} V} : Cat R → CatDesc R)
 
-    instance isCategory : IsCategory V α := ⟨⟩
+  namespace HasCatProp
 
-  end IsGroupoid
+    structure Category (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V]
+                       [h : HasCatProp.{u} V] :
+      Sort (max (u + 1) v vv) where
+    {R : BundledRelation.{u} V}
+    (C : h.Cat R)
 
+    namespace Category
 
+      section
 
-  structure MorphismFunctor {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                            (α : Sort u) (β : Sort v)
-                            [hα : HasMorphisms W α] [hβ : HasMorphisms W β] where
-  {φ : α → β}
-  (F : PreFunctor hα.Hom hβ.Hom φ)
+        variable (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
 
-  namespace MorphismFunctor
+        instance hasInstances : HasInstances.{u} (Category.{u} V) := ⟨λ A => A.R.α⟩
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+        def univ : Universe.{u, max (u + 1) v vv} := ⟨Category.{u} V⟩
 
-    def idFun (α : Sort u) [hα : HasMorphisms W α] :
-      MorphismFunctor α α :=
-    ⟨MetaFunctor.idFun.metaFunctor hα.Hom⟩
+      end
 
-    def constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
-                 [hα : HasMorphisms W α] [hβ : IsCategory W β] (b : β) :
-      MorphismFunctor α β :=
-    ⟨MetaFunctor.constFun.metaFunctor hα.Hom hβ.Hom b⟩
+      variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
 
-    def compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
-                [hα : HasMorphisms W α] [hβ : HasMorphisms W β] [hγ : HasMorphisms W γ]
-                (F : MorphismFunctor α β) (G : MorphismFunctor β γ) :
-      MorphismFunctor α γ :=
-    ⟨MetaFunctor.compFun.metaFunctor F.F (MetaFunctor.lift G.F F.φ)⟩
+      def Hom (A : Category V) : MetaRelation A V := A.R.Hom
+      infix:20 " ⇾ " => CategoryTheory.HasCatProp.Category.Hom _
 
-  end MorphismFunctor
+      instance (A : Category V) : IsPreorder            (Hom A) := (h.desc A.C).homIsPreorder
+      instance (A : Category V) : HasTransFun           (Hom A) := (h.desc A.C).homHasTransFun
+      instance (A : Category V) : IsCategoricalPreorder (Hom A) := (h.desc A.C).homIsCategoricalPreorder
 
-  class IsSemicategoryFunctor {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                              {α : Sort u} {β : Sort v}
-                              [hα : IsSemicategory W α] [hβ : IsSemicategory W β]
-                              (F : MorphismFunctor α β) extends
-    IsTransFunctor F.F
+      @[reducible] def idHom {A : Category V} (a : A) : a ⇾ a := HasRefl.refl a
+      @[reducible] def compHom {A : Category V} {a b c : A} (f : a ⇾ b) (g : b ⇾ c) : a ⇾ c := g • f
 
-  namespace IsSemicategoryFunctor
+    end Category
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+    structure DefCat {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
+                     {R : BundledRelation.{u} V} (desc : CatDesc R) where
+    (C   : h.Cat R)
+    [hEq : IsPreorderEq (h.desc C).homIsPreorder desc.homIsPreorder]
 
-    instance idFun (α : Sort u) [hα : IsSemicategory W α] :
-      IsSemicategoryFunctor (MorphismFunctor.idFun α) :=
-    { toIsTransFunctor := MetaFunctor.idFun.isTransFunctor hα.Hom }
+    namespace DefCat
 
-    instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
-                      [hα : IsSemicategory W α] [hβ : IsCategory W β] (b : β) :
-      IsSemicategoryFunctor (MorphismFunctor.constFun α b) :=
-    { toIsTransFunctor := MetaFunctor.constFun.isTransFunctor hα.Hom hβ.Hom b }
+      open Category
 
-    instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
-                     [hα : IsSemicategory W α] [hβ : IsSemicategory W β] [hγ : IsSemicategory W γ]
-                     (F : MorphismFunctor α β) (G : MorphismFunctor β γ)
-                     [hF : IsSemicategoryFunctor F] [hG : IsSemicategoryFunctor G] :
-      IsSemicategoryFunctor (MorphismFunctor.compFun F G) :=
-    let _ : HasTransFun (MetaRelation.lift (MetaRelation.lift hγ.Hom G.φ) F.φ) := inferInstance;
-    let _ : IsTransFunctor (MetaFunctor.lift G.F F.φ) := inferInstance;
-    { toIsTransFunctor := MetaFunctor.compFun.isTransFunctor F.F (MetaFunctor.lift G.F F.φ) }
+      variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
+               {R : BundledRelation.{u} V} {desc : CatDesc R}
 
-  end IsSemicategoryFunctor
+      def toCategory (A : DefCat desc) : Category.{u} V :=
+      { R := R,
+        C := A.C }
 
-  class IsCategoryFunctor {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                          {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-                          (F : MorphismFunctor α β) extends
-    IsPreorderFunctor F.F
+      def catReflEq {A : DefCat desc} (a : toCategory A) :
+        HasInstanceEquivalences.Rel (a ⇾ a) (idHom a)
+                                            (desc.homIsPreorder.refl a) :=
+      A.hEq.reflEq a
 
-  namespace IsCategoryFunctor
+      def catTransEq {A : DefCat desc} {a b c : toCategory A} (f : a ⇾ b) (g : b ⇾ c) :
+        HasInstanceEquivalences.Rel (a ⇾ c) (g • f)
+                                            (desc.homIsPreorder.trans f g) :=
+      A.hEq.transEq f g
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
+    end DefCat
 
-    section
+    class HasTrivialCatProp (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V]
+                            [h : HasCatProp.{u} V] where
+    (cat {R : BundledRelation.{u} V} (desc : CatDesc R) : DefCat desc)
 
-      variable {α : Sort u} {β : Sort v} [hα : IsCategory W α] [hβ : IsCategory W β]
-               (F : MorphismFunctor α β) [h : IsCategoryFunctor F]
+    namespace HasTrivialCatProp
 
-      instance isSemicategoryFunctor : IsSemicategoryFunctor F := ⟨⟩
+      variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
+               [h : HasTrivialCatProp V]
 
-      def mapHalfInv {a b : α} {f : a ⇾ b} {g : b ⇾ a} (hfg : HalfInv hα.Hom f g) :
-        HalfInv hβ.Hom (F.F f) (F.F g) :=
-      h.reflEq a •
-      HasCongrArg.congrArg (F.F.baseFun a a) hfg •
-      (h.transEq f g)⁻¹
+      def defCat {R : BundledRelation.{u} V} {desc : CatDesc R} : DefCat desc := h.cat desc
 
-    end
+    end HasTrivialCatProp
 
-    instance idFun (α : Sort u) [hα : IsCategory W α] :
-      IsCategoryFunctor (MorphismFunctor.idFun α) :=
-    { toIsPreorderFunctor := MetaFunctor.idFun.isPreorderFunctor hα.Hom }
+  end HasCatProp
 
-    instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
-                      [hα : IsCategory W α] [hβ : IsCategory W β] (b : β) :
-      IsCategoryFunctor (MorphismFunctor.constFun α b) :=
-    { toIsPreorderFunctor := MetaFunctor.constFun.isPreorderFunctor hα.Hom hβ.Hom b }
 
-    instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
-                     [hα : IsCategory W α] [hβ : IsCategory W β] [hγ : IsCategory W γ]
-                     (F : MorphismFunctor α β) (G : MorphismFunctor β γ)
-                     [hF : IsCategoryFunctor F] [hG : IsCategoryFunctor G] :
-      IsCategoryFunctor (MorphismFunctor.compFun F G) :=
-    let _ : HasTransFun (MetaRelation.lift (MetaRelation.lift hγ.Hom G.φ) F.φ) := inferInstance;
-    let _ : IsPreorderFunctor (MetaFunctor.lift G.F F.φ) := inferInstance;
-    { toIsPreorderFunctor := MetaFunctor.compFun.isPreorderFunctor F.F (MetaFunctor.lift G.F F.φ) }
 
-  end IsCategoryFunctor
+  class IsCatUniverse (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V] where
+  [hasCat : HasCatProp.{max 1 u v} V]
 
-  class IsGroupoidFunctor {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                          {α : Sort u} {β : Sort v} [hα : IsGroupoid W α] [hβ : IsGroupoid W β]
-                          (F : MorphismFunctor α β) extends
-    IsEquivalenceFunctor F.F
+  namespace IsCatUniverse
 
-  namespace IsGroupoidFunctor
+    variable (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V]
+             [hCatUniv : IsCatUniverse.{u} V]
 
-    open IsCategoryFunctor
+    instance : HasCatProp.{max 1 u v} V := hCatUniv.hasCat
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-
-    section
-
-      variable {α : Sort u} {β : Sort v} [hα : IsGroupoid W α] [hβ : IsGroupoid W β]
-               (F : MorphismFunctor α β)
-
-      def fromCategoryFunctor [hF : IsCategoryFunctor F] : IsGroupoidFunctor F :=
-      { symmEq := λ e => HalfInv.unique hβ.Hom (leftInv (F.F e))
-                                               (mapHalfInv F (rightInv e)) }
-
-      variable [h : IsGroupoidFunctor F]
-
-      instance isCategoryFunctor : IsCategoryFunctor F := ⟨⟩
-
-    end
-
-    instance idFun (α : Sort u) [hα : IsGroupoid W α] :
-      IsGroupoidFunctor (MorphismFunctor.idFun α) :=
-    { toIsEquivalenceFunctor := MetaFunctor.idFun.isEquivalenceFunctor hα.Hom }
-
-    instance constFun [HasSubLinearFunOp W] (α : Sort u) {β : Sort v}
-                      [hα : IsGroupoid W α] [hβ : IsGroupoid W β] (b : β) :
-      IsGroupoidFunctor (MorphismFunctor.constFun α b) :=
-    { toIsEquivalenceFunctor := MetaFunctor.constFun.isEquivalenceFunctor hα.Hom hβ.Hom b }
-
-    instance compFun {α : Sort u} {β : Sort u'} {γ : Sort u''}
-                     [hα : IsGroupoid W α] [hβ : IsGroupoid W β] [hγ : IsGroupoid W γ]
-                     (F : MorphismFunctor α β) (G : MorphismFunctor β γ)
-                     [hF : IsGroupoidFunctor F] [hG : IsGroupoidFunctor G] :
-      IsGroupoidFunctor (MorphismFunctor.compFun F G) :=
-    let _ : HasSymmFun (MetaRelation.lift (MetaRelation.lift hγ.Hom G.φ) F.φ) := inferInstance;
-    let _ : HasTransFun (MetaRelation.lift (MetaRelation.lift hγ.Hom G.φ) F.φ) := inferInstance;
-    let _ : IsEquivalenceFunctor (MetaFunctor.lift G.F F.φ) := inferInstance;
-    let _ : IsSymmFunctor (MetaFunctor.lift G.F F.φ) := inferInstance;
-    { toIsEquivalenceFunctor := MetaFunctor.compFun.isEquivalenceFunctor F.F (MetaFunctor.lift G.F F.φ) }
-
-  end IsGroupoidFunctor
-
-
-
-  def Quantification {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] {α : Sort u} {β : Sort v}
-                     [hα : HasMorphisms W α] [hβ : IsSemicategory W β] (F G : MorphismFunctor α β) :=
-  MetaQuantification hβ.Hom F.φ G.φ
-
-  namespace Quantification
-
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] {α : Sort u} {β : Sort v}
-
-    @[reducible] def refl' [hα : HasMorphisms W α] [hβ : IsCategory W β] {φ : α → β}
-                           (F₁ F₂ : PreFunctor hα.Hom hβ.Hom φ) :
-      Quantification ⟨F₁⟩ ⟨F₂⟩ :=
-    MetaQuantification.refl hβ.Hom φ
-
-    @[reducible] def refl [hα : HasMorphisms W α] [hβ : IsCategory W β] (F : MorphismFunctor α β) :
-      Quantification F F :=
-    MetaQuantification.refl hβ.Hom F.φ
-
-    @[reducible] def symm [hα : HasMorphisms W α] [hβ : IsGroupoid W β] {F G : MorphismFunctor α β}
-                          (η : Quantification F G) :
-      Quantification G F :=
-    MetaQuantification.symm hβ.Hom η
-
-    @[reducible] def trans [hα : HasMorphisms W α] [hβ : IsSemicategory W β]
-                           {F G H : MorphismFunctor α β}
-                           (η : Quantification F G) (ε : Quantification G H) :
-      Quantification F H :=
-    MetaQuantification.trans hβ.Hom η ε
-
-  end Quantification
-
-  class IsNaturalTransformation {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W]
-                                {α : Sort u} {β : Sort v}
-                                [hα : HasMorphisms W α] [hβ : IsSemicategory W β]
-                                {F G : MorphismFunctor α β} (η : Quantification F G) extends
-    IsNatural F.F G.F η
-
-  namespace IsNaturalTransformation
-
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw} W] {α : Sort u} {β : Sort v}
-
-    def fromEq [hα : HasMorphisms W α] [hβ : IsCategory W β] {φ : α → β}
-               {F G : PreFunctor hα.Hom hβ.Hom φ} (hEq : ∀ {a b : α} (f : a ⇾ b), F f ≃ G f) :
-      IsNaturalTransformation (Quantification.refl' F G) :=
-    { toIsNatural := IsNatural.fromEq F G hEq }
-
-    instance refl [hα : HasMorphisms W α] [hβ : IsCategory W β] (F : MorphismFunctor α β) :
-      IsNaturalTransformation (Quantification.refl F) :=
-    ⟨⟩
-
-    instance symm [hα : HasMorphisms W α] [hβ : IsGroupoid W β] {F G : MorphismFunctor α β}
-                  (η : Quantification F G) [hη : IsNaturalTransformation η] :
-      IsNaturalTransformation (Quantification.symm η) :=
-    ⟨⟩
-
-    instance trans [hα : HasMorphisms W α] [hβ : IsSemicategory W β] {F G H : MorphismFunctor α β}
-                   (η : Quantification F G) (ε : Quantification G H)
-                   [hη : IsNaturalTransformation η] [hε : IsNaturalTransformation ε] :
-      IsNaturalTransformation (Quantification.trans η ε) :=
-    ⟨⟩
-
-  end IsNaturalTransformation
+  end IsCatUniverse
 
 end CategoryTheory

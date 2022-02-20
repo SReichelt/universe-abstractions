@@ -23,7 +23,51 @@ namespace MetaRelation
        IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
 
   variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
-           (R : MetaRelation α V)
+
+  section
+
+    variable {R : MetaRelation α V}
+
+    namespace HasSymmEq
+
+      variable (hR₁ hR₂ : HasSymm R) (hRF₁ : HasSymmFun R (hR := hR₁)) (hRF₂ : HasSymmFun R (hR := hR₂))
+
+      class HasSymmEqExt [h : HasSymmEq hR₁ hR₂] where
+      (symmEqExt (a b : α) :
+         symmFun R (hR := hR₁) (h := hRF₁) a b
+         ≃{▻ λ f => h.symmEq f ◅}
+         symmFun R (hR := hR₂) (h := hRF₂) a b)
+
+      def HasSymmEqExt.translate {h₁ h₂ : HasSymmEq hR₁ hR₂} [HasSymmEqExt hR₁ hR₂ hRF₁ hRF₂ (h := h₁)] :
+        HasSymmEqExt hR₁ hR₂ hRF₁ hRF₂ (h := h₂) :=
+      { symmEqExt := symmEqExt (h := h₁) }
+
+    end HasSymmEq
+
+    namespace HasTransEq
+
+      variable (hR₁ hR₂ : HasTrans R) (hRF₁ : HasTransFun R (hR := hR₁)) (hRF₂ : HasTransFun R (hR := hR₂))
+
+      class HasTransEqExt [h : HasTransEq hR₁ hR₂] where
+      (transEqExt {a b : α} (f : R a b) (c : α) :
+         transFun R (hR := hR₁) (h := hRF₁) f c
+         ≃{▻ λ g => transEq f g ◅}
+         transFun R (hR := hR₂) (h := hRF₂) f c)
+      (transEqExtExt (a b c : α) :
+         transFunFun R (hR := hR₁) (h := hRF₁) a b c
+         ≃{▻ λ f => transEqExt f c ◅}
+         transFunFun R (hR := hR₂) (h := hRF₂) a b c)
+
+      def HasTransEqExt.translate {h₁ h₂ : HasTransEq hR₁ hR₂} [HasTransEqExt hR₁ hR₂ hRF₁ hRF₂ (h := h₁)] :
+        HasTransEqExt hR₁ hR₂ hRF₁ hRF₂ (h := h₂) :=
+      { transEqExt    := transEqExt    (h := h₁),
+        transEqExtExt := transEqExtExt (h := h₁) }
+
+    end HasTransEq
+
+  end
+
+  variable (R : MetaRelation α V)
 
   namespace IsAssociative
 
@@ -96,13 +140,13 @@ namespace MetaRelation
 
     def symmInvExt (a b : α) :
       symmFun R b a • symmFun R a b
-      ≃{byDefDef ▻ λ f => symmInv R f ◅}
+      ≃{byDefDef ▻ λ f => symmInv f ◅}
       idFun (R a b) :=
     sorry
 
     def transInvExt {a b : α} (f : R a b) (c : α) :
       symmFun R a c • transFun R f c
-      ≃{byDefDef ▻ λ g => transInv R f g ◅ byDefDef}
+      ≃{byDefDef ▻ λ g => transInv f g ◅ byDefDef}
       revTransFun R c f⁻¹ • symmFun R b c :=
     sorry
 
@@ -268,20 +312,27 @@ namespace MetaFunctor
 
   namespace constFun
 
-    variable {α : Sort u} {β : Sort u'} {V : Universe.{v}} [HasIdentity.{v, iv} V]
-             [HasInternalFunctors V] (R : MetaRelation α V) (S : MetaRelation β V) (c : β)
+    instance (α : Sort u) {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             [HasConstFun V V] {C : V} (c : C) :
+      HasSymmFun (constRelation α c) :=
+    { defSymmFun := λ _ _ => HasConstFun.defConstFun C c }
 
-    instance isSymmFunctorExt [HasFullFunOp V] [HasAffineFunExt V] [HasSymm R] [HasSymmFun R]
-                              [IsEquivalence S] [IsGroupoidEquivalence S] [HasSymmFun S]
-                              [HasTransFun S] [IsGroupoidEquivalenceExt S] :
-      IsSymmFunctor.IsSymmFunctorExt (metaFunctor R S c) :=
+    instance (α : Sort u) {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             [HasConstFun V V] {C : V} (c : C) :
+      HasTransFun (constRelation α c) :=
+    { defTransFun    := λ _ _   => HasConstFun.defConstFun C c,
+      defTransFunFun := λ _ _ _ => HasConstFun.defConstFun C (HasConstFun.constFun C c) }
+
+    variable {α : Sort u} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             (R : MetaRelation α V) {C : V} (c : C)
+
+    instance isSymmFunctorExt [HasFullFunOp V] [HasAffineFunExt V] [HasSymm R] [HasSymmFun R] :
+      IsSymmFunctor.IsSymmFunctorExt (metaFunctor R c) :=
     sorry
     --{ symmEqExt := λ a b => _ • (leftConst (constFun (R a b) (HasRefl.refl (R := S) c)) (HasRefl.refl c))⁻¹ • leftConst (symmFun R a b) (HasRefl.refl c) }
 
-    instance isTransFunctorExt [HasAffineFunOp V] [HasAffineFunExt V] [HasTrans R] [HasTransFun R]
-                               [IsPreorder S] [IsCategoricalPreorder S] [HasTransFun S]
-                               [IsCategoricalPreorderExt S] :
-      IsTransFunctor.IsTransFunctorExt (metaFunctor R S c) :=
+    instance isTransFunctorExt [HasAffineFunOp V] [HasAffineFunExt V] [HasTrans R] [HasTransFun R] :
+      IsTransFunctor.IsTransFunctorExt (metaFunctor R c) :=
     sorry
     --{ transEqExt    := λ {a b} f d => (leftConst (constFun (R b d) c) c)⁻¹ • leftConst (transFun R f d) c,
     --  transEqExtExt := λ a b d => (defCongrArg (defConstFunFun (R a b) (R b d ⟶ C))
@@ -292,6 +343,8 @@ namespace MetaFunctor
     --                              (leftConst (transFunFun R a b d) (constFun (R b d) c) •
     --                               defCongrArg (HasCompFunFun.defCompFunFun (transFunFun R a b d) (R b d ⟶ C))
     --                                           (leftConstFunExt (R b d) (R a d) c)) }
+
+    -- TODO: We may need slightly different code for `PreFunctor.constFun`.
 
   end constFun
 

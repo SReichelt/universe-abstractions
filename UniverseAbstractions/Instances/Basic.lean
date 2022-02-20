@@ -413,14 +413,14 @@ namespace sort
 
   -- Same for products, but usually the specialized versions for `prop` and `type` should be used.
 
-  instance (priority := low) hasProducts : HasProducts sort.{u} sort.{v} sort.{max 1 u v} :=
+  instance (priority := low) hasProducts : HasProducts sort.{u} sort.{v} tsort.{max u v} :=
   { Prod  := PProd,
     intro := PProd.mk,
     fst   := PProd.fst,
     snd   := PProd.snd }
 
   instance (priority := low) hasProductEq :
-    HasProducts.HasProductEq sort.{u} sort.{v} (UxV := sort.{max 1 u v}) :=
+    HasProducts.HasProductEq sort.{u} sort.{v} (UxV := tsort.{max u v}) :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => rfl }
@@ -433,7 +433,7 @@ namespace sort
     left   := ⟨e.leftInv⟩,
     right  := ⟨e.rightInv⟩ }
 
-  instance (priority := low) hasEquivalences : HasEquivalences sort.{u} sort.{v} sort.{max 1 u v} :=
+  instance (priority := low) hasEquivalences : HasEquivalences sort.{u} sort.{v} tsort.{max u v} :=
   { Equiv := Equiv,
     desc  := equivDesc }
 
@@ -600,14 +600,14 @@ namespace type
     sndEq   := λ _ _    => rfl }
 
   instance (priority := low) hasSubtypes :
-    HasDependentProducts sort.{u} prop sort.{max 1 u} :=
+    HasDependentProducts sort.{u} prop tsort.{u} :=
   { Sigma := Subtype,
     intro := Subtype.mk,
     fst   := Subtype.val,
     snd   := Subtype.property }
 
   instance (priority := low) hasSubtypeEq :
-    HasDependentProducts.HasDependentProductEq sort.{u} prop (UxV := sort.{max 1 u}) :=
+    HasDependentProducts.HasDependentProductEq sort.{u} prop (UxV := tsort.{u}) :=
   { introEq := λ ⟨_, _⟩ => rfl,
     fstEq   := λ _ _    => rfl,
     sndEq   := λ _ _    => HasTrivialIdentity.eq }

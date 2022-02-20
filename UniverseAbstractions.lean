@@ -20,11 +20,12 @@ import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.FunctorProperti
 
 import UniverseAbstractions.Axioms.CategoryTheory.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Extended
+import UniverseAbstractions.Axioms.CategoryTheory.Functors
+import UniverseAbstractions.Axioms.CategoryTheory.NaturalTransformations
 import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
-import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.HigherCategoryTheory.Isomorphisms
+import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Meta
+import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Basic
+import UniverseAbstractions.Axioms.CategoryTheory.Algebra.Basic
 
 import UniverseAbstractions.Lemmas.DerivedFunctors
 import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality
@@ -45,5 +46,5 @@ import UniverseAbstractions.Instances.FunctorUniverse
 import UniverseAbstractions.Instances.CoFunctorUniverse
 import UniverseAbstractions.Instances.Setoid
 import UniverseAbstractions.Instances.Algebra
-import UniverseAbstractions.Instances.Category
+import UniverseAbstractions.Instances.HomUniverses.Prop
 import UniverseAbstractions.Instances.HomUniverses.Type

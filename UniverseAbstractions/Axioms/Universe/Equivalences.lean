@@ -171,7 +171,7 @@ class HasEquivalences (U : Universe.{u}) (V : Universe.{v})
 
 namespace HasEquivalences
 
-  open MetaRelation HasFunctors HasCongrFun
+  open MetaRelation HasFunctors HasCongrArg HasCongrFun
 
   variable {U V UU VV UV VU U_V : Universe} [HasIdentity U] [HasIdentity V]
            [HasFunctors U V UV] [HasFunctors V U VU] [HasEquivalences U V U_V]
@@ -238,6 +238,12 @@ namespace HasEquivalences
   def byInvDef [HasCongrFun V U] {e : A ⮂ B} {E : A ⟷{e} B} {b : B} :
     inv (fromDefEquiv E) b ≃ e.invFun b :=
   congrFun byInvFunDef b
+
+  def toInv   [HasCongrArg V U] {E : A ⟷ B} {a : A} {b : B} (e : to E a ≃ b) : a ≃ inv E b :=
+  congrArg (invFun E) e • (leftInv E a)⁻¹
+
+  def fromInv [HasCongrArg U V] {E : A ⟷ B} {a : A} {b : B} (e : a ≃ inv E b) : to E a ≃ b :=
+  rightInv E b • congrArg (toFun E) e
 
 end HasEquivalences
 
@@ -363,12 +369,6 @@ namespace DependentEquivalence
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
            [HasLinearFunExt U] [hEquiv : HasInternalEquivalences U] [HasEquivOp U]
-
-  def toInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃[E] b) : a ≃ inv E b :=
-  congrArg (invFun E) e • (leftInv E a)⁻¹
-
-  def fromInv {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃ inv E b) : a ≃[E] b :=
-  rightInv E b • congrArg (toFun E) e
 
   def compDepInd {A B : U} {E : A ⟷ B} {a : A} {b₁ b₂ : B} (e : a ≃[E] b₁) (f : b₁ ≃ b₂) :
     a ≃[E] b₂ :=
