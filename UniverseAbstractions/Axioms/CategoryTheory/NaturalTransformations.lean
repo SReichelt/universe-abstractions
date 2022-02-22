@@ -356,15 +356,11 @@ namespace CategoryTheory
         def toFunctor (G : DefFunFun desc) : A ⮕ B ⮕' C := DefFun.toFunctor G.defFunFun
 
         def byFunFunDefNat {G : DefFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
-          HasInstanceEquivalences.Rel (F a₁ ⇾ F a₂)
-                                      (mapHom (toFunctor G) f)
-                                      (G.defNat f).η :=
+          mapHom (toFunctor G) f ≃' (G.defNat f).η :=
         DefFun.byMapHomDef
 
         def byFunFunDef {G : DefFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} :
-          HasInstanceEquivalences.Rel ((F a₁) b ⇾ (F a₂) b)
-                                      (nat (mapHom (toFunctor G) f) b)
-                                      ((desc.natDesc f).η b) :=
+          nat (mapHom (toFunctor G) f) b ≃' (desc.natDesc f).η b :=
         byNatDef • natCongrArg byFunFunDefNat b
 
       end DefFunFun
@@ -388,27 +384,6 @@ namespace CategoryTheory
                               (F : hFunABC.Fun (λ a => ⟨F' a⟩)) (G : hFunABC.Fun (λ a => ⟨G' a⟩)) :=
         ∀ {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B), nat (mapHom ⟨F⟩ f) b ≃ nat (mapHom ⟨G⟩ f) b
 
-        -- This just splits naturality proofs in two halves with a dedicated goal in the middle.
-        -- It is only necessary because these proofs tend to exceed the limits of what Lean's
-        -- definitional equality can handle.
-        structure StrictNaturality₂Helper {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
-                                          (F : hFunABC.Fun (λ a => ⟨F' a⟩))
-                                          (G : hFunABC.Fun (λ a => ⟨G' a⟩))
-                                          {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) where
-        (g  : φ a₁ b ⇾ φ a₂ b)
-        (e₁ : nat (mapHom ⟨F⟩ f) b ≃ g)
-        (e₂ : nat (mapHom ⟨G⟩ f) b ≃ g)
-
-        def StrictNaturality₂' {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
-                               (F : hFunABC.Fun (λ a => ⟨F' a⟩)) (G : hFunABC.Fun (λ a => ⟨G' a⟩)) :=
-        ∀ {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B), StrictNaturality₂Helper F G f b
-
-        def StrictNaturality₂.split {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
-                                    {F : hFunABC.Fun (λ a => ⟨F' a⟩)}
-                                    {G : hFunABC.Fun (λ a => ⟨G' a⟩)} :
-          StrictNaturality₂' F G → StrictNaturality₂ F G :=
-        λ h {_ _} f b => ((h f b).e₂)⁻¹ • (h f b).e₁
-
         def strict {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
                    {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
                    {η : ∀ a, DefNat (NatDesc.strict (hEq a))}
@@ -420,14 +395,6 @@ namespace CategoryTheory
                                     hNatEq f b •
                                     cancelLeftId (nat (mapHom ⟨F⟩ f) b)
                                                  (byStrictNatDef (hEq := hEq a₂)) }
-
-        def strict' {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
-                    {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
-                    {η : ∀ a, DefNat (NatDesc.strict (hEq a))}
-                    {F : hFunABC.Fun (λ a => ⟨F' a⟩)} {G : hFunABC.Fun (λ a => ⟨G' a⟩)}
-                    (hNatEq : StrictNaturality₂' F G) :
-          NatNatDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
-        strict (StrictNaturality₂.split hNatEq)
 
       end NatNatDesc
 
@@ -522,6 +489,14 @@ namespace CategoryTheory
           defFunFunFun       := DefFunFun.trivial H }
 
         def toFunctor (G : DefFunFunFun desc) : A ⮕ B ⮕' C ⮕' D := DefFunFun.toFunctor G.defFunFunFun
+
+        def byFunFunFunDefNat {G : DefFunFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} :
+          nat (mapHom (toFunctor G) f) b ≃' (G.funFunDesc.natDesc f).η b :=
+        DefFunFun.byFunFunDef
+
+        def byFunFunFunDef {G : DefFunFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} {c : C} :
+          nat (nat (mapHom (toFunctor G) f) b) c ≃' ((desc.revFunFunDesc b).natDesc f).η c :=
+        byNatDef • natCongrArg byFunFunFunDefNat c
 
       end DefFunFunFun
 

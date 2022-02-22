@@ -238,9 +238,7 @@ namespace HasFullFunOp
      substFunFun F C • substFunFun F (B ⟶ C))
   (substDupExtExt (A B C : U) :
      compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C) • substFunFunFun A B C
-     ≃{byDefDef ▻
-       λ F => substDupExt F C
-       ◅ byDef₂ • congrFun byArgDef _ • byFunDef • byArgDef}
+     ≃{byDefDef ▻ λ F => substDupExt F C ◅ byDef₂ • congrFun byArgDef _ • byFunDef • byArgDef}
      substFun (substFunFunFun A B C) (compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C) •
      substFunFunFun A B (B ⟶ C)))
 

@@ -133,13 +133,11 @@ namespace CategoryTheory
         C := A.C }
 
       def catReflEq {A : DefCat desc} (a : toCategory A) :
-        HasInstanceEquivalences.Rel (a ⇾ a) (idHom a)
-                                            (desc.homIsPreorder.refl a) :=
+        idHom a ≃' desc.homIsPreorder.refl a :=
       A.hEq.reflEq a
 
       def catTransEq {A : DefCat desc} {a b c : toCategory A} (f : a ⇾ b) (g : b ⇾ c) :
-        HasInstanceEquivalences.Rel (a ⇾ c) (g • f)
-                                            (desc.homIsPreorder.trans f g) :=
+        g • f ≃' desc.homIsPreorder.trans f g :=
       A.hEq.transEq f g
 
     end DefCat

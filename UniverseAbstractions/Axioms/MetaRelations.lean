@@ -114,10 +114,6 @@ namespace HasEquivalenceRelation
   instance : IsEquivalence (HasEquivalence.Equiv (α := α) (β := α)) := isEquivalence
   instance : HasInstances (HasEquivalence.γ α α) := Universe.instInst V
 
-  @[reducible] def refl  (a     : α)                         : a ≃ a := HasRefl.refl a
-  @[reducible] def symm  {a b   : α} (e : a ≃ b)             : b ≃ a := e⁻¹
-  @[reducible] def trans {a b c : α} (e : a ≃ b) (f : b ≃ c) : a ≃ c := f • e
-
 end HasEquivalenceRelation
 
 instance HasEquivalenceRelation.coeNativeEquivalence {α : Sort u} {r : α → α → Prop} :

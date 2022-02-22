@@ -145,21 +145,11 @@ namespace type
     HasNaturality.DefFunFun desc :=
   HasNaturality.DefFunFun.trivial defFunFunBase
 
-  def defNatNatBase {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇾ G a}
-                    {desc : HasNaturality.NatNatDesc F G η} :
-    HasNaturality.DefNatNatBase desc :=
-  HasNaturality.DefNatNatBase.trivial
-
-  def defNatNat {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇾ G a}
-                {desc : HasNaturality.NatNatDesc F G η} :
-    HasNaturality.DefNatNat desc :=
-  HasNaturality.DefNatNat.trivial defNatNatBase
-
   def defFunFunFunBase {A B C D : Cat'.{u}} {F : A → (B ⮕ C ⮕' D)}
                        {desc : HasNaturality.FunFunFunDesc F} :
     HasNaturality.DefFunFunFunBase desc :=
   { defRevFunFun := λ _ => defFunFunBaseBase,
-    defNatNat    := λ _ => defNatNatBase }
+    defNatNat    := λ _ => HasNaturality.DefNatNatBase.trivial }
 
   def defFunFunFun {A B C D : Cat'.{u}} {F : A → (B ⮕ C ⮕' D)}
                    {desc : HasNaturality.FunFunFunDesc F} :
@@ -272,37 +262,12 @@ namespace type
     HasIsoNaturality.HasTrivialNaturalityCondition A B :=
   ⟨defNatIso⟩
 
-  noncomputable def defNatNatIsoBase {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇿ G a}
-                                     {desc : HasIsoNaturality.NatNatIsoDesc F G η} :
-    HasIsoNaturality.DefNatNatIsoBase desc :=
-  { toDef  := defNatNatBase,
-    invDef := defNatNatBase }
-
-  noncomputable def defNatNatIso {A B C : Cat'.{u}} {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇿ G a}
-                                 {desc : HasIsoNaturality.NatNatIsoDesc F G η} :
-    HasIsoNaturality.DefNatNatIso desc :=
-  { toDefNatNatIsoBase := defNatNatIsoBase,
-    defNatNatIso       := HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
-
-  noncomputable instance hasRightIdNatNat (A B : Cat'.{u}) : IsIsoUniverse.HasRightIdNatNat A B :=
-  { defRightIdNat    := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso,
-    defRightIdNatNat := defNatNatIso }
-
-  noncomputable instance hasLeftIdNatNat (A B : Cat'.{u}) : IsIsoUniverse.HasLeftIdNatNat A B :=
-  { defLeftIdNat    := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso,
-    defLeftIdNatNat := defNatNatIso }
-
-  noncomputable instance hasSwapRevAppNat (A B : Cat'.{u}) : IsIsoUniverse.HasSwapRevAppNat A B :=
-  { defSwapRevAppNat := λ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
-
-  noncomputable instance hasCompAssocNat (A B C D : Cat'.{u}) : IsIsoUniverse.HasCompAssocNat A B C D :=
-  { defCompAssocNat := λ _ _ _ => HasIsoNaturality.HasTrivialNaturalityCondition.defNatIso }
+  noncomputable instance isIsoUniverse.hasTrivialNaturalIsomorphisms :
+    IsIsoUniverse.HasTrivialNaturalIsomorphisms.{u + 1} type'.{u} :=
+  ⟨⟩
 
   noncomputable instance isIsoUniverse.hasFullNaturalIsomorphisms :
     IsIsoUniverse.HasFullNaturalIsomorphisms.{u + 1} type'.{u} :=
-  { hasRightIdNatNat := hasRightIdNatNat,
-    hasLeftIdNatNat  := hasLeftIdNatNat,
-    hasSwapRevAppNat := hasSwapRevAppNat,
-    hasCompAssocNat  := hasCompAssocNat }
+  inferInstance
 
 end type

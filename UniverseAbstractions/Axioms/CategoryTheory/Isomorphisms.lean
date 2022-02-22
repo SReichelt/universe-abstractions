@@ -836,15 +836,6 @@ namespace CategoryTheory
                                                  cancelLeftId (nat (mapHom ⟨G⟩ f) b)
                                                               (byStrictNatIsoInvHomDef (hEq := hEq a₂)) } }
 
-        def strict' {φ : A → B → C} {F' G' : ∀ a, hIsoFunBC.hasFunProp.Fun (φ a)}
-                    {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
-                    {η : ∀ a, DefNatIso (NatIsoDesc.strict (hEq a))}
-                    {F : hIsoFunABC.hasFunProp.Fun (λ a => ⟨F' a⟩)}
-                    {G : hIsoFunABC.hasFunProp.Fun (λ a => ⟨G' a⟩)}
-                    (hNatEq : NatNatDesc.StrictNaturality₂' F G) :
-          NatNatIsoDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
-        strict (NatNatDesc.StrictNaturality₂.split hNatEq)
-
       end NatNatIsoDesc
 
       variable {F G : A ⮕ B ⮕' C} {η : ∀ a, F a ⇿ G a}
@@ -854,6 +845,10 @@ namespace CategoryTheory
       (invDef : DefNatNatBase desc.invDesc)
 
       namespace DefNatNatIsoBase
+
+        def trivial {desc : NatNatIsoDesc F G η} [HasTrivialNatEquiv B C] : DefNatNatIsoBase desc :=
+        { toDef  := DefNatNatBase.trivial,
+          invDef := DefNatNatBase.trivial }
 
         variable {desc : NatNatIsoDesc F G η} (ε : DefNatNatIsoBase desc)
 
@@ -869,6 +864,18 @@ namespace CategoryTheory
                              (desc : NatNatIsoDesc F G η) extends
         DefNatNatIsoBase desc where
       (defNatNatIso : DefNatIso (DefNatNatIsoBase.natIsoDesc toDefNatNatIsoBase))
+
+      namespace DefNatNatIso
+
+        variable [HasCatProp.{max 1 u u' u'' w} W] [HasIsoNaturality A (B ⮕' C)]
+                 {desc : NatNatIsoDesc F G η}
+
+        def trivial (ε : DefNatNatIsoBase desc) [HasTrivialNaturalityCondition A (B ⮕' C)] :
+          DefNatNatIso desc :=
+        { toDefNatNatIsoBase := ε,
+          defNatNatIso       := HasTrivialNaturalityCondition.defNatIso }
+
+      end DefNatNatIso
 
     end
 
@@ -886,7 +893,7 @@ namespace CategoryTheory
   namespace IsIsoUniverse
 
     open HasIsoRel HasIsoOp HasIsoPreFun HasIsomorphisms HasIsoNat HasIsoNaturality
-         HasLinearFunOp
+         HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp
 
     section
 
@@ -941,6 +948,19 @@ namespace CategoryTheory
       { defDupFun    := λ F   => toDefFun (IsNatUniverse.HasFullFunctors.dupFun F),
         defDupFunFun := λ A B => toDefFun (IsNatUniverse.HasFullFunctors.dupFunFun A B) }
 
+      class HasTrivialNaturalIsomorphisms where
+      [hasTrivialNatEquiv (A B : Category W) : HasTrivialNatEquiv A B]
+      [hasTrivialIsoNat   (A B : Category W) : HasIsoNaturality.HasTrivialNaturalityCondition A B]
+
+      namespace HasTrivialNaturalIsomorphisms
+
+        variable [h : HasTrivialNaturalIsomorphisms W]
+
+        instance (A B : Category W) : HasTrivialNatEquiv A B                             := h.hasTrivialNatEquiv A B
+        instance (A B : Category W) : HasIsoNaturality.HasTrivialNaturalityCondition A B := h.hasTrivialIsoNat A B
+
+      end HasTrivialNaturalIsomorphisms
+
     end
 
     section
@@ -952,54 +972,237 @@ namespace CategoryTheory
 
         variable [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
 
+        def byIdFunDef {A : univ W} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (idFun A) f ≃' f :=
+        DefFun.byMapHomDef
+
+        def byAppFunFunDef {A B : univ W} {F₁ F₂ : A ⟶ B} {η : F₁ ⇾ F₂} {a : A} :
+          nat (mapHom (appFunFun A B) η) a ≃' nat η a :=
+        natCongrArg byIdFunDef a
+
+        def byRevAppFunDef {A B : univ W} {a : A} {F₁ F₂ : A ⟶ B} {η : F₁ ⇾ F₂} :
+          mapHom (revAppFun a B) η ≃' nat η a :=
+        DefFun.byMapHomDef
+
+        def byRevAppFunFunDef {A B : univ W} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {F : A ⟶ B} :
+          nat (mapHom (revAppFunFun A B) f) F ≃' mapHom F f :=
+        DefFunFun.byFunFunDef
+
+        def byCompFunDef {A B C : univ W} {F : A ⟶ B} {G : B ⟶ C} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (G • F) f ≃' mapHom G (mapHom F f) :=
+        DefFun.byMapHomDef
+
+        def byCompFunFunDef {A B C : univ W} {F : A ⟶ B} {G₁ G₂ : B ⟶ C} {ε : G₁ ⇾ G₂} {a : A} :
+          nat (mapHom (compFunFun F C) ε) a ≃' nat ε (F a) :=
+        DefFunFun.byFunFunDef
+
+        def byCompFunFunFunDef {A B C : univ W} {F₁ F₂ : A ⟶ B} {η : F₁ ⇾ F₂} {G : B ⟶ C} {a : A} :
+          nat (nat (mapHom (compFunFunFun A B C) η) G) a ≃' mapHom G (nat η a) :=
+        DefFunFunFun.byFunFunFunDef
+
+        def bySwapFunDef {A B C : univ W} {F : A ⟶ B ⟶ C} {b : B} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (swapFun F b) f ≃' nat (mapHom F f) b :=
+        byRevAppFunDef • byCompFunDef
+
+        def bySwapFunFunDef {A B C : univ W} {F : A ⟶ B ⟶ C} {b₁ b₂ : B} {g : b₁ ⇾ b₂} {a : A} :
+          nat (mapHom (swapFunFun F) g) a ≃' mapHom (F a) g :=
+        byRevAppFunFunDef • byCompFunFunDef • natCongrArg byCompFunDef a
+
+        def bySwapFunFunFunDef {A B C : univ W} {F₁ F₂ : A ⟶ B ⟶ C} {η : F₁ ⇾ F₂} {a : A} {b : B} :
+          nat (nat (mapHom (swapFunFunFun A B C) η) b) a ≃' nat (nat η a) b :=
+        byRevAppFunDef •
+        byCompFunFunFunDef •
+        natCongrArg (byCompFunFunDef • natCongrArg byCompFunDef b) a
+
+        def byRevCompFunFunDef {A B C : univ W} {G : B ⟶ C} {F₁ F₂ : A ⟶ B} {η : F₁ ⇾ F₂} {a : A} :
+          nat (mapHom (revCompFunFun A G) η) a ≃' mapHom G (nat η a) :=
+        byCompFunFunFunDef • natCongrArg bySwapFunDef a
+
+        def byRevCompFunFunFunDef {A B C : univ W} {G₁ G₂ : B ⟶ C} {ε : G₁ ⇾ G₂} {F : A ⟶ B} {a : A} :
+          nat (nat (mapHom (revCompFunFunFun A B C) ε) F) a ≃' nat ε (F a) :=
+        byCompFunFunDef • natCongrArg bySwapFunFunDef a
+
         def rightIdNatDesc {A B : univ W} (F : A ⟶ B) : NatIsoDesc (F • idFun A) F :=
-        NatIsoDesc.strict (λ _ => mapHomCongrArg F DefFun.byMapHomDef • DefFun.byMapHomDef)
+        NatIsoDesc.strict (λ _ => mapHomCongrArg F byIdFunDef • byCompFunDef)
 
         class HasRightIdNat (A B : univ W) where
         (defRightIdNat (F : A ⟶ B) : DefNatIso (rightIdNatDesc F))
 
         def rightIdNatNatDesc (A B : univ W) [h : HasRightIdNat A B] :
-          NatNatIsoDesc (compFunFun (idFun A) B) (appFunFun A B) (λ F => (h.defRightIdNat F).η) :=
-        NatNatIsoDesc.strict' (λ η a => { g  := nat η a,
-                                          e₁ := DefFunFun.byFunFunDef,
-                                          e₂ := natCongrArg DefFun.byMapHomDef a })
+          NatNatIsoDesc (compFunFun (idFun A) B) (idFun (A ⟶ B)) (λ F => (h.defRightIdNat F).η) :=
+        NatNatIsoDesc.strict (λ _ _ => byAppFunFunDef⁻¹ • byCompFunFunDef)
 
         class HasRightIdNatNat (A B : univ W) extends HasRightIdNat A B where
         (defRightIdNatNat : DefNatNatIso (rightIdNatNatDesc A B))
 
         def leftIdNatDesc {A B : univ W} (F : A ⟶ B) : NatIsoDesc (idFun B • F) F :=
-        NatIsoDesc.strict (λ _ => DefFun.byMapHomDef • DefFun.byMapHomDef)
+        NatIsoDesc.strict (λ _ => byIdFunDef • byCompFunDef)
 
         class HasLeftIdNat (A B : univ W) where
         (defLeftIdNat (F : A ⟶ B) : DefNatIso (leftIdNatDesc F))
 
         def leftIdNatNatDesc (A B : univ W) [h : HasLeftIdNat A B] :
-          NatNatIsoDesc (revCompFunFun A (idFun B)) (appFunFun A B) (λ F => (h.defLeftIdNat F).η) :=
-        NatNatIsoDesc.strict' (λ η a => { g  := nat η a,
-                                          e₁ := sorry,
-                                          e₂ := natCongrArg DefFun.byMapHomDef a })
+          NatNatIsoDesc (revCompFunFun A (idFun B)) (idFun (A ⟶ B)) (λ F => (h.defLeftIdNat F).η) :=
+        NatNatIsoDesc.strict (λ _ _ => byAppFunFunDef⁻¹ • byIdFunDef • byRevCompFunFunDef)
 
         class HasLeftIdNatNat (A B : univ W) extends HasLeftIdNat A B where
         (defLeftIdNatNat : DefNatNatIso (leftIdNatNatDesc A B))
 
         def swapRevAppNatDesc {A B : univ W} (F : A ⟶ B) :
           NatIsoDesc (swapFun (revAppFunFun A B) F) F :=
-        NatIsoDesc.strict (λ _ => byNatDef •
-                                  DefFun.byMapHomDef •
-                                  mapHomCongrArg (HasNaturality.HasRevAppFun.revAppFun (A ⟶ B) B F)
-                                                 DefFun.byMapHomDef •
-                                  DefFun.byMapHomDef)
+        NatIsoDesc.strict (λ _ => byRevAppFunFunDef • bySwapFunDef)
 
         class HasSwapRevAppNat (A B : univ W) where
         (defSwapRevAppNat (F : A ⟶ B) : DefNatIso (swapRevAppNatDesc F))
 
+        def swapRevAppNatNatDesc (A B : univ W) [h : HasSwapRevAppNat A B] :
+          NatNatIsoDesc (swapFunFun (revAppFunFun A B)) (appFunFun A B) (λ F => (h.defSwapRevAppNat F).η) :=
+        NatNatIsoDesc.strict (λ _ _ => byAppFunFunDef⁻¹ • byRevAppFunDef • bySwapFunFunDef)
+
+        class HasSwapRevAppNatNat (A B : univ W) extends HasSwapRevAppNat A B where
+        (defSwapRevAppNatNat : DefNatNatIso (swapRevAppNatNatDesc A B))
+
+        def swapCompFunNatDesc {A B : univ W} (F : A ⟶ B) (a : A) (C : univ W) :
+          NatIsoDesc (swapFun (compFunFun F C) a) (revAppFun (F a) C) :=
+        NatIsoDesc.strict (λ _ => byRevAppFunDef⁻¹ • byCompFunFunDef • bySwapFunDef)
+
+        class HasSwapCompFunNat (A B C : univ W) where
+        (defSwapCompFunNat (F : A ⟶ B) (a : A) : DefNatIso (swapCompFunNatDesc F a C))
+
+        class HasSwapCompFunNatNat (A B C : univ W) extends HasSwapCompFunNat A B C
+
+        class HasSwapCompFunNatNatNat (A B C : univ W) extends HasSwapCompFunNatNat A B C
+
+        def swapRevCompFunNatDesc {A B C : univ W} (F : B ⟶ C) (a : A) :
+          NatIsoDesc (swapFun (revCompFunFun A F) a) (F • revAppFun a B) :=
+        NatIsoDesc.strict (λ _ => (mapHomCongrArg F byRevAppFunDef • byCompFunDef)⁻¹ •
+                                  byRevCompFunFunDef • bySwapFunDef)
+
+        class HasSwapRevCompFunNat (A B C : univ W) where
+        (defSwapRevCompFunNat (F : B ⟶ C) (a : A) : DefNatIso (swapRevCompFunNatDesc F a))
+
+        class HasSwapRevCompFunNatNat (A B C : univ W) extends HasSwapRevCompFunNat A B C
+
+        class HasSwapRevCompFunNatNatNat (A B C : univ W) extends HasSwapRevCompFunNatNat A B C
+
         def compAssocNatDesc {A B C D : univ W} (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) :
           NatIsoDesc ((H • G) • F) (H • (G • F)) :=
-        NatIsoDesc.strict (λ _ => (congrArg _ DefFun.byMapHomDef • DefFun.byMapHomDef)⁻¹ •
-                                  DefFun.byMapHomDef • DefFun.byMapHomDef)
+        NatIsoDesc.strict (λ _ => (mapHomCongrArg H byCompFunDef • byCompFunDef)⁻¹ •
+                                  byCompFunDef • byCompFunDef)
 
         class HasCompAssocNat (A B C D : univ W) where
         (defCompAssocNat (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : DefNatIso (compAssocNatDesc F G H))
+
+        class HasCompAssocNatNat (A B C D : univ W) extends HasCompAssocNat A B C D
+
+        class HasCompAssocNatNatNat (A B C D : univ W) extends HasCompAssocNatNat A B C D
+
+        class HasCompAssocNatNatNatNat (A B C D : univ W) extends HasCompAssocNatNatNat A B C D
+
+      end
+
+      section
+
+        variable [HasSubLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
+                 [IsNatUniverse.HasAffineFunctors W]
+
+        def byConstFunDef {A B : univ W} {b : B} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (constFun A b) f ≃' idHom b :=
+        DefFun.byMapHomDef
+
+        def byConstFunFunDef {A B : univ W} {b₁ b₂ : B} {g : b₁ ⇾ b₂} {a : A} :
+          nat (mapHom (constFunFun A B) g) a ≃' g :=
+        DefFunFun.byFunFunDef
+
+        def rightConstNatDesc (A : univ W) {B C : univ W} (b : B) (G : B ⟶ C) :
+          NatIsoDesc (G • constFun A b) (constFun A (G b)) :=
+        NatIsoDesc.strict (λ _ => byConstFunDef⁻¹ •
+                                  reflEq G b • mapHomCongrArg G byConstFunDef • byCompFunDef)
+
+        class HasRightConstNat (A B C : univ W) where
+        (defRightConstNat (b : B) (G : B ⟶ C) : DefNatIso (rightConstNatDesc A b G))
+
+        class HasRightConstNatNat (A B C : univ W) extends HasRightConstNat A B C
+
+        class HasRightConstNatNatNat (A B C : univ W) extends HasRightConstNatNat A B C
+
+        def leftConstNatDesc {A B C : univ W} (F : A ⟶ B) (c : C) :
+          NatIsoDesc (constFun B c • F) (constFun A c) :=
+        NatIsoDesc.strict (λ _ => byConstFunDef⁻¹ • byConstFunDef • byCompFunDef)
+
+        class HasLeftConstNat (A B C : univ W) where
+        (defLeftConstNat (F : A ⟶ B) (c : C) : DefNatIso (leftConstNatDesc F c))
+
+        class HasLeftConstNatNat (A B C : univ W) extends HasLeftConstNat A B C
+
+        class HasLeftConstNatNatNat (A B C : univ W) extends HasLeftConstNatNat A B C
+
+      end
+
+      section
+
+        variable [HasSubLinearFunOp W] [HasNonLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
+                 [IsNatUniverse.HasFullFunctors W]
+
+        def byDupFunDef {A B : univ W} {F : A ⟶ A ⟶ B} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (dupFun F) f ≃' mapDupHom F f :=
+        DefFun.byMapHomDef
+
+        def byDupFunDef' {A B : univ W} {F : A ⟶ A ⟶ B} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (dupFun F) f ≃' mapDupHom' F f :=
+        (mapDupHomEq F f)⁻¹ • byDupFunDef
+
+        def byDupFunFunDef {A B : univ W} {F₁ F₂ : A ⟶ A ⟶ B} {η : F₁ ⇾ F₂} {a : A} :
+          nat (mapHom (dupFunFun A B) η) a ≃' nat (nat η a) a :=
+        DefFunFun.byFunFunDef
+
+        def bySubstFunDef {A B C : univ W} {F : A ⟶ B} {G : A ⟶ B ⟶ C} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (substFun F G) f ≃' mapHom (G a₂) (mapHom F f) • nat (mapHom G f) (F a₁) :=
+        congrArgTrans (byCompFunFunDef • natCongrArg byCompFunDef a₁) byCompFunDef • byDupFunDef
+
+        def bySubstFunDef' {A B C : univ W} {F : A ⟶ B} {G : A ⟶ B ⟶ C} {a₁ a₂ : A} {f : a₁ ⇾ a₂} :
+          mapHom (substFun F G) f ≃' nat (mapHom G f) (F a₂) • mapHom (G a₁) (mapHom F f) :=
+        congrArgTrans byCompFunDef (byCompFunFunDef • natCongrArg byCompFunDef a₂) • byDupFunDef'
+
+        def dupSwapNatDesc {A B : univ W} (F : A ⟶ A ⟶ B) :
+          NatIsoDesc (dupFun (swapFunFun F)) (dupFun F) :=
+        NatIsoDesc.strict (λ _ => byDupFunDef⁻¹ •
+                                  congrArgTrans bySwapFunDef bySwapFunFunDef •
+                                  byDupFunDef')
+
+        class HasDupSwapNat (A B : univ W) where
+        (defDupSwapNat (F : A ⟶ A ⟶ B) : DefNatIso (dupSwapNatDesc F))
+
+        def dupSwapNatNatDesc (A B : univ W) [h : HasDupSwapNat A B] :
+          NatNatIsoDesc (dupFunFun A B • swapFunFunFun A A B) (dupFunFun A B)
+                        (λ F => (h.defDupSwapNat F).η) :=
+        NatNatIsoDesc.strict (λ _ a => byDupFunFunDef⁻¹ •
+                                       bySwapFunFunFunDef •
+                                       byDupFunFunDef •
+                                       natCongrArg byCompFunDef a)
+
+        class HasDupSwapNatNat (A B : univ W) extends HasDupSwapNat A B where
+        (defDupSwapNatNat : DefNatNatIso (dupSwapNatNatDesc A B))
+
+        def dupConstNatDesc {A B : univ W} (F : A ⟶ B) :
+          NatIsoDesc (dupFun (constFun A F)) F :=
+        NatIsoDesc.strict (λ {a b} f => rightId (mapHom F f) •
+                                        congrArgTransRight (natReflEq' F a • natCongrArg byConstFunDef a)
+                                                           (mapHom F f) •
+                                        byDupFunDef)
+
+        class HasDupConstNat (A B : univ W) where
+        (defDupConstNat (F : A ⟶ B) : DefNatIso (dupConstNatDesc F))
+
+        def dupConstNatNatDesc (A B : univ W) [h : HasDupConstNat A B] :
+          NatNatIsoDesc (dupFunFun A B • constFunFun A (A ⟶ B)) (idFun (A ⟶ B))
+                        (λ F => (h.defDupConstNat F).η) :=
+        NatNatIsoDesc.strict (λ f a => natCongrArg (byIdFunDef⁻¹ • byConstFunFunDef) a •
+                                       byDupFunFunDef •
+                                       natCongrArg byCompFunDef a)
+
+        class HasDupConstNatNat (A B : univ W) extends HasDupConstNat A B where
+        (defDupConstNatNat : DefNatNatIso (dupConstNatNatDesc A B))
 
       end
 
@@ -1012,52 +1215,108 @@ namespace CategoryTheory
 
       class HasLinearNaturalIsomorphisms [hLinFun : IsFunUniverse.HasLinearFunctors W]
                                          [hNatLinFun : IsNatUniverse.HasLinearFunctors W] where
-      [hasRightIdNatNat (A B     : Category W) : HasRightIdNatNat A B]
-      [hasLeftIdNatNat  (A B     : Category W) : HasLeftIdNatNat  A B]
-      [hasSwapRevAppNat (A B     : Category W) : HasSwapRevAppNat A B]
-      [hasCompAssocNat  (A B C D : Category W) : HasCompAssocNat  A B C D]
+      [hasRightIdNatNat           (A B     : Category W) : HasRightIdNatNat           A B]
+      [hasLeftIdNatNat            (A B     : Category W) : HasLeftIdNatNat            A B]
+      [hasSwapRevAppNatNat        (A B     : Category W) : HasSwapRevAppNatNat        A B]
+      [hasSwapCompFunNatNatNat    (A B C   : Category W) : HasSwapCompFunNatNatNat    A B C]
+      [hasSwapRevCompFunNatNatNat (A B C   : Category W) : HasSwapRevCompFunNatNatNat A B C]
+      [hasCompAssocNatNatNatNat   (A B C D : Category W) : HasCompAssocNatNatNatNat   A B C D]
+
+      namespace HasLinearNaturalIsomorphisms
+
+        variable [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
+
+        instance trivial [h : HasTrivialNaturalIsomorphisms W] : HasLinearNaturalIsomorphisms W :=
+        { hasRightIdNatNat           := λ _ _     => { defRightIdNat        := λ _ => HasTrivialNaturalityCondition.defNatIso,
+                                                       defRightIdNatNat     := DefNatNatIso.trivial DefNatNatIsoBase.trivial },
+          hasLeftIdNatNat            := λ _ _     => { defLeftIdNat         := λ _ => HasTrivialNaturalityCondition.defNatIso,
+                                                       defLeftIdNatNat      := DefNatNatIso.trivial DefNatNatIsoBase.trivial },
+          hasSwapRevAppNatNat        := λ _ _     => { defSwapRevAppNat     := λ _ => HasTrivialNaturalityCondition.defNatIso,
+                                                       defSwapRevAppNatNat  := DefNatNatIso.trivial DefNatNatIsoBase.trivial },
+          hasSwapCompFunNatNatNat    := λ _ _ _   => { defSwapCompFunNat    := λ _ _ => HasTrivialNaturalityCondition.defNatIso },
+          hasSwapRevCompFunNatNatNat := λ _ _ _   => { defSwapRevCompFunNat := λ _ _ => HasTrivialNaturalityCondition.defNatIso },
+          hasCompAssocNatNatNatNat   := λ _ _ _ _ => { defCompAssocNat      := λ _ _ _ => HasTrivialNaturalityCondition.defNatIso } }
+
+        instance hasLinearFunExt [h : HasLinearNaturalIsomorphisms W] :
+          HasLinearFunOp.HasLinearFunExt (univ W) :=
+        { rightId              := λ {A B} F         => ((h.hasRightIdNatNat A B).defRightIdNat F).η,
+          rightIdExt           := λ A B             => (h.hasRightIdNatNat A B).defRightIdNatNat.defNatNatIso.η,
+          leftId               := λ {A B} F         => ((h.hasLeftIdNatNat A B).defLeftIdNat F).η,
+          leftIdExt            := λ A B             => (h.hasLeftIdNatNat A B).defLeftIdNatNat.defNatNatIso.η,
+          swapRevApp           := λ {A B} F         => ((h.hasSwapRevAppNatNat A B).defSwapRevAppNat F).η,
+          swapRevAppExt        := λ A B             => (h.hasSwapRevAppNatNat A B).defSwapRevAppNatNat.defNatNatIso.η,
+          swapCompFun          := λ {A B} F a C     => ((h.hasSwapCompFunNatNatNat A B C).defSwapCompFunNat F a).η,
+          swapCompFunExt       := λ {A B} F C       => sorry,
+          swapCompFunExtExt    := λ A B C           => sorry,
+          swapRevCompFun       := λ {A B C} F a     => ((h.hasSwapRevCompFunNatNatNat A B C).defSwapRevCompFunNat F a).η,
+          swapRevCompFunExt    := λ A {B C} F       => sorry,
+          swapRevCompFunExtExt := λ A B C           => sorry,
+          compAssoc            := λ {A B C D} F G H => ((h.hasCompAssocNatNatNatNat A B C D).defCompAssocNat F G H).η,
+          compAssocExt         := λ {A B C} F G D   => sorry,
+          compAssocExtExt      := λ {A B} F C D     => sorry,
+          compAssocExtExtExt   := λ A B C D         => sorry }
+
+      end HasLinearNaturalIsomorphisms
 
       class HasAffineNaturalIsomorphisms [HasSubLinearFunOp W]
                                          [hAffFun : IsFunUniverse.HasAffineFunctors W]
                                          [hNatAffFun : IsNatUniverse.HasAffineFunctors W] extends
-        HasLinearNaturalIsomorphisms W
+        HasLinearNaturalIsomorphisms W where
+      [hasRightConstNatNatNat (A B C : Category W) : HasRightConstNatNatNat A B C]
+      [hasLeftConstNatNatNat  (A B C : Category W) : HasLeftConstNatNatNat  A B C]
+
+      namespace HasAffineNaturalIsomorphisms
+
+        variable [HasSubLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
+                 [IsNatUniverse.HasAffineFunctors W]
+
+        instance trivial [h : HasTrivialNaturalIsomorphisms W] : HasAffineNaturalIsomorphisms W :=
+        { hasRightConstNatNatNat := λ _ _ _ => { defRightConstNat := λ _ _ => HasTrivialNaturalityCondition.defNatIso },
+          hasLeftConstNatNatNat  := λ _ _ _ => { defLeftConstNat  := λ _ _ => HasTrivialNaturalityCondition.defNatIso } }
+
+        instance hasAffineFunExt [h : HasAffineNaturalIsomorphisms W] :
+          HasAffineFunOp.HasAffineFunExt (univ W) :=
+        { rightConst       := λ A {B C} b G => ((h.hasRightConstNatNatNat A B C).defRightConstNat b G).η,
+          rightConstExt    := λ A {B} b C   => sorry,
+          rightConstExtExt := λ A B C       => sorry,
+          leftConst        := λ {A B C} F c => ((h.hasLeftConstNatNatNat A B C).defLeftConstNat F c).η,
+          leftConstExt     := λ {A B} F C   => sorry,
+          leftConstExtExt  := λ A B C       => sorry }
+
+      end HasAffineNaturalIsomorphisms
 
       class HasFullNaturalIsomorphisms [HasSubLinearFunOp W] [HasNonLinearFunOp W]
                                        [hAffFun : IsFunUniverse.HasAffineFunctors W]
                                        [hNatFullFun : IsNatUniverse.HasFullFunctors W] extends
-        HasAffineNaturalIsomorphisms W
+        HasAffineNaturalIsomorphisms W where
+      [hasDupSwapNatNat  (A B : Category W) : HasDupSwapNatNat  A B]
+      [hasDupConstNatNat (A B : Category W) : HasDupConstNatNat A B]
 
-      instance hasLinearFunExt [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
-                               [h : HasLinearNaturalIsomorphisms W] :
-        HasLinearFunOp.HasLinearFunExt (univ W) :=
-      { rightId              := λ {A B} F => ((h.hasRightIdNatNat A B).defRightIdNat F).η,
-        leftId               := λ {A B} F => ((h.hasLeftIdNatNat  A B).defLeftIdNat  F).η,
-        rightIdExt           := λ A B => (h.hasRightIdNatNat A B).defRightIdNatNat.defNatNatIso.η,
-        leftIdExt            := λ A B => (h.hasLeftIdNatNat  A B).defLeftIdNatNat.defNatNatIso.η,
-        swapRevApp           := λ {A B} F => ((h.hasSwapRevAppNat A B).defSwapRevAppNat F).η,
-        swapRevAppExt        := sorry,
-        swapCompFun          := sorry,
-        swapCompFunExt       := sorry,
-        swapCompFunExtExt    := sorry,
-        swapRevCompFun       := sorry,
-        swapRevCompFunExt    := sorry,
-        swapRevCompFunExtExt := sorry,
-        compAssoc            := λ {A B C D} F G H => ((h.hasCompAssocNat A B C D).defCompAssocNat F G H).η,
-        compAssocExt         := sorry,
-        compAssocExtExt      := sorry,
-        compAssocExtExtExt   := sorry }
+      namespace HasFullNaturalIsomorphisms
 
-      instance hasAffineFunExt [HasSubLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
-                               [IsNatUniverse.HasAffineFunctors W]
-                               [h : HasAffineNaturalIsomorphisms W] :
-        HasAffineFunOp.HasAffineFunExt (univ W) :=
-      sorry
+        variable [HasSubLinearFunOp W] [HasNonLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
+                 [IsNatUniverse.HasFullFunctors W]
 
-      instance hasFullFunExt [HasSubLinearFunOp W] [HasNonLinearFunOp W]
-                             [IsFunUniverse.HasAffineFunctors W] [IsNatUniverse.HasFullFunctors W]
-                             [h : HasFullNaturalIsomorphisms W] :
-        HasFullFunOp.HasFullFunExt (univ W) :=
-      sorry
+        instance trivial [h : HasTrivialNaturalIsomorphisms W] : HasFullNaturalIsomorphisms W :=
+        { hasDupSwapNatNat  := λ _ _ => { defDupSwapNat     := λ _ => HasTrivialNaturalityCondition.defNatIso,
+                                          defDupSwapNatNat  := DefNatNatIso.trivial DefNatNatIsoBase.trivial },
+          hasDupConstNatNat := λ _ _ => { defDupConstNat    := λ _ => HasTrivialNaturalityCondition.defNatIso,
+                                          defDupConstNatNat := DefNatNatIso.trivial DefNatNatIsoBase.trivial } }
+
+        instance hasFullFunExt [h : HasFullNaturalIsomorphisms W] :
+          HasFullFunOp.HasFullFunExt (univ W) :=
+        { dupSwap        := λ {A B} F     => ((h.hasDupSwapNatNat A B).defDupSwapNat F).η,
+          dupSwapExt     := λ A B         => (h.hasDupSwapNatNat A B).defDupSwapNatNat.defNatNatIso.η,
+          dupConst       := λ {A B} F     => ((h.hasDupConstNatNat A B).defDupConstNat F).η,
+          dupConstExt    := λ A B         => (h.hasDupConstNatNat A B).defDupConstNatNat.defNatNatIso.η,
+          rightDup       := λ {A B C} F G => sorry,
+          rightDupExt    := λ {A B} F C   => sorry,
+          rightDupExtExt := λ A B C       => sorry,
+          substDup       := λ {A B C} F G => sorry,
+          substDupExt    := λ {A B} F C   => sorry,
+          substDupExtExt := λ A B C       => sorry }
+
+      end HasFullNaturalIsomorphisms
 
       instance hasStandardFunctors [HasSubLinearFunOp W] [HasNonLinearFunOp W]
                                    [IsFunUniverse.HasAffineFunctors W] [IsNatUniverse.HasFullFunctors W]

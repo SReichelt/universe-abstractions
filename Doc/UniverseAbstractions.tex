@@ -45,6 +45,7 @@
 \newcommand{\Bool}{\universe{Bool}}
 \newcommand{\Prop}{\universe{Prop}}
 \newcommand{\Set}{\universe{Set}}
+\newcommand{\Cat}{\universe{Cat}}
 
 \newcommand{\id}{\nm{id}}
 \newcommand{\apply}{\nm{apply}}
@@ -74,45 +75,50 @@
 
 \section{Introduction}
 
-In this document, we describe a mathematical framework to automate proofs that follow from structural
-properties. Such automation can be implemented in theorem provers, and in fact this document is
-largely intended as documentation for the accompanying formalization in Lean 4 \cite{lean4}.
-At the same time, the algorithms are simple enough to be carried out by hand, and quite often the
-existence of an algorithm can be used to prove a result without actually executing the algorithm, so
-our results can be useful for informal mathematics as well.
+This work is an attempt to make the advantages of Homotopy Type Theory (HoTT) \cite{hottbook} available
+within more traditional mathematical foundations, by formalizing suitable models of type theories in
+a way that working with these models is as easy as working within HoTT itself. In short, the goal is to
+be able to \emph{use} HoTT as a mathematical theory whenever convenient, similarly to the way category
+theory is typically used.
 
-The framework is built around the realization that categories and functors form a simply-typed lambda
-calculus \cite{simply-typed-lambda-calculus} when objects are regarded up to isomorphism, because
-functors corresponding to the $\nm{S}$ and $\nm{K}$ combinators exist (theorem
-\ref{thm:funop}).\footnote{This is different from the interpretation of simply-typed lambda calculus
-as the internal logic of a Cartesian closed category, mainly due to the different interpretation of
-equality. In particular, our result applies to \emph{any} category, or more precisely to the
-collection of categories.}
-So it is possible to prove that a function between categories is functorial just by observing that it
-is a term in simply-typed lambda calculus, or, as we state it, its definition is built from functor
-applications (proposition \ref{prp:functoriality}). We then generalize this result by including
-further categorical structures, which corresponds to enriching the lambda calculus with more types.
+In particular, one of the goals (which we have not reached yet but are getting close) is a
+``polymorphic'' definition of a higher category built on top of categories one level below. Iterating
+this definition gives a certain model of $\infty$-categories that (if successful) models HoTT in a
+more direct way than simplicial or cubical sets.
 
-Functors constructed in this way way are extensional, which means that if for two functors
-$F,G : \C \to \D$ we have an isomorphism between $F(a)$ and $G(a)$ for a sufficiently `generic' $a$
-(which we make precise), then we can algorithmically construct a natural isomorphism between $F$ and
-$G$ (theorem \ref{thm:extensionality}).
+This construction works in several different frameworks:
+\begin{itemize}
+  \item In this document, we describe the construction in the context of Zermelo-Fraenkel (ZF) set
+  theory with universes.
+  \item The accompanying formalization in the Lean 4 proof assistant \cite{lean4} is directly based
+  on the logic implemented in Lean, without assuming any additional axioms (such as univalence, which
+  is inconsistent with the foundation of Lean 3 and 4).
+  \item A large part of this formalization (the ``polymorphic'' part, essentially) can in principle be
+  carried out in a weak intuitionistic type theory with universes and $\Pi$ types (but without sum and
+  identity types).
+\end{itemize}
 
-The main goal is to automate proofs of isomorphism invariance in a similar way, but this is work in
-progress.
+A key difference to usual treatments of higher categories is that we do \emph{not} use 1-categories
+as a starting point. Instead, we define a ``potentially weak'' version of categories where equality
+is replaced with a more general notion of equivalence, the prerequisites of which we formalize first:
+The weakened definition is parameterized by a `universe' (see definition \ref{def:universe}) in
+which the `types' of its morphisms live, and this parameterization actually enables a \emph{single}
+definition of category to be used at every level.
 
-The framework is influenced by ideas from Homotopy Type Theory \cite{hottbook}, but it is built on
-conventional mathematical foundations: in this document, we work in Zermelo-Fraenkel (ZF) set
-theory with universes, whereas the Lean formalization is directly based on the Calculus of Inductive
-Constructions implemented in Lean, without assuming any additional axioms. When we use
-type-theoretic notation and vocabulary, it always refers to a specific definition that we give in
-this document.
+Although the prerequisites are very generic, they enable some nontrivial automation based on
+algorithms from combinatorial logic \cite{combinators}: Proposition \ref{prp:functoriality} shows
+how functoriality can be proved automatically in many cases, based on a generalization of the fact
+that the category $\Cat$ of (small) categories is Cartesian closed. Theorem \ref{thm:extensionality}
+is a similar result for proofs of natural isomorphisms.
+
+The envisioned full implementation of HoTT will be able to automate proofs of isomorphism invariance
+(and transport of structure along isomorphisms) in a similar way.
 
 \section{Universes}
 \label{sec:universes}
 
-Although we specifically work in Zermelo-Fraenkel (ZF) set theory with (a finite number of)
-Grothendieck universes, we will ignore all issues related to the sizes of collections.
+Although in this document, we specifically work in Zermelo-Fraenkel (ZF) set theory with (a finite
+number of) Grothendieck universes, we will ignore all issues related to the sizes of collections.
 Explicit universe constraints are given in the Lean formalization. Since the logic
 implemented in Lean has been proved to be equiconsistent with ZF plus choice and a finite
 number of inaccessible cardinals \cite{lean-type-theory}, it is safe to assume that analogous
@@ -121,6 +127,7 @@ constraints are sufficient in the latter.
 Therefore, we reserve the word `universe' for our own use except where specified otherwise:
 
 \begin{definition}
+  \label{def:universe}
   We define a \defn{universe} to be a pair $(I, (S_A)_{A \in I})$ of
   \begin{itemize}
     \item an index set $I,$ the members of which we call \defn{types}, and
@@ -157,7 +164,7 @@ are a lot of examples of such universes. Fix a Grothendieck universe $U.$
   $(\C, (S)_{(S, t_S) \in \C})$ is a universe.\\
   As an example, let $\C$ be the set of all $U$-small groups. Then each type $A$ is a group, and
   each instance $a : A$ is member of the carrier set of $A$ (i.e.\ informally a member of $A$).\\
-  The universe of categories will be of particular importance, where types are categories and instances
+  Universes of categories will be of particular importance, where types are categories and instances
   are objects in those categories.\\
   Another example is that $\C$ is a collection of universes. Then each type is itself a universe, and
   its instances are the types in that universe.
@@ -269,15 +276,11 @@ examples given in section \ref{sec:universes}.
   structures inherit their instance equivalences from $\Set$ if their elements do not have
   any internal structure that suggests a different definition of instance equivalence.
   This generalizes to structures built on universes other than $\Set.$
-  \item In the universe of categories, we define $a \equiv b$ to be the set of
-  isomorphisms from $a$ to $b,$ as described in the previous section. Therefore, the
-  universe of categories has instance equivalences in $\Set$ instead of $\Bool.$\\
-  (Similarly, higher categories generally have instance equivalences in some universe of
-  categories or higher categories. We will not investigate this in detail, but it is likely
-  that some concepts in this document correspond closely to higher category theory.)
-  \item In section \ref{sec:equivalences} we will give a definition of equivalence of types in
-  a universe, and this will also be our definition of instance equivalences of universes of
-  universes.
+  \item In a universe of categories, we define $a \equiv b$ to be the set of isomorphisms
+  from $a$ to $b,$ as described in the previous section. Therefore, the universe of
+  1-categories has instance equivalences in $\Set$ instead of $\Bool,$ and in general a
+  universe of (weak) $n$-categories will have instance equivalences in the universe of (weak)
+  $(n-1)$-categories.
   \item Subuniverses inherit instance equivalences from their superuniverse.
   \item If $\U$ has instance equivalences in $\V,$ and $\U'$ has instance equivalences in
   $\V',$ then the product and sum universes $\U \times \U'$ and $\U \uplus \U'$ have instance
@@ -675,7 +678,7 @@ a universe with linear functor operations.)
   The universes with internal functors that are listed in section \ref{sec:functors} have the
   following functor operations.
   \begin{itemize}
-    \item $\Unit,$ $\Bool,$ $\Set,$ and the universes of categories and groupoids have
+    \item $\Unit,$ $\Bool,$ $\Set,$ and the universes of 1-categories and 1-groupoids have
     full functor operations.
     \item The listed universes of algebraic structures have linear functor operations.
   \end{itemize}
@@ -702,9 +705,18 @@ a universe with linear functor operations.)
     is similar to $\Set$ except that equality is replaced with an equivalence relation.}
     the axioms $\nm{rightId},\nm{leftId},\ldots$ hold by lemma \ref{lem:extensional}.
     %
-    \item To show how to construct the required functors in universes of
-    structures, we will take $\constFun_{\C\D}$ for categories $\C$ and $\D$ as a
-    simple but not completely trivial example.
+    \item Structures forming a Cartesian closed category also form a universe with full
+    functor operations, and structures forming a closed monoidal category form a
+    universe with linear functor operations. This follows from the relationship between
+    such categories and simply-typed lambda calculus. (Caveat: We have not yet proved
+    that the extensionality axioms always hold for such structures, but we conjecture
+    that they do and that they are in fact equalities.)
+    %
+    \item Although the previous item includes 1-categories and 1-groupoids, we will
+    additionally sketch a more elementary proof that we will generalize to higher
+    categories later. First, we will show how $\constFun_{\C\D}$ can be constructed for
+    categories $\C$ and $\D,$ and then we will show the same for $\dupFun_{\C\D},$
+    which is in some sense the only nontrivial case.
 
     The definition of $\constFun_{\C\D}$ says that for objects $c$ of $\C$ and $d$ of
     $\D,$ $\constFun_{\C\D}(d,c)$ must be isomorphic to $d.$ In many cases, we do not
@@ -735,8 +747,7 @@ a universe with linear functor operations.)
     $g_c : K_d(c) \to K_{d'}(c).$ Since $K_d(c) = d$ and $K_{d'}(c) = d',$ we can
     take $g_c := f.$ ($\constFun_{\C\D}$ is known as the diagonal functor.)
     %
-    \item The least straightforward case is the construction of $\dupFun_{\C\D}$ for
-    categories $\C$ and $\D.$ Following the same strategy as before, first we fix a
+    \item For $\dupFun_{\C\D},$ following the same strategy as before, first we fix a
     functor $F : \C \to \D^\C$ and need to construct a functor
     \begin{align*}
       W_F : \C &\to     \D\\
@@ -782,16 +793,6 @@ a universe with linear functor operations.)
     equivalences $e(a)$ are natural in $a.$ \qedhere
   \end{itemize}
 \end{proof}
-
-\begin{conjecture}
-  Theorem \ref{thm:funop} generalizes to $\infty$-groupoids and to
-  $(\infty,1)$-categories.
-\end{conjecture}
-
-\begin{conjecture}
-  Topological spaces satisfying some mild conditions (compactly generated Hausdorff?)
-  also have full functor operations.
-\end{conjecture}
 
 \subsection{Functoriality algorithm}
 
