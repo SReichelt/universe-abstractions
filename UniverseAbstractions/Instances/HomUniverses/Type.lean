@@ -5,6 +5,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Axioms.CategoryTheory.Functors
 import UniverseAbstractions.Axioms.CategoryTheory.NaturalTransformations
 import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
+import UniverseAbstractions.Axioms.CategoryTheory.FunctorExtensionality
 
 
 

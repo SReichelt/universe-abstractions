@@ -137,13 +137,13 @@ namespace HasLinearFunOp
       swapFun (compFunFun F C) a ≃ revAppFun (F a) C :=
     applyCongrFun (swapCompFunCongr U F C) a byDef (byDef • byDef)
 
-    def swapRevCompFunCongr (A : U) {B C : U} (F : B ⟶ C) :
-      swapFunFun (revCompFunFun A F) ≃ revCompFunFun (A ⟶ B) F • revAppFunFun A B :=
-    applyCongrFun (swapRevCompFun A B C) F (byDefDef • byDef) (byDefDef • byDef)
+    def swapRevCompFunCongr (A : U) {B C : U} (G : B ⟶ C) :
+      swapFunFun (revCompFunFun A G) ≃ revCompFunFun (A ⟶ B) G • revAppFunFun A B :=
+    applyCongrFun (swapRevCompFun A B C) G (byDefDef • byDef) (byDefDef • byDef)
 
-    def swapRevCompFunCongrCongr {A B C : U} (F : B ⟶ C) (a : A) :
-      swapFun (revCompFunFun A F) a ≃ F • revAppFun a B :=
-    applyCongrFun (swapRevCompFunCongr U A F) a byDef (byDefDef • byDef)
+    def swapRevCompFunCongrCongr {A B C : U} (G : B ⟶ C) (a : A) :
+      swapFun (revCompFunFun A G) a ≃ G • revAppFun a B :=
+    applyCongrFun (swapRevCompFunCongr U A G) a byDef (byDefDef • byDef)
 
     def compAssocCongr {A B : U} (F : A ⟶ B) (C D : U) :
       revCompFunFun (C ⟶ D) (compFunFun F D) • compFunFunFun B C D ≃ compFunFunFun A C D • compFunFun F C :=

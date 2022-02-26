@@ -31,6 +31,12 @@ namespace HasInstanceEquivalences
   @[reducible] def refl  {A : U} (a     : A)                         : a ≃ a := HasRefl.refl a
   @[reducible] def symm  {A : U} {a b   : A} (e : a ≃ b)             : b ≃ a := e⁻¹
   @[reducible] def trans {A : U} {a b c : A} (e : a ≃ b) (f : b ≃ c) : a ≃ c := f • e
+  @[reducible] def indir {A : U} {a b c : A} (e : a ≃ c) (f : b ≃ c) : a ≃ b := f⁻¹ • e
+
+  notation:90 g:91 " •' " f:90 => HasInstanceEquivalences.trans f g
+  postfix:max "⁻¹'" => HasInstanceEquivalences.symm
+  notation:80 e:81 " ⑅ " f:81 => HasInstanceEquivalences.indir e f
+  notation:80 e:81 " ▹{" x:0 "}◃ " f:81 => HasInstanceEquivalences.indir (c := x) e f
 
   class IsSubsingleton (A : U) where
   (eq (a b : A) : a ≃ b)

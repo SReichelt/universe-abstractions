@@ -380,7 +380,7 @@ namespace DependentEquivalence
 
   def refl {A : U} (a : A) :
     a ≃[HasRefl.refl A] a :=
-  HasInstanceEquivalences.trans byToDef byDef
+  byDef •' byToDef
 
   def symm {A B : U} {E : A ⟷ B} {a : A} {b : B} (e : a ≃[E] b) :
     b ≃[E⁻¹] a :=
@@ -391,10 +391,10 @@ namespace DependentEquivalence
   compIndDep e f • byDef • byToDef
 
   def fromEq {A : U} {a₁ a₂ : A} (e : a₁ ≃ a₂) : a₁ ≃[HasRefl.refl A] a₂ :=
-  HasInstanceEquivalences.trans (refl a₁) e
+  e •' refl a₁
 
   def toEq {A : U} {a₁ a₂ : A} (e : a₁ ≃[HasRefl.refl A] a₂) : a₁ ≃ a₂ :=
-  HasInstanceEquivalences.trans (refl a₁)⁻¹ e
+  e •' (refl a₁)⁻¹
 
   instance isDependentEquivalence : IsDependentEquivalence (R := hEquiv.Equiv) DependentEquivalence :=
   { refl  := refl,

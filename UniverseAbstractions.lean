@@ -23,6 +23,7 @@ import UniverseAbstractions.Axioms.CategoryTheory.Basic
 import UniverseAbstractions.Axioms.CategoryTheory.Functors
 import UniverseAbstractions.Axioms.CategoryTheory.NaturalTransformations
 import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
+import UniverseAbstractions.Axioms.CategoryTheory.FunctorExtensionality
 import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Meta
 import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Basic
 import UniverseAbstractions.Axioms.CategoryTheory.Algebra.Basic

@@ -68,15 +68,15 @@ namespace HasLinearFunOp
      swapFunFunFun (B ⟶ C) A C • compFunFunFun A B C
      ≃{byDefDef ▻ λ F => swapCompFunExt F C ◅}
      revCompFunFun A (revAppFunFun B C))
-  (swapRevCompFun {A B C : U} (F : B ⟶ C) (a : A) :
-     swapFun (revCompFunFun A F) a ≃{byDef₂ ▻-◅ byArgDef} F • revAppFun a B)
-  (swapRevCompFunExt (A : U) {B C : U} (F : B ⟶ C) :
-     swapFunFun (revCompFunFun A F)
-     ≃{▻ λ a => swapRevCompFun F a ◅ byDefDef}
-     revCompFunFun (A ⟶ B) F • revAppFunFun A B)
+  (swapRevCompFun {A B C : U} (G : B ⟶ C) (a : A) :
+     swapFun (revCompFunFun A G) a ≃{byDef₂ ▻-◅ byArgDef} G • revAppFun a B)
+  (swapRevCompFunExt (A : U) {B C : U} (G : B ⟶ C) :
+     swapFunFun (revCompFunFun A G)
+     ≃{▻ λ a => swapRevCompFun G a ◅ byDefDef}
+     revCompFunFun (A ⟶ B) G • revAppFunFun A B)
   (swapRevCompFunExtExt (A B C : U) :
      swapFunFunFun (A ⟶ B) A C • revCompFunFunFun A B C
-     ≃{byDefDef ▻ λ F => swapRevCompFunExt A F ◅ byDefDef}
+     ≃{byDefDef ▻ λ G => swapRevCompFunExt A G ◅ byDefDef}
      compFunFun (revAppFunFun A B) ((A ⟶ B) ⟶ C) • revCompFunFunFun (A ⟶ B) B C)
   (compAssoc {A B C D : U} (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) :
      (H • G) • F ≃{byDef ▻-◅ byArgDef} H • (G • F))
