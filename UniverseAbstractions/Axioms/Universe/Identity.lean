@@ -25,6 +25,7 @@ namespace HasInstanceEquivalences
 
   @[reducible] def Rel (A : U) : MetaRelation A IU := λ a b => a ≃ b
   infix:25 " ≃' " => HasInstanceEquivalences.Rel _
+  notation:25 a:26 " ≃'{" A:0 "} " b:26 => HasInstanceEquivalences.Rel A a b
 
   instance isEquivalence (A : U) : IsEquivalence (Rel A) := HasEquivalenceRelation.isEquivalence
 

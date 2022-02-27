@@ -1,4 +1,4 @@
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Basic
 
 
 

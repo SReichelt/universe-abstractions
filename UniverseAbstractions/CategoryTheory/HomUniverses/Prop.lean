@@ -1,11 +1,11 @@
-import UniverseAbstractions.Instances.Basic
-import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory
-import UniverseAbstractions.Axioms.CategoryTheory.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Functors
-import UniverseAbstractions.Axioms.CategoryTheory.NaturalTransformations
-import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
-import UniverseAbstractions.Axioms.CategoryTheory.FunctorExtensionality
+import UniverseAbstractions.Instances.Sort
+import UniverseAbstractions.CategoryTheory.Meta
+import UniverseAbstractions.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Functors
+import UniverseAbstractions.CategoryTheory.NaturalTransformations
+import UniverseAbstractions.CategoryTheory.Isomorphisms
+import UniverseAbstractions.CategoryTheory.FunctorExtensionality
+import UniverseAbstractions.CategoryTheory.Utils.Trivial
 
 
 

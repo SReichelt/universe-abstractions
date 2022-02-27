@@ -1,5 +1,5 @@
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Functors
+import UniverseAbstractions.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Functors
 
 
 
@@ -7,7 +7,7 @@ set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 2000
 --set_option pp.universes true
 
-universe u u' u'' u''' v w ww iw iww
+universe u u' u'' u''' u'''' v w ww iw iww
 
 
 
@@ -31,7 +31,7 @@ namespace CategoryTheory
              {A : Category.{u} W} {B : Category.{v} W} [hFunProp : HasFunProp A B]
 
     def StrictNaturality {φ : A → B} (F G : hFunProp.Fun φ) :=
-    ∀ {a b : A} (f : a ⇾ b), HasInstanceEquivalences.Rel (φ a ⇾ φ b) (mapHom ⟨F⟩ f) (mapHom ⟨G⟩ f)
+    ∀ {a b : A} (f : a ⇾ b), mapHom ⟨F⟩ f ≃'{φ a ⇾ φ b} mapHom ⟨G⟩ f
 
     def strict {φ : A → B} {F G : hFunProp.Fun φ} (hEq : StrictNaturality F G) : NatDesc ⟨F⟩ ⟨G⟩ :=
     { η     := λ a => idHom (φ a),
@@ -112,10 +112,17 @@ namespace CategoryTheory
 
       end
 
-      def byStrictNatDef {φ : A → B} {F G : hFunProp.Fun φ} {hEq : NatDesc.StrictNaturality F G}
-                         {η : DefNat (NatDesc.strict hEq)} {a : A} :
-        nat η.η a ≃ idHom (φ a) :=
-      byNatDef
+      section
+
+        variable {φ : A → B} {F G : hFunProp.Fun φ}
+
+        def StrictDefNat (hEq : NatDesc.StrictNaturality F G) := DefNat (NatDesc.strict hEq)
+
+        def byStrictNatDef {hEq : NatDesc.StrictNaturality F G} {η : StrictDefNat hEq} {a : A} :
+          nat η.η a ≃ idHom (φ a) :=
+        byNatDef
+
+      end
 
     end
 
@@ -382,19 +389,19 @@ namespace CategoryTheory
         def StrictNaturality₂ {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
                               (F : hFunABC.Fun (λ a => ⟨F' a⟩)) (G : hFunABC.Fun (λ a => ⟨G' a⟩)) :=
         ∀ {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B),
-          HasInstanceEquivalences.Rel (φ a₁ b ⇾ φ a₂ b) (nat (mapHom ⟨F⟩ f) b) (nat (mapHom ⟨G⟩ f) b)
+          nat (mapHom ⟨F⟩ f) b ≃'{φ a₁ b ⇾ φ a₂ b} nat (mapHom ⟨G⟩ f) b
 
         def strict {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
                    {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
-                   {η : ∀ a, DefNat (NatDesc.strict (hEq a))}
+                   {η : ∀ a, StrictDefNat (hEq a)}
                    {F : hFunABC.Fun (λ a => ⟨F' a⟩)} {G : hFunABC.Fun (λ a => ⟨G' a⟩)}
                    (hNatEq : StrictNaturality₂ F G) :
           NatNatDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
-        { natEq := λ {a₁ a₂} f b => (cancelRightId (byStrictNatDef (hEq := hEq a₁))
+        { natEq := λ {a₁ a₂} f b => (cancelRightId (byStrictNatDef (η := η a₁))
                                                    (nat (mapHom ⟨G⟩ f) b))⁻¹ •
                                     hNatEq f b •
                                     cancelLeftId (nat (mapHom ⟨F⟩ f) b)
-                                                 (byStrictNatDef (hEq := hEq a₂)) }
+                                                 (byStrictNatDef (η := η a₂)) }
 
       end NatNatDesc
 
@@ -422,14 +429,14 @@ namespace CategoryTheory
 
         end DefNatNatBase
 
-        structure DefNatNat [HasCatProp.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
-                            (desc : NatNatDesc F G η) extends
+        variable [HasCatProp.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
+
+        structure DefNatNat (desc : NatNatDesc F G η) extends
           DefNatNatBase desc, DefNat (DefNatNatBase.natDesc toDefNatNatBase)
 
         namespace DefNatNat
 
-          variable [HasCatProp.{max 1 u u' u'' w} W] [HasNaturality A (B ⮕' C)]
-                  {desc : NatNatDesc F G η}
+          variable {desc : NatNatDesc F G η}
 
           def trivial (ε : DefNatNatBase desc) [HasTrivialNaturalityCondition A (B ⮕' C)] :
             DefNatNat desc :=
@@ -438,17 +445,31 @@ namespace CategoryTheory
 
         end DefNatNat
 
+        def byNatNatDef {desc : NatNatDesc F G η} {ε : DefNatNat desc} {a : A} :
+          nat ε.η a ≃ η a :=
+        byNatDef
+
       end
 
-      def byStrictNatNatDef [HasCatProp.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
-                            {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
-                            {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
-                            {η' : ∀ a, DefNat (NatDesc.strict (hEq a))}
+      section
+
+        variable [HasCatProp.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
+                 {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
+                 {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
+
+        def StrictDefNatNat (η : ∀ a, StrictDefNat (hEq a))
                             {F : hFunABC.Fun (λ a => ⟨F' a⟩)} {G : hFunABC.Fun (λ a => ⟨G' a⟩)}
-                            {hNatEq : NatNatDesc.StrictNaturality₂ F G}
-                            {η : DefNatNat (NatNatDesc.strict (η := η') hNatEq)} {a : A} {b : B} :
-        nat (nat η.η a) b ≃ idHom (φ a b) :=
-      byNatDef • natCongrArg (byNatDef (η := η.toDefNat)) b
+                            (hNatEq : NatNatDesc.StrictNaturality₂ F G) :=
+        DefNatNat (NatNatDesc.strict (η := η) hNatEq)
+
+        def byStrictNatNatDef {η : ∀ a, StrictDefNat (hEq a)}
+                              {F : hFunABC.Fun (λ a => ⟨F' a⟩)} {G : hFunABC.Fun (λ a => ⟨G' a⟩)}
+                              {hNatEq : NatNatDesc.StrictNaturality₂ F G}
+                              {ε : StrictDefNatNat η hNatEq} {a : A} {b : B} :
+          nat (nat ε.η a) b ≃ idHom (φ a b) :=
+        byStrictNatDef • natCongrArg byNatNatDef b
+
+      end
 
     end
 
@@ -533,64 +554,234 @@ namespace CategoryTheory
                               {G' : ∀ a, hFunBCD.Fun (λ b => ⟨G'' a b⟩)}
                               (F : hFunABCD.Fun (λ a => ⟨F' a⟩)) (G : hFunABCD.Fun (λ a => ⟨G' a⟩)) :=
         ∀ {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) (c : C),
-          HasInstanceEquivalences.Rel (φ a₁ b c ⇾ φ a₂ b c) (nat (nat (mapHom ⟨F⟩ f) b) c)
-                                                            (nat (nat (mapHom ⟨G⟩ f) b) c)
+          nat (nat (mapHom ⟨F⟩ f) b) c ≃'{φ a₁ b c ⇾ φ a₂ b c} nat (nat (mapHom ⟨G⟩ f) b) c
 
         def strict {φ : A → B → C → D} {F'' G'' : ∀ a b, hFunCD.Fun (φ a b)}
                    {hEq : ∀ a b, NatDesc.StrictNaturality (F'' a b) (G'' a b)}
-                   {η' : ∀ a b, DefNat (NatDesc.strict (hEq a b))}
+                   {η' : ∀ a b, StrictDefNat (hEq a b)}
                    {F' : ∀ a, hFunBCD.Fun (λ b => ⟨F'' a b⟩)}
                    {G' : ∀ a, hFunBCD.Fun (λ b => ⟨G'' a b⟩)}
                    {hNatEq : ∀ a, NatNatDesc.StrictNaturality₂ (F' a) (G' a)}
-                   {η : ∀ a, DefNatNat (NatNatDesc.strict (η := η' a) (hNatEq a))}
+                   {η : ∀ a, StrictDefNatNat (η' a) (hNatEq a)}
                    {F : hFunABCD.Fun (λ a => ⟨F' a⟩)} {G : hFunABCD.Fun (λ a => ⟨G' a⟩)}
                    (hNatNatEq : StrictNaturality₃ F G) :
           NatNatNatDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
-        { natNatEq := λ {a₁ a₂} f b c => (cancelRightId (byStrictNatNatDef (hNatEq := hNatEq a₁))
+        { natNatEq := λ {a₁ a₂} f b c => (cancelRightId (byStrictNatNatDef (ε := η a₁))
                                                         (nat (nat (mapHom ⟨G⟩ f) b) c))⁻¹ •
                                          hNatNatEq f b c •
                                          cancelLeftId (nat (nat (mapHom ⟨F⟩ f) b) c)
-                                                      (byStrictNatNatDef (hNatEq := hNatEq a₂)) }
+                                                      (byStrictNatNatDef (ε := η a₂)) }
 
       end NatNatNatDesc
 
-      variable {F G : A ⮕ B ⮕' C ⮕' D} {η : ∀ a, F a ⇾ G a}
+      section
 
-      structure DefNatNatNatBase (desc : NatNatNatDesc F G η) where
-      (natNatEquiv {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) :
-         NatEquiv (compHom (nat (mapHom F f) b) (nat (η a₂) b)) (compHom (nat (η a₁) b) (nat (mapHom G f) b))
-                  (λ c => (natTransEq' (nat (η a₁) b) (nat (mapHom G f) b) c)⁻¹ •
-                          desc.natNatEq f b c •
-                          natTransEq' (nat (mapHom F f) b) (nat (η a₂) b) c))
+        variable {F G : A ⮕ B ⮕' C ⮕' D} {η : ∀ a, F a ⇾ G a}
 
-      namespace DefNatNatNatBase
+        structure DefNatNatNatBase (desc : NatNatNatDesc F G η) where
+        (natNatEquiv {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) :
+           NatEquiv (compHom (nat (mapHom F f) b) (nat (η a₂) b)) (compHom (nat (η a₁) b) (nat (mapHom G f) b))
+                    (λ c => (natTransEq' (nat (η a₁) b) (nat (mapHom G f) b) c)⁻¹ •
+                            desc.natNatEq f b c •
+                            natTransEq' (nat (mapHom F f) b) (nat (η a₂) b) c))
 
-        def trivial {desc : NatNatNatDesc F G η} [HasTrivialNatEquiv C D] : DefNatNatNatBase desc :=
-        { natNatEquiv := λ _ _ => HasTrivialNatEquiv.natEquiv }
+        namespace DefNatNatNatBase
 
-        variable {desc : NatNatNatDesc F G η} (ε : DefNatNatNatBase desc)
+          def trivial {desc : NatNatNatDesc F G η} [HasTrivialNatEquiv C D] : DefNatNatNatBase desc :=
+          { natNatEquiv := λ _ _ => HasTrivialNatEquiv.natEquiv }
 
-        def natNatDesc : NatNatDesc F G η :=
-        { natEq := ε.natNatEquiv }
+          variable {desc : NatNatNatDesc F G η} (ε : DefNatNatNatBase desc)
 
-      end DefNatNatNatBase
+          def natNatDesc : NatNatDesc F G η :=
+          { natEq := ε.natNatEquiv }
 
-      structure DefNatNatNat [HasCatProp.{max 1 u u' u'' u''' w} W] [hNatABC : HasNaturality A (B ⮕' C ⮕' D)]
-                          (desc : NatNatNatDesc F G η) extends
-        DefNatNatNatBase desc, DefNatNat (DefNatNatNatBase.natNatDesc toDefNatNatNatBase)
+        end DefNatNatNatBase
 
-      namespace DefNatNatNat
+        variable [HasCatProp.{max 1 u u' u'' u''' w} W] [hNatABCD : HasNaturality A (B ⮕' C ⮕' D)]
+
+        structure DefNatNatNat (desc : NatNatNatDesc F G η) extends
+          DefNatNatNatBase desc, DefNatNat (DefNatNatNatBase.natNatDesc toDefNatNatNatBase)
+
+        namespace DefNatNatNat
+
+          variable {desc : NatNatNatDesc F G η}
+
+          def trivial (ε : DefNatNatNatBase desc) (θ : DefNatNatBase (DefNatNatNatBase.natNatDesc ε))
+                      [HasTrivialNaturalityCondition A (B ⮕' C ⮕' D)] :
+            DefNatNatNat desc :=
+          { toDefNatNatNatBase := ε,
+            toDefNatNat        := DefNatNat.trivial θ }
+
+        end DefNatNatNat
+
+        def byNatNatNatDef {desc : NatNatNatDesc F G η} {ε : DefNatNatNat desc} {a : A} :
+          nat ε.η a ≃ η a :=
+        byNatDef
+
+      end
+
+      section
 
         variable [HasCatProp.{max 1 u u' u'' u''' w} W] [HasNaturality A (B ⮕' C ⮕' D)]
-                 {desc : NatNatNatDesc F G η}
+                 {φ : A → B → C → D} {F'' G'' : ∀ a b, hFunCD.Fun (φ a b)}
+                 {hEq : ∀ a b, NatDesc.StrictNaturality (F'' a b) (G'' a b)}
+                 {η' : ∀ a b, StrictDefNat (hEq a b)}
+                 {F' : ∀ a, hFunBCD.Fun (λ b => ⟨F'' a b⟩)}
+                 {G' : ∀ a, hFunBCD.Fun (λ b => ⟨G'' a b⟩)}
+                 {hNatEq : ∀ a, NatNatDesc.StrictNaturality₂ (F' a) (G' a)}
 
-        def trivial (ε : DefNatNatNatBase desc) (θ : DefNatNatBase (DefNatNatNatBase.natNatDesc ε))
-                    [HasTrivialNaturalityCondition A (B ⮕' C ⮕' D)] :
-          DefNatNatNat desc :=
-        { toDefNatNatNatBase := ε,
-          toDefNatNat        := DefNatNat.trivial θ }
+        def StrictDefNatNatNat (η : ∀ a, StrictDefNatNat (η' a) (hNatEq a))
+                               {F : hFunABCD.Fun (λ a => ⟨F' a⟩)} {G : hFunABCD.Fun (λ a => ⟨G' a⟩)}
+                               (hNatNatEq : NatNatNatDesc.StrictNaturality₃ F G) :=
+        DefNatNatNat (NatNatNatDesc.strict (η := η) hNatNatEq)
 
-      end DefNatNatNat
+        def byStrictNatNatNatDef {η : ∀ a, StrictDefNatNat (η' a) (hNatEq a)}
+                                 {F : hFunABCD.Fun (λ a => ⟨F' a⟩)} {G : hFunABCD.Fun (λ a => ⟨G' a⟩)}
+                                 {hNatNatEq : NatNatNatDesc.StrictNaturality₃ F G}
+                                 {ε : StrictDefNatNatNat η hNatNatEq} {a : A} {b : B} {c : C} :
+          nat (nat (nat ε.η a) b) c ≃ idHom (φ a b c) :=
+        byStrictNatNatDef • natCongrArg (natCongrArg (byNatNatNatDef (ε := ε)) b) c
+
+      end
+
+    end
+
+    section
+
+      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{u'''} W]
+               [HasCatProp.{u''''} W] [HasCatProp.{max 1 u' u'' u''' u'''' w} W]
+               [HasCatProp.{max 1 u'' u''' u'''' w} W] [HasCatProp.{max 1 u''' u'''' w} W]
+               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
+               {D : Category.{u'''} W} {E : Category.{u''''} W}
+               [hFunDE : HasFunProp D E] [hNatDE : HasNaturality D E]
+               [hFunCDE : HasFunProp C (D ⮕' E)] [hNatCDE : HasNaturality C (D ⮕' E)]
+               [hFunBCDE : HasFunProp B (C ⮕' D ⮕' E)] [hNatBCDE : HasNaturality B (C ⮕' D ⮕' E)]
+               [hFunABCDE : HasFunProp A (B ⮕' C ⮕' D ⮕' E)]
+
+      structure NatNatNatNatDesc (F G : A ⮕ B ⮕' C ⮕' D ⮕' E) (η : ∀ a, F a ⇾ G a) where
+      (natNatNatEq {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) (c : C) (d : D) :
+         nat (nat (nat (η a₂) b) c) d • nat (nat (nat (mapHom F f) b) c) d ≃
+         nat (nat (nat (mapHom G f) b) c) d • nat (nat (nat (η a₁) b) c) d)
+
+      namespace NatNatNatNatDesc
+
+        def StrictNaturality₄ {φ : A → B → C → D → E} {F''' G''' : ∀ a b c, hFunDE.Fun (φ a b c)}
+                              {F'' : ∀ a b, hFunCDE.Fun (λ c => ⟨F''' a b c⟩)}
+                              {G'' : ∀ a b, hFunCDE.Fun (λ c => ⟨G''' a b c⟩)}
+                              {F' : ∀ a, hFunBCDE.Fun (λ b => ⟨F'' a b⟩)}
+                              {G' : ∀ a, hFunBCDE.Fun (λ b => ⟨G'' a b⟩)}
+                              (F : hFunABCDE.Fun (λ a => ⟨F' a⟩))
+                              (G : hFunABCDE.Fun (λ a => ⟨G' a⟩)) :=
+        ∀ {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) (c : C) (d : D),
+          nat (nat (nat (mapHom ⟨F⟩ f) b) c) d
+          ≃'{φ a₁ b c d ⇾ φ a₂ b c d}
+          nat (nat (nat (mapHom ⟨G⟩ f) b) c) d
+
+        def strict {φ : A → B → C → D → E} {F''' G''' : ∀ a b c, hFunDE.Fun (φ a b c)}
+                   {hEq : ∀ a b c, NatDesc.StrictNaturality (F''' a b c) (G''' a b c)}
+                   {η'' : ∀ a b c, StrictDefNat (hEq a b c)}
+                   {F'' : ∀ a b, hFunCDE.Fun (λ c => ⟨F''' a b c⟩)}
+                   {G'' : ∀ a b, hFunCDE.Fun (λ c => ⟨G''' a b c⟩)}
+                   {hNatEq : ∀ a b, NatNatDesc.StrictNaturality₂ (F'' a b) (G'' a b)}
+                   {η' : ∀ a b, StrictDefNatNat (η'' a b) (hNatEq a b)}
+                   {F' : ∀ a, hFunBCDE.Fun (λ b => ⟨F'' a b⟩)}
+                   {G' : ∀ a, hFunBCDE.Fun (λ b => ⟨G'' a b⟩)}
+                   {hNatNatEq : ∀ a, NatNatNatDesc.StrictNaturality₃ (F' a) (G' a)}
+                   {η : ∀ a, StrictDefNatNatNat (η' a) (hNatNatEq a)}
+                   {F : hFunABCDE.Fun (λ a => ⟨F' a⟩)} {G : hFunABCDE.Fun (λ a => ⟨G' a⟩)}
+                   (hNatNatNatEq : StrictNaturality₄ F G) :
+          NatNatNatNatDesc ⟨F⟩ ⟨G⟩ (λ a => (η a).η) :=
+        { natNatNatEq := λ {a₁ a₂} f b c d => (cancelRightId (byStrictNatNatNatDef (ε := η a₁))
+                                                             (nat (nat (nat (mapHom ⟨G⟩ f) b) c) d))⁻¹ •
+                                              hNatNatNatEq f b c d •
+                                              cancelLeftId (nat (nat (nat (mapHom ⟨F⟩ f) b) c) d)
+                                                           (byStrictNatNatNatDef (ε := η a₂)) }
+
+      end NatNatNatNatDesc
+
+      section
+
+        variable {F G : A ⮕ B ⮕' C ⮕' D ⮕' E} {η : ∀ a, F a ⇾ G a}
+
+        structure DefNatNatNatNatBase (desc : NatNatNatNatDesc F G η) where
+        (natNatNatEquiv {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) (c : C) :
+           NatEquiv (compHom (nat (nat (mapHom F f) b) c) (nat (nat (η a₂) b) c))
+                    (compHom (nat (nat (η a₁) b) c) (nat (nat (mapHom G f) b) c))
+                    (λ d => (natTransEq' (nat (nat (η a₁) b) c) (nat (nat (mapHom G f) b) c) d)⁻¹ •
+                            desc.natNatNatEq f b c d •
+                            natTransEq' (nat (nat (mapHom F f) b) c) (nat (nat (η a₂) b) c) d))
+
+        namespace DefNatNatNatNatBase
+
+          def trivial {desc : NatNatNatNatDesc F G η} [HasTrivialNatEquiv D E] :
+            DefNatNatNatNatBase desc :=
+          { natNatNatEquiv := λ _ _ _ => HasTrivialNatEquiv.natEquiv }
+
+          variable {desc : NatNatNatNatDesc F G η} (ε : DefNatNatNatNatBase desc)
+
+          def natNatNatDesc : NatNatNatDesc F G η :=
+          { natNatEq := ε.natNatNatEquiv }
+
+        end DefNatNatNatNatBase
+
+        variable [HasCatProp.{max 1 u u' u'' u''' u'''' w} W]
+                 [hNatABCDE : HasNaturality A (B ⮕' C ⮕' D ⮕' E)]
+
+        structure DefNatNatNatNat (desc : NatNatNatNatDesc F G η) extends
+          DefNatNatNatNatBase desc,
+          DefNatNatNat (DefNatNatNatNatBase.natNatNatDesc toDefNatNatNatNatBase)
+
+        namespace DefNatNatNatNat
+
+          variable {desc : NatNatNatNatDesc F G η}
+
+          def trivial (ε : DefNatNatNatNatBase desc)
+                      (θ : DefNatNatNatBase (DefNatNatNatNatBase.natNatNatDesc ε))
+                      (ν : DefNatNatBase (DefNatNatNatBase.natNatDesc θ))
+                      [HasTrivialNaturalityCondition A (B ⮕' C ⮕' D ⮕' E)] :
+            DefNatNatNatNat desc :=
+          { toDefNatNatNatNatBase := ε,
+            toDefNatNatNat        := DefNatNatNat.trivial θ ν }
+
+        end DefNatNatNatNat
+
+        def byNatNatNatNatDef {desc : NatNatNatNatDesc F G η} {ε : DefNatNatNatNat desc} {a : A} :
+          nat ε.η a ≃ η a :=
+        byNatDef
+
+      end
+
+      section
+
+        variable [HasCatProp.{max 1 u u' u'' u''' u'''' w} W] [HasNaturality A (B ⮕' C ⮕' D ⮕' E)]
+                 {φ : A → B → C → D → E} {F''' G''' : ∀ a b c, hFunDE.Fun (φ a b c)}
+                 {hEq : ∀ a b c, NatDesc.StrictNaturality (F''' a b c) (G''' a b c)}
+                 {η'' : ∀ a b c, StrictDefNat (hEq a b c)}
+                 {F'' : ∀ a b, hFunCDE.Fun (λ c => ⟨F''' a b c⟩)}
+                 {G'' : ∀ a b, hFunCDE.Fun (λ c => ⟨G''' a b c⟩)}
+                 {hNatEq : ∀ a b, NatNatDesc.StrictNaturality₂ (F'' a b) (G'' a b)}
+                 {η' : ∀ a b, StrictDefNatNat (η'' a b) (hNatEq a b)}
+                 {F' : ∀ a, hFunBCDE.Fun (λ b => ⟨F'' a b⟩)}
+                 {G' : ∀ a, hFunBCDE.Fun (λ b => ⟨G'' a b⟩)}
+                 {hNatNatEq : ∀ a, NatNatNatDesc.StrictNaturality₃ (F' a) (G' a)}
+
+        def StrictDefNatNatNatNat (η : ∀ a, StrictDefNatNatNat (η' a) (hNatNatEq a))
+                                  {F : hFunABCDE.Fun (λ a => ⟨F' a⟩)}
+                                  {G : hFunABCDE.Fun (λ a => ⟨G' a⟩)}
+                                  (hNatNatNatEq : NatNatNatNatDesc.StrictNaturality₄ F G) :=
+        DefNatNatNatNat (NatNatNatNatDesc.strict (η := η) hNatNatNatEq)
+
+        def byStrictNatNatNatNatDef {η : ∀ a, StrictDefNatNatNat (η' a) (hNatNatEq a)}
+                                    {F : hFunABCDE.Fun (λ a => ⟨F' a⟩)}
+                                    {G : hFunABCDE.Fun (λ a => ⟨G' a⟩)}
+                                    {hNatNatNatEq : NatNatNatNatDesc.StrictNaturality₄ F G}
+                                    {ε : StrictDefNatNatNatNat η hNatNatNatEq}
+                                    {a : A} {b : B} {c : C} {d : D} :
+          nat (nat (nat (nat ε.η a) b) c) d ≃ idHom (φ a b c d) :=
+        byStrictNatNatNatDef •
+        natCongrArg (natCongrArg (natCongrArg (byNatNatNatNatDef (ε := ε)) b) c) d
+
+      end
 
     end
 

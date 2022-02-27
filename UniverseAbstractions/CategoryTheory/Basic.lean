@@ -6,7 +6,7 @@ definition. If a universe has equivalences, those are isomorphisms in that categ
 
 
 
-import UniverseAbstractions.Axioms.CategoryTheory.Meta
+import UniverseAbstractions.CategoryTheory.Meta
 
 
 

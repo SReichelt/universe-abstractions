@@ -1,5 +1,5 @@
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Meta
+import UniverseAbstractions.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Extensional.Meta
 
 
 

@@ -9,7 +9,7 @@ is a category, then `IsMonoidExt A` turns `A` into a monoidal category.
 
 
 
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Basic
 
 
 

@@ -1,6 +1,6 @@
 import UniverseAbstractions.Instances.Utils.Trivial
-import UniverseAbstractions.Axioms.CategoryTheory.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Meta
+import UniverseAbstractions.CategoryTheory.Meta
+import UniverseAbstractions.CategoryTheory.Extensional.Meta
 
 
 

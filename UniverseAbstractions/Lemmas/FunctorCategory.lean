@@ -3,8 +3,8 @@ import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Basic
+import UniverseAbstractions.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Extensional.Basic
 
 
 

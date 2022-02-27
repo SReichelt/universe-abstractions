@@ -18,16 +18,6 @@ import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.IdentityQuantif
 import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.UniversalExtensionality
 import UniverseAbstractions.Axioms.Universe.FunctorialIdentities.FunctorProperties
 
-import UniverseAbstractions.Axioms.CategoryTheory.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Functors
-import UniverseAbstractions.Axioms.CategoryTheory.NaturalTransformations
-import UniverseAbstractions.Axioms.CategoryTheory.Isomorphisms
-import UniverseAbstractions.Axioms.CategoryTheory.FunctorExtensionality
-import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Meta
-import UniverseAbstractions.Axioms.CategoryTheory.Extensional.Basic
-import UniverseAbstractions.Axioms.CategoryTheory.Algebra.Basic
-
 import UniverseAbstractions.Lemmas.DerivedFunctors
 import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality
 import UniverseAbstractions.Lemmas.DerivedSingletonFunctors
@@ -39,13 +29,26 @@ import UniverseAbstractions.Meta.Tactics.Functoriality
 import UniverseAbstractions.Meta.Tactics.Extensionality
 
 import UniverseAbstractions.Instances.Utils.Trivial
-import UniverseAbstractions.Instances.Utils.TrivialCategoryTheory
 import UniverseAbstractions.Instances.Utils.Direct
 import UniverseAbstractions.Instances.Utils.Bundled
-import UniverseAbstractions.Instances.Basic
+import UniverseAbstractions.Instances.Utils.PropFunctors
+import UniverseAbstractions.Instances.Unit
+import UniverseAbstractions.Instances.Bool
+import UniverseAbstractions.Instances.Sort
 import UniverseAbstractions.Instances.FunctorUniverse
 import UniverseAbstractions.Instances.CoFunctorUniverse
 import UniverseAbstractions.Instances.Setoid
 import UniverseAbstractions.Instances.Algebra
-import UniverseAbstractions.Instances.HomUniverses.Prop
-import UniverseAbstractions.Instances.HomUniverses.Type
+
+import UniverseAbstractions.CategoryTheory.Meta
+import UniverseAbstractions.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Functors
+import UniverseAbstractions.CategoryTheory.NaturalTransformations
+import UniverseAbstractions.CategoryTheory.Isomorphisms
+import UniverseAbstractions.CategoryTheory.FunctorExtensionality
+import UniverseAbstractions.CategoryTheory.Extensional.Meta
+import UniverseAbstractions.CategoryTheory.Extensional.Basic
+import UniverseAbstractions.CategoryTheory.Utils.Trivial
+import UniverseAbstractions.CategoryTheory.HomUniverses.Prop
+import UniverseAbstractions.CategoryTheory.HomUniverses.Type
+import UniverseAbstractions.CategoryTheory.Algebra.Basic

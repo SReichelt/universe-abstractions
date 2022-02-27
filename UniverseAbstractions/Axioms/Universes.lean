@@ -84,31 +84,6 @@ end Universe
 
 
 
-def unit : Universe.{0, 0} := ⟨True⟩
-
-namespace unit
-
-  def Inst : unit := trivial
-
-  def inst {A : unit} : A := trivial
-
-end unit
-
-
-
-def boolean : Universe.{0, 1} := ⟨Bool⟩
-
-namespace boolean
-
-  def True  : boolean := true
-  def False : boolean := false
-
-  def inst : True := trivial
-
-end boolean
-
-
-
 def sort : Universe.{u, u + 1} := ⟨Sort u⟩
 @[reducible] def prop := sort.{0}
 @[reducible] def type := sort.{u + 1}

@@ -3,7 +3,7 @@ import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
-import UniverseAbstractions.Axioms.CategoryTheory.Meta
+import UniverseAbstractions.CategoryTheory.Meta
 import UniverseAbstractions.Lemmas.DerivedFunctors
 import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality
 
