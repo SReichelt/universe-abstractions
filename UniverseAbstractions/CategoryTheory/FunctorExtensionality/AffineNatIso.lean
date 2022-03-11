@@ -6,6 +6,7 @@ import UniverseAbstractions.CategoryTheory.Isomorphisms
 
 
 set_option autoBoundImplicitLocal false
+set_option maxHeartbeats 100000
 --set_option pp.universes true
 
 universe u w ww iw iww
@@ -14,7 +15,7 @@ universe u w ww iw iww
 
 namespace CategoryTheory
 
-  open HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor HasNatRel HasNaturality
+  open HasCatProp HasCatProp.Category IsCatUniverse HasFunProp HasFunProp.Functor HasNatRel HasNaturality
        HasIsoNat HasIsoNaturality
        HasLinearFunOp HasSubLinearFunOp
 

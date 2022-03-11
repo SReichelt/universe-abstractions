@@ -5,7 +5,7 @@ import UniverseAbstractions.CategoryTheory.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u u' u'' v w ww iw iww
+universe u uu u' uu' u'' uu'' v vv w ww iw iww
 
 
 
@@ -13,9 +13,9 @@ namespace CategoryTheory
 
   open MetaRelation MetaFunctor HasCatProp HasCatProp.Category HasFunctors
 
-  structure FunDesc {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                    [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-                    (φ : A → B) :
+  structure FunDesc {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                    [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                    {A : Category U W} {B : Category V W} (φ : A → B) :
     Sort (max 1 u w iw) where
   (F  : PreFunctor (Hom A) (Hom B) φ)
   [hF : IsPreorderFunctor F]
@@ -26,8 +26,8 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-               {φ : A → B} (F : FunDesc φ)
+      variable {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+               {A : Category U W} {B : Category V W} {φ : A → B} (F : FunDesc φ)
 
       instance : IsPreorderFunctor F.F := F.hF
 
@@ -35,7 +35,7 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] (A : Category.{u} W)
+      variable {U : Universe} [HasCatProp U W] (A : Category U W)
 
       @[reducible] def idPreFun : PreFunctor (Hom A) (Hom A) id :=
       PreFunctor.idFun.preFunctor (Hom A)
@@ -48,8 +48,8 @@ namespace CategoryTheory
 
     section
 
-      variable [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-               (A : Category.{u} W) {B : Category.{v} W} (b : B)
+      variable [HasSubLinearFunOp W] {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+               (A : Category U W) {B : Category V W} (b : B)
 
       @[reducible] def constPreFun : PreFunctor (Hom A) (Hom B) (Function.const A b) :=
       PreFunctor.constFun.preFunctor (Hom A) (Hom B) b
@@ -63,8 +63,8 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
+      variable {U U' U'' : Universe} [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W}
                {φ : A → B} {ψ : B → C} (F : FunDesc φ) (G : FunDesc ψ)
 
       @[reducible] def compPreFun : PreFunctor (Hom A) (Hom C) (ψ ∘ φ) :=
@@ -79,8 +79,9 @@ namespace CategoryTheory
 
   end FunDesc
 
-  class HasFunProp {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp.{u} W]
-                   [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W) where
+  class HasFunProp {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                   [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                   (A : Category U W) (B : Category V W) where
   (Fun              : MetaProperty (A → B) W)
   (desc {φ : A → B} : Fun φ → FunDesc φ)
 
@@ -88,8 +89,8 @@ namespace CategoryTheory
 
     variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
 
-    structure Functor [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W)
-                      [h : HasFunProp A B] :
+    structure Functor {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W]
+                      [HasCatProp V W] (A : Category U W) (B : Category V W) [h : HasFunProp A B] :
       Sort (max 1 u v w) where
     {φ : A → B}
     (F : h.Fun φ)
@@ -98,8 +99,8 @@ namespace CategoryTheory
 
       infixr:20 " ⮕ " => CategoryTheory.HasFunProp.Functor
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-               [h : HasFunProp A B]
+      variable {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+               {A : Category U W} {B : Category V W} [h : HasFunProp A B]
 
       instance coeFun : CoeFun (A ⮕ B) (λ _ => A → B) := ⟨Functor.φ⟩
 
@@ -122,15 +123,16 @@ namespace CategoryTheory
 
     end Functor
 
-    structure DefFun [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-                     [h : HasFunProp A B] {φ : A → B} (desc : FunDesc φ) where
+    structure DefFun {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W]
+                     [HasCatProp V W] {A : Category U W} {B : Category V W} [h : HasFunProp A B]
+                     {φ : A → B} (desc : FunDesc φ) where
     (F            : h.Fun φ)
     (eq (a b : A) : (h.desc F).F.baseFun a b ≃ desc.F.baseFun a b)
 
     namespace DefFun
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-               [h : HasFunProp A B] {φ : A → B}
+      variable {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+               {A : Category U W} {B : Category V W} [h : HasFunProp A B] {φ : A → B}
 
       @[reducible] def toFunctor {desc : FunDesc φ} (F : DefFun desc) : A ⮕ B := ⟨F.F⟩
 
@@ -143,56 +145,64 @@ namespace CategoryTheory
 
     end DefFun
 
-    class HasTrivialFunctorialityCondition [HasCatProp.{u} W] [HasCatProp.{v} W]
-                                           (A : Category.{u} W) (B : Category.{v} W)
+    class HasTrivialFunctorialityCondition {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                                           [HasCatProp U W] [HasCatProp V W]
+                                           (A : Category U W) (B : Category V W)
                                            [h : HasFunProp A B] where
     (functor {φ : A → B} (desc : FunDesc φ) : DefFun desc)
 
     namespace HasTrivialFunctorialityCondition
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-               [HasFunProp A B] [h : HasTrivialFunctorialityCondition A B]
+      variable {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+               {A : Category U W} {B : Category V W} [HasFunProp A B]
+               [h : HasTrivialFunctorialityCondition A B]
       
       def defFun {φ : A → B} {desc : FunDesc φ} : DefFun desc := h.functor desc
 
     end HasTrivialFunctorialityCondition
 
-    class HasIdFun [HasCatProp.{u} W] (A : Category.{u} W) [hFunAA : HasFunProp A A] where 
+    class HasIdFun {U : Universe.{u, uu}} [HasCatProp U W] (A : Category U W)
+                   [hFunAA : HasFunProp A A] where 
     (defIdFun : DefFun (FunDesc.idFun A))
 
     namespace HasIdFun
 
-      instance trivial [HasCatProp.{u} W] (A : Category.{u} W) [HasFunProp A A]
+      instance trivial {U : Universe} [HasCatProp U W] (A : Category U W) [HasFunProp A A]
                        [HasTrivialFunctorialityCondition A A] :
         HasIdFun A :=
       ⟨HasTrivialFunctorialityCondition.defFun⟩
 
-      def idFun [HasCatProp.{u} W] (A : Category.{u} W) [HasFunProp A A] [h : HasIdFun A] : A ⮕ A :=
+      def idFun {U : Universe} [HasCatProp U W] (A : Category U W) [HasFunProp A A]
+                [h : HasIdFun A] :
+        A ⮕ A :=
       DefFun.toFunctor h.defIdFun
 
     end HasIdFun
 
-    class HasConstFun [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-                      (A : Category.{u} W) (B : Category.{v} W) [hFunAB : HasFunProp A B] where
+    class HasConstFun [HasSubLinearFunOp W] {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                      [HasCatProp U W] [HasCatProp V W] (A : Category U W) (B : Category V W)
+                      [hFunAB : HasFunProp A B] where
     (defConstFun (b : B) : DefFun (FunDesc.constFun A b))
 
     namespace HasConstFun
 
-      instance trivial [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-                       (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B]
+      instance trivial [HasSubLinearFunOp W] {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+                       (A : Category U W) (B : Category V W) [HasFunProp A B]
                        [HasTrivialFunctorialityCondition A B] :
         HasConstFun A B :=
       ⟨λ _ => HasTrivialFunctorialityCondition.defFun⟩
 
-      def constFun [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W)
-                   {B : Category.{v} W} [HasFunProp A B] [h : HasConstFun A B] (b : B) :
+      def constFun [HasSubLinearFunOp W] {U V : Universe} [HasCatProp U W] [HasCatProp V W]
+                   (A : Category U W) {B : Category V W} [HasFunProp A B] [h : HasConstFun A B]
+                   (b : B) :
         A ⮕ B :=
       DefFun.toFunctor (h.defConstFun b)
 
     end HasConstFun
 
-    class HasCompFun [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-                     (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W)
+    class HasCompFun {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+                     [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+                     (A : Category U W) (B : Category U' W) (C : Category U'' W)
                      [hFunAB : HasFunProp A B] [hFunBC : HasFunProp B C] [hFunAC : HasFunProp A C]
                      where
     (defCompFun (F : A ⮕ B) (G : B ⮕ C) :
@@ -200,15 +210,15 @@ namespace CategoryTheory
 
     namespace HasCompFun
 
-      instance trivial [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-                       (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W)
+      instance trivial {U U' U'' : Universe} [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+                       (A : Category U W) (B : Category U' W) (C : Category U'' W)
                        [HasFunProp A B] [HasFunProp B C] [HasFunProp A C]
                        [HasTrivialFunctorialityCondition A C] :
         HasCompFun A B C :=
       ⟨λ _ _ => HasTrivialFunctorialityCondition.defFun⟩
 
-      def compFun [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-                  {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
+      def compFun {U U' U'' : Universe} [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+                  {A : Category U W} {B : Category U' W} {C : Category U'' W}
                   [HasFunProp A B] [HasFunProp B C] [HasFunProp A C] [h : HasCompFun A B C]
                   (F : A ⮕ B) (G : B ⮕ C) :
         A ⮕ C :=
@@ -224,11 +234,11 @@ namespace CategoryTheory
 
   class IsFunUniverse (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W]
                       [hCatUniv : IsCatUniverse.{u} W] where
-  [hasFun (A B : Category W) : HasFunProp (W := W) A B]
+  [hasFun (A B : IsCatUniverse.Category W) : HasFunProp A B]
 
   namespace IsFunUniverse
 
-    open HasFunProp
+    open IsCatUniverse HasFunProp
 
     section
 

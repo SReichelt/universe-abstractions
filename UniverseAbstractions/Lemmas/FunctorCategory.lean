@@ -3,7 +3,9 @@ import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
+import UniverseAbstractions.CategoryTheory.Meta
 import UniverseAbstractions.CategoryTheory.Basic
+import UniverseAbstractions.CategoryTheory.Extensional.Meta
 import UniverseAbstractions.CategoryTheory.Extensional.Basic
 
 
@@ -11,16 +13,19 @@ import UniverseAbstractions.CategoryTheory.Extensional.Basic
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
+universe u uu iu iuu
+
 
 
 namespace HasLinearFunOp.HasLinearFunExt
 
-  open MetaRelation IsCategoricalPreorder CategoryTheory IsCategory
+  open MetaRelation IsCategoricalPreorder CategoryTheory
 
-  variable {U : Universe} [hHomUniv : IsHomUniverse U] [h : HasLinearFunExt U]
+  variable (U : Universe.{u, uu}) [hHomUniv : IsHomUniverse.{u, uu, iu, iuu} U]
+           [h : HasLinearFunExt U]
 
-  -- The axioms for composition and identity imply that types and functors form a (potentially
-  -- higher) category.
+  -- The axioms for composition and identity imply that types and functors form a weak
+  -- "extensional" category, i.e. a weak bicategory.
 
   instance isCategoricalPreorder : IsCategoricalPreorder hHomUniv.Fun :=
   { assoc   := h.compAssoc,
@@ -34,13 +39,16 @@ namespace HasLinearFunOp.HasLinearFunExt
     rightIdExt     := h.rightIdExt,
     leftIdExt      := h.leftIdExt }
 
-  instance isCategory : IsCategory U U :=
-  { Hom                      := hHomUniv.Fun,
-    homIsPreorder            := isPreorder,
-    homHasTransFun           := hasTransFun,
-    homIsCategoricalPreorder := isCategoricalPreorder }
+  -- TODO: We probably want something more generic than `{U}` here, so that we have more than just
+  -- this single category at our disposal.
+  def funRel : BundledRelation.{uu, 0, u, uu} {U} U := ⟨PUnit.unit, hHomUniv.Fun⟩
 
-  instance isCategoryExt : IsCategoryExt U :=
-  { homIsCategoricalPreorderExt := isCategoricalPreorderExt }
+  def category : CatDesc (funRel U) :=
+  { homIsPreorder            := isPreorder,
+    homHasTransFun           := hasTransFun,
+    homIsCategoricalPreorder := isCategoricalPreorder U }
+
+  def categoryExt : CatDesc.CatDescExt (funRel U) :=
+  { homIsCategoricalPreorderExt := isCategoricalPreorderExt U }
 
 end HasLinearFunOp.HasLinearFunExt

@@ -27,6 +27,8 @@ set_option autoBoundImplicitLocal false
 
 
 
+instance : HasInstances.{0, 1} Bool := ⟨λ b => cond b True False⟩
+
 def boolean : Universe.{0, 1} := ⟨Bool⟩
 
 namespace boolean
@@ -40,7 +42,8 @@ namespace boolean
 
   -- `boolean` has instance equivalences in `unit`.
 
-  instance hasInstanceEquivalences : HasInstanceEquivalences boolean unit := unit.unitInstanceEquivalences boolean
+  instance hasInstanceEquivalences : HasInstanceEquivalences boolean unit :=
+  unit.unitInstanceEquivalences boolean
 
   instance hasTrivialIdentity : HasTrivialIdentity boolean := ⟨λ _ _ => unit.inst⟩
 

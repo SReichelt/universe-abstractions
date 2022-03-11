@@ -7,7 +7,7 @@ set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 2000
 --set_option pp.universes true
 
-universe u u' u'' u''' u'''' v w ww iw iww
+universe u uu u' uu' u'' uu'' u''' uu''' u'''' uu'''' v vv w ww iw iww
 
 
 
@@ -18,17 +18,18 @@ namespace CategoryTheory
        HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor
        HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasNonLinearFunOp
 
-  structure NatDesc {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                    [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-                    [hFunProp : HasFunProp A B] (F G : A ⮕ B) :
+  structure NatDesc {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                    [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                    {A : Category U W} {B : Category V W} [hFunProp : HasFunProp A B]
+                    (F G : A ⮕ B) :
     Sort (max 1 u w iw) where
   (η     : MetaQuantification (Hom B) F.φ G.φ)
   [isNat : IsNatural (preFun F) (preFun G) η]
 
   namespace NatDesc
 
-    variable {W : Universe} [IsHomUniverse W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-             {A : Category.{u} W} {B : Category.{v} W} [hFunProp : HasFunProp A B]
+    variable {U V W : Universe} [IsHomUniverse W] [HasCatProp U W] [HasCatProp V W]
+             {A : Category U W} {B : Category V W} [hFunProp : HasFunProp A B]
 
     def StrictNaturality {φ : A → B} (F G : hFunProp.Fun φ) :=
     ∀ {a b : A} (f : a ⇾ b), mapHom ⟨F⟩ f ≃'{φ a ⇾ φ b} mapHom ⟨G⟩ f
@@ -53,9 +54,9 @@ namespace CategoryTheory
 
   end NatDesc
 
-  class HasNatRel {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                  [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W)
-                  [hFunProp : HasFunProp A B] where
+  class HasNatRel {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                  [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                  (A : Category U W) (B : Category V W) [hFunProp : HasFunProp A B] where
   (Nat                             : MetaRelation (A ⮕ B) W)
   (desc {F G : A ⮕ B}              : Nat F G → NatDesc F G)
   (defNatFun (F G : A ⮕ B) (a : A) : Nat F G ⟶{λ η => (desc η).η a} (F a ⇾ G a))
@@ -64,15 +65,19 @@ namespace CategoryTheory
 
     open HasFunctors HasFunProp HasFunProp.Functor
 
-    variable {W : Universe} [IsHomUniverse W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-
-    def natRel (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [h : HasNatRel A B] :
-      BundledRelation W :=
-    ⟨h.Nat⟩
+    variable {U V W : Universe} [IsHomUniverse W] [HasCatProp U W] [HasCatProp V W]
 
     section
 
-      variable {A : Category.{u} W} {B : Category.{v} W} [hFunProp : HasFunProp A B]
+      variable (A : Category U W) (B : Category V W) [HasFunProp A B] [h : HasNatRel A B]
+
+      def natRel : BundledRelation sort W := ⟨A ⮕ B, h.Nat⟩
+
+    end
+
+    section
+
+      variable {A : Category U W} {B : Category V W} [hFunProp : HasFunProp A B]
                [h : HasNatRel A B]
 
       @[reducible] def nat {F G : A ⮕ B} (η : h.Nat F G) (a : A) : F a ⇾ G a :=
@@ -91,7 +96,7 @@ namespace CategoryTheory
           e := byDef }
 
         def natCongrArg {η₁ η₂ : h.Nat F G} (e : η₁ ≃ η₂) (a : A) : nat η₁ a ≃ nat η₂ a :=
-        defCongrArg (defNatFun F G a) e
+        defCongrArg (h.defNatFun F G a) e
 
         def naturality (η : h.Nat F G) {a b : A} (f : a ⇾ b) :
           nat η b • mapHom F f ≃ mapHom G f • nat η a :=
@@ -126,27 +131,27 @@ namespace CategoryTheory
 
     end
 
-    class HasTrivialNaturalityCondition (A : Category.{u} W) (B : Category.{v} W)
+    class HasTrivialNaturalityCondition (A : Category U W) (B : Category V W)
                                         [hFunProp : HasFunProp A B] [h : HasNatRel A B] where
     (nat {F G : A ⮕ B} (desc : NatDesc F G) : DefNat desc)
 
     namespace HasTrivialNaturalityCondition
 
-      variable {A : Category.{u} W} {B : Category.{v} W} [HasFunProp A B] [HasNatRel A B]
+      variable {A : Category U W} {B : Category V W} [HasFunProp A B] [HasNatRel A B]
                [h : HasTrivialNaturalityCondition A B]
 
       def defNat {F G : A ⮕ B} {desc : NatDesc F G} : DefNat desc := h.nat desc
 
     end HasTrivialNaturalityCondition
 
-    class HasTrivialNatEquiv (A : Category.{u} W) (B : Category.{v} W) [hFunProp : HasFunProp A B]
+    class HasTrivialNatEquiv (A : Category U W) (B : Category V W) [hFunProp : HasFunProp A B]
                              [h : HasNatRel A B] where
     (equiv {F G : A ⮕ B} (η₁ η₂ : h.Nat F G) (hNat : ∀ a, nat η₁ a ≃ nat η₂ a) :
        NatEquiv η₁ η₂ hNat)
 
     namespace HasTrivialNatEquiv
 
-      variable {A : Category.{u} W} {B : Category.{v} W} [HasFunProp A B] [hNatRel : HasNatRel A B]
+      variable {A : Category U W} {B : Category V W} [HasFunProp A B] [hNatRel : HasNatRel A B]
                [h : HasTrivialNatEquiv A B]
 
       def natEquiv {F G : A ⮕ B} {η₁ η₂ : hNatRel.Nat F G} {hNat : ∀ a, nat η₁ a ≃ nat η₂ a} :
@@ -157,9 +162,9 @@ namespace CategoryTheory
 
   end HasNatRel
 
-  class HasNatOp {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                 [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W)
-                 [hFunProp : HasFunProp A B] extends
+  class HasNatOp {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                 [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                 (A : Category U W) (B : Category V W) [hFunProp : HasFunProp A B] extends
     HasNatRel A B where
   (defRefl (F : A ⮕ B) : HasNatRel.DefNat (NatDesc.refl F))
   (defTrans {F G H : A ⮕ B} (η : Nat F G) (ε : Nat G H) :
@@ -169,11 +174,11 @@ namespace CategoryTheory
 
     open HasFunProp HasFunProp.Functor HasNatRel
 
-    variable {W : Universe} [IsHomUniverse W] [HasCatProp.{u} W] [HasCatProp.{v} W]
+    variable {U V W : Universe} [IsHomUniverse W] [HasCatProp U W] [HasCatProp V W]
 
     section
 
-      variable (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B]
+      variable (A : Category U W) (B : Category V W) [HasFunProp A B]
 
       instance trivial [HasNatRel A B] [HasTrivialNaturalityCondition A B] : HasNatOp A B :=
       { defRefl  := λ _   => HasTrivialNaturalityCondition.defNat,
@@ -189,7 +194,7 @@ namespace CategoryTheory
 
     section
 
-      variable {A : Category.{u} W} {B : Category.{v} W} [HasFunProp A B] [h : HasNatOp A B]
+      variable {A : Category U W} {B : Category V W} [HasFunProp A B] [h : HasNatOp A B]
 
       def natReflEq (F : A ⮕ B) (a : A) :
         nat (HasRefl.refl F) a ≃ idHom (F a) :=
@@ -221,9 +226,9 @@ namespace CategoryTheory
 
   end HasNatOp
 
-  class HasNatOpEquiv {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                      [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W)
-                      [hFunProp : HasFunProp A B] extends
+  class HasNatOpEquiv {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                      [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                      (A : Category U W) (B : Category V W) [hFunProp : HasFunProp A B] extends
     HasNatOp A B where
   (assoc {F G H I : A ⮕ B} (η : Nat F G) (ε : Nat G H) (θ : Nat H I) :
      HasNatRel.NatEquiv ((θ • ε) • η) (θ • (ε • η)) (HasNatOp.natAssoc η ε θ))
@@ -236,8 +241,8 @@ namespace CategoryTheory
 
     open HasNatRel
 
-    variable {W : Universe} [IsHomUniverse W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-             (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [HasFunProp A B]
+    variable {U V W : Universe} [IsHomUniverse W] [HasCatProp U W] [HasCatProp V W]
+             (A : Category U W) (B : Category V W) [HasFunProp A B] [HasFunProp A B]
 
     instance trivial [HasNatOp A B] [HasTrivialNatEquiv A B] : HasNatOpEquiv A B :=
     { assoc   := λ _ _ _ => HasTrivialNatEquiv.natEquiv,
@@ -258,9 +263,10 @@ namespace CategoryTheory
 
   end HasNatOpEquiv
 
-  class HasNaturality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                      [HasCatProp.{u} W] [HasCatProp.{v} W] [hFunCat : HasCatProp.{max 1 u v w} W]
-                      (A : Category.{u} W) (B : Category.{v} W) [hFunProp : HasFunProp A B] extends
+  class HasNaturality {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                      [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                      [hFunCat : HasCatProp sort.{max 1 u v w} W]
+                      (A : Category U W) (B : Category V W) [hFunProp : HasFunProp A B] extends
     HasNatOpEquiv A B where
   [natHasTransFun : HasTransFun Nat]
   (defFunCat : DefCat (HasNatOpEquiv.funCatDesc A B))
@@ -273,12 +279,13 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [hFunCat : HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [h : HasNaturality A B]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W] [HasCatProp V W]
+               [hFunCat : HasCatProp sort.{max 1 u v w} W] (A : Category U W) (B : Category V W)
+               [HasFunProp A B] [h : HasNaturality A B]
 
       instance : HasTransFun h.Nat := h.natHasTransFun
 
-      def funCat : Category.{max 1 u v w} W := HasCatProp.DefCat.toCategory h.defFunCat
+      def funCat : Category sort.{max 1 u v w} W := HasCatProp.DefCat.toCategory h.defFunCat
       infixr:20 " ⮕' " => CategoryTheory.HasNaturality.funCat
 
       instance : CoeFun (A ⮕' B) (λ _ => A → B) := HasFunProp.Functor.coeFun
@@ -287,8 +294,9 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [hFunCat : HasCatProp.{max 1 u v w} W]
-               {A : Category.{u} W} {B : Category.{v} W} [HasFunProp A B] [h : HasNaturality A B]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W] [HasCatProp V W]
+               [hFunCat : HasCatProp sort.{max 1 u v w} W] {A : Category U W} {B : Category V W}
+               [HasFunProp A B] [h : HasNaturality A B]
 
       def natReflEq' (F : A ⮕' B) (a : A) :
         nat (idHom F) a ≃ idHom (F a) :=
@@ -302,30 +310,30 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W}
                [hFunBC : HasFunProp B C]
 
       structure FunFunDesc (F : A → (B ⮕ C)) where
       (natDesc {a₁ a₂ : A} : (a₁ ⇾ a₂) → NatDesc (F a₁) (F a₂))
+      (defNatDescFun (a₁ a₂ : A) (b : B) : (a₁ ⇾ a₂) ⟶{λ f => (natDesc f).η b} (F a₁ b ⇾ F a₂ b))
       (natDescReflEq (a : A) (b : B) : (natDesc (idHom a)).η b ≃ idHom ((F a) b))
       (natDescTransEq {a₁ a₂ a₃ : A} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) (b : B) :
          (natDesc (g • f)).η b ≃ (natDesc g).η b • (natDesc f).η b)
 
-      variable [HasCatProp.{max 1 u' u'' w} W] [hNatBC : HasNaturality B C] {F : A → (B ⮕' C)}
+      variable [HasCatProp sort.{max 1 u' u'' w} W] [hNatBC : HasNaturality B C] {F : A → (B ⮕' C)}
 
-      structure DefFunFunBaseBase (desc : FunFunDesc F) where
+      structure DefFunFunBase (desc : FunFunDesc F) where
       (defNat {a₁ a₂ : A} (f : a₁ ⇾ a₂) : DefNat (desc.natDesc f))
+      (defNatFun (a₁ a₂ : A) : (a₁ ⇾ a₂) ⟶{λ f => (defNat f).η} (F a₁ ⇾ F a₂))
       (natReflEq (a : A) :
          DefNatEquiv (defNat (idHom a)) (HasNatOp.defRefl (F a))
                      (desc.natDescReflEq a))
       (natTransEq {a₁ a₂ a₃ : A} (f : a₁ ⇾ a₂) (g : a₂ ⇾ a₃) :
          DefNatEquiv (defNat (g • f)) (HasNatOp.defTrans (defNat f).η (defNat g).η)
-                     (λ b => (congrArgTrans byNatDef byNatDef)⁻¹ •
+                     (λ b => (congrArgTrans (byNatDef (η := defNat f)) (byNatDef (η := defNat g)))⁻¹ •
                              desc.natDescTransEq f g b))
-
-      structure DefFunFunBase (desc : FunFunDesc F) extends DefFunFunBaseBase desc where
-      (defNatFun (a₁ a₂ : A) : (a₁ ⇾ a₂) ⟶{λ f => (defNat f).η} (F a₁ ⇾ F a₂))
 
       namespace DefFunFunBase
 
@@ -367,7 +375,7 @@ namespace CategoryTheory
 
         def byFunFunDef {G : DefFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} :
           nat (mapHom (toFunctor G) f) b ≃' (desc.natDesc f).η b :=
-        byNatDef • natCongrArg byFunFunDefNat b
+        byNatDef • natCongrArg (byFunFunDefNat (G := G)) b
 
       end DefFunFun
 
@@ -375,9 +383,10 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-               [HasCatProp.{max 1 u' u'' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W} [hFunBC : HasFunProp B C]
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               [HasCatProp sort.{max 1 u' u'' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W} [hFunBC : HasFunProp B C]
                [hNatBC : HasNaturality B C] [hFunABC : HasFunProp A (B ⮕' C)]
 
       structure NatNatDesc (F G : A ⮕ B ⮕' C) (η : ∀ a, F a ⇾ G a) where
@@ -429,7 +438,7 @@ namespace CategoryTheory
 
         end DefNatNatBase
 
-        variable [HasCatProp.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
+        variable [HasCatProp sort.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
 
         structure DefNatNat (desc : NatNatDesc F G η) extends
           DefNatNatBase desc, DefNat (DefNatNatBase.natDesc toDefNatNatBase)
@@ -453,7 +462,7 @@ namespace CategoryTheory
 
       section
 
-        variable [HasCatProp.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
+        variable [HasCatProp sort.{max 1 u u' u'' w} W] [hNatABC : HasNaturality A (B ⮕' C)]
                  {φ : A → B → C} {F' G' : ∀ a, hFunBC.Fun (φ a)}
                  {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
 
@@ -467,7 +476,7 @@ namespace CategoryTheory
                               {hNatEq : NatNatDesc.StrictNaturality₂ F G}
                               {ε : StrictDefNatNat η hNatEq} {a : A} {b : B} :
           nat (nat ε.η a) b ≃ idHom (φ a b) :=
-        byStrictNatDef • natCongrArg byNatNatDef b
+        byStrictNatDef • natCongrArg (byNatNatDef (ε := ε)) b
 
       end
 
@@ -475,22 +484,24 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{u'''} W]
-               [HasCatProp.{max 1 u'' u''' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W} {D : Category.{u'''} W}
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               {U''' : Universe.{u''', uu'''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W] [HasCatProp U''' W]
+               [HasCatProp sort.{max 1 u'' u''' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W} {D : Category U''' W}
                [hFunCD : HasFunProp C D] [hNatCD : HasNaturality C D]
                [hFunBCD : HasFunProp B (C ⮕' D)]
 
       structure FunFunFunDesc (F : A → (B ⮕ C ⮕' D)) where
       (revFunFunDesc (b : B) : FunFunDesc (λ a => (F a) b))
-      (natNatDesc {a₁ a₂ : A} (f : a₁ ⇾ a₂) (G : ∀ b, DefFunFunBaseBase (revFunFunDesc b)) :
+      (natNatDesc {a₁ a₂ : A} (f : a₁ ⇾ a₂) (G : ∀ b, DefFunFunBase (revFunFunDesc b)) :
          NatNatDesc (F a₁) (F a₂) (λ b => ((G b).defNat f).η))
 
-      variable [HasCatProp.{max 1 u' u'' u''' w} W] [hNatBCD : HasNaturality B (C ⮕' D)]
+      variable [HasCatProp sort.{max 1 u' u'' u''' w} W] [hNatBCD : HasNaturality B (C ⮕' D)]
                {F : A → (B ⮕' C ⮕' D)}
 
       structure DefFunFunFunBase (desc : FunFunFunDesc F) where
-      (defRevFunFun (b : B) : DefFunFunBaseBase (desc.revFunFunDesc b))
+      (defRevFunFun (b : B) : DefFunFunBase (desc.revFunFunDesc b))
       (defNatNat {a₁ a₂ : A} (f : a₁ ⇾ a₂) : DefNatNatBase (desc.natNatDesc f defRevFunFun))
 
       namespace DefFunFunFunBase
@@ -498,13 +509,14 @@ namespace CategoryTheory
         variable {desc : FunFunFunDesc F} (G : DefFunFunFunBase desc)
 
         def funFunDesc : FunFunDesc F :=
-        { natDesc        := λ f     => DefNatNatBase.natDesc (G.defNatNat f),
-          natDescReflEq  := λ a   b => (DefCat.catReflEq ((F a) b))⁻¹ •
-                                       (G.defRevFunFun b).natReflEq a,
-          natDescTransEq := λ f g b => (DefCat.catTransEq (A := hNatCD.defFunCat)
-                                                          ((G.defRevFunFun b).defNat f).η
-                                                          ((G.defRevFunFun b).defNat g).η)⁻¹ •
-                                       (G.defRevFunFun b).natTransEq f g }
+        { natDesc        := λ f       => DefNatNatBase.natDesc (G.defNatNat f),
+          defNatDescFun  := λ a₁ a₂ b => (G.defRevFunFun b).defNatFun a₁ a₂,
+          natDescReflEq  := λ a   b   => (DefCat.catReflEq ((F a) b))⁻¹ •
+                                         (G.defRevFunFun b).natReflEq a,
+          natDescTransEq := λ f g b   => (DefCat.catTransEq (A := hNatCD.defFunCat)
+                                                            ((G.defRevFunFun b).defNat f).η
+                                                            ((G.defRevFunFun b).defNat g).η)⁻¹ •
+                                         (G.defRevFunFun b).natTransEq f g }
 
       end DefFunFunFunBase
 
@@ -529,7 +541,7 @@ namespace CategoryTheory
 
         def byFunFunFunDef {G : DefFunFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} {c : C} :
           nat (nat (mapHom (toFunctor G) f) b) c ≃' ((desc.revFunFunDesc b).natDesc f).η c :=
-        byNatDef • natCongrArg byFunFunFunDefNat c
+        byNatDef • natCongrArg (byFunFunFunDefNat (G := G)) c
 
       end DefFunFunFun
 
@@ -537,9 +549,11 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{u'''} W]
-               [HasCatProp.{max 1 u' u'' u''' w} W] [HasCatProp.{max 1 u'' u''' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W} {D : Category.{u'''} W}
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               {U''' : Universe.{u''', uu'''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W] [HasCatProp U''' W]
+               [HasCatProp sort.{max 1 u' u'' u''' w} W] [HasCatProp sort.{max 1 u'' u''' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W} {D : Category U''' W}
                [hFunCD : HasFunProp C D] [hNatCD : HasNaturality C D] [hFunBCD : HasFunProp B (C ⮕' D)]
                [hNatBCD : HasNaturality B (C ⮕' D)] [hFunABCD : HasFunProp A (B ⮕' C ⮕' D)]
 
@@ -597,7 +611,7 @@ namespace CategoryTheory
 
         end DefNatNatNatBase
 
-        variable [HasCatProp.{max 1 u u' u'' u''' w} W] [hNatABCD : HasNaturality A (B ⮕' C ⮕' D)]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' w} W] [hNatABCD : HasNaturality A (B ⮕' C ⮕' D)]
 
         structure DefNatNatNat (desc : NatNatNatDesc F G η) extends
           DefNatNatNatBase desc, DefNatNat (DefNatNatNatBase.natNatDesc toDefNatNatNatBase)
@@ -622,7 +636,7 @@ namespace CategoryTheory
 
       section
 
-        variable [HasCatProp.{max 1 u u' u'' u''' w} W] [HasNaturality A (B ⮕' C ⮕' D)]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' w} W] [HasNaturality A (B ⮕' C ⮕' D)]
                  {φ : A → B → C → D} {F'' G'' : ∀ a b, hFunCD.Fun (φ a b)}
                  {hEq : ∀ a b, NatDesc.StrictNaturality (F'' a b) (G'' a b)}
                  {η' : ∀ a b, StrictDefNat (hEq a b)}
@@ -648,11 +662,13 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{u'''} W]
-               [HasCatProp.{u''''} W] [HasCatProp.{max 1 u' u'' u''' u'''' w} W]
-               [HasCatProp.{max 1 u'' u''' u'''' w} W] [HasCatProp.{max 1 u''' u'''' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
-               {D : Category.{u'''} W} {E : Category.{u''''} W}
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               {U''' : Universe.{u''', uu'''}} {U'''' : Universe.{u'''', uu''''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W] [HasCatProp U''' W]
+               [HasCatProp U'''' W] [HasCatProp sort.{max 1 u' u'' u''' u'''' w} W]
+               [HasCatProp sort.{max 1 u'' u''' u'''' w} W] [HasCatProp sort.{max 1 u''' u'''' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W}
+               {D : Category U''' W} {E : Category U'''' W}
                [hFunDE : HasFunProp D E] [hNatDE : HasNaturality D E]
                [hFunCDE : HasFunProp C (D ⮕' E)] [hNatCDE : HasNaturality C (D ⮕' E)]
                [hFunBCDE : HasFunProp B (C ⮕' D ⮕' E)] [hNatBCDE : HasNaturality B (C ⮕' D ⮕' E)]
@@ -724,7 +740,7 @@ namespace CategoryTheory
 
         end DefNatNatNatNatBase
 
-        variable [HasCatProp.{max 1 u u' u'' u''' u'''' w} W]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' u'''' w} W]
                  [hNatABCDE : HasNaturality A (B ⮕' C ⮕' D ⮕' E)]
 
         structure DefNatNatNatNat (desc : NatNatNatNatDesc F G η) extends
@@ -753,7 +769,7 @@ namespace CategoryTheory
 
       section
 
-        variable [HasCatProp.{max 1 u u' u'' u''' u'''' w} W] [HasNaturality A (B ⮕' C ⮕' D ⮕' E)]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' u'''' w} W] [HasNaturality A (B ⮕' C ⮕' D ⮕' E)]
                  {φ : A → B → C → D → E} {F''' G''' : ∀ a b c, hFunDE.Fun (φ a b c)}
                  {hEq : ∀ a b c, NatDesc.StrictNaturality (F''' a b c) (G''' a b c)}
                  {η'' : ∀ a b c, StrictDefNat (hEq a b c)}
@@ -787,9 +803,9 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               {A : Category.{u} W} (a : A) (B : Category.{v} W) [HasFunProp A B]
-               [h : HasNaturality A B]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W] [HasCatProp V W]
+               [HasCatProp sort.{max 1 u v w} W] {A : Category U W} (a : A) (B : Category V W)
+               [HasFunProp A B] [h : HasNaturality A B]
 
       def revApp (F : A ⮕' B) : B := F a
 
@@ -806,16 +822,18 @@ namespace CategoryTheory
 
     end
 
-    class HasRevAppFun [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-                       (A : Category.{u} W) (B : Category.{v} W) [hFunAB : HasFunProp A B]
+    class HasRevAppFun {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W]
+                       [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+                       (A : Category U W) (B : Category V W) [hFunAB : HasFunProp A B]
                        [hNatAB : HasNaturality A B] [hFunABB : HasFunProp (A ⮕' B) B] where
     (defRevAppFun (a : A) : HasFunProp.DefFun (revAppFunDesc a B))
 
     namespace HasRevAppFun
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [hNatAB : HasNaturality A B]
-               [HasFunProp (A ⮕' B) B] [h : HasRevAppFun A B]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W] [HasCatProp V W]
+               [HasCatProp sort.{max 1 u v w} W] (A : Category U W) (B : Category V W)
+               [HasFunProp A B] [hNatAB : HasNaturality A B] [HasFunProp (A ⮕' B) B]
+               [h : HasRevAppFun A B]
 
       def revAppFun (a : A) : (A ⮕' B) ⮕ B := DefFun.toFunctor (h.defRevAppFun a)
 
@@ -838,13 +856,15 @@ namespace CategoryTheory
 
       def revAppFunFunDesc : FunFunDesc (revAppFun A B) :=
       { natDesc        := revAppNatDesc A B,
-        natDescReflEq  := λ a   F => Functor.reflEq  F a,
-        natDescTransEq := λ f g F => Functor.transEq F f g }
+        defNatDescFun  := λ a₁ a₂ F => toDefFun ((preFun F).baseFun a₁ a₂),
+        natDescReflEq  := λ a   F   => Functor.reflEq  F a,
+        natDescTransEq := λ f g F   => Functor.transEq F f g }
 
     end HasRevAppFun
 
-    class HasRevAppFunFun [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-                          (A : Category.{u} W) (B : Category.{v} W) [hFunAB : HasFunProp A B]
+    class HasRevAppFunFun {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W]
+                          [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+                          (A : Category U W) (B : Category V W) [hFunAB : HasFunProp A B]
                           [hNatAB : HasNaturality A B] [hFunABB : HasFunProp (A ⮕' B) B]
                           [hNatABB : HasNaturality (A ⮕' B) B]
                           [hFunAABB : HasFunProp A ((A ⮕' B) ⮕' B)] extends
@@ -853,10 +873,10 @@ namespace CategoryTheory
 
     namespace HasRevAppFunFun
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [HasNaturality A B]
-               [HasFunProp (A ⮕' B) B] [HasNaturality (A ⮕' B) B] [HasFunProp A ((A ⮕' B) ⮕' B)]
-               [h : HasRevAppFunFun A B]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W] [HasCatProp V W]
+               [HasCatProp sort.{max 1 u v w} W] (A : Category U W) (B : Category V W)
+               [HasFunProp A B] [HasNaturality A B] [HasFunProp (A ⮕' B) B]
+               [HasNaturality (A ⮕' B) B] [HasFunProp A ((A ⮕' B) ⮕' B)] [h : HasRevAppFunFun A B]
 
       def revAppFunFun : A ⮕ (A ⮕' B) ⮕' B := DefFunFun.toFunctor h.defRevAppFunFun
 
@@ -864,13 +884,14 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-               (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W) [HasFunProp A B]
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               (A : Category U W) (B : Category U' W) (C : Category U'' W) [HasFunProp A B]
                [HasFunProp B C] [HasFunProp A C] [h : HasCompFun A B C]
 
       section
 
-        variable [HasCatProp.{max 1 u' u'' w} W] [hNatBC : HasNaturality B C] (F : A ⮕ B)
+        variable [HasCatProp sort.{max 1 u' u'' w} W] [hNatBC : HasNaturality B C] (F : A ⮕ B)
 
         def mapCompNat {G₁ G₂ : B ⮕' C} (η : G₁ ⇾ G₂) :
           MetaQuantification (Hom C) (G₁.φ ∘ F.φ) (G₂.φ ∘ F.φ) :=
@@ -891,14 +912,15 @@ namespace CategoryTheory
 
         def compFunFunDesc : FunFunDesc (λ G : B ⮕' C => G ⭗ F) :=
         { natDesc        := compNatDesc A B C F,
-          natDescReflEq  := λ G   a => natReflEq'  G   (F a),
-          natDescTransEq := λ η ε a => natTransEq' η ε (F a) }
+          defNatDescFun  := λ G₁ G₂ a => hNatBC.defNatFun G₁ G₂ (F a),
+          natDescReflEq  := λ G   a   => natReflEq'  G   (F a),
+          natDescTransEq := λ η ε a   => natTransEq' η ε (F a) }
 
       end
 
       section
 
-        variable [HasCatProp.{max 1 u u' w} W] [hNatAB : HasNaturality A B] (G : B ⮕ C)
+        variable [HasCatProp sort.{max 1 u u' w} W] [hNatAB : HasNaturality A B] (G : B ⮕ C)
 
         def mapRevCompNat {F₁ F₂ : A ⮕' B} (η : F₁ ⇾ F₂) :
           MetaQuantification (Hom C) (G.φ ∘ F₁.φ) (G.φ ∘ F₂.φ) :=
@@ -921,18 +943,21 @@ namespace CategoryTheory
 
         def revCompFunFunDesc : FunFunDesc (λ F : A ⮕' B => G ⭗ F) :=
         { natDesc        := revCompNatDesc A B C G,
-          natDescReflEq  := λ F   a => Functor.reflEq G (F a) •
-                                       mapHomCongrArg G (natReflEq' F a),
-          natDescTransEq := λ η ε a => Functor.transEq G (nat η a) (nat ε a) •
-                                       mapHomCongrArg G (natTransEq' η ε a) }
+          defNatDescFun  := λ F₁ F₂ a => HasCompFun.defCompDefFun (hNatAB.defNatFun F₁ F₂ a)
+                                                                  ((preFun G).baseFun (F₁ a) (F₂ a)),
+          natDescReflEq  := λ F   a   => Functor.reflEq G (F a) •
+                                         mapHomCongrArg G (natReflEq' F a),
+          natDescTransEq := λ η ε a   => Functor.transEq G (nat η a) (nat ε a) •
+                                         mapHomCongrArg G (natTransEq' η ε a) }
 
       end
 
     end
 
-    class HasCompFunFun [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-                        [HasCatProp.{max 1 u u'' w} W] [HasCatProp.{max 1 u' u'' w} W]
-                        (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W)
+    class HasCompFunFun {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+                        [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+                        [HasCatProp sort.{max 1 u u'' w} W] [HasCatProp sort.{max 1 u' u'' w} W]
+                        (A : Category U W) (B : Category U' W) (C : Category U'' W)
                         [hFunAB : HasFunProp A B] [hFunBC : HasFunProp B C]
                         [hFunAC : HasFunProp A C] [hNatBC : HasNaturality B C]
                         [hNatAC : HasNaturality A C] [hFunBCAC : HasFunProp (B ⮕' C) (A ⮕' C)]
@@ -941,10 +966,11 @@ namespace CategoryTheory
 
     namespace HasCompFunFun
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-               [HasCatProp.{max 1 u u' w} W] [HasCatProp.{max 1 u u'' w} W]
-               [HasCatProp.{max 1 u' u'' w} W]
-               (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W) [HasFunProp A B]
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               [HasCatProp sort.{max 1 u u' w} W] [HasCatProp sort.{max 1 u u'' w} W]
+               [HasCatProp sort.{max 1 u' u'' w} W]
+               (A : Category U W) (B : Category U' W) (C : Category U'' W) [HasFunProp A B]
                [HasFunProp B C] [HasFunProp A C] [HasNaturality B C]
                [HasNaturality A C] [HasFunProp (B ⮕' C) (A ⮕' C)] [HasCompFun A B C]
                [h : HasCompFunFun A B C]
@@ -953,16 +979,19 @@ namespace CategoryTheory
 
       def compFunFunFunDesc [HasNaturality A B] : FunFunFunDesc (λ F : A ⮕' B => compFunFun A B C F) :=
       { revFunFunDesc := revCompFunFunDesc A B C,
-        natNatDesc    := λ η _ => { natEq := λ ε a => (naturality ε (nat η a) •
-                                                       congrArgTrans byNatDef DefFunFun.byFunFunDef)⁻¹ •
-                                                      congrArgTrans DefFunFun.byFunFunDef byNatDef } }
+        natNatDesc    := λ {F₁ F₂} η H =>
+                         { natEq := λ {G₁ G₂} ε a =>
+                                    (naturality ε (nat η a) •
+                                     congrArgTrans (byNatDef (η := (H G₁).defNat η)) DefFunFun.byFunFunDef)⁻¹ •
+                                    congrArgTrans (DefFunFun.byFunFunDef (G := h.defCompFunFun F₁)) byNatDef } }
 
     end HasCompFunFun
 
-    class HasCompFunFunFun [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-                           [HasCatProp.{max 1 u u' w} W] [HasCatProp.{max 1 u u'' w} W]
-                           [HasCatProp.{max 1 u' u'' w} W] [HasCatProp.{max 1 u u' u'' w} W]
-                           (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W)
+    class HasCompFunFunFun {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+                           [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+                           [HasCatProp sort.{max 1 u u' w} W] [HasCatProp sort.{max 1 u u'' w} W]
+                           [HasCatProp sort.{max 1 u' u'' w} W] [HasCatProp sort.{max 1 u u' u'' w} W]
+                           (A : Category U W) (B : Category U' W) (C : Category U'' W)
                            [hFunAB : HasFunProp A B] [hFunBC : HasFunProp B C]
                            [hFunAC : HasFunProp A C] [hNatAB : HasNaturality A B]
                            [hNatBC : HasNaturality B C] [hNatAC : HasNaturality A C]
@@ -975,10 +1004,11 @@ namespace CategoryTheory
 
     namespace HasCompFunFunFun
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W]
-               [HasCatProp.{max 1 u u' w} W] [HasCatProp.{max 1 u u'' w} W]
-               [HasCatProp.{max 1 u' u'' w} W] [HasCatProp.{max 1 u u' u'' w} W]
-               (A : Category.{u} W) (B : Category.{u'} W) (C : Category.{u''} W) [HasFunProp A B]
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               [HasCatProp sort.{max 1 u u' w} W] [HasCatProp sort.{max 1 u u'' w} W]
+               [HasCatProp sort.{max 1 u' u'' w} W] [HasCatProp sort.{max 1 u u' u'' w} W]
+               (A : Category U W) (B : Category U' W) (C : Category U'' W) [HasFunProp A B]
                [HasFunProp B C] [HasFunProp A C] [HasNaturality A B] [HasNaturality B C]
                [HasNaturality A C] [HasFunProp (B ⮕' C) (A ⮕' C)]
                [HasNaturality (B ⮕' C) (A ⮕' C)] [HasFunProp (A ⮕' B) ((B ⮕' C) ⮕' (A ⮕' C))]
@@ -992,8 +1022,9 @@ namespace CategoryTheory
 
       open HasFunProp.HasConstFun
 
-      variable [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [h : HasConstFun A B]
+      variable [HasSubLinearFunOp W] {U : Universe.{u, uu}} {V : Universe.{v, vv}} [HasCatProp U W]
+               [HasCatProp V W] (A : Category U W) (B : Category V W) [HasFunProp A B]
+               [h : HasConstFun A B]
 
       def mapConstNat {b₁ b₂ : B} (g : b₁ ⇾ b₂) :
         MetaQuantification (Hom B) (Function.const A b₁) (Function.const A b₂) :=
@@ -1012,21 +1043,24 @@ namespace CategoryTheory
 
       def constFunFunDesc : FunFunDesc (λ b : B => constFun A b) :=
       { natDesc        := constNatDesc A B,
-        natDescReflEq  := λ b   _ => HasInstanceEquivalences.refl (idHom b),
-        natDescTransEq := λ f g _ => HasInstanceEquivalences.refl (g • f) }
+        defNatDescFun  := λ b₁ b₂ _ => HasIdFun.defIdFun (b₁ ⇾ b₂),
+        natDescReflEq  := λ b   _   => HasInstanceEquivalences.refl (idHom b),
+        natDescTransEq := λ f g _   => HasInstanceEquivalences.refl (g • f) }
 
     end
 
-    class HasConstFunFun [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-                         [HasCatProp.{max 1 u v w} W] (A : Category.{u} W) (B : Category.{v} W)
+    class HasConstFunFun [HasSubLinearFunOp W] {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                         [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+                         (A : Category U W) (B : Category V W)
                          [hFunAB : HasFunProp A B] [hNatAB : HasNaturality A B]
                          [hFunBAB : HasFunProp B (A ⮕' B)] [h : HasConstFun A B] where
     (defConstFunFun : DefFunFun (constFunFunDesc A B))
 
     namespace HasConstFunFun
 
-      variable [HasSubLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [HasNaturality A B]
+      variable [HasSubLinearFunOp W] {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+               [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               (A : Category U W) (B : Category V W) [HasFunProp A B] [HasNaturality A B]
                [HasFunProp B (A ⮕' B)] [HasConstFun A B] [h : HasConstFunFun A B]
 
       def constFunFun : B ⮕ (A ⮕' B) := DefFunFun.toFunctor h.defConstFunFun
@@ -1035,8 +1069,9 @@ namespace CategoryTheory
 
     section
 
-      variable [HasNonLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               {A : Category.{u} W} {B : Category.{v} W} [HasFunProp A B] [HasNaturality A B]
+      variable [HasNonLinearFunOp W]  {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+               [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               {A : Category U W} {B : Category V W} [HasFunProp A B] [HasNaturality A B]
                [HasFunProp A (A ⮕' B)] (F : A ⮕ A ⮕' B)
 
       @[reducible] def dup (a : A) : B := (F a) a
@@ -1098,16 +1133,18 @@ namespace CategoryTheory
 
     end
 
-    class HasDupFun [HasNonLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-                    [HasCatProp.{max 1 u v w} W] (A : Category.{u} W) (B : Category.{v} W)
+    class HasDupFun [HasNonLinearFunOp W]  {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                    [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+                    (A : Category U W) (B : Category V W)
                     [hFunAB : HasFunProp A B] [hNatAB : HasNaturality A B]
                     [hFunAAB : HasFunProp A (A ⮕' B)] where
     (defDupFun (F : A ⮕ A ⮕' B) : HasFunProp.DefFun (dupFunDesc F))
 
     namespace HasDupFun
 
-      variable [HasNonLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [HasNaturality A B]
+      variable [HasNonLinearFunOp W] {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+               [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               (A : Category U W) (B : Category V W) [HasFunProp A B] [hNatAB : HasNaturality A B]
                [HasFunProp A (A ⮕' B)] [h : HasDupFun A B]
 
       def dupFun (F : A ⮕ A ⮕' B) : A ⮕ B := DefFun.toFunctor (h.defDupFun F)
@@ -1139,15 +1176,17 @@ namespace CategoryTheory
 
       def dupFunFunDesc : FunFunDesc (λ F : A ⮕' A ⮕' B => dupFun A B F) :=
       { natDesc        := dupNatDesc A B,
-        natDescReflEq  := λ F   a => natReflEq' (F a) a •
-                                     natCongrArg (natReflEq' F a) a,
-        natDescTransEq := λ η ε a => natTransEq' (nat η a) (nat ε a) a •
-                                     natCongrArg (natTransEq' η ε a) a }
+        defNatDescFun  := λ F₁ F₂ a => HasCompFun.defCompDefDefFun (hNatAAB.defNatFun F₁ F₂ a) (hNatAB.defNatFun (F₁ a) (F₂ a) a),
+        natDescReflEq  := λ F   a   => natReflEq' (F a) a •
+                                       natCongrArg (natReflEq' F a) a,
+        natDescTransEq := λ η ε a   => natTransEq' (nat η a) (nat ε a) a •
+                                       natCongrArg (natTransEq' η ε a) a }
 
     end HasDupFun
 
-    class HasDupFunFun [HasNonLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W]
-                       [HasCatProp.{max 1 u v w} W] (A : Category.{u} W) (B : Category.{v} W)
+    class HasDupFunFun [HasNonLinearFunOp W]  {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                       [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+                       (A : Category U W) (B : Category V W)
                        [hFunAB : HasFunProp A B] [hNatAB : HasNaturality A B]
                        [hFunAAB : HasFunProp A (A ⮕' B)] [hNatAAB : HasNaturality A (A ⮕' B)]
                        [hFunAABAB : HasFunProp (A ⮕' A ⮕' B) (A ⮕' B)] extends
@@ -1156,8 +1195,9 @@ namespace CategoryTheory
 
     namespace HasDupFunFun
 
-      variable [HasNonLinearFunOp W] [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [HasFunProp A B] [HasNaturality A B]
+      variable [HasNonLinearFunOp W]  {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+               [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               (A : Category U W) (B : Category V W) [HasFunProp A B] [HasNaturality A B]
                [HasFunProp A (A ⮕' B)] [HasNaturality A (A ⮕' B)] [HasFunProp (A ⮕' A ⮕' B) (A ⮕' B)]
                [h : HasDupFunFun A B]
 
@@ -1171,7 +1211,7 @@ namespace CategoryTheory
 
   class IsNatUniverse (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W]
                       [hCatUniv : IsCatUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W] where
-  [hasNat (A B : Category W) : HasNaturality A B]
+  [hasNat (A B : IsCatUniverse.Category W) : HasNaturality A B]
 
   namespace IsNatUniverse
 

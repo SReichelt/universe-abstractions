@@ -10,8 +10,8 @@ import UniverseAbstractions.CategoryTheory.Utils.Trivial
 
 
 set_option autoBoundImplicitLocal false
-set_option synthInstance.maxHeartbeats 5000
-set_option pp.universes true
+set_option synthInstance.maxHeartbeats 10000
+--set_option pp.universes true
 
 universe u v w
 
@@ -20,31 +20,32 @@ universe u v w
 -- This establishes the universe `prop` as a morphism universe, which enables the construction of
 -- categories with morphisms in `prop`, which are the same as preorders.
 
-namespace prop
+namespace prop.IsHomUniverse
 
   open MetaRelation MetaFunctor CategoryTheory HasCatProp HasIsoRel
 
   instance isHomUniverse : IsHomUniverse prop := ⟨⟩
 
-  def catDesc {R : BundledRelation.{u + 1} prop} (p : Preorder R.Hom) : CatDesc R :=
+  def catDesc {R : BundledRelation type.{u} prop} (p : Preorder R.Hom) : CatDesc R :=
   { homIsPreorder            := nativePreorder p,
     homHasTransFun           := inferInstance,
     homIsCategoricalPreorder := inferInstance }
 
-  instance hasCat : HasCatProp.{u + 1} prop :=
+  -- TODO: Generalize to arbitrary source universe.
+  instance hasCat : HasCatProp type.{u} prop :=
   { Cat  := λ R => Preorder R.Hom,
     desc := catDesc }
 
-  def defCat {R : BundledRelation.{u + 1} prop} (C : CatDesc R) : DefCat C :=
+  def defCat {R : BundledRelation type.{u} prop} (C : CatDesc R) : DefCat C :=
   ⟨{ refl  := C.homIsPreorder.refl,
      trans := C.homIsPreorder.trans }⟩
 
-  instance hasTrivialCatProp : HasCatProp.HasTrivialCatProp.{u + 1} prop := ⟨defCat⟩
+  instance hasTrivialCatProp : HasCatProp.HasTrivialCatProp type.{u} prop := ⟨defCat⟩
 
   instance isCatUniverse : IsCatUniverse.{u + 1} prop :=
   { hasCat := hasCat }
 
-  @[reducible] def Cat := Category.{u + 1} prop
+  @[reducible] def Cat := Category type.{u} prop
 
   -- Functors
 
@@ -113,18 +114,13 @@ namespace prop
   { natHasTransFun := HasTrivialFunctoriality.hasTransFun (NatRel A B),
     defFunCat      := HasTrivialCatProp.defCat }
 
-  noncomputable def defFunFunBaseBase {A B C : Cat} {F : A → (B ⮕ C)}
-                                      {desc : HasNaturality.FunFunDesc F} :
-    HasNaturality.DefFunFunBaseBase desc :=
-  { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
-    natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
-    natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
-
   noncomputable def defFunFunBase {A B C : Cat} {F : A → (B ⮕ C)}
                                   {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFunBase desc :=
-  { toDefFunFunBaseBase := defFunFunBaseBase,
-    defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun }
+  { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
+    defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun,
+    natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
 
   noncomputable def defFunFun {A B C : Cat} {F : A → (B ⮕ C)} {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFun desc :=
@@ -133,7 +129,7 @@ namespace prop
   noncomputable def defFunFunFunBase {A B C D : Cat} {F : A → (B ⮕ C ⮕' D)}
                                      {desc : HasNaturality.FunFunFunDesc F} :
     HasNaturality.DefFunFunFunBase desc :=
-  { defRevFunFun := λ _ => defFunFunBaseBase,
+  { defRevFunFun := λ _ => defFunFunBase,
     defNatNat    := λ _ => HasNaturality.DefNatNatBase.trivial }
 
   noncomputable def defFunFunFun {A B C D : Cat} {F : A → (B ⮕ C ⮕' D)}
@@ -236,4 +232,4 @@ namespace prop
     IsIsoUniverse.HasFullNaturalIsomorphisms.{u + 1} prop :=
   inferInstance
 
-end prop
+end prop.IsHomUniverse

@@ -1,8 +1,8 @@
 import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.MetaProperties
 
-import UniverseAbstractions.MathlibFragments.CoreExt
-import UniverseAbstractions.MathlibFragments.Data.Notation
+import UniverseAbstractions.MathlibFragments.Init.CoreExt
+import UniverseAbstractions.MathlibFragments.Init.Notation
 
 
 
@@ -79,6 +79,12 @@ namespace MetaRelation
   { refl  := e.refl,
     symm  := e.symm,
     trans := e.trans }
+
+  instance iffEquivalence : IsEquivalence (nativeRelation Iff) :=
+  nativeEquivalence Iff.isEquivalence
+
+  instance eqEquivalence (α : Sort u) : IsEquivalence (nativeRelation (@Eq α)) :=
+  nativeEquivalence (Eq.isEquivalence α)
 
   instance setoidEquivalence (α : Sort u) [s : Setoid α] :
     IsEquivalence (nativeRelation s.r) :=

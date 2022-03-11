@@ -16,7 +16,7 @@ universe u w ww iw iww
 namespace CategoryTheory
 
   open MetaRelation HasTransFun IsAssociative IsCategoricalPreorder
-       HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor HasNatRel HasNaturality
+       HasCatProp HasCatProp.Category IsCatUniverse HasFunProp HasFunProp.Functor HasNatRel HasNaturality
        HasIsoNat HasIsoNaturality
        HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp
 
@@ -54,7 +54,7 @@ namespace CategoryTheory
       mapHom (dupFun (constFun A F)) f
       ≃'{F a₁ ⇾ F a₂}
       mapHom F f :=
-    cancelRightId (natReflEq' F a₁ • natCongrArg byConstFunDef a₁) (mapHom F f) •
+    cancelRightId (natReflEq' F a₁ • natCongrArg (byConstFunDef (b := F) (f := f)) a₁) (mapHom F f) •
     byDupFunDef
 
     def dupConstNatNat (A B : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
@@ -172,7 +172,8 @@ namespace CategoryTheory
     bySubstFunFunFunDef (G := dupFunFun B C • G) •
     natCongrArg (byCompFunFunDef (F := revCompFunFun A (dupFunFun B C))
                                  (ε := mapHom (substFunFunFun A B C) η) •
-                 natCongrArg (byCompFunDef (F := substFunFunFun A B C)) G) a
+                 natCongrArg (byCompFunDef (F := substFunFunFun A B C)
+                                           (G := compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C))) G) a
     ▹{mapDupHom (G a) (nat η a)}◃
     congrArgTrans (natCongrArg bySubstFunFunFunDef (F₁ a) •
                    bySubstFunFunDef (ε := nat (mapHom (substFunFunFun A B (B ⟶ C)) η) G))
@@ -188,7 +189,8 @@ namespace CategoryTheory
                              (mapHom (compFunFun (substFunFun F₂ (B ⟶ C)) (A ⟶ C))
                                      (mapHom (substFunFunFun A B C) η))
                              G •
-                 natCongrArg (congrArgTransRight (natCongrArg (byCompFunDef (F := substFunFunFun A B (B ⟶ C)))
+                 natCongrArg (congrArgTransRight (natCongrArg (byCompFunDef (F := substFunFunFun A B (B ⟶ C))
+                                                                            (G := compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C)))
                                                               (substFunFun F₁ C))
                                                  (mapHom (compFunFun (substFunFun F₂ (B ⟶ C)) (A ⟶ C))
                                                          (mapHom (substFunFunFun A B C) η)) •

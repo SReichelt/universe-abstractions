@@ -4,10 +4,9 @@ import UniverseAbstractions.CategoryTheory.Extensional.Meta
 
 
 set_option autoBoundImplicitLocal false
-set_option synthInstance.maxHeartbeats 3000
 --set_option pp.universes true
 
-universe u v vv iv ivv
+universe u uu v vv iv ivv
 
 
 
@@ -15,11 +14,11 @@ namespace CategoryTheory
 
   open MetaRelation IsAssociative IsCategoricalPreorder IsGroupoidEquivalence
 
-  variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+  variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
 
   namespace SemicatDesc
 
-    structure SemicatDescExt (R : BundledRelation.{u} V) extends SemicatDesc R :
+    structure SemicatDescExt (R : BundledRelation U V) extends SemicatDesc R :
       Sort (max 1 u v iv) where
     [homIsAssociativeExt : IsAssociativeExt R.Hom]
 
@@ -27,13 +26,13 @@ namespace CategoryTheory
 
   namespace CatDesc
 
-    structure CatDescExt (R : BundledRelation.{u} V) extends CatDesc R :
+    structure CatDescExt (R : BundledRelation U V) extends CatDesc R :
       Sort (max 1 u v iv) where
     [homIsCategoricalPreorderExt : IsCategoricalPreorderExt R.Hom]
 
     namespace CatDescExt
 
-      variable {R : BundledRelation.{u} V} (desc : CatDescExt R)
+      variable {R : BundledRelation U V} (desc : CatDescExt R)
 
       def toSemicatDescExt : SemicatDesc.SemicatDescExt R :=
       let _ : IsPreorder               R.Hom := desc.homIsPreorder;
@@ -53,13 +52,13 @@ namespace CategoryTheory
     local instance : HasAffineFunOp V := ⟨⟩
     local instance : HasFullFunOp   V := ⟨⟩
 
-    class GrpoidDescExt (R : BundledRelation.{u} V) extends GrpoidDesc R :
+    class GrpoidDescExt (R : BundledRelation U V) extends GrpoidDesc R :
       Sort (max 1 u v iv) where
     [homIsGroupoidEquivalenceExt : IsGroupoidEquivalenceExt R.Hom]
 
     namespace GrpoidDescExt
 
-      variable {R : BundledRelation.{u} V} (desc : GrpoidDescExt R)
+      variable {R : BundledRelation U V} (desc : GrpoidDescExt R)
 
       def toCatDescExt : CatDesc.CatDescExt R :=
       let _ : IsEquivalence            R.Hom := desc.homIsEquivalence;

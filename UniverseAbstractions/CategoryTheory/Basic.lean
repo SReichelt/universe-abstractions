@@ -13,7 +13,7 @@ import UniverseAbstractions.CategoryTheory.Meta
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v vv iv ivv
+universe u uu u' uu' v vv iv ivv
 
 
 
@@ -25,27 +25,30 @@ namespace CategoryTheory
   class IsHomUniverse (V : Universe.{v, vv}) extends
     HasIdentity.{v, iv, vv, ivv} V, HasInternalFunctors V, HasLinearFunOp V
 
-  structure BundledRelation (V : Universe.{v, vv}) : Sort (max (u + 1) vv) where
-  {α   : Sort u}
-  (Hom : MetaRelation α V)
+  -- Note: We could replace `U` with `Sort u`, but that implies replacing `uu` with `u + 1`, which
+  -- is too large in higher-category use cases.
+  structure BundledRelation (U : Universe.{u, uu}) (V : Universe.{v, vv}) :
+    Sort (max 1 u uu vv) where
+  (A   : U)
+  (Hom : MetaRelation A V)
 
   section
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+    variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
 
-    structure SemicatDesc (R : BundledRelation.{u} V) : Sort (max 1 u v iv) where
+    structure SemicatDesc (R : BundledRelation U V) : Sort (max 1 u v iv) where
     [homHasTrans      : HasTrans      R.Hom]
     [homHasTransFun   : HasTransFun   R.Hom]
     [homIsAssociative : IsAssociative R.Hom]
 
-    structure CatDesc (R : BundledRelation.{u} V) : Sort (max 1 u v iv) where
+    structure CatDesc (R : BundledRelation U V) : Sort (max 1 u v iv) where
     [homIsPreorder            : IsPreorder            R.Hom]
     [homHasTransFun           : HasTransFun           R.Hom]
     [homIsCategoricalPreorder : IsCategoricalPreorder R.Hom]
 
     namespace CatDesc
 
-      variable {R : BundledRelation.{u} V} (desc : CatDesc R)
+      variable {R : BundledRelation U V} (desc : CatDesc R)
 
       def toSemicatDesc : SemicatDesc R :=
       let _ : IsPreorder            R.Hom := desc.homIsPreorder;
@@ -55,7 +58,7 @@ namespace CategoryTheory
 
     end CatDesc
 
-    structure GrpoidDesc (R : BundledRelation.{u} V) : Sort (max 1 u v iv) where
+    structure GrpoidDesc (R : BundledRelation U V) : Sort (max 1 u v iv) where
     [homIsEquivalence         : IsEquivalence         R.Hom]
     [homHasSymmFun            : HasSymmFun            R.Hom]
     [homHasTransFun           : HasTransFun           R.Hom]
@@ -63,7 +66,7 @@ namespace CategoryTheory
 
     namespace GrpoidDesc
 
-      variable {R : BundledRelation.{u} V} (desc : GrpoidDesc R)
+      variable {R : BundledRelation U V} (desc : GrpoidDesc R)
 
       def toCatDesc : CatDesc R :=
       let _ : IsEquivalence         R.Hom := desc.homIsEquivalence;
@@ -78,46 +81,48 @@ namespace CategoryTheory
 
 
 
-  class HasCatProp (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V] where
-  (Cat                              : MetaProperty (BundledRelation.{u} V) V)
-  (desc {R : BundledRelation.{u} V} : Cat R → CatDesc R)
+  class HasCatProp (U : Universe.{u, uu}) (V : Universe.{v, vv})
+                   [IsHomUniverse.{v, vv, iv, ivv} V] where
+  (Cat                            : MetaProperty (BundledRelation U V) V)
+  (desc {R : BundledRelation U V} : Cat R → CatDesc R)
 
   namespace HasCatProp
 
-    structure Category (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V]
-                       [h : HasCatProp.{u} V] :
-      Sort (max (u + 1) v vv) where
-    {R : BundledRelation.{u} V}
+    structure Category (U : Universe.{u, uu}) (V : Universe.{v, vv})
+                       [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp U V] :
+      Sort (max 1 u uu v vv) where
+    {R : BundledRelation U V}
     (C : h.Cat R)
 
     namespace Category
 
       section
 
-        variable (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
+        variable (U : Universe.{u, uu}) (V : Universe.{v, vv})
+                 [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp U V]
 
-        instance hasInstances : HasInstances.{u} (Category.{u} V) := ⟨λ A => A.R.α⟩
-
-        def univ : Universe.{u, max (u + 1) v vv} := ⟨Category.{u} V⟩
+        instance hasInstances : HasInstances.{u} (Category U V) := ⟨λ A => A.R.A⟩
 
       end
 
-      variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+               [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp U V]
 
-      def Hom (A : Category V) : MetaRelation A V := A.R.Hom
+      def Hom (A : Category U V) : MetaRelation A V := A.R.Hom
       infix:20 " ⇾ " => CategoryTheory.HasCatProp.Category.Hom _
 
-      instance (A : Category V) : IsPreorder            (Hom A) := (h.desc A.C).homIsPreorder
-      instance (A : Category V) : HasTransFun           (Hom A) := (h.desc A.C).homHasTransFun
-      instance (A : Category V) : IsCategoricalPreorder (Hom A) := (h.desc A.C).homIsCategoricalPreorder
+      instance (A : Category U V) : IsPreorder            (Hom A) := (h.desc A.C).homIsPreorder
+      instance (A : Category U V) : HasTransFun           (Hom A) := (h.desc A.C).homHasTransFun
+      instance (A : Category U V) : IsCategoricalPreorder (Hom A) := (h.desc A.C).homIsCategoricalPreorder
 
-      @[reducible] def idHom {A : Category V} (a : A) : a ⇾ a := HasRefl.refl a
-      @[reducible] def compHom {A : Category V} {a b c : A} (f : a ⇾ b) (g : b ⇾ c) : a ⇾ c := g • f
+      @[reducible] def idHom {A : Category U V} (a : A) : a ⇾ a := HasRefl.refl a
+      @[reducible] def compHom {A : Category U V} {a b c : A} (f : a ⇾ b) (g : b ⇾ c) : a ⇾ c := g • f
 
     end Category
 
-    structure DefCat {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
-                     {R : BundledRelation.{u} V} (desc : CatDesc R) where
+    structure DefCat {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                     [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp U V]
+                     {R : BundledRelation U V} (desc : CatDesc R) where
     (C   : h.Cat R)
     [hEq : IsPreorderEq (h.desc C).homIsPreorder desc.homIsPreorder]
 
@@ -125,10 +130,10 @@ namespace CategoryTheory
 
       open Category
 
-      variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp.{u} V]
-               {R : BundledRelation.{u} V} {desc : CatDesc R}
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+               [h : HasCatProp U V] {R : BundledRelation U V} {desc : CatDesc R}
 
-      def toCategory (A : DefCat desc) : Category.{u} V :=
+      def toCategory (A : DefCat desc) : Category U V :=
       { R := R,
         C := A.C }
 
@@ -142,16 +147,16 @@ namespace CategoryTheory
 
     end DefCat
 
-    class HasTrivialCatProp (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V]
-                            [h : HasCatProp.{u} V] where
-    (cat {R : BundledRelation.{u} V} (desc : CatDesc R) : DefCat desc)
+    class HasTrivialCatProp (U : Universe.{u, uu}) (V : Universe.{v, vv})
+                            [IsHomUniverse.{v, vv, iv, ivv} V] [h : HasCatProp U V] where
+    (cat {R : BundledRelation U V} (desc : CatDesc R) : DefCat desc)
 
     namespace HasTrivialCatProp
 
-      variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
-               [h : HasTrivialCatProp V]
+      variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+               [HasCatProp U V] [h : HasTrivialCatProp U V]
 
-      def defCat {R : BundledRelation.{u} V} {desc : CatDesc R} : DefCat desc := h.cat desc
+      def defCat {R : BundledRelation U V} {desc : CatDesc R} : DefCat desc := h.cat desc
 
     end HasTrivialCatProp
 
@@ -159,15 +164,20 @@ namespace CategoryTheory
 
 
 
+  -- TODO: Figure out how to replace `sort` with a more generic universe.
   class IsCatUniverse (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V] where
-  [hasCat : HasCatProp.{max 1 u v} V]
+  [hasCat : HasCatProp sort.{max 1 u v} V]
 
   namespace IsCatUniverse
 
     variable (V : Universe.{v, vv}) [IsHomUniverse.{v, vv, iv, ivv} V]
              [hCatUniv : IsCatUniverse.{u} V]
 
-    instance : HasCatProp.{max 1 u v} V := hCatUniv.hasCat
+    instance : HasCatProp sort.{max 1 u v} V := hCatUniv.hasCat
+
+    @[reducible] def Category := HasCatProp.Category sort.{max 1 u v} V
+
+    def univ : Universe.{max 1 u v, max (max 1 u v + 1) vv} := ⟨Category V⟩
 
   end IsCatUniverse
 

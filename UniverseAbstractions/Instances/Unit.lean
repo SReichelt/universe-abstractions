@@ -25,8 +25,6 @@ universe u v
 
 
 
-def unit : Universe.{0, 0} := ⟨True⟩
-
 namespace unit
 
   open MetaRelation HasFunctors HasInternalEquivalences HasEquivOp HasEquivOpFun
@@ -44,7 +42,8 @@ namespace unit
   def unitInstanceEquivalences (U : Universe) : HasInstanceEquivalences U unit :=
   ⟨λ A => unit.unitEq ⌈A⌉⟩
 
-  instance hasInstanceEquivalences : HasInstanceEquivalences unit unit := unitInstanceEquivalences unit
+  instance hasInstanceEquivalences : HasInstanceEquivalences unit unit :=
+  unitInstanceEquivalences unit
 
   instance hasTrivialIdentity : HasTrivialIdentity unit := ⟨λ _ _ => inst⟩
 

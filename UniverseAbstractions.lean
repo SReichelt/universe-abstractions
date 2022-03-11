@@ -22,6 +22,7 @@ import UniverseAbstractions.Lemmas.DerivedFunctors
 import UniverseAbstractions.Lemmas.DerivedFunctorExtensionality
 import UniverseAbstractions.Lemmas.DerivedSingletonFunctors
 import UniverseAbstractions.Lemmas.DerivedProductFunctors
+import UniverseAbstractions.Lemmas.FunctorCategory
 
 import UniverseAbstractions.Meta.TypedExpr
 import UniverseAbstractions.Meta.Reflect
@@ -31,13 +32,13 @@ import UniverseAbstractions.Meta.Tactics.Extensionality
 import UniverseAbstractions.Instances.Utils.Trivial
 import UniverseAbstractions.Instances.Utils.Direct
 import UniverseAbstractions.Instances.Utils.Bundled
-import UniverseAbstractions.Instances.Utils.PropFunctors
 import UniverseAbstractions.Instances.Unit
 import UniverseAbstractions.Instances.Bool
 import UniverseAbstractions.Instances.Sort
 import UniverseAbstractions.Instances.FunctorUniverse
 import UniverseAbstractions.Instances.CoFunctorUniverse
 import UniverseAbstractions.Instances.Setoid
+import UniverseAbstractions.Instances.BundledSet
 import UniverseAbstractions.Instances.Algebra
 
 import UniverseAbstractions.CategoryTheory.Meta
@@ -51,4 +52,5 @@ import UniverseAbstractions.CategoryTheory.Extensional.Basic
 import UniverseAbstractions.CategoryTheory.Utils.Trivial
 import UniverseAbstractions.CategoryTheory.HomUniverses.Prop
 import UniverseAbstractions.CategoryTheory.HomUniverses.Type
+import UniverseAbstractions.CategoryTheory.HomUniverses.Setoid
 import UniverseAbstractions.CategoryTheory.Algebra.Basic

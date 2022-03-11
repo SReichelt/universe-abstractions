@@ -8,7 +8,7 @@ Authors: Leonardo de Moura, Mario Carneiro
 
 
 
-import UniverseAbstractions.MathlibFragments.Data.Notation
+import UniverseAbstractions.MathlibFragments.Init.Notation
 
 
 

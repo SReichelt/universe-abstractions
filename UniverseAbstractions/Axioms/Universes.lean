@@ -1,4 +1,4 @@
-import UniverseAbstractions.MathlibFragments.CoreExt
+import UniverseAbstractions.MathlibFragments.Init.CoreExt
 
 
 
@@ -33,7 +33,6 @@ namespace HasInstances
 
   instance sortHasInstances : HasInstances.{u, u + 1} (Sort u) := ⟨id⟩
   instance unitHasInstances : HasInstances.{0, 0}     True     := ⟨λ _ => True⟩
-  instance boolHasInstances : HasInstances.{0, 1}     Bool     := ⟨λ b => cond b True False⟩
 
 end HasInstances
 
@@ -88,6 +87,8 @@ def sort : Universe.{u, u + 1} := ⟨Sort u⟩
 @[reducible] def prop := sort.{0}
 @[reducible] def type := sort.{u + 1}
 @[reducible] def tsort := sort.{max 1 u}
+
+def unit : Universe.{0, 0} := ⟨True⟩
 
 
 

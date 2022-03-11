@@ -19,7 +19,7 @@ universe u w ww iw iww
 
 namespace CategoryTheory
 
-  open HasCatProp HasCatProp.Category HasIsoNat HasIsoNaturality
+  open IsCatUniverse HasIsoNat HasIsoNaturality
 
   namespace IsIsoUniverse
 

@@ -28,9 +28,8 @@ import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
 import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 import UniverseAbstractions.Instances.Utils.Trivial
-import UniverseAbstractions.Instances.Utils.PropFunctors
 
-import UniverseAbstractions.MathlibFragments.CoreExt
+import UniverseAbstractions.MathlibFragments.Init.CoreExt
 import UniverseAbstractions.MathlibFragments.Data.Equiv.Basic
 
 
@@ -40,7 +39,7 @@ set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 100000
 --set_option pp.universes true
 
-universe u v w
+universe u v w w'
 
 
 
@@ -56,8 +55,11 @@ namespace sort
   -- irrelevance, but it's easier to generalize over `prop` and `type` if we have a single
   -- definition.
 
+  instance hasEquivalenceRelation (α : sort.{u}) : HasEquivalenceRelation α prop :=
+  ⟨nativeRelation (@Eq α)⟩
+
   instance hasInstanceEquivalences : HasInstanceEquivalences sort.{u} prop :=
-  ⟨λ α => @Eq.isEquivalence ⌈α⌉⟩
+  ⟨hasEquivalenceRelation⟩
 
   -- Functors from `sort` to any universe are just functions: Instance equivalence in `sort` is
   -- given by equality, so functors do not need to respect anything else besides equality.
@@ -89,6 +91,31 @@ namespace sort
   instance hasInternalFunctors : HasInternalFunctors sort.{u} := ⟨⟩
 
   instance hasTrivialExtensionality : HasTrivialExtensionality sort.{u} sort.{v} := ⟨funext⟩
+
+  -- Functors into `sort` need to be well-defined.
+
+  structure InFunctor {U : Universe.{u}} [HasIdentity U] (A : U) (B : sort.{v}) :
+    Sort (max 1 u v) where
+  (f                    : A → B)
+  (congrArg {a₁ a₂ : A} : a₁ ≃ a₂ → f a₁ = f a₂)
+
+  instance (priority := low) hasInFunctors (U : Universe.{u}) [HasIdentity U] :
+    HasFunctors U sort.{v} sort.{max 1 u v} :=
+  { Fun   := InFunctor,
+    apply := InFunctor.f }
+
+  instance (priority := low) hasInCongrArg (U : Universe.{u}) [HasIdentity U] :
+    HasCongrArg U sort.{v} :=
+  ⟨InFunctor.congrArg⟩
+
+  def defInFun {U : Universe.{u}} [HasIdentity U] {A : U} {B : sort.{v}} (F : InFunctor A B) :
+    A ⟶{F.f} B :=
+  toDefFun' F (λ _ => by rfl)
+
+  instance hasInCompFun (U : Universe.{u}) (V : Universe.{v}) {W : Universe.{w'}} [HasIdentity U]
+                        [HasIdentity V] [HasFunctors U V W] [HasCongrArg U V] :
+    HasCompFun U V sort.{w} :=
+  ⟨λ F G => defInFun ⟨λ a => G.f (F a), λ e => G.congrArg (HasCongrArg.congrArg F e)⟩⟩
 
   -- There are top and bottom types that work generically for `sort`.
 
@@ -162,9 +189,51 @@ end sort
 
 namespace prop
 
-  open MetaRelation HasEquivOp HasEquivOpFun
+  open MetaRelation HasFunctors HasEquivOp HasEquivOpFun
 
   instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
+
+  -- Mapping into `prop` is expecially simple.
+
+  instance hasInFunctors (U : Universe.{u}) : HasFunctors U prop prop :=
+  { Fun   := λ A q => A → q,
+    apply := id }
+
+  def defInFun {U : Universe.{u}} {A : U} {q : prop} (f : ⌈A ⟶ q⌉) : A ⟶{f} q :=
+  toDefFun f
+
+  instance hasTrivialInFunctoriality (U : Universe.{u}) : HasTrivialFunctoriality U prop :=
+  ⟨defInFun⟩
+
+  -- Propositional trunction is functorial.
+
+  def Truncated {U : Universe.{u}} (A : U) : prop := Nonempty A
+
+  theorem trunc {U : Universe.{u}} {A : U} (a : A) : Truncated A := ⟨a⟩
+  theorem truncFun {U : Universe.{u}} (A : U) : A ⟶ Truncated A := trunc
+
+  instance trunc.isFunApp {U : Universe.{u}} {A : U} (a : A) : IsFunApp (V := prop) A (trunc a) :=
+  { F := truncFun A,
+    a := a,
+    e := proofIrrel _ _ }
+
+  theorem truncProj {U : Universe.{u}} [HasFunctors U U U] {A B : U} (F : A ⟶ B) :
+    Truncated A ⟶ Truncated B :=
+  λ ⟨a⟩ => ⟨F a⟩
+
+  theorem truncProjFun {U : Universe.{u}} [HasFunctors U U U] (A B : U) :
+    (A ⟶ B) ⟶ (Truncated A ⟶ Truncated B) :=
+  truncProj
+
+  instance truncProj.isFunApp {U : Universe.{u}} [HasFunctors U U U] {A B : U} (F : A ⟶ B) :
+    IsFunApp (V := prop) (A ⟶ B) (truncProj F) :=
+  { F := truncProjFun A B,
+    a := F,
+    e := proofIrrel _ _ }
+
+  theorem truncProjFun' {U : Universe.{u}} [HasFunctors U U U] (A B : U) :
+    Truncated (A ⟶ B) ⟶ (Truncated A ⟶ Truncated B) :=
+  λ ⟨F⟩ => truncProj F
 
   -- In `prop`, `Top` is `True` and `Bot` is `False`.
 
@@ -207,9 +276,8 @@ namespace prop
     fst   := λ ⟨h₁, _⟩ => h₁,
     snd   := λ ⟨_, h₂⟩ => h₂ }
 
-  noncomputable instance (priority := low) hasClassicalDependentProducts
-                                             (U : Universe.{u}) [HasIdentity U] :
-    HasDependentProducts U prop prop :=
+  noncomputable instance (priority := low) hasClassicalDependentProducts :
+    HasDependentProducts sort.{u} prop prop :=
   { Sigma := λ φ => ∃ a, φ a,
     intro := λ a h => ⟨a, h⟩,
     fst   := Classical.choose,

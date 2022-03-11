@@ -375,6 +375,8 @@ class HasCompFun (U V W : Universe) {UV VW UW : Universe} [HasFunctors U V UV] [
 
 namespace HasCompFun
 
+  open HasFunctors HasCongrArg
+
   variable {U V W UV VW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW] [HasFunctors U W UW]
            [HasIdentity W] [HasCompFun U V W]
 
@@ -385,7 +387,13 @@ namespace HasCompFun
                     (F : A ⟶{f} B) (G : B ⟶ C) :
     A ⟶{λ a => G (f a)} C :=
   G ⊙ F
-  ◄ HasCongrArg.byArgDef
+  ◄ byArgDef
+
+  def defCompDefDefFun [HasIdentity V] [HasCongrArg V W] {A : U} {B : V} {C : W}
+                       {f : A → B} {g : B → C} (F : A ⟶{f} B) (G : B ⟶{g} C) :
+    A ⟶{λ a => g (f a)} C :=
+  fromDefFun G ⊙ F
+  ◄ byDefDef
 
 end HasCompFun
 

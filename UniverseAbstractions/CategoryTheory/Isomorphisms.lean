@@ -5,10 +5,10 @@ import UniverseAbstractions.CategoryTheory.NaturalTransformations
 
 
 set_option autoBoundImplicitLocal false
-set_option maxHeartbeats 200000
+set_option maxHeartbeats 300000
 --set_option pp.universes true
 
-universe u u' u'' u''' u'''' v vv w ww iv iw ivv iww
+universe u uu u' uu' u'' uu'' u''' uu''' u'''' uu'''' v vv w ww iv iw ivv iww
 
 
 
@@ -18,8 +18,8 @@ namespace CategoryTheory
        HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor HasNatRel HasNatOp HasNatOpEquiv HasNaturality
        HasFunctors HasCongrArg
 
-  structure IsoDesc {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
-                    {A : Category.{u} V} (a b : A) :
+  structure IsoDesc {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+                    [HasCatProp U V] {A : Category U V} (a b : A) :
     Sort (max 1 v iv) where
   (toHom  : a ⇾ b)
   (invHom : b ⇾ a)
@@ -27,8 +27,7 @@ namespace CategoryTheory
 
   namespace IsoDesc
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
-             {A : Category.{u} V}
+    variable {U V : Universe} [IsHomUniverse V] [HasCatProp U V] {A : Category U V}
 
     instance {a b : A} (e : IsoDesc a b) : IsInv e.toHom e.invHom := e.isInv
 
@@ -41,12 +40,16 @@ namespace CategoryTheory
     def trans {a b c : A} (e : IsoDesc a b) (f : IsoDesc b c) : IsoDesc a c :=
     ⟨f.toHom • e.toHom, e.invHom • f.invHom⟩
 
+    def toInvEquiv' {a b : A} {e₁ e₂ : IsoDesc a b} (h : e₁.toHom ≃ e₂.toHom) :
+      e₂.invHom ≃ e₁.invHom :=
+    HalfInv.unique e₁.isInv.leftInv (HalfInv.congrArgLeft h e₂.isInv.rightInv)
+
     def toInvEquiv {a b : A} {e₁ e₂ : IsoDesc a b} (h : e₁.toHom ≃ e₂.toHom) :
       e₁.invHom ≃ e₂.invHom :=
     (HalfInv.unique e₁.isInv.leftInv (HalfInv.congrArgLeft h e₂.isInv.rightInv))⁻¹
 
-    def map [HasCatProp.{u'} V] {B : Category.{u'} V} [HasFunProp A B] (F : A ⮕ B) {a b : A}
-            (e : IsoDesc a b) :
+    def map {U' : Universe} [HasCatProp U' V] {B : Category U' V} [HasFunProp A B]
+            (F : A ⮕ B) {a b : A} (e : IsoDesc a b) :
       IsoDesc (F a) (F b) :=
     { toHom  := mapHom F e.toHom,
       invHom := mapHom F e.invHom,
@@ -55,8 +58,8 @@ namespace CategoryTheory
 
   end IsoDesc
 
-  class HasIsoRel {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
-                  (A : Category.{u} V) where
+  class HasIsoRel {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+                  [HasCatProp U V] (A : Category U V) where
   (Iso                                  : MetaRelation A V)
   (desc {a b : A}                       : Iso a b → IsoDesc a b)
   (defToHomFun (a b : A)                : Iso a b ⟶{λ e => (desc e).toHom} (a ⇾ b))
@@ -66,13 +69,13 @@ namespace CategoryTheory
 
     infix:20 " ⇿ " => CategoryTheory.HasIsoRel.Iso
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
+    variable {U V : Universe} [IsHomUniverse V] [HasCatProp U V]
 
     section
 
-      variable (A : Category.{u} V) [h : HasIsoRel A]
+      variable (A : Category U V) [h : HasIsoRel A]
 
-      def isoRel : BundledRelation V := ⟨h.Iso⟩
+      def isoRel : BundledRelation U V := ⟨A.R.A, h.Iso⟩
 
       def toHomMetaFunctor : MetaFunctor h.Iso (Hom A) := MetaFunctor.fromDefFun h.defToHomFun
 
@@ -80,7 +83,7 @@ namespace CategoryTheory
 
     section
 
-      variable {A : Category.{u} V} [h : HasIsoRel A]
+      variable {A : Category U V} [h : HasIsoRel A]
 
       @[reducible] def toHom  {a b : A} (e : a ⇿ b) : a ⇾ b := (h.desc e).toHom
       @[reducible] def invHom {a b : A} (e : a ⇿ b) : b ⇾ a := (h.desc e).invHom
@@ -106,13 +109,12 @@ namespace CategoryTheory
 
     end
 
-    class HasTrivialIsomorphismCondition (A : Category.{u} V) [h : HasIsoRel A] where
+    class HasTrivialIsomorphismCondition (A : Category U V) [h : HasIsoRel A] where
     (iso {a b : A} (desc : IsoDesc a b) : DefIso desc)
 
     namespace HasTrivialIsomorphismCondition
 
-      variable {A : Category.{u} V} [HasIsoRel A]
-               [h : HasTrivialIsomorphismCondition A]
+      variable {A : Category U V} [HasIsoRel A] [h : HasTrivialIsomorphismCondition A]
 
       def defIso {a b : A} {desc : IsoDesc a b} : DefIso desc := h.iso desc
 
@@ -120,8 +122,8 @@ namespace CategoryTheory
 
   end HasIsoRel
 
-  class HasIsoOp {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
-                 (A : Category.{u} V) extends
+  class HasIsoOp {U : Universe.{u, uu}} {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V]
+                 [HasCatProp U V] (A : Category U V) extends
     HasIsoRel A where
   (defRefl (a : A) : HasIsoRel.DefIso (IsoDesc.refl a))
   (defSymm {a b : A} (e : a ⇿ b) : HasIsoRel.DefIso (IsoDesc.symm (desc e)))
@@ -132,11 +134,11 @@ namespace CategoryTheory
 
     open HasIsoRel
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
+    variable {U V : Universe} [IsHomUniverse V] [HasCatProp U V]
 
     section
 
-      variable (A : Category.{u} V)
+      variable (A : Category U V)
 
       instance hasTrivialIsoOp [hIso : HasIsoRel A] [h : HasTrivialIsomorphismCondition A] :
         HasIsoOp A :=
@@ -161,7 +163,7 @@ namespace CategoryTheory
 
     section
 
-      variable {A : Category.{u} V} [h : HasIsoOp A]
+      variable {A : Category U V} [h : HasIsoOp A]
 
       @[reducible] def idIso (a : A) : a ⇿ a := HasRefl.refl a
 
@@ -209,7 +211,7 @@ namespace CategoryTheory
 
     section
 
-      variable (A : Category.{u} V) [h : HasIsoOp A]
+      variable (A : Category U V) [h : HasIsoOp A]
 
       instance isoIsCategoricalPreorder : IsCategoricalPreorder h.Iso :=
       { assoc   := isoAssoc,
@@ -236,8 +238,9 @@ namespace CategoryTheory
 
   end HasIsoOp
 
-  class HasIsomorphisms {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
-                        (A : Category.{u} V) extends
+  class HasIsomorphisms {U : Universe.{u, uu}} {V : Universe.{v, vv}}
+                        [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp U V] (A : Category U V)
+                        extends
     HasIsoOp A where
   [isoHasSymmFun  : HasSymmFun  Iso]
   [isoHasTransFun : HasTransFun Iso]
@@ -247,16 +250,16 @@ namespace CategoryTheory
 
     open HasIsoRel HasIsoOp
 
-    variable {V : Universe.{v, vv}} [IsHomUniverse.{v, vv, iv, ivv} V] [HasCatProp.{u} V]
+    variable {U V : Universe} [IsHomUniverse V] [HasCatProp U V]
 
     section
 
-      variable (A : Category.{u} V) [h : HasIsomorphisms A]
+      variable (A : Category U V) [h : HasIsomorphisms A]
 
       instance : HasSymmFun  h.Iso := h.isoHasSymmFun
       instance : HasTransFun h.Iso := h.isoHasTransFun
 
-      def iso : Category.{u} V := DefCat.toCategory h.defIsoCat
+      def iso : Category U V := DefCat.toCategory h.defIsoCat
 
       @[reducible] def Iso' : MetaRelation A V := Hom (iso A)
       infix:20 " ⇿' " => CategoryTheory.HasIsomorphisms.Iso' _
@@ -269,8 +272,9 @@ namespace CategoryTheory
 
     open HasIsomorphisms
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-             [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W)
+    variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+             [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+             (A : Category U W) (B : Category V W)
              [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B] [HasFunProp (iso A) (iso B)]
 
     def IsoFunctor := HasFunProp.Functor (iso A) (iso B)
@@ -279,10 +283,10 @@ namespace CategoryTheory
 
   end HasFunProp
 
-  class HasIsoPreFun {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                     [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-                     [hAIso : HasIsoRel A] [hBIso : HasIsoRel B] [hFunProp : HasFunProp A B]
-                     (F : A ⮕ B) where
+  class HasIsoPreFun {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                     [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                     {A : Category U W} {B : Category V W} [hAIso : HasIsoRel A] [hBIso : HasIsoRel B]
+                     [hFunProp : HasFunProp A B] (F : A ⮕ B) where
   (defMapIso {a b : A} (e : a ⇿ b) : HasIsoRel.DefIso (IsoDesc.map F (hAIso.desc e)))
   (defMapIsoFun (a b : A) : (a ⇿ b) ⟶{λ e => (defMapIso e).e} (F a ⇿ F b))
 
@@ -290,9 +294,8 @@ namespace CategoryTheory
 
     open HasIsoRel HasIsoOp HasIsomorphisms
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-             [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-             [HasFunProp A B] (F : A ⮕ B)
+    variable {U V W : Universe} [IsHomUniverse W] [HasCatProp U W] [HasCatProp V W]
+             {A : Category U W} {B : Category V W} [HasFunProp A B] (F : A ⮕ B)
 
     section
 
@@ -379,8 +382,9 @@ namespace CategoryTheory
 
   end HasIsoPreFun
 
-  class HasIsoFun {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                  [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
+  class HasIsoFun {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                  [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                  {A : Category U W} {B : Category V W}
                   [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B]
                   [hFunProp : HasFunProp A B]
                   [hIsoFunProp : HasFunProp (HasIsomorphisms.iso A) (HasIsomorphisms.iso B)]
@@ -392,8 +396,8 @@ namespace CategoryTheory
 
     open HasIsomorphisms HasIsoPreFun
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-             [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
+    variable {U V W : Universe} [IsHomUniverse W] [HasCatProp U W] [HasCatProp V W]
+             {A : Category U W} {B : Category V W}
              [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B] [HasFunProp A B]
              [HasFunProp (iso A) (iso B)] (F : A ⮕ B) [h : HasIsoFun F]
 
@@ -405,8 +409,9 @@ namespace CategoryTheory
 
   end HasIsoFun
 
-  class HasIsoFunctoriality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                            [HasCatProp.{u} W] [HasCatProp.{v} W] (A : Category.{u} W) (B : Category.{v} W)
+  class HasIsoFunctoriality {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                            [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                            (A : Category U W) (B : Category V W)
                             [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B] where
   [hasFunProp    : HasFunProp A B]
   [hasIsoFunProp : HasFunProp (HasIsomorphisms.iso A) (HasIsomorphisms.iso B)]
@@ -416,11 +421,11 @@ namespace CategoryTheory
 
     open HasIsoRel HasIsomorphisms HasIsoPreFun
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
+    variable {U V W : Universe} [IsHomUniverse W]
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
+      variable [HasCatProp U W] [HasCatProp V W] {A : Category U W} {B : Category V W}
                [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B]
                [h : HasIsoFunctoriality A B]
 
@@ -442,9 +447,10 @@ namespace CategoryTheory
 
 
 
-  structure NatIsoDesc {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                       [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-                       [hBIso : HasIsomorphisms B] [hFunProp : HasFunProp A B] (F G : A ⮕ B) :
+  structure NatIsoDesc {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                       [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                       {A : Category U W} {B : Category V W} [hBIso : HasIsomorphisms B]
+                       [hFunProp : HasFunProp A B] (F G : A ⮕ B) :
     Sort (max 1 u w iw) where
   -- Note: `isInvNat` is redundant (see `construct`), but we include it anyway because in strict
   -- cases, it contains a much simpler term.
@@ -456,9 +462,10 @@ namespace CategoryTheory
 
     open HasIsoRel HasIsoOp HasIsomorphisms HasIsoPreFun HasIsoFun
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-             [HasCatProp.{u} W] [HasCatProp.{v} W] {A : Category.{u} W} {B : Category.{v} W}
-             [hBIso : HasIsomorphisms B] [hFunProp : HasFunProp A B]
+    variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+             [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+             {A : Category U W} {B : Category V W} [hBIso : HasIsomorphisms B]
+             [hFunProp : HasFunProp A B]
 
     -- It would be nice if we could just use the corresponding code from `Meta.lean` here.
     -- However, we are in the special situation that only terms involving `η` are invertible,
@@ -548,7 +555,7 @@ namespace CategoryTheory
 
     namespace IsoDescBuilder
 
-      variable [HasCatProp.{max 1 u v w} W] [hNat : HasNaturality A B] (e : IsoDescBuilder η)
+      variable [HasCatProp sort.{max 1 u v w} W] [hNat : HasNaturality A B] (e : IsoDescBuilder η)
 
       def isoDesc : IsoDesc (A := A ⮕' B) F G :=
       { toHom  := e.defToNat.η,
@@ -592,10 +599,10 @@ namespace CategoryTheory
 
   namespace HasNaturality
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-             [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-             {A : Category.{u} W} {B : Category.{v} W} [HasFunProp A B] [h : HasNaturality A B]
-             {F G : A ⮕' B}
+    variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+             [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+             [HasCatProp sort.{max 1 u v w} W] {A : Category U W} {B : Category V W}
+             [HasFunProp A B] [h : HasNaturality A B] {F G : A ⮕' B}
 
     def natHalfInv {η : F ⇾ G} {ε : G ⇾ F} (e : HalfInv η ε) (a : A) :
       HalfInv (nat η a) (nat ε a) :=
@@ -613,9 +620,9 @@ namespace CategoryTheory
 
   end HasNaturality
 
-  class HasIsoNat {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                  [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-                  {A : Category.{u} W} {B : Category.{v} W}
+  class HasIsoNat {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                  [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                  [HasCatProp sort.{max 1 u v w} W] {A : Category U W} {B : Category V W}
                   [hFunProp : HasFunProp A B] [hNat : HasNaturality A B]
                   [hBIso : HasIsomorphisms B] [hABIso : HasIsomorphisms (A ⮕' B)]
                   (F G : A ⮕' B) where
@@ -626,9 +633,9 @@ namespace CategoryTheory
 
     open HasIsoRel HasIsoOp HasIsoPreFun
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-             [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-             {A : Category.{u} W} {B : Category.{v} W}
+    variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+             [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+             [HasCatProp sort.{max 1 u v w} W] {A : Category U W} {B : Category V W}
 
     section
 
@@ -731,9 +738,9 @@ namespace CategoryTheory
 
   end HasIsoNat
 
-  class HasIsoNaturality {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
-                         [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-                         (A : Category.{u} W) (B : Category.{v} W)
+  class HasIsoNaturality {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}}
+                         [IsHomUniverse.{w, ww, iw, iww} W] [HasCatProp U W] [HasCatProp V W]
+                         [HasCatProp sort.{max 1 u v w} W] (A : Category U W) (B : Category V W)
                          [hBIso : HasIsomorphisms B] [hFunProp : HasFunProp A B] where
   [hasNat    : HasNaturality A B]
   [hasNatIso : HasIsomorphisms (A ⮕' B)]
@@ -743,12 +750,12 @@ namespace CategoryTheory
 
     open HasIsoRel HasIsoOp HasIsomorphisms HasIsoPreFun HasIsoNat
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
+    variable {U : Universe.{u, uu}} {V : Universe.{v, vv}} {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W]
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               (A : Category.{u} W) (B : Category.{v} W) [hBIso : HasIsomorphisms B]
+      variable [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               (A : Category U W) (B : Category V W) [hBIso : HasIsomorphisms B]
                [HasFunProp A B] [h : HasIsoNaturality A B]
 
       instance : HasNaturality A B        := h.hasNat
@@ -758,8 +765,8 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               {A : Category.{u} W} {B : Category.{v} W} [hBIso : HasIsomorphisms B]
+      variable [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               {A : Category U W} {B : Category V W} [hBIso : HasIsomorphisms B]
                [HasFunProp A B] [h : HasIsoNaturality A B]
 
       instance (F G : A ⮕' B) : HasIsoNat F G := h.hasIsoNat F G
@@ -786,9 +793,9 @@ namespace CategoryTheory
 
     end
 
-    class HasTrivialNaturalityCondition [HasCatProp.{u} W] [HasCatProp.{v} W]
-                                        [HasCatProp.{max 1 u v w} W]
-                                        (A : Category.{u} W) (B : Category.{v} W)
+    class HasTrivialNaturalityCondition [HasCatProp U W] [HasCatProp V W]
+                                        [HasCatProp sort.{max 1 u v w} W]
+                                        (A : Category U W) (B : Category V W)
                                         [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B]
                                         [hIsoFun : HasIsoFunctoriality A B]
                                         [h : HasIsoNaturality A B] where
@@ -796,8 +803,8 @@ namespace CategoryTheory
 
     namespace HasTrivialNaturalityCondition
 
-      variable [HasCatProp.{u} W] [HasCatProp.{v} W] [HasCatProp.{max 1 u v w} W]
-               {A : Category.{u} W} {B : Category.{v} W} [HasIsomorphisms A] [HasIsomorphisms B]
+      variable [HasCatProp U W] [HasCatProp V W] [HasCatProp sort.{max 1 u v w} W]
+               {A : Category U W} {B : Category V W} [HasIsomorphisms A] [HasIsomorphisms B]
                [HasIsoFunctoriality A B] [HasIsoNaturality A B]
                [h : HasTrivialNaturalityCondition A B]
 
@@ -807,8 +814,10 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{max 1 u' u'' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W]
+               [HasCatProp sort.{max 1 u' u'' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W}
                [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B] [hCIso : HasIsomorphisms C]
                [hIsoFunBC : HasIsoFunctoriality B C] [hIsoNatBC : HasIsoNaturality B C]
                [hIsoFunABC : HasIsoFunctoriality A (B ⮕' C)]
@@ -863,7 +872,7 @@ namespace CategoryTheory
 
         end DefNatNatIsoBase
 
-        variable [HasCatProp.{max 1 u u' u'' w} W] [hIsoNatABC : HasIsoNaturality A (B ⮕' C)]
+        variable [HasCatProp sort.{max 1 u u' u'' w} W] [hIsoNatABC : HasIsoNaturality A (B ⮕' C)]
 
         structure DefNatNatIso (desc : NatNatIsoDesc F G η) extends
           DefNatNatIsoBase desc, DefNatIso (DefNatNatIsoBase.natIsoDesc toDefNatNatIsoBase)
@@ -894,7 +903,7 @@ namespace CategoryTheory
 
       section
 
-        variable [HasCatProp.{max 1 u u' u'' w} W] [hIsoNatABC : HasIsoNaturality A (B ⮕' C)]
+        variable [HasCatProp sort.{max 1 u u' u'' w} W] [hIsoNatABC : HasIsoNaturality A (B ⮕' C)]
                  {φ : A → B → C} {F' G' : ∀ a, hIsoFunBC.hasFunProp.Fun (φ a)}
                  {hEq : ∀ a, NatDesc.StrictNaturality (F' a) (G' a)}
 
@@ -911,13 +920,13 @@ namespace CategoryTheory
                  {ε : StrictDefNatNatIso η hNatEq} {a : A} {b : B}
 
         def byStrictNatNatIsoDef : natIso (natIso ε.η a) b ≃ idIso (φ a b) :=
-        byStrictNatIsoDef • natIsoCongrArg byNatNatIsoDef b
+        byStrictNatIsoDef • natIsoCongrArg (byNatNatIsoDef (ε := ε)) b
 
         def byStrictNatNatIsoToHomDef  : nat (nat (toHom  ε.η) a) b ≃ idHom (φ a b) :=
-        byStrictNatIsoToHomDef  • natCongrArg byNatNatIsoToHomDef  b
+        byStrictNatIsoToHomDef  • natCongrArg (byNatNatIsoToHomDef  (ε := ε)) b
 
         def byStrictNatNatIsoInvHomDef : nat (nat (invHom ε.η) a) b ≃ idHom (φ a b) :=
-        byStrictNatIsoInvHomDef • natCongrArg byNatNatIsoInvHomDef b
+        byStrictNatIsoInvHomDef • natCongrArg (byNatNatIsoInvHomDef (ε := ε)) b
 
       end
 
@@ -925,10 +934,12 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{u'''} W]
-               [HasCatProp.{max 1 u' u'' u''' w} W] [HasCatProp.{max 1 u'' u''' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
-               {D : Category.{u'''} W} [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B]
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               {U''' : Universe.{u''', uu'''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W] [HasCatProp U''' W]
+               [HasCatProp sort.{max 1 u' u'' u''' w} W] [HasCatProp sort.{max 1 u'' u''' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W}
+               {D : Category U''' W} [hAIso : HasIsomorphisms A] [hBIso : HasIsomorphisms B]
                [hCIso : HasIsomorphisms C] [hDIso : HasIsomorphisms D]
                [hIsoFunCD : HasIsoFunctoriality C D] [hIsoNatCD : HasIsoNaturality C D]
                [hIsoFunBCD : HasIsoFunctoriality B (C ⮕' D)]
@@ -988,7 +999,7 @@ namespace CategoryTheory
 
         end DefNatNatNatIsoBase
 
-        variable [HasCatProp.{max 1 u u' u'' u''' w} W]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' w} W]
                  [hIsoNatABCD : HasIsoNaturality A (B ⮕' C ⮕' D)]
 
         structure DefNatNatNatIso (desc : NatNatNatIsoDesc F G η) extends
@@ -1023,7 +1034,7 @@ namespace CategoryTheory
 
       section
 
-        variable [HasCatProp.{max 1 u u' u'' u''' w} W] [HasIsoNaturality A (B ⮕' C ⮕' D)]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' w} W] [HasIsoNaturality A (B ⮕' C ⮕' D)]
                  {φ : A → B → C → D} {F'' G'' : ∀ a b, hIsoFunCD.hasFunProp.Fun (φ a b)}
                  {hEq : ∀ a b, NatDesc.StrictNaturality (F'' a b) (G'' a b)}
                  {η' : ∀ a b, StrictDefNatIso (hEq a b)}
@@ -1058,11 +1069,13 @@ namespace CategoryTheory
 
     section
 
-      variable [HasCatProp.{u} W] [HasCatProp.{u'} W] [HasCatProp.{u''} W] [HasCatProp.{u'''} W]
-               [HasCatProp.{u''''} W] [HasCatProp.{max 1 u' u'' u''' u'''' w} W]
-               [HasCatProp.{max 1 u'' u''' u'''' w} W] [HasCatProp.{max 1 u''' u'''' w} W]
-               {A : Category.{u} W} {B : Category.{u'} W} {C : Category.{u''} W}
-               {D : Category.{u'''} W} {E : Category.{u''''} W} [hAIso : HasIsomorphisms A]
+      variable {U : Universe.{u, uu}} {U' : Universe.{u', uu'}} {U'' : Universe.{u'', uu''}}
+               {U''' : Universe.{u''', uu'''}} {U'''' : Universe.{u'''', uu''''}}
+               [HasCatProp U W] [HasCatProp U' W] [HasCatProp U'' W] [HasCatProp U''' W]
+               [HasCatProp U'''' W] [HasCatProp sort.{max 1 u' u'' u''' u'''' w} W]
+               [HasCatProp sort.{max 1 u'' u''' u'''' w} W] [HasCatProp sort.{max 1 u''' u'''' w} W]
+               {A : Category U W} {B : Category U' W} {C : Category U'' W}
+               {D : Category U''' W} {E : Category U'''' W} [hAIso : HasIsomorphisms A]
                [hBIso : HasIsomorphisms B] [hCIso : HasIsomorphisms C] [hDIso : HasIsomorphisms D]
                [hEIso : HasIsomorphisms E] [hIsoFunDE : HasIsoFunctoriality D E]
                [hIsoNatDE : HasIsoNaturality D E] [hIsoFunCDE : HasIsoFunctoriality C (D ⮕' E)]
@@ -1128,7 +1141,7 @@ namespace CategoryTheory
 
         end DefNatNatNatNatIsoBase
 
-        variable [HasCatProp.{max 1 u u' u'' u''' u'''' w} W]
+        variable [HasCatProp sort.{max 1 u u' u'' u''' u'''' w} W]
                  [hIsoNatABCDE : HasIsoNaturality A (B ⮕' C ⮕' D ⮕' E)]
 
         structure DefNatNatNatNatIso (desc : NatNatNatNatIsoDesc F G η) extends
@@ -1164,8 +1177,9 @@ namespace CategoryTheory
 
       section
 
-        variable [HasCatProp.{max 1 u u' u'' u''' u'''' w} W] [HasIsoNaturality A (B ⮕' C ⮕' D ⮕' E)]
-                 {φ : A → B → C → D → E} {F''' G''' : ∀ a b c, hIsoFunDE.hasFunProp.Fun (φ a b c)}
+        variable [HasCatProp sort.{max 1 u u' u'' u''' u'''' w} W]
+                 [HasIsoNaturality A (B ⮕' C ⮕' D ⮕' E)] {φ : A → B → C → D → E}
+                 {F''' G''' : ∀ a b c, hIsoFunDE.hasFunProp.Fun (φ a b c)}
                  {hEq : ∀ a b c, NatDesc.StrictNaturality (F''' a b c) (G''' a b c)}
                  {η'' : ∀ a b c, StrictDefNatIso (hEq a b c)}
                  {F'' : ∀ a b, hIsoFunCDE.hasFunProp.Fun (λ c => ⟨F''' a b c⟩)}
@@ -1217,13 +1231,14 @@ namespace CategoryTheory
   class IsIsoUniverse (W : Universe.{w, ww}) [IsHomUniverse.{w, ww, iw, iww} W]
                       [hCatUniv : IsCatUniverse.{u} W] [hFunUniv : IsFunUniverse.{u} W]
                       [hNatUniv : IsNatUniverse.{u} W] where
-  [hasIso (A : Category W) : HasIsomorphisms A]
-  [hasIsoFun {A B : Category W} (F : A ⮕ B) : HasIsoFun F]
-  [hasIsoNat {A B : Category W} (F G : A ⮕ B) : HasIsoNat F G]
+  [hasIso (A : IsCatUniverse.Category W) : HasIsomorphisms A]
+  [hasIsoFun {A B : IsCatUniverse.Category W} (F : A ⮕ B) : HasIsoFun F]
+  [hasIsoNat {A B : IsCatUniverse.Category W} (F G : A ⮕ B) : HasIsoNat F G]
 
   namespace IsIsoUniverse
 
-    open HasIsoRel HasIsoOp HasIsoPreFun HasIsoNat
+    open IsCatUniverse
+         HasIsoRel HasIsoOp HasIsoPreFun HasIsoNat
          HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp
 
     section
@@ -1416,13 +1431,15 @@ namespace CategoryTheory
           nat (nat (mapHom (substFunFunFun A B C) η) G) a ≃' mapHom (G a) (nat η a) :=
         byCompFunFunFunDef (G := G a) •
         natCongrArg (byRevCompFunFunFunDef (ε := mapHom (compFunFunFun A B C) η) •
-                     natCongrArg (natCongrArg (byCompFunDef (F := compFunFunFun A B C)) G) a) a •
+                     natCongrArg (natCongrArg (byCompFunDef (F := compFunFunFun A B C)
+                                                            (G := revCompFunFunFun A (B ⟶ C) (A ⟶ C))) G) a) a •
         byDupFunFunDef (η := nat (mapHom (revCompFunFunFun A (B ⟶ C) (A ⟶ C) • compFunFunFun A B C) η) G) •
         natCongrArg (byRevCompFunFunDef (G := dupFunFun A C)
                                         (η := mapHom (revCompFunFunFun A (B ⟶ C) (A ⟶ C) •
                                                       compFunFunFun A B C) η) •
                      natCongrArg (byCompFunDef (F := revCompFunFunFun A (B ⟶ C) (A ⟶ C) •
-                                                     compFunFunFun A B C)) G) a
+                                                     compFunFunFun A B C)
+                                               (G := revCompFunFun (A ⟶ B ⟶ C) (dupFunFun A C))) G) a
 
       end
 

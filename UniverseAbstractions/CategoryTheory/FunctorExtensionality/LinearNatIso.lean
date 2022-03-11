@@ -15,7 +15,7 @@ universe u w ww iw iww
 
 namespace CategoryTheory
 
-  open HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor HasNatRel HasNaturality
+  open HasCatProp HasCatProp.Category IsCatUniverse HasFunProp HasFunProp.Functor HasNatRel HasNaturality
        HasIsoNat HasIsoNaturality
        HasFunctors HasCongrArg HasLinearFunOp
 

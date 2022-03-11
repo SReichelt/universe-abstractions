@@ -7,7 +7,7 @@ import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Instances.Utils.Bundled
 import UniverseAbstractions.Instances.Utils.Trivial
 
-import UniverseAbstractions.MathlibFragments.CoreExt
+import UniverseAbstractions.MathlibFragments.Init.CoreExt
 
 
 
@@ -27,7 +27,7 @@ class CommSemigroup (α : Type u) : Type u where
 
 namespace CommSemigroup
 
-  open Bundled
+  open MetaRelation Bundled
 
   @[reducible] def typeClass : SimpleTypeClass.{u + 1, u + 1} := CommSemigroup.{u}
   @[reducible] def univ : Universe.{u + 1, u + 2} := Bundled.univ typeClass.{u}
@@ -36,8 +36,11 @@ namespace CommSemigroup
 
   -- Instance equivalences
 
+  instance hasEquivalenceRelation (A : univ.{u}) : HasEquivalenceRelation A prop :=
+  ⟨nativeRelation (@Eq A)⟩
+
   instance hasInstanceEquivalences : HasInstanceEquivalences univ.{u} prop :=
-  ⟨λ A => @Eq.isEquivalence A⟩
+  ⟨hasEquivalenceRelation⟩
 
   -- Functors
 

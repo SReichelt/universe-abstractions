@@ -11,44 +11,45 @@ import UniverseAbstractions.CategoryTheory.Utils.Trivial
 
 set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 5000
-set_option pp.universes true
+--set_option pp.universes true
 
 universe u v w
 
 
 
--- This establishes the universe `type.{w}` as a morphism universe, which enables the construction
+-- This establishes the universe `type.{u}` as a morphism universe, which enables the construction
 -- of categories with morphisms in `type`, i.e. regular 1-categories.
 --
 -- Due to the way functors are defined mathematically, the morphism universe always needs to be at
 -- least as large as the universe of the domain, as it needs to hold natural transformation between
 -- functors. We need to use some trickery to make Lean behave well with this restriction.
 
-namespace type
+namespace type.IsHomUniverse
 
   open MetaRelation MetaFunctor CategoryTheory HasCatProp HasIsoRel
 
-  instance isHomUniverse : IsHomUniverse type.{w} := ⟨⟩
+  instance isHomUniverse : IsHomUniverse type.{u} := ⟨⟩
 
   @[reducible] def homUniv := type.{max u w}
 
   -- This is defeq to `type.{u}` but solves some universe unification issues.
   abbrev type' := homUniv.{u, 0}
 
-  instance hasCat : HasCatProp.{u + 1} homUniv.{u, w} :=
+  -- TODO: Generalize to arbitrary source universe.
+  instance hasCat : HasCatProp type.{u} homUniv.{u, w} :=
   { Cat  := CatDesc,
     desc := id }
 
-  def defCat {R : BundledRelation.{u + 1} homUniv.{u, w}} (C : CatDesc R) : DefCat C :=
+  def defCat {R : BundledRelation type.{u} homUniv.{u, w}} (C : CatDesc R) : DefCat C :=
   { C   := C,
     hEq := IsPreorderEq.refl R.Hom (hR := C.homIsPreorder) }
 
-  instance hasTrivialCatProp : HasCatProp.HasTrivialCatProp.{u + 1} homUniv.{u, w} := ⟨defCat⟩
+  instance hasTrivialCatProp : HasCatProp.HasTrivialCatProp type.{u} homUniv.{u, w} := ⟨defCat⟩
 
   instance isCatUniverse : IsCatUniverse.{u + 1} type'.{u} :=
   { hasCat := hasCat }
 
-  @[reducible] def Cat := Category.{u + 1} homUniv.{u, w}
+  @[reducible] def Cat := Category type.{u} homUniv.{u, w}
   @[reducible] def Cat' := Cat.{u, 0}
 
   -- Functors
@@ -130,17 +131,12 @@ namespace type
   { natHasTransFun := HasTrivialFunctoriality.hasTransFun (NatRel A B),
     defFunCat      := HasTrivialCatProp.defCat }
 
-  def defFunFunBaseBase {A B C : Cat'.{u}} {F : A → (B ⮕ C)}
-                        {desc : HasNaturality.FunFunDesc F} :
-    HasNaturality.DefFunFunBaseBase desc :=
-  { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
-    natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
-    natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
-
   def defFunFunBase {A B C : Cat'.{u}} {F : A → (B ⮕ C)} {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFunBase desc :=
-  { toDefFunFunBaseBase := defFunFunBaseBase,
-    defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun }
+  { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
+    defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun,
+    natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
+    natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
 
   def defFunFun {A B C : Cat'.{u}} {F : A → (B ⮕ C)} {desc : HasNaturality.FunFunDesc F} :
     HasNaturality.DefFunFun desc :=
@@ -149,7 +145,7 @@ namespace type
   def defFunFunFunBase {A B C D : Cat'.{u}} {F : A → (B ⮕ C ⮕' D)}
                        {desc : HasNaturality.FunFunFunDesc F} :
     HasNaturality.DefFunFunFunBase desc :=
-  { defRevFunFun := λ _ => defFunFunBaseBase,
+  { defRevFunFun := λ _ => defFunFunBase,
     defNatNat    := λ _ => HasNaturality.DefNatNatBase.trivial }
 
   def defFunFunFun {A B C D : Cat'.{u}} {F : A → (B ⮕ C ⮕' D)}
@@ -271,4 +267,4 @@ namespace type
     IsIsoUniverse.HasFullNaturalIsomorphisms.{u + 1} type'.{u} :=
   inferInstance
 
-end type
+end type.IsHomUniverse
