@@ -166,4 +166,21 @@ namespace Universe
 
   def sumUniverse (U V : Universe.{u}) : Universe.{u} := ⟨PSum U V⟩
 
+
+  def unaryOpUniverse (U : Universe.{u}) (Op : U → Sort v) : Universe.{v} :=
+  { a    := U,
+    inst := ⟨Op⟩ }
+
+  def unaryOpUniverse.type {U : Universe} {Op : U → Sort v} (A : U) :
+    unaryOpUniverse U Op :=
+  A
+
+  def binaryOpUniverse (U : Universe.{u}) (V : Universe.{v}) (Op : U → V → Sort w) : Universe.{w} :=
+  { a    := PProd U V,
+    inst := ⟨λ C => Op C.fst C.snd⟩ }
+
+  def binaryOpUniverse.type {U V : Universe} {Op : U → V → Sort w} (A : U) (B : V) :
+    binaryOpUniverse U V Op :=
+  ⟨A, B⟩
+
 end Universe

@@ -1,12 +1,16 @@
 import UniverseAbstractions.CategoryTheory.Basic
 import UniverseAbstractions.CategoryTheory.Functors
 import UniverseAbstractions.CategoryTheory.NaturalTransformations
-import UniverseAbstractions.CategoryTheory.Isomorphisms
+import UniverseAbstractions.CategoryTheory.MultiFunctors
+import UniverseAbstractions.CategoryTheory.MultiFunctorIsomorphisms
+import UniverseAbstractions.CategoryTheory.Functors.Nested
+import UniverseAbstractions.CategoryTheory.Functors.FunDef
 
 
 
 set_option autoBoundImplicitLocal false
 set_option maxHeartbeats 500000
+set_option synthInstance.maxHeartbeats 2000
 --set_option pp.universes true
 
 universe u w ww iw iww
@@ -16,18 +20,15 @@ universe u w ww iw iww
 namespace CategoryTheory
 
   open MetaRelation HasTransFun IsAssociative IsCategoricalPreorder
-       HasCatProp HasCatProp.Category IsCatUniverse HasFunProp HasFunProp.Functor HasNatRel HasNaturality
-       HasIsoNat HasIsoNaturality
+       HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor HasNatRel HasNaturality HasIsoNat
        HasLinearFunOp HasSubLinearFunOp HasNonLinearFunOp
 
-  namespace IsIsoUniverse
+  namespace IsSortNatUniverse
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W] [IsCatUniverse.{u} W]
-             [IsFunUniverse.{u} W] [IsNatUniverse.{u} W] [h : IsIsoUniverse.{u} W]
-             [HasSubLinearFunOp W] [HasNonLinearFunOp W] [IsFunUniverse.HasAffineFunctors W]
-             [IsNatUniverse.HasFullFunctors W]
+    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W] [HasSubLinearFunOp W]
+             [HasNonLinearFunOp W] [IsSortNatUniverse.{u} W] [HasFullCatFun.{u} W]
 
-    def dupSwapNat {A B : univ W} (F : A ⟶ A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def dupSwapNat {A B : univ.{u} W} (F : A ⟶ A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (dupFun (swapFunFun F)) f
       ≃'{dup F a₁ ⇾ dup F a₂}
       mapHom (dupFun F) f :=
@@ -36,7 +37,7 @@ namespace CategoryTheory
     ▹{mapDupHom F f}◃
     byDupFunDef
 
-    def dupSwapNatNat (A B : univ W) {F₁ F₂ : A ⟶ A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
+    def dupSwapNatNat (A B : univ.{u} W) {F₁ F₂ : A ⟶ A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
       nat (mapHom (dupFunFun A B • swapFunFunFun A A B) η) a
       ≃'{dup F₁ a ⇾ dup F₂ a}
       nat (mapHom (dupFunFun A B) η) a :=
@@ -46,18 +47,18 @@ namespace CategoryTheory
     ▹{nat (nat η a) a}◃
     byDupFunFunDef
 
-    class HasDupSwapNat (A B : univ W) where
+    class HasDupSwapNat (A B : univ.{u} W) where
     (defDupSwapNat (F : A ⟶ A ⟶ B) : StrictDefNatIso (φ := λ a => F a a) (dupSwapNat F))
     (defDupSwapNatNat : StrictDefNatNatIso defDupSwapNat (dupSwapNatNat A B))
 
-    def dupConstNat {A B : univ W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def dupConstNat {A B : univ.{u} W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (dupFun (constFun A F)) f
       ≃'{F a₁ ⇾ F a₂}
       mapHom F f :=
     cancelRightId (natReflEq' F a₁ • natCongrArg (byConstFunDef (b := F) (f := f)) a₁) (mapHom F f) •
     byDupFunDef
 
-    def dupConstNatNat (A B : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
+    def dupConstNatNat (A B : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
       nat (mapHom (dupFunFun A B • constFunFun A (A ⟶ B)) η) a
       ≃'{F₁ a ⇾ F₂ a}
       nat (mapHom (idFun (A ⟶ B)) η) a :=
@@ -67,11 +68,11 @@ namespace CategoryTheory
     ▹{nat η a}◃
     byAppFunFunDef
 
-    class HasDupConstNat (A B : univ W) where
+    class HasDupConstNat (A B : univ.{u} W) where
     (defDupConstNat (F : A ⟶ B) : StrictDefNatIso (φ := F.φ) (dupConstNat F))
     (defDupConstNatNat : StrictDefNatNatIso defDupConstNat (dupConstNatNat A B))
 
-    def rightDupNat {A B C : univ W} (F : A ⟶ A ⟶ B) (G : B ⟶ C) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def rightDupNat {A B C : univ.{u} W} (F : A ⟶ A ⟶ B) (G : B ⟶ C) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (dupFun (revCompFunFun A G • F)) f
       ≃'{G (F a₁ a₁) ⇾ G (F a₂ a₂)}
       mapHom (G • dupFun F) f :=
@@ -83,7 +84,7 @@ namespace CategoryTheory
     mapHomCongrArg G byDupFunDef •
     byCompFunDef (F := dupFun F) (G := G)
 
-    def rightDupNatNat {A B : univ W} (F : A ⟶ A ⟶ B) (C : univ W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) :
+    def rightDupNatNat {A B : univ.{u} W} (F : A ⟶ A ⟶ B) (C : univ.{u} W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) :
       nat (mapHom (dupFunFun A C • compFunFun F (A ⟶ C) • revCompFunFunFun A B C) ε) a
       ≃'{G₁ (F a a) ⇾ G₂ (F a a)}
       nat (mapHom (compFunFun (dupFun F) C) ε) a :=
@@ -95,7 +96,7 @@ namespace CategoryTheory
     ▹{nat ε (F a a)}◃
     byCompFunFunDef (F := dupFun F)
 
-    def rightDupNatNatNat (A B C : univ W) {F₁ F₂ : A ⟶ A ⟶ B} (η : F₁ ⇾ F₂) (G : B ⟶ C) (a : A) :
+    def rightDupNatNatNat (A B C : univ.{u} W) {F₁ F₂ : A ⟶ A ⟶ B} (η : F₁ ⇾ F₂) (G : B ⟶ C) (a : A) :
       nat (nat (mapHom (revCompFunFun (B ⟶ C) (dupFunFun A C) •
                         compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
                         compFunFunFun A (A ⟶ B) (A ⟶ C)) η) G) a
@@ -120,12 +121,12 @@ namespace CategoryTheory
     byCompFunFunFunDef (η := mapHom (dupFunFun A B) η) •
     natCongrArg (natCongrArg (byCompFunDef (F := dupFunFun A B) (G := compFunFunFun A B C)) G) a
 
-    class HasRightDupNat (A B C : univ W) where
+    class HasRightDupNat (A B C : univ.{u} W) where
     (defRightDupNat (F : A ⟶ A ⟶ B) (G : B ⟶ C) : StrictDefNatIso (φ := λ a => G (F a a)) (rightDupNat F G))
     (defRightDupNatNat (F : A ⟶ A ⟶ B) : StrictDefNatNatIso (defRightDupNat F) (rightDupNatNat F C))
     (defRightDupNatNatNat : StrictDefNatNatNatIso defRightDupNatNat (rightDupNatNatNat A B C))
 
-    def substDupNat {A B C : univ W} (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def substDupNat {A B C : univ.{u} W} (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (substFun F (dupFunFun B C • G)) f
       ≃'{G a₁ (F a₁) (F a₁) ⇾ G a₂ (F a₂) (F a₂)}
       mapHom (substFun F (substFun F G)) f :=
@@ -144,7 +145,7 @@ namespace CategoryTheory
                        (mapHom F f)) •
     bySubstFunDef (F := F) (G := substFun F G) (f := f)
 
-    def substDupNatNat {A B : univ W} (F : A ⟶ B) (C : univ W) {G₁ G₂ : A ⟶ B ⟶ B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) :
+    def substDupNatNat {A B : univ.{u} W} (F : A ⟶ B) (C : univ.{u} W) {G₁ G₂ : A ⟶ B ⟶ B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) :
       nat (mapHom (substFunFun F C • revCompFunFun A (dupFunFun B C)) ε) a
       ≃'{G₁ a (F a) (F a) ⇾ G₂ a (F a) (F a)}
       nat (mapHom (substFunFun F C • substFunFun F (B ⟶ C)) ε) a :=
@@ -163,7 +164,7 @@ namespace CategoryTheory
     e₂ •
     natCongrArg (byCompFunDef (F := substFunFun F (B ⟶ C))) a
 
-    def substDupNatNatNat (A B C : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (G : A ⟶ B ⟶ B ⟶ C) (a : A) :
+    def substDupNatNatNat (A B C : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (G : A ⟶ B ⟶ B ⟶ C) (a : A) :
       nat (nat (mapHom (compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C) • substFunFunFun A B C) η) G) a
       ≃'{G a (F₁ a) (F₁ a) ⇾ G a (F₂ a) (F₂ a)}
       nat (nat (mapHom (substFun (substFunFunFun A B C) (compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C) •
@@ -196,11 +197,11 @@ namespace CategoryTheory
                                                          (mapHom (substFunFunFun A B C) η)) •
                               bySubstFunDef (F := substFunFunFun A B C)) G) a
 
-    class HasSubstDupNat (A B C : univ W) where
+    class HasSubstDupNat (A B C : univ.{u} W) where
     (defSubstDupNat (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) : StrictDefNatIso (φ := λ a => G a (F a) (F a)) (substDupNat F G))
     (defSubstDupNatNat (F : A ⟶ B) : StrictDefNatNatIso (defSubstDupNat F) (substDupNatNat F C))
     (defSubstDupNatNatNat : StrictDefNatNatNatIso defSubstDupNatNat (substDupNatNatNat A B C))
 
-  end IsIsoUniverse
+  end IsSortNatUniverse
 
 end CategoryTheory

@@ -45,7 +45,11 @@ import UniverseAbstractions.CategoryTheory.Meta
 import UniverseAbstractions.CategoryTheory.Basic
 import UniverseAbstractions.CategoryTheory.Functors
 import UniverseAbstractions.CategoryTheory.NaturalTransformations
-import UniverseAbstractions.CategoryTheory.Isomorphisms
+import UniverseAbstractions.CategoryTheory.MultiFunctors
+import UniverseAbstractions.CategoryTheory.MultiFunctorIsomorphisms
+import UniverseAbstractions.CategoryTheory.Functors.Basic
+import UniverseAbstractions.CategoryTheory.Functors.Nested
+import UniverseAbstractions.CategoryTheory.Functors.FunDef
 import UniverseAbstractions.CategoryTheory.FunctorExtensionality
 import UniverseAbstractions.CategoryTheory.Extensional.Meta
 import UniverseAbstractions.CategoryTheory.Extensional.Basic

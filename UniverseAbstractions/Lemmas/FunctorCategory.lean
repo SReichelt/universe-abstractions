@@ -39,8 +39,6 @@ namespace HasLinearFunOp.HasLinearFunExt
     rightIdExt     := h.rightIdExt,
     leftIdExt      := h.leftIdExt }
 
-  -- TODO: We probably want something more generic than `{U}` here, so that we have more than just
-  -- this single category at our disposal.
   def funRel : BundledRelation.{uu, 0, u, uu} {U} U := ⟨PUnit.unit, hHomUniv.Fun⟩
 
   def category : CatDesc (funRel U) :=

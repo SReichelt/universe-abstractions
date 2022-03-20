@@ -14,17 +14,17 @@ universe u v w wv iu iv
 
 def coFunctorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v}) {VU : Universe.{v}} [HasFunctors V U VU] :
   Universe.{v} :=
-{ a    := V,
-  inst := ⟨λ B => ⌈B ⟶ A⌉⟩ }
+Universe.unaryOpUniverse V (λ B => ⌈B ⟶ A⌉)
 
 namespace coFunctorUniverse
 
-  open HasCongrArg HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp HasFullFunOp
+  open Universe HasCongrArg HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp HasFullFunOp
        HasLinearFunExt HasAffineFunExt HasFullFunExt
 
   notation:20 V:21 " {⟶ " A:0 "}" => coFunctorUniverse A V
 
-  def type {U : Universe.{u}} {V VU : Universe.{v}} [HasFunctors V U VU] (B : V) (A : U) : V {⟶ A} := B
+  def type {U : Universe.{u}} {V VU : Universe.{v}} [HasFunctors V U VU] (B : V) (A : U) : V {⟶ A} :=
+  unaryOpUniverse.type B
   infixr:20 " ⟶! " => coFunctorUniverse.type
 
   def inst {U : Universe.{u}} {V VU : Universe.{v}} [HasFunctors V U VU] {B : V} {A : U} (F : B ⟶ A) : B ⟶! A := F

@@ -1,7 +1,10 @@
 import UniverseAbstractions.CategoryTheory.Basic
 import UniverseAbstractions.CategoryTheory.Functors
 import UniverseAbstractions.CategoryTheory.NaturalTransformations
-import UniverseAbstractions.CategoryTheory.Isomorphisms
+import UniverseAbstractions.CategoryTheory.MultiFunctors
+import UniverseAbstractions.CategoryTheory.MultiFunctorIsomorphisms
+import UniverseAbstractions.CategoryTheory.Functors.Nested
+import UniverseAbstractions.CategoryTheory.Functors.FunDef
 
 
 
@@ -15,71 +18,69 @@ universe u w ww iw iww
 
 namespace CategoryTheory
 
-  open HasCatProp HasCatProp.Category IsCatUniverse HasFunProp HasFunProp.Functor HasNatRel HasNaturality
-       HasIsoNat HasIsoNaturality
+  open HasCatProp HasCatProp.Category HasFunProp HasFunProp.Functor HasNatRel HasIsoNat
        HasFunctors HasCongrArg HasLinearFunOp
 
-  namespace IsIsoUniverse
+  namespace IsSortNatUniverse
 
-    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W] [IsCatUniverse.{u} W]
-             [IsFunUniverse.{u} W] [IsNatUniverse.{u} W] [h : IsIsoUniverse.{u} W]
-             [IsFunUniverse.HasLinearFunctors W] [IsNatUniverse.HasLinearFunctors W]
+    variable {W : Universe.{w, ww}} [IsHomUniverse.{w, ww, iw, iww} W] [IsSortNatUniverse.{u} W]
+             [HasLinearCatFun.{u} W]
 
-    def rightIdNat {A B : univ W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def rightIdNat {A B : univ.{u} W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (F • idFun A) f
       ≃'{F a₁ ⇾ F a₂}
       mapHom F f :=
     mapHomCongrArg F byIdFunDef • byCompFunDef
 
-    def rightIdNatNat (A B : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
+    def rightIdNatNat (A B : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
       nat (mapHom (compFunFun (idFun A) B) η) a
       ≃'{F₁ a ⇾ F₂ a}
       nat (mapHom (idFun (A ⟶ B)) η) a :=
     byCompFunFunDef ▹{nat η a}◃ byAppFunFunDef
 
-    class HasRightIdNat (A B : univ W) where
-    (defRightIdNat (F : A ⟶ B) : StrictDefNatIso (φ := F.φ) (rightIdNat F))
+    class HasRightIdNat (A B : univ.{u} W) where
+    (defRightIdNat (F : A ⟶ B) : StrictDefNatIso (rightIdNat F))
     (defRightIdNatNat : StrictDefNatNatIso defRightIdNat (rightIdNatNat A B))
 
-    def leftIdNat {A B : univ W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def leftIdNat {A B : univ.{u} W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (idFun B • F) f
       ≃'{F a₁ ⇾ F a₂}
       mapHom F f :=
     byIdFunDef • byCompFunDef
 
-    def leftIdNatNat (A B : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
+    def leftIdNatNat (A B : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
       nat (mapHom (revCompFunFun A (idFun B)) η) a
       ≃'{F₁ a ⇾ F₂ a}
       nat (mapHom (idFun (A ⟶ B)) η) a :=
     byIdFunDef • byRevCompFunFunDef ▹{nat η a}◃ byAppFunFunDef
 
-    class HasLeftIdNat (A B : univ W) where
-    (defLeftIdNat (F : A ⟶ B) : StrictDefNatIso (φ := F.φ) (leftIdNat F))
+    class HasLeftIdNat (A B : univ.{u} W) where
+    (defLeftIdNat (F : A ⟶ B) : StrictDefNatIso (leftIdNat F))
     (defLeftIdNatNat : StrictDefNatNatIso defLeftIdNat (leftIdNatNat A B))
 
-    def swapRevAppNat {A B : univ W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def swapRevAppNat {A B : univ.{u} W} (F : A ⟶ B) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom (swapFun (revAppFunFun A B) F) f
       ≃'{F a₁ ⇾ F a₂}
       mapHom F f :=
     byRevAppFunFunDef • bySwapFunDef (F := revAppFunFun A B)
 
-    def swapRevAppNatNat (A B : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
+    def swapRevAppNatNat (A B : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
       nat (mapHom (swapFunFun (revAppFunFun A B)) η) a
       ≃'{F₁ a ⇾ F₂ a}
       nat (mapHom (appFunFun A B) η) a :=
     byRevAppFunDef • bySwapFunFunDef (F := revAppFunFun A B) ▹{nat η a}◃ byAppFunFunDef
 
-    class HasSwapRevAppNat (A B : univ W) where
-    (defSwapRevAppNat (F : A ⟶ B) : StrictDefNatIso (φ := F.φ) (swapRevAppNat F))
+    class HasSwapRevAppNat (A B : univ.{u} W) where
+    (defSwapRevAppNat (F : A ⟶ B) : StrictDefNatIso (swapRevAppNat F))
     (defSwapRevAppNatNat : StrictDefNatNatIso defSwapRevAppNat (swapRevAppNatNat A B))
 
-    def swapCompFunNat {A B : univ W} (F : A ⟶ B) (a : A) (C : univ W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) :
+    def swapCompFunNat {A B : univ.{u} W} (F : A ⟶ B) (a : A) (C : univ.{u} W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) :
       mapHom (swapFun (compFunFun F C) a) ε
       ≃'{G₁ (F a) ⇾ G₂ (F a)}
       mapHom (revAppFun (F a) C) ε :=
     byCompFunFunDef • bySwapFunDef ▹{nat ε (F a)}◃ byRevAppFunDef
 
-    def swapCompFunNatNat {A B : univ W} (F : A ⟶ B) (C : univ W) {a₁ a₂ : A} (f : a₁ ⇾ a₂) (G : B ⟶ C) :
+    def swapCompFunNatNat {A B : univ.{u} W} (F : A ⟶ B) (C : univ.{u} W) {a₁ a₂ : A} (f : a₁ ⇾ a₂) (G : B ⟶ C) :
       nat (mapHom (swapFunFun (compFunFun F C)) f) G
       ≃'{G (F a₁) ⇾ G (F a₂)}
       nat (mapHom (revAppFunFun B C • F) f) G :=
@@ -87,7 +88,7 @@ namespace CategoryTheory
     ▹{mapHom G (mapHom F f)}◃
     byRevAppFunFunDef • natCongrArg (byCompFunDef (G := revAppFunFun B C)) G
 
-    def swapCompFunNatNatNat (A B C : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) (G : B ⟶ C) :
+    def swapCompFunNatNatNat (A B C : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) (G : B ⟶ C) :
       nat (nat (mapHom (swapFunFunFun (B ⟶ C) A C • compFunFunFun A B C) η) a) G
       ≃'{G (F₁ a) ⇾ G (F₂ a)}
       nat (nat (mapHom (revCompFunFun A (revAppFunFun B C)) η) a) G :=
@@ -100,12 +101,12 @@ namespace CategoryTheory
     byRevAppFunFunDef (f := nat η a) •
     natCongrArg (byRevCompFunFunDef (G := revAppFunFun B C)) G
 
-    class HasSwapCompFunNat (A B C : univ W) where
-    (defSwapCompFunNat (F : A ⟶ B) (a : A) : StrictDefNatIso (φ := λ G : B ⟶ C => G (F a)) (swapCompFunNat F a C))
+    class HasSwapCompFunNat (A B C : univ.{u} W) where
+    (defSwapCompFunNat (F : A ⟶ B) (a : A) : StrictDefNatIso (swapCompFunNat F a C))
     (defSwapCompFunNatNat (F : A ⟶ B) : StrictDefNatNatIso (defSwapCompFunNat F) (swapCompFunNatNat F C))
     (defSwapCompFunNatNatNat : StrictDefNatNatNatIso defSwapCompFunNatNat (swapCompFunNatNatNat A B C))
 
-    def swapRevCompFunNat {A B C : univ W} (G : B ⟶ C) (a : A) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) :
+    def swapRevCompFunNat {A B C : univ.{u} W} (G : B ⟶ C) (a : A) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) :
       mapHom (swapFun (revCompFunFun A G) a) η
       ≃'{G (F₁ a) ⇾ G (F₂ a)}
       mapHom (G • revAppFun a B) η :=
@@ -113,7 +114,7 @@ namespace CategoryTheory
     ▹{mapHom G (nat η a)}◃
     mapHomCongrArg G byRevAppFunDef • byCompFunDef
 
-    def swapRevCompFunNatNat (A : univ W) {B C : univ W} (G : B ⟶ C) {a₁ a₂ : A} (f : a₁ ⇾ a₂) (F : A ⟶ B) :
+    def swapRevCompFunNatNat (A : univ.{u} W) {B C : univ.{u} W} (G : B ⟶ C) {a₁ a₂ : A} (f : a₁ ⇾ a₂) (F : A ⟶ B) :
       nat (mapHom (swapFunFun (revCompFunFun A G)) f) F
       ≃'{G (F a₁) ⇾ G (F a₂)}
       nat (mapHom (revCompFunFun (A ⟶ B) G • revAppFunFun A B) f) F :=
@@ -124,7 +125,7 @@ namespace CategoryTheory
     byRevCompFunFunDef •
     natCongrArg (byCompFunDef (F := revAppFunFun A B) (G := revCompFunFun (A ⟶ B) G)) F
 
-    def swapRevCompFunNatNatNat (A B C : univ W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) (F : A ⟶ B) :
+    def swapRevCompFunNatNatNat (A B C : univ.{u} W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) (F : A ⟶ B) :
       nat (nat (mapHom (swapFunFunFun (A ⟶ B) A C • revCompFunFunFun A B C) ε) a) F
       ≃'{G₁ (F a) ⇾ G₂ (F a)}
       nat (nat (mapHom (compFunFun (revAppFunFun A B) ((A ⟶ B) ⟶ C) • revCompFunFunFun (A ⟶ B) B C) ε) a) F :=
@@ -140,12 +141,12 @@ namespace CategoryTheory
                                            (G := compFunFun (revAppFunFun A B) ((A ⟶ B) ⟶ C))
                                            (f := ε)) a) F
 
-    class HasSwapRevCompFunNat (A B C : univ W) where
-    (defSwapRevCompFunNat (G : B ⟶ C) (a : A) : StrictDefNatIso (φ := λ F : A ⟶ B => G (F a)) (swapRevCompFunNat G a))
+    class HasSwapRevCompFunNat (A B C : univ.{u} W) where
+    (defSwapRevCompFunNat (G : B ⟶ C) (a : A) : StrictDefNatIso (swapRevCompFunNat G a))
     (defSwapRevCompFunNatNat (G : B ⟶ C) : StrictDefNatNatIso (defSwapRevCompFunNat G) (swapRevCompFunNatNat A G))
     (defSwapRevCompFunNatNatNat : StrictDefNatNatNatIso defSwapRevCompFunNatNat (swapRevCompFunNatNatNat A B C))
 
-    def compAssocNat {A B C D : univ W} (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
+    def compAssocNat {A B C D : univ.{u} W} (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
       mapHom ((H • G) • F) f
       ≃'{H (G (F a₁)) ⇾ H (G (F a₂))}
       mapHom (H • (G • F)) f :=
@@ -153,7 +154,7 @@ namespace CategoryTheory
     ▹{mapHom H (mapHom G (mapHom F f))}◃
     mapHomCongrArg H byCompFunDef • byCompFunDef
 
-    def compAssocNatNat {A B C : univ W} (F : A ⟶ B) (G : B ⟶ C) (D : univ W) {H₁ H₂ : C ⟶ D} (θ : H₁ ⇾ H₂) (a : A) :
+    def compAssocNatNat {A B C : univ.{u} W} (F : A ⟶ B) (G : B ⟶ C) (D : univ.{u} W) {H₁ H₂ : C ⟶ D} (θ : H₁ ⇾ H₂) (a : A) :
       nat (mapHom (compFunFun F D • compFunFun G D) θ) a
       ≃'{H₁ (G (F a)) ⇾ H₂ (G (F a))}
       nat (mapHom (compFunFun (G • F) D) θ) a :=
@@ -161,7 +162,7 @@ namespace CategoryTheory
     ▹{nat θ (G (F a))}◃
     byCompFunFunDef
 
-    def compAssocNatNatNat {A B : univ W} (F : A ⟶ B) (C D : univ W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (H : C ⟶ D) (a : A) :
+    def compAssocNatNatNat {A B : univ.{u} W} (F : A ⟶ B) (C D : univ.{u} W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (H : C ⟶ D) (a : A) :
       nat (nat (mapHom (revCompFunFun (C ⟶ D) (compFunFun F D) • compFunFunFun B C D) ε) H) a
       ≃'{H (G₁ (F a)) ⇾ H (G₂ (F a))}
       nat (nat (mapHom (compFunFunFun A C D • compFunFun F C) ε) H) a :=
@@ -178,7 +179,7 @@ namespace CategoryTheory
                                            (G := compFunFunFun A C D)
                                            (f := ε)) H) a
 
-    def compAssocNatNatNatNat (A B C D : univ W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
+    def compAssocNatNatNatNat (A B C D : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (G : B ⟶ C) (H : C ⟶ D) (a : A) :
       nat (nat (nat (mapHom (compFunFun (compFunFunFun B C D) ((C ⟶ D) ⟶ (A ⟶ D)) •
                              revCompFunFunFun (C ⟶ D) (B ⟶ D) (A ⟶ D) •
                              compFunFunFun A B D) η) G) H) a
@@ -205,12 +206,12 @@ namespace CategoryTheory
                               natCongrArg (byCompFunDef (F := compFunFunFun A B C)
                                                         (G := revCompFunFun (B ⟶ C) (compFunFunFun A C D))) G) H) a
 
-    class HasCompAssocNat (A B C D : univ W) where
-    (defCompAssocNat (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : StrictDefNatIso (φ := λ a => H (G (F a))) (compAssocNat F G H))
+    class HasCompAssocNat (A B C D : univ.{u} W) where
+    (defCompAssocNat (F : A ⟶ B) (G : B ⟶ C) (H : C ⟶ D) : StrictDefNatIso (compAssocNat F G H))
     (defCompAssocNatNat (F : A ⟶ B) (G : B ⟶ C) : StrictDefNatNatIso (defCompAssocNat F G) (compAssocNatNat F G D))
     (defCompAssocNatNatNat (F : A ⟶ B) : StrictDefNatNatNatIso (defCompAssocNatNat F) (compAssocNatNatNat F C D))
     (defCompAssocNatNatNatNat : StrictDefNatNatNatNatIso defCompAssocNatNatNat (compAssocNatNatNatNat A B C D))
 
-  end IsIsoUniverse
+  end IsSortNatUniverse
 
 end CategoryTheory

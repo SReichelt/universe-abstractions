@@ -3,17 +3,17 @@ import UniverseAbstractions.CategoryTheory.Meta
 import UniverseAbstractions.CategoryTheory.Basic
 import UniverseAbstractions.CategoryTheory.Functors
 import UniverseAbstractions.CategoryTheory.NaturalTransformations
-import UniverseAbstractions.CategoryTheory.Isomorphisms
+import UniverseAbstractions.CategoryTheory.Functors.Basic
+import UniverseAbstractions.CategoryTheory.Functors.Nested
 import UniverseAbstractions.CategoryTheory.FunctorExtensionality
 import UniverseAbstractions.CategoryTheory.Utils.Trivial
 
 
 
 set_option autoBoundImplicitLocal false
-set_option synthInstance.maxHeartbeats 10000
 --set_option pp.universes true
 
-universe u v w
+universe u u' u'' u''' v w
 
 
 
@@ -22,214 +22,253 @@ universe u v w
 
 namespace prop.IsHomUniverse
 
-  open MetaRelation MetaFunctor CategoryTheory HasCatProp HasIsoRel
+  open MetaRelation CategoryTheory
 
   instance isHomUniverse : IsHomUniverse prop := ⟨⟩
 
-  def catDesc {R : BundledRelation type.{u} prop} (p : Preorder R.Hom) : CatDesc R :=
+  def catDesc {U : Universe.{u}} {R : BundledRelation U prop} (p : Preorder R.Hom) :
+    CatDesc R :=
   { homIsPreorder            := nativePreorder p,
     homHasTransFun           := inferInstance,
     homIsCategoricalPreorder := inferInstance }
 
-  -- TODO: Generalize to arbitrary source universe.
-  instance hasCat : HasCatProp type.{u} prop :=
+  instance hasCat (U : Universe.{u}) : HasCatProp U prop :=
   { Cat  := λ R => Preorder R.Hom,
     desc := catDesc }
 
-  def defCat {R : BundledRelation type.{u} prop} (C : CatDesc R) : DefCat C :=
+  @[reducible] def Cat (U : Universe.{u}) := HasCatProp.Category U prop
+
+  def defCat {U : Universe.{u}} {R : BundledRelation U prop} (C : CatDesc R) : HasCatProp.DefCat C :=
   ⟨{ refl  := C.homIsPreorder.refl,
      trans := C.homIsPreorder.trans }⟩
 
-  instance hasTrivialCatProp : HasCatProp.HasTrivialCatProp type.{u} prop := ⟨defCat⟩
+  instance hasTrivialCatProp (U : Universe.{u}) : HasCatProp.HasTrivialCatProp U prop := ⟨defCat⟩
 
-  instance isCatUniverse : IsCatUniverse.{u + 1} prop :=
-  { hasCat := hasCat }
+  section
 
-  @[reducible] def Cat := Category type.{u} prop
+    variable {U : Universe.{u}}
+
+    def IsoRel (A : Cat U) : MetaRelation A prop := λ a b => (a ⇾ b) ∧ (b ⇾ a)
+
+    def isoDesc {A : Cat U} {a b : A} (p : IsoRel A a b) : IsoDesc a b := ⟨p.left, p.right⟩
+
+    instance hasIsoRel (A : Cat U) : HasIsoRel A :=
+    { Iso         := IsoRel A,
+      desc        := isoDesc,
+      defToHomFun := λ _ _ => HasTrivialFunctoriality.defFun,
+      toHomInj    := λ _ => HasTrivialIdentity.eq }
+
+    def defIso {A : Cat U} {a b : A} (e : IsoDesc a b) : HasIsoRel.DefIso e :=
+    { e    := ⟨e.toHom, e.invHom⟩,
+      toEq := HasTrivialIdentity.eq }
+
+    instance hasTrivialIsomorphismCondition (A : Cat U) :
+      HasIsoRel.HasTrivialIsomorphismCondition A :=
+    ⟨defIso⟩
+
+    instance isoIsEquivalence (A : Cat U) : IsEquivalence (IsoRel A) :=
+    HasIsoOp.isoIsEquivalence A
+
+    instance hasIsomorphisms (A : Cat U) : HasIsomorphisms A :=
+    { isoHasSymmFun  := HasTrivialFunctoriality.hasSymmFun  (IsoRel A),
+      isoHasTransFun := HasTrivialFunctoriality.hasTransFun (IsoRel A),
+      defIsoCat      := HasCatProp.HasTrivialCatProp.defCat }
+
+  end
+
+  instance isCatUniverse (U : Universe.{u}) : IsCatUniverse U prop := ⟨⟩
+  instance isSortCatUniverse : IsSortCatUniverse.{u} prop := ⟨⟩
 
   -- Functors
 
-  def FunProp (A : Cat.{u}) (B : Cat.{v}) : MetaProperty (A → B) prop :=
-  λ φ => ∀ a b, (a ⇾ b) → (φ a ⇾ φ b)
+  section
 
-  def funDesc {A B : Cat} {φ : A → B} (p : FunProp A B φ) : FunDesc φ := ⟨⟨p⟩⟩
+    variable {U : Universe.{u}} {V : Universe.{v}}
 
-  instance hasFunProp (A : Cat.{u}) (B : Cat.{v}) : HasFunProp A B :=
-  { Fun  := FunProp A B,
-    desc := funDesc }
+    def FunProp (A : Cat U) (B : Cat V) : MetaProperty (A → B) prop :=
+    λ φ => ∀ a b, (a ⇾ b) → (φ a ⇾ φ b)
 
-  def defFun {A B : Cat} {φ : A → B} (F : FunDesc φ) : HasFunProp.DefFun F :=
-  { F  := F.F.baseFun,
-    eq := λ _ _ => HasTrivialIdentity.eq }
+    def funDesc {A : Cat U} {B : Cat V} {φ : A → B} (p : FunProp A B φ) : FunDesc φ := ⟨⟨p⟩⟩
 
-  instance hasTrivialFunctorialityCondition (A B : Cat) :
-    HasFunProp.HasTrivialFunctorialityCondition A B :=
-  ⟨defFun⟩
+    instance hasFunProp (A : Cat U) (B : Cat V) : HasFunProp A B :=
+    { Fun  := FunProp A B,
+      desc := funDesc }
 
-  instance hasIdFun (A : Cat) : HasFunProp.HasIdFun A :=
+    def defFun {A : Cat U} {B : Cat V} {φ : A → B} (F : FunDesc φ) : HasFunProp.DefFun F :=
+    { F  := F.F.baseFun,
+      eq := λ _ _ => HasTrivialIdentity.eq }
+
+    instance hasTrivialFunctorialityCondition (A : Cat U) (B : Cat V) :
+      HasFunProp.HasTrivialFunctorialityCondition A B :=
+    ⟨defFun⟩
+
+    -- Lean bug :-(
+    noncomputable instance hasIsoFun {A : Cat U} {B : Cat V} (F : A ⮕ B) : HasIsoFun F :=
+    { defMapIso    := λ _   => HasIsoRel.HasTrivialIsomorphismCondition.defIso,
+      defMapIsoFun := λ _ _ => HasTrivialFunctoriality.defFun,
+      defIsoFun    := HasFunProp.HasTrivialFunctorialityCondition.defFun }
+
+  end
+
+  instance hasIdFun {U : Universe.{u}} (A : Cat U) : HasFunProp.HasIdFun A :=
   HasFunProp.HasIdFun.trivial A
 
-  instance hasConstFun (A B : Cat) : HasFunProp.HasConstFun A B :=
+  instance hasConstFun {U : Universe.{u}} {V : Universe.{v}} (A : Cat U) (B : Cat V) :
+    HasFunProp.HasConstFun A B :=
   HasFunProp.HasConstFun.trivial A B
 
-  instance hasCompFun (A B C : Cat) : HasFunProp.HasCompFun A B C :=
+  instance hasCompFun {U : Universe.{u}} {U' : Universe.{u'}} {U'' : Universe.{u''}}
+                      (A : Cat U) (B : Cat U') (C : Cat U'') :
+    HasFunProp.HasCompFun A B C :=
   HasFunProp.HasCompFun.trivial A B C
 
-  instance isFunUniverse : IsFunUniverse.{u + 1} prop :=
-  { hasFun := hasFunProp.{u, u} }
+  noncomputable instance isFunUniverse (U : Universe.{u}) (V : Universe.{v}) :
+    IsFunUniverse U V prop :=
+  ⟨⟩
 
-  instance isFunUniverse.hasAffineFunctors : IsFunUniverse.HasAffineFunctors.{u + 1} prop :=
-  { hasIdFun    := hasIdFun,
-    hasConstFun := hasConstFun,
-    hasCompFun  := hasCompFun }
+  noncomputable instance isSortFunUniverse : IsSortFunUniverse.{u, v} prop := ⟨⟩
+
+  instance isFunUniverse.hasCatIdFun (U : Universe.{u}) : IsFunUniverse.HasCatIdFun U prop := ⟨⟩
+
+  instance isFunUniverse.hasCatConstFun (U : Universe.{u}) (V : Universe.{v}) :
+    IsFunUniverse.HasCatConstFun U V prop :=
+  ⟨⟩
+
+  instance isFunUniverse.hasCatCompFun (U : Universe.{u}) (U' : Universe.{u'}) (U'' : Universe.{u''}) :
+    IsFunUniverse.HasCatCompFun U U' U'' prop :=
+  ⟨⟩
 
   -- Natural transformations
 
-  def NatRel (A : Cat.{u}) (B : Cat.{v}) : MetaRelation (A ⮕ B) prop :=
-  λ F G => ∀ a, F a ⇾ G a
+  section
 
-  -- Lean bug (?): IR check failed
-  noncomputable def natDesc {A B : Cat} {F G : A ⮕ B} (p : NatRel A B F G) : NatDesc F G := ⟨p⟩
+    variable {U : Universe.{u}} {V : Universe.{v}}
 
-  noncomputable instance hasNaturalityRelation (A : Cat.{u}) (B : Cat.{v}) : HasNatRel A B :=
-  { Nat       := NatRel A B,
-    desc      := natDesc,
-    defNatFun := λ _ _ _ => HasTrivialFunctoriality.defFun }
+    def NatRel (A : Cat U) (B : Cat V) : MetaRelation (A ⮕ B) prop := λ F G => ∀ a, F a ⇾ G a
 
-  noncomputable def defNat {A B : Cat} {F G : A ⮕ B} (η : NatDesc F G) : HasNatRel.DefNat η :=
-  { η     := η.η,
-    natEq := λ _ => HasTrivialIdentity.eq }
+    -- Lean bug (?): IR check failed
+    noncomputable def natDesc {A : Cat U} {B : Cat V} {F G : A ⮕ B} (p : NatRel A B F G) :
+      NatDesc F G :=
+    ⟨p⟩
 
-  noncomputable instance hasTrivialNaturalityCondition (A B : Cat) :
-    HasNatRel.HasTrivialNaturalityCondition A B :=
-  ⟨defNat⟩
+    noncomputable instance hasNaturalityRelation (A : Cat U) (B : Cat V) : HasNatRel A B :=
+    { Nat       := NatRel A B,
+      desc      := natDesc,
+      defNatFun := λ _ _ _ => HasTrivialFunctoriality.defFun }
 
-  instance hasTrivialNatEquiv (A B : Cat) : HasNatRel.HasTrivialNatEquiv A B :=
-  ⟨λ _ _ _ => HasTrivialIdentity.eq⟩
+    noncomputable def defNat {A : Cat U} {B : Cat V} {F G : A ⮕ B} (η : NatDesc F G) :
+      HasNatRel.DefNat η :=
+    { η     := η.η,
+      natEq := λ _ => HasTrivialIdentity.eq }
 
-  noncomputable instance natIsPreorder (A B : Cat) : IsPreorder (NatRel A B) :=
-  HasNatOp.natIsPreorder A B
+    noncomputable instance hasTrivialNaturalityCondition (A : Cat U) (B : Cat V) :
+      HasNatRel.HasTrivialNaturalityCondition A B :=
+    ⟨defNat⟩
 
-  noncomputable instance hasNaturality (A B : Cat) : HasNaturality A B :=
-  { natHasTransFun := HasTrivialFunctoriality.hasTransFun (NatRel A B),
-    defFunCat      := HasTrivialCatProp.defCat }
+    instance hasTrivialNatEquiv (A : Cat U) (B : Cat V) : HasNatRel.HasTrivialNatEquiv A B :=
+    ⟨λ _ _ _ => HasTrivialIdentity.eq⟩
 
-  noncomputable def defFunFunBase {A B C : Cat} {F : A → (B ⮕ C)}
-                                  {desc : HasNaturality.FunFunDesc F} :
-    HasNaturality.DefFunFunBase desc :=
-  { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
-    defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun,
-    natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
-    natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
+    noncomputable instance natIsPreorder (A : Cat U) (B : Cat V) : IsPreorder (NatRel A B) :=
+    HasNatOp.natIsPreorder A B
 
-  noncomputable def defFunFun {A B C : Cat} {F : A → (B ⮕ C)} {desc : HasNaturality.FunFunDesc F} :
-    HasNaturality.DefFunFun desc :=
-  HasNaturality.DefFunFun.trivial defFunFunBase
+    noncomputable instance hasNaturality (A : Cat U) (B : Cat V) : HasNaturality A B :=
+    { natHasTransFun := HasTrivialFunctoriality.hasTransFun (NatRel A B),
+      defFunCat      := HasCatProp.HasTrivialCatProp.defCat }
 
-  noncomputable def defFunFunFunBase {A B C D : Cat} {F : A → (B ⮕ C ⮕' D)}
-                                     {desc : HasNaturality.FunFunFunDesc F} :
-    HasNaturality.DefFunFunFunBase desc :=
-  { defRevFunFun := λ _ => defFunFunBase,
-    defNatNat    := λ _ => HasNaturality.DefNatNatBase.trivial }
+    noncomputable instance hasIsoNat {A : Cat U} {B : Cat V} (F G : A ⮕' B) : HasIsoNat F G :=
+    { defNatIso    := λ _ _ => HasIsoRel.HasTrivialIsomorphismCondition.defIso,
+      defNatIsoFun := λ _   => HasTrivialFunctoriality.defFun }
 
-  noncomputable def defFunFunFun {A B C D : Cat} {F : A → (B ⮕ C ⮕' D)}
-                                 {desc : HasNaturality.FunFunFunDesc F} :
-    HasNaturality.DefFunFunFun desc :=
-  HasNaturality.DefFunFunFun.trivial defFunFunFunBase defFunFunBase
+    noncomputable def defNatIso {A : Cat U} {B : Cat V} {F G : A ⮕' B} (η : NatIsoDesc F G) :
+      HasIsoNat.DefNatIso η :=
+    { η     := ⟨λ a => (η.η a).left, λ a => (η.η a).right⟩,
+      natEq := λ _ => HasTrivialIdentity.eq }
 
-  noncomputable instance hasRevAppFunFun (A B : Cat) : HasNaturality.HasRevAppFunFun A B :=
+    noncomputable instance hasIsoNaturality (A : Cat U) (B : Cat V) : HasIsoNaturality A B := ⟨⟩
+
+    noncomputable instance hasTrivialIsoNaturalityCondition (A : Cat U) (B : Cat V) :
+      HasIsoNaturality.HasTrivialIsoNaturalityCondition A B :=
+    ⟨defNatIso⟩
+
+  end
+
+  noncomputable instance isNatUniverse (U : Universe.{u}) (V : Universe.{v}) :
+    IsNatUniverse U V prop :=
+  ⟨⟩
+
+  noncomputable instance isSortNatUniverse : IsSortNatUniverse.{u} prop := ⟨⟩
+
+  noncomputable instance isSortNatUniverse.hasTrivialNaturalIsomorphisms :
+    IsSortNatUniverse.HasTrivialNaturalIsomorphisms.{u} prop :=
+  ⟨⟩
+
+  -- Multifunctors
+
+  section
+
+    variable {U : Universe.{u}} {U' : Universe.{u'}} {U'' : Universe.{u''}}
+             {A : Cat U} {B : Cat U'} {C : Cat U''} {F : A → (B ⮕ C)}
+             {desc : HasNaturality.FunFunDesc F}
+
+    noncomputable def defFunFunBase : HasNaturality.DefFunFunBase desc :=
+    { defNat     := λ _   => HasNatRel.HasTrivialNaturalityCondition.defNat,
+      defNatFun  := λ _ _ => HasTrivialFunctoriality.defFun,
+      natReflEq  := λ _   => HasNatRel.HasTrivialNatEquiv.natEquiv,
+      natTransEq := λ _ _ => HasNatRel.HasTrivialNatEquiv.natEquiv }
+
+    noncomputable def defFunFun : HasNaturality.DefFunFun desc :=
+    HasNaturality.DefFunFun.trivial defFunFunBase
+
+  end
+
+  section
+
+    variable {U : Universe.{u}} {U' : Universe.{u'}} {U'' : Universe.{u''}} {U''' : Universe.{u'''}}
+             {A : Cat U} {B : Cat U'} {C : Cat U''} {D : Cat U'''} {F : A → (B ⮕ C ⮕' D)}
+             {desc : HasNaturality.FunFunFunDesc F}
+
+    noncomputable def defFunFunFunBase : HasNaturality.DefFunFunFunBase desc :=
+    { defRevFunFun := λ _ => defFunFunBase,
+      defNatNat    := λ _ => HasNaturality.DefNatNatBase.trivial }
+
+    noncomputable def defFunFunFun : HasNaturality.DefFunFunFun desc :=
+    HasNaturality.DefFunFunFun.trivial defFunFunFunBase defFunFunBase
+
+  end
+
+  noncomputable instance hasRevAppFunFun {U : Universe.{u}} {V : Universe.{v}}
+                                         (A : Cat U) (B : Cat V) :
+    HasNaturality.HasRevAppFunFun A B :=
   { defRevAppFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defRevAppFunFun := defFunFun }
 
-  noncomputable instance hasCompFunFunFun (A B C : Cat) : HasNaturality.HasCompFunFunFun A B C :=
+  noncomputable instance hasCompFunFunFun {U : Universe.{u}} {U' : Universe.{u'}}
+                                          {U'' : Universe.{u''}}
+                                          (A : Cat U) (B : Cat U') (C : Cat U'') :
+    HasNaturality.HasCompFunFunFun A B C :=
   { defCompFunFun    := λ _ => defFunFun,
     defCompFunFunFun := defFunFunFun }
 
-  noncomputable instance hasConstFunFun (A B : Cat) : HasNaturality.HasConstFunFun A B :=
+  noncomputable instance hasConstFunFun {U : Universe.{u}} {V : Universe.{v}}
+                                        (A : Cat U) (B : Cat V) :
+    HasNaturality.HasConstFunFun A B :=
   { defConstFunFun := defFunFun }
 
-  noncomputable instance hasDupFunFun (A B : Cat) : HasNaturality.HasDupFunFun A B :=
+  noncomputable instance hasDupFunFun {U : Universe.{u}} {V : Universe.{v}}
+                                      (A : Cat U) (B : Cat V) :
+    HasNaturality.HasDupFunFun A B :=
   { defDupFun    := λ _ => HasFunProp.HasTrivialFunctorialityCondition.defFun,
     defDupFunFun := defFunFun }
 
-  noncomputable instance isNatUniverse : IsNatUniverse.{u + 1} prop :=
-  { hasNat := hasNaturality }
-
-  noncomputable instance isNatUniverse.hasFullFunctors : IsNatUniverse.HasFullFunctors.{u + 1} prop :=
+  noncomputable instance isSortNatUniverse.hasFullCatFun :
+    IsSortNatUniverse.HasFullCatFun.{u} prop :=
   { hasRevAppFunFun  := hasRevAppFunFun,
     hasCompFunFunFun := hasCompFunFunFun,
     hasConstFunFun   := hasConstFunFun,
     hasDupFunFun     := hasDupFunFun }
 
-  -- Isomorphisms
-
-  def IsoRel (A : Cat.{u}) : MetaRelation A prop := λ a b => (a ⇾ b) ∧ (b ⇾ a)
-
-  def isoDesc {A : Cat} {a b : A} (p : IsoRel A a b) : IsoDesc a b := ⟨p.left, p.right⟩
-
-  instance hasIsoRel (A : Cat.{u}) : HasIsoRel A :=
-  { Iso         := IsoRel A,
-    desc        := isoDesc,
-    defToHomFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    toHomInj    := λ _ => HasTrivialIdentity.eq }
-
-  def defIso {A : Cat} {a b : A} (e : IsoDesc a b) : DefIso e :=
-  { e    := ⟨e.toHom, e.invHom⟩,
-    toEq := HasTrivialIdentity.eq }
-
-  instance hasTrivialIsomorphismCondition (A : Cat) : HasTrivialIsomorphismCondition A := ⟨defIso⟩
-
-  instance isoIsEquivalence (A : Cat) : IsEquivalence (IsoRel A) :=
-  HasIsoOp.isoIsEquivalence A
-
-  instance hasIsomorphisms (A : Cat) : HasIsomorphisms A :=
-  { isoHasSymmFun  := HasTrivialFunctoriality.hasSymmFun  (IsoRel A),
-    isoHasTransFun := HasTrivialFunctoriality.hasTransFun (IsoRel A),
-    defIsoCat      := HasTrivialCatProp.defCat }
-
-  -- Lean bug :-(
-  noncomputable instance hasIsoFun {A B : Cat} (F : A ⮕ B) : HasIsoFun F :=
-  { defMapIso    := λ _   => HasTrivialIsomorphismCondition.defIso,
-    defMapIsoFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    defIsoFun    := HasFunProp.HasTrivialFunctorialityCondition.defFun }
-
-  noncomputable instance hasIsoNat {A B : Cat} (F G : A ⮕' B) : HasIsoNat F G :=
-  { defNatIso    := λ _ _ => HasTrivialIsomorphismCondition.defIso,
-    defNatIsoFun := λ _   => HasTrivialFunctoriality.defFun }
-
-  noncomputable instance isIsoUniverse : IsIsoUniverse.{u + 1} prop :=
-  { hasIso    := hasIsomorphisms,
-    hasIsoFun := hasIsoFun,
-    hasIsoNat := hasIsoNat }
-
-  noncomputable instance hasIsoFunctoriality (A B : Cat.{u}) : HasIsoFunctoriality A B :=
-  IsIsoUniverse.hasIsoFunctoriality A B
-
-  noncomputable instance hasIsoNaturality (A B : Cat.{u}) : HasIsoNaturality A B :=
-  IsIsoUniverse.hasIsoNaturality A B
-
-  noncomputable def natIsoDescBuilder {A B : Cat.{u}} {F G : A ⮕ B} (η : NatIsoDesc F G) :
-    NatIsoDesc.IsoDescBuilder η :=
-  { defToNat  := HasNatRel.HasTrivialNaturalityCondition.defNat,
-    defInvNat := HasNatRel.HasTrivialNaturalityCondition.defNat,
-    leftInv   := HasNatRel.HasTrivialNatEquiv.natEquiv,
-    rightInv  := HasNatRel.HasTrivialNatEquiv.natEquiv }
-
-  noncomputable def defNatIso {A B : Cat.{u}} {F G : A ⮕' B} (η : NatIsoDesc F G) :
-    HasIsoNat.DefNatIso η :=
-  { η     := ⟨λ a => (η.η a).left, λ a => (η.η a).right⟩,
-    natEq := λ _ => HasTrivialIdentity.eq }
-
-  noncomputable instance hasTrivialNatIsoCondition (A B : Cat.{u}) :
-    HasIsoNaturality.HasTrivialNaturalityCondition A B :=
-  ⟨defNatIso⟩
-
-  noncomputable instance isIsoUniverse.hasTrivialNaturalIsomorphisms :
-    IsIsoUniverse.HasTrivialNaturalIsomorphisms.{u + 1} prop :=
-  ⟨⟩
-
-  noncomputable instance isIsoUniverse.hasFullNaturalIsomorphisms :
-    IsIsoUniverse.HasFullNaturalIsomorphisms.{u + 1} prop :=
+  noncomputable instance isSortNatUniverse.hasFullNatIso :
+    IsSortNatUniverse.HasFullNatIso.{u} prop :=
   inferInstance
 
 end prop.IsHomUniverse

@@ -22,19 +22,19 @@ universe u v vv w vw iu iv iw ivw
 -- TODO: Lift universe level restriction on `UV`.
 def functorUniverse {U : Universe.{u}} (A : U) (V : Universe.{v, vv}) {UV : Universe.{v}} [HasFunctors U V UV] :
   Universe.{v, vv} :=
-{ a    := V,
-  inst := ⟨λ B => ⌈A ⟶ B⌉⟩ }
+Universe.unaryOpUniverse V (λ B => ⌈A ⟶ B⌉)
 
 namespace functorUniverse
 
-  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasInternalFunctors
+  open Universe MetaRelation HasFunctors HasCongrArg HasCongrFun HasInternalFunctors
        HasLinearFunOp HasSubLinearFunOp HasAffineFunOp HasNonLinearFunOp HasFullFunOp
        HasSubsingletonExt HasLinearFunExt HasAffineFunExt HasFullFunExt
 
   notation:20 "{" A:0 " ⟶} " V:21 => functorUniverse A V
 
   -- TODO: Lift universe level restriction on `UV`.
-  def type {U : Universe.{u}} {V UV : Universe.{v}} [HasFunctors U V UV] (A : U) (B : V) : {A ⟶} V := B
+  def type {U : Universe.{u}} {V UV : Universe.{v}} [HasFunctors U V UV] (A : U) (B : V) : {A ⟶} V :=
+  unaryOpUniverse.type B
   infixr:20 " !⟶ " => functorUniverse.type
 
   -- TODO: Lift universe level restriction on `UV`.

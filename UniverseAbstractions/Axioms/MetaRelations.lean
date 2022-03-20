@@ -99,6 +99,14 @@ namespace MetaRelation
     symm  := λ _   => b,
     trans := λ _ _ => b }
 
+  def emptyRelation (V : Universe.{v}) : MetaRelation PEmpty.{u} V :=
+  λ e _ => PEmpty.elim e
+
+  instance emptyRelation.isEquivalence (V : Universe.{v}) : IsEquivalence (emptyRelation V) :=
+  { refl  := λ e           => PEmpty.elim e,
+    symm  := λ {e _}   _   => PEmpty.elim e,
+    trans := λ {e _ _} _ _ => PEmpty.elim e }
+
 end MetaRelation
 
 

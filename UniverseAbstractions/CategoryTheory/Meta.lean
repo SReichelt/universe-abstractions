@@ -271,6 +271,23 @@ namespace MetaRelation
 
 end MetaRelation
 
+namespace MetaRelation.emptyRelation
+
+  variable (V : Universe.{v}) {VV : Universe.{vv}} [HasIdentity.{v, iv} V] [HasFunctors V V VV]
+
+  instance isAssociative : IsAssociative (emptyRelation V) :=
+  { assoc := λ {e _ _ _} _ _ _ => PEmpty.elim e }
+
+  instance isCategoricalPreorder : IsCategoricalPreorder (emptyRelation V) :=
+  { rightId := λ {e _} _ => PEmpty.elim e,
+    leftId  := λ {e _} _ => PEmpty.elim e }
+
+  instance isGroupoidEquivalence : IsGroupoidEquivalence (emptyRelation V) :=
+  { leftInv  := λ {e _} _ => PEmpty.elim e,
+    rightInv := λ {e _} _ => PEmpty.elim e }
+
+end MetaRelation.emptyRelation
+
 
 
 structure MetaFunctor {α : Sort u} {V : Universe.{v}} {W : Universe.{w}} {VW : Universe.{vw}}

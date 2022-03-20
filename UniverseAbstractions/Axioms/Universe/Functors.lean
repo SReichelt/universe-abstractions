@@ -862,6 +862,19 @@ namespace MetaRelation
 
 end MetaRelation
 
+namespace MetaRelation.emptyRelation
+
+  variable (V : Universe.{v}) {VV : Universe.{vv}} [HasIdentity.{v, iv} V] [HasFunctors V V VV]
+
+  instance hasSymmFun : HasSymmFun (emptyRelation V) :=
+  { defSymmFun := λ e _ => PEmpty.elim e }
+
+  instance hasTransFun [HasIdentity VV] [HasFunctors V VV VV] : HasTransFun (emptyRelation V) :=
+  { defTransFun    := λ {e _} _ _ => PEmpty.elim e,
+    defTransFunFun := λ e _ _     => PEmpty.elim e }
+
+end MetaRelation.emptyRelation
+
 
 
 class HasInternalFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
