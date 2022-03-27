@@ -14,6 +14,11 @@ universe u v uv
 
 
 
+-- TODO: We probably want to introduce a dedicated `HasProperties` class.
+-- Maybe include the target universe as a member, like with `HasIdentity`?
+-- Maybe include `HasPropCongrArg`?
+-- Are type functors properties as well?
+
 namespace HasFunctors
 
   open HasTypeIdentity
@@ -39,12 +44,22 @@ end HasFunctors
 
 
 
-namespace HasCongrArg
+class HasPropCongrArg (U V : Universe) {UpV : Universe} [HasFunctors U {V} UpV]
+                      [HasIdentity U] [HasTypeIdentity V] extends
+  HasCongrArg U {V} where
+(congrArgReflEq  {A : U} (φ : A ⟶ ⌊V⌋) (a : A) :
+   congrArg φ (HasInstanceEquivalences.refl a) ≃' HasEquivOp.refl (φ a))
+(congrArgSymmEq  {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ : A} (e : a₁ ≃ a₂) :
+   congrArg φ e⁻¹ ≃' (congrArg φ e)⁻¹)
+(congrArgTransEq {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ a₃ : A} (e : a₁ ≃ a₂) (f : a₂ ≃ a₃) :
+   congrArg φ (f • e) ≃' congrArg φ f • congrArg φ e)
 
-  open HasFunctors
+namespace HasPropCongrArg
+
+  open HasFunctors HasCongrArg
 
   variable {U V UpV : Universe} [HasFunctors U {V} UpV] [HasIdentity U]
-           [HasTypeIdentity V] [HasCongrArg U {V}]
+           [HasTypeIdentity V] [HasPropCongrArg U V]
 
   def propCongrArg {A : U} (φ : A ⟶ ⌊V⌋) {a₁ a₂ : A} (e : a₁ ≃ a₂) : φ a₁ ⟷ φ a₂ :=
   congrArg φ e
@@ -53,7 +68,33 @@ namespace HasCongrArg
     p a₁ ⟷ p a₂ :=
   defCongrArg φ e
 
-end HasCongrArg
+end HasPropCongrArg
+
+
+
+namespace DependentEquivalence
+
+  open HasPropCongrArg
+
+  variable {U V UpV : Universe} [HasFunctors U {V} UpV] [HasIdentity U]
+           [HasTypeIdentity V] [HasPropCongrArg U V]
+
+  def depCongrArgRefl {A : U} {φ : A ⟶ ⌊V⌋} {a : A} (b : φ a) :
+    b ≃[propCongrArg φ (HasInstanceEquivalences.refl a)] b :=
+  DependentEquivalence.cast (congrArgReflEq φ a)⁻¹ (DependentEquivalence.refl b)
+
+  def depCongrArgSymm {A : U} {φ : A ⟶ ⌊V⌋} {a₁ a₂ : A} {e : a₁ ≃ a₂} {b₁ : φ a₁} {b₂ : φ a₂}
+                      (h : b₁ ≃[propCongrArg φ e] b₂) :
+    b₂ ≃[propCongrArg φ e⁻¹] b₁ :=
+  DependentEquivalence.cast (congrArgSymmEq φ e)⁻¹ h[⁻¹]
+
+  def depCongrArgTrans {A : U} {φ : A ⟶ ⌊V⌋} {a₁ a₂ a₃ : A} {e : a₁ ≃ a₂} {f : a₂ ≃ a₃}
+                       {b₁ : φ a₁} {b₂ : φ a₂} {b₃ : φ a₃}
+                       (h : b₁ ≃[propCongrArg φ e] b₂) (i : b₂ ≃[propCongrArg φ f] b₃) :
+    b₁ ≃[propCongrArg φ (f • e)] b₃ :=
+  DependentEquivalence.cast (congrArgTransEq φ e f)⁻¹ (i [•] h)
+
+end DependentEquivalence
 
 
 
@@ -114,7 +155,7 @@ namespace HasFunctors
     ◄ byDef
 
     @[reducible] def rightFunProp {A : U} (B : V) (ψ : A ⟶ ⌊W⌋) : A ⟶ ⌊VW⌋ := defRightFunProp B ψ
-    notation:20 "{" B:0 "⟶} " ψ:21 => HasFunctors.rightFunProp B ψ
+    notation:20 "{" B:0 " ⟶} " ψ:21 => HasFunctors.rightFunProp B ψ
 
   end
 

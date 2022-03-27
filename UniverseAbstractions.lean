@@ -51,6 +51,8 @@ import UniverseAbstractions.CategoryTheory.Functors.Basic
 import UniverseAbstractions.CategoryTheory.Functors.Nested
 import UniverseAbstractions.CategoryTheory.Functors.FunDef
 import UniverseAbstractions.CategoryTheory.FunctorExtensionality
+import UniverseAbstractions.CategoryTheory.Singletons
+import UniverseAbstractions.CategoryTheory.Products
 import UniverseAbstractions.CategoryTheory.Extensional.Meta
 import UniverseAbstractions.CategoryTheory.Extensional.Basic
 import UniverseAbstractions.CategoryTheory.Utils.Trivial

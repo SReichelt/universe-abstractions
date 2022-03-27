@@ -33,6 +33,10 @@ theorem ext {α : Sort u₁} {β : Sort u₂} {e₁ e₂ : α ≃ β} :
   e₁.toFun = e₂.toFun ∧ e₁.invFun = e₂.invFun → e₁ = e₂ :=
 sorry
 
+theorem inj {α : Sort u₁} {β : Sort u₂} {e₁ e₂ : α ≃ β} :
+  e₁.toFun = e₂.toFun → e₁ = e₂ :=
+sorry
+
 def refl (α : Sort u₁) : α ≃ α := ⟨id, id, λ x => rfl, λ y => rfl⟩
 
 def symm {α : Sort u₁} {β : Sort u₂} (e : α ≃ β) : β ≃ α := ⟨e.invFun, e.toFun, e.rightInv, e.leftInv⟩

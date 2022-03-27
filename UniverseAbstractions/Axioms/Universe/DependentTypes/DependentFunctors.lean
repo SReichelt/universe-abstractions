@@ -80,16 +80,16 @@ end HasDependentFunctors
 
 class HasDependentCongrArg (U : Universe.{u}) (V : Universe.{v}) {UpV : Universe.{upv}}
                            [HasFunctors U {V} UpV] {UV : Universe.{uv}} [HasDependentFunctors U V UV]
-                           [HasIdentity U] [HasTypeIdentity V] [HasCongrArg U {V}] where
+                           [HasIdentity U] [HasTypeIdentity V] [HasPropCongrArg U V] where
 (piCongrArg {A : U} {φ : A ⟶ ⌊V⌋} (F : Π φ) {a₁ a₂ : A} (e : a₁ ≃ a₂) :
-   F a₁ ≃[HasCongrArg.propCongrArg φ e] F a₂)
+   F a₁ ≃[HasPropCongrArg.propCongrArg φ e] F a₂)
 
 namespace HasDependentCongrArg
 
-  open HasFunctors HasCongrArg HasEquivalences DependentEquivalence HasTypeIdentity HasDependentFunctors
+  open HasFunctors HasEquivalences DependentEquivalence HasTypeIdentity HasPropCongrArg HasDependentFunctors
 
   variable {U V UpV UV : Universe} [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
-           [HasIdentity U] [HasTypeIdentity V] [HasCongrArg U {V}] [HasDependentCongrArg U V]
+           [HasIdentity U] [HasTypeIdentity V] [HasPropCongrArg U V] [HasDependentCongrArg U V]
 
   def defPiCongrArg {A : U} {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f : ∀ a, p a} (F : Π{f} φ) {a₁ a₂ : A}
                     (e : a₁ ≃ a₂) :
@@ -176,7 +176,7 @@ class HasDependentTypeFunPi {U V W UpV UpVtW UtUpVtW UpVtUpVtW UtUpV : Universe}
                             [h₁ : HasFunctors U {V} UpV] [h₂ : HasFunctors UpV {W} UpVtW] [HasIdentity {W}]
                             [HasFunctors {U} {UpVtW} UtUpVtW] [HasDependentFunctors {U} UpVtW UtUpVtW]
                             [HasFunctors {UpV} {UpVtW} UpVtUpVtW] [HasTypeIdentity UpVtW]
-                            [HasFunctors {U} {UpV} UtUpV] [HasIdentity {UpV}] [HasCongrArg {UpV} {UpVtW}]
+                            [HasFunctors {U} {UpV} UtUpV] [HasIdentity {UpV}] [HasPropCongrArg {UpV} UpVtW]
                             [HasLeftTypeFun h₁.Fun] [HasLeftTypeFun h₂.Fun] [HasCompFun {U} {UpV} {UpVtW}]
                             (T : ∀ {A : U}, (A ⟶ ⌊V⌋) → W) extends
   HasDependentTypeFun T where
@@ -184,27 +184,28 @@ class HasDependentTypeFunPi {U V W UpV UpVtW UtUpVtW UpVtUpVtW UtUpV : Universe}
 
 namespace HasDependentTypeFunPi
 
-  open HasFunctors HasCongrFun HasCongrArg HasEquivalences HasTypeIdentity HasDependentCongrArg HasDependentTypeFun
+  open HasFunctors HasCongrFun HasEquivalences HasTypeIdentity HasPropCongrArg HasDependentCongrArg HasDependentTypeFun
 
   variable {U V W UpV UpVtW UtUpVtW UpVtUpVtW UtUpV : Universe}
            [h₁ : HasFunctors U {V} UpV] [h₂ : HasFunctors UpV {W} UpVtW]
            [HasFunctors {U} {UpVtW} UtUpVtW] [HasDependentFunctors {U} UpVtW UtUpVtW]
            [HasFunctors {UpV} {UpVtW} UpVtUpVtW] [HasTypeIdentity UpVtW]
-           [HasFunctors {U} {UpV} UtUpV] [HasTypeIdentity UpV] [HasCongrArg {UpV} {UpVtW}]
+           [HasFunctors {U} {UpV} UtUpV] [HasTypeIdentity UpV] [HasPropCongrArg {UpV} UpVtW]
            [HasLeftTypeFun h₁.Fun] [HasLeftTypeFun h₂.Fun] [HasCompFun {U} {UpV} {UpVtW}]
            (T : ∀ {A : U}, (A ⟶ ⌊V⌋) → W)
 
   variable [HasTypeIdentity U] [HasIdentity {V}] [HasTypeIdentity W] [h : HasDependentTypeFunPi T]
-           [HasCompFun U U {V}] [HasCongrArg {U} {UpVtW}] [HasDependentCongrArg {U} UpVtW]
+           [HasCompFun U U {V}] [HasPropCongrArg {U} UpVtW] [HasDependentCongrArg {U} UpVtW]
            [HasCongrArg {U} {UpV}] [HasCongrFun UpV {W}]
 
+  -- TODO: Can we prove this with `HasPropCongrArg` now?
   def baseEquiv {A₁ A₂ : U} {φ : A₁ ⟶ ⌊V⌋} (E : A₁ ⟷ A₂) : T φ ⟷ T (φ ⊙ invFun E) :=
   let H₁ : ((A₁ ⟶ ⌊V⌋) ⟶ ⌊W⌋) ⟷ ((A₂ ⟶ ⌊V⌋) ⟶ ⌊W⌋) := defPropCongrArg (defDependentTypeProp U ⌊V⌋ ⌊W⌋) E;
   let H₂ : typeFun T A₁ ≃[H₁] typeFun T A₂ := defPiCongrArg h.defTypeFunPi E;
   let H₃ : typeFun T A₁ ≃ inv H₁ (typeFun T A₂) := HasEquivalences.toInv H₂;
   let H₄ := congrFun H₃ φ • byDef⁻¹;
   let H₅ : T φ ⟷ (inv H₁ (typeFun T A₂)) φ := H₄;
-  -- TODO: To prove this, we need to construct type functors explicitly instead of asserting them as variables.
+  -- TODO (outdated?): To prove this, we need to construct type functors explicitly instead of asserting them as variables.
   let H₆ : HasLeftTypeFun.castInstTo h₁.Fun E φ ≃ φ ⊙ invFun E := sorry;
   let H₉ : T φ ⟷ T (φ ⊙ invFun E) := sorry;
   H₉
@@ -258,6 +259,7 @@ end HasDependentFunctors
 
 
 -- TODO: Most of these definitions probably need to be moved further into the dependent realm.
+-- Or maybe define a dependent S combinator only?
 
 class HasCompFunPi (U V W : Universe) {UV VpW VW UpW UW : Universe} [HasFunctors U V UV]
                    [HasFunctors V {W} VpW] [HasDependentFunctors V W VW]

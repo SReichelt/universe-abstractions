@@ -39,7 +39,7 @@ set_option autoBoundImplicitLocal false
 set_option synthInstance.maxHeartbeats 100000
 --set_option pp.universes true
 
-universe u v w w'
+universe u v w w' upv
 
 
 
@@ -80,13 +80,30 @@ namespace sort
 
   instance (priority := low) hasOutCongrArg (V : Universe.{v}) [HasIdentity V] :
     HasCongrArg sort.{u} V :=
-  ⟨λ {_ _} f {_ _} e => e ▸ HasRefl.refl _⟩
+  ⟨λ {_ _} f {a₁ a₂} h => h ▸ HasInstanceEquivalences.refl (f a₁)⟩
+
+  theorem hasOutCongrArg.reflEq {α : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V}
+                                (f : ⌈α ⟶ B⌉) (a : α) :
+    (hasOutCongrArg V).congrArg f (Eq.refl a) = HasInstanceEquivalences.refl (f a) :=
+  rfl
+
+  theorem hasOutCongrArg.symmEq {α : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V}
+                                (f : ⌈α ⟶ B⌉) {a₁ a₂ : α} (h : a₁ = a₂)
+                                (hRefl : ∀ b : B, (HasInstanceEquivalences.refl b)⁻¹ = HasInstanceEquivalences.refl b) :
+    (hasOutCongrArg V).congrArg f (Eq.symm h) = ((hasOutCongrArg V).congrArg f h)⁻¹ :=
+  by subst h; exact Eq.symm (hRefl (f a₁))
+
+  theorem hasOutCongrArg.transEq {α : sort.{u}} {V : Universe.{v}} [HasIdentity V] {B : V}
+                                 (f : ⌈α ⟶ B⌉) {a₁ a₂ a₃ : α} (h : a₁ = a₂) (i : a₂ = a₃)
+                                 (hRefl : ∀ b : B, HasInstanceEquivalences.refl b • HasInstanceEquivalences.refl b = HasInstanceEquivalences.refl b) :
+    (hasOutCongrArg V).congrArg f (Eq.trans h i) = (hasOutCongrArg V).congrArg f i • (hasOutCongrArg V).congrArg f h :=
+  by subst h; subst i; exact Eq.symm (hRefl (f a₁))
 
   instance hasCongrFun : HasCongrFun sort.{u} sort.{v} := ⟨congrFun⟩
 
   instance (priority := low) hasOutCongrFun (V : Universe.{v}) [HasIdentity V] :
     HasCongrFun sort.{u} V :=
-  ⟨λ e _ => e ▸ HasRefl.refl _⟩
+  ⟨λ h _ => h ▸ HasInstanceEquivalences.refl _⟩
 
   instance hasInternalFunctors : HasInternalFunctors sort.{u} := ⟨⟩
 
@@ -124,7 +141,7 @@ namespace sort
     t := PUnit.unit }
   
   instance (priority := low) hasTopEq : HasTop.HasTopEq sort.{u} :=
-  ⟨λ ⟨⟩ => rfl⟩
+  ⟨λ _ => rfl⟩
 
   instance (priority := low) hasBot : HasBot sort.{u} :=
   { B    := PEmpty,
@@ -146,9 +163,9 @@ namespace sort
 
   instance (priority := low) hasProductEq :
     HasProducts.HasProductEq sort.{u} sort.{v} (UxV := tsort.{max u v}) :=
-  { introEq := λ ⟨_, _⟩ => rfl,
-    fstEq   := λ _ _    => rfl,
-    sndEq   := λ _ _    => rfl }
+  { introEq := λ _   => rfl,
+    fstEq   := λ _ _ => rfl,
+    sndEq   := λ _ _ => rfl }
 
   -- `Equiv` also works for general `sort`, but is overridden for `prop`.
 
@@ -158,9 +175,18 @@ namespace sort
     left   := ⟨e.leftInv⟩,
     right  := ⟨e.rightInv⟩ }
 
-  instance (priority := low) hasEquivalences : HasEquivalences sort.{u} sort.{v} tsort.{max u v} :=
+  instance (priority := low) hasEquivalences : HasEquivalences sort.{u} sort.{v} sort.{max 1 u v} :=
   { Equiv := Equiv,
     desc  := equivDesc }
+
+  -- Properties out of `sort` are functorial.
+
+  -- TODO: Replace `subst` tactic with explicit recursor invocation.
+  instance (priority := low) hasOutPropCongrArg (V : Universe.{v}) [HasTypeIdentity V] :
+    HasPropCongrArg sort.{u} V :=
+  { congrArgReflEq  := λ     φ            a   => HasInstanceEquivalences.refl (HasEquivOp.refl (φ a)),
+    congrArgSymmEq  := λ {_} φ {a₁ a₂}    h   => by subst h; exact (HasEquivOp.symmRefl (φ a₁))⁻¹,
+    congrArgTransEq := λ {_} φ {a₁ a₂ a₃} h i => by subst h; subst i; exact (HasEquivOp.transReflRefl (φ a₁))⁻¹ }
 
   -- Dependent functors are analogous to independent functors.
 
@@ -169,11 +195,10 @@ namespace sort
   { Pi    := HasFunctors.Pi,
     apply := id }
 
-  def defPi {α : sort.{u}} {V : Universe.{v}} [HasTypeIdentity V] {p : α → V} {φ : α ⟶{p} ⌊V⌋}
-            (f : ∀ a, p a) :
-    DefPi φ f :=
-  { F   := λ a => HasEquivalences.inv      (φ.eff a) (f a),
-    eff := λ a => HasEquivalences.rightInv (φ.eff a) (f a) }
+  def defPi {α : sort.{u}} {V : Universe.{v}} [HasTypeIdentity V] {φ : ⌈α ⟶ ⌊V⌋⌉}
+            (f : HasFunctors.Pi φ) :
+    Π{f} (HasFunctors.toDefFun φ) :=
+  toDefPi' f (λ _ => HasInstanceEquivalences.refl _) (λ _ => DependentEquivalence.refl _)
 
   instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasTypeIdentity V] :
     HasTrivialDependentFunctoriality sort.{u} V :=
@@ -183,13 +208,13 @@ namespace sort
 
   instance (priority := low) hasDependentOutCongrFun (V : Universe.{v}) [HasIdentity V] :
     HasDependentCongrFun sort.{u} V :=
-  ⟨λ e _ => e ▸ HasRefl.refl _⟩
+  ⟨λ e _ => e ▸ HasInstanceEquivalences.refl _⟩
 
 end sort
 
 namespace prop
 
-  open MetaRelation HasFunctors HasEquivOp HasEquivOpFun
+  open MetaRelation HasFunctors HasEquivOp HasEquivOpFun HasDependentFunctors
 
   instance hasTrivialIdentity : HasTrivialIdentity prop := ⟨proofIrrel⟩
 
@@ -267,6 +292,25 @@ namespace prop
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition prop :=
   ⟨λ e => HasTrivialIdentity.defEquiv (Iff.intro e.toFun e.invFun)⟩
 
+  -- Dependent incoming functors are analogous to independent incoming functors.
+
+  instance hasDependentInFunctors (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+                                  [HasFunctors U {prop} UpV] :
+    HasDependentFunctors U prop prop :=
+  { Pi    := λ φ => ∀ a, φ a,
+    apply := id }
+
+  def defInPi {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+              [HasFunctors U {prop} UpV] {A : U} {φ : A ⟶ ⌊prop⌋} (f : Π φ) :
+    Π{f} (HasFunctors.toDefFun φ) :=
+  -- `toDefPi` results in Lean bug.
+  toDefPi' f (λ a => HasInstanceEquivalences.refl (φ a)) (λ _ => proofIrrel _ _)
+
+  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) {UpV : Universe.{upv}}
+                                              [HasIdentity U] [HasFunctors U {prop} UpV] :
+    HasTrivialDependentFunctoriality U prop :=
+  ⟨defInPi⟩
+
   -- Dependent products are given by `∃`, requiring choice to obtain a witness unless the witness
   -- is in `prop`.
 
@@ -285,6 +329,82 @@ namespace prop
 
 end prop
 
+namespace tsort
+
+  open HasPropCongrArg HasDependentFunctors
+
+  -- `tsort` has internal equivalences given by `Equiv`. An `Equiv` essentially matches our
+  -- `EquivDesc`, so we can directly use the equivalence proofs from generic code.
+
+  instance (priority := low) hasInternalEquivalences : HasInternalEquivalences tsort.{u} :=
+  HasTrivialExtensionality.hasInternalEquivalences tsort (λ h => Equiv.inj h)
+
+  --instance (priority := low) hasInternalEquivalences : HasInternalEquivalences tsort.{u} :=
+  --{ defToFunFun := λ _ _ => HasTrivialFunctoriality.defFun,
+  --  isExt       := λ E => HasTrivialExtensionality.equivDescExt tsort.{u} (HasEquivalences.desc E) }
+
+  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition tsort.{u} :=
+  ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
+
+  -- Dependent incoming functors are analogous to independent incoming functors.
+
+  structure DependentInFunctor {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+                               [HasFunctors U {tsort.{v}} UpV] [HasPropCongrArg U tsort.{v}]
+                               {A : U} (φ : A ⟶ ⌊tsort.{v}⌋) :
+    Sort (max 1 u v) where
+  (f                                  : HasFunctors.Pi φ)
+  (congrArg {a₁ a₂ : A} (e : a₁ ≃ a₂) : f a₁ ≃[propCongrArg φ e] f a₂)
+
+  instance (priority := low) hasDependentInFunctors (U : Universe.{u}) {UpV : Universe.{upv}}
+                                                    [HasIdentity U] [HasFunctors U {tsort.{v}} UpV]
+                                                    [HasPropCongrArg U tsort.{v}] :
+    HasDependentFunctors U tsort.{v} tsort.{max u v} :=
+  { Pi    := DependentInFunctor,
+    apply := DependentInFunctor.f }
+
+  instance (priority := low) hasDependentInCongrArg (U : Universe.{u}) {UpV : Universe.{upv}}
+                                                    [HasIdentity U] [HasFunctors U {tsort.{v}} UpV]
+                                                    [HasPropCongrArg U tsort.{v}] :
+    HasDependentCongrArg U tsort.{v} :=
+  ⟨DependentInFunctor.congrArg⟩
+
+  def defInPi {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+              [HasFunctors U {tsort.{v}} UpV] [HasPropCongrArg U tsort.{v}]
+              {A : U} {φ : A ⟶ ⌊tsort.{v}⌋} (F : Π φ) :
+    Π{F.f} (HasFunctors.toDefFun φ) :=
+  toDefPi' F (λ a => HasInstanceEquivalences.refl (φ a)) (λ _ => by rfl)
+
+  -- Dependent products are given by either `PSigma` or `Subtype`, depending on the
+  -- universe levels.
+
+  instance (priority := low) hasDependentProducts :
+    HasDependentProducts sort.{u} tsort.{v} tsort.{max u v} :=
+  { Sigma := PSigma,
+    intro := PSigma.mk,
+    fst   := PSigma.fst,
+    snd   := PSigma.snd }
+
+  instance (priority := low) hasDependentProductEq :
+    HasDependentProducts.HasDependentProductEq sort.{u} tsort.{v} (UxV := tsort.{max u v}) :=
+  { introEq := λ _   => rfl,
+    fstEq   := λ _ _ => rfl,
+    sndEq   := λ _ _ => rfl }
+
+  instance (priority := low) hasSubtypes :
+    HasDependentProducts sort.{u} prop tsort.{u} :=
+  { Sigma := Subtype,
+    intro := Subtype.mk,
+    fst   := Subtype.val,
+    snd   := Subtype.property }
+
+  instance (priority := low) hasSubtypeEq :
+    HasDependentProducts.HasDependentProductEq sort.{u} prop (UxV := tsort.{u}) :=
+  { introEq := λ _   => rfl,
+    fstEq   := λ _ _ => rfl,
+    sndEq   := λ _ _ => HasTrivialIdentity.eq }
+
+end tsort
+
 namespace type
 
   open MetaRelation
@@ -296,7 +416,7 @@ namespace type
     t := Unit.unit }
   
   instance hasTopEq : HasTop.HasTopEq type.{0} :=
-  ⟨λ ⟨⟩ => rfl⟩
+  ⟨λ _ => rfl⟩
 
   instance hasBot : HasBot type.{0} :=
   { B    := Empty,
@@ -308,7 +428,7 @@ namespace type
   noncomputable instance hasClassicalLogic : HasClassicalLogic type.{0} :=
   { byContradictionFun := byContradiction }
 
-  -- Products are given by `Prod`.
+  -- Use `Prod` instead of `PProd` where possible.
 
   instance hasProducts : HasProducts type.{u} type.{v} type.{max u v} :=
   { Prod  := Prod,
@@ -317,19 +437,17 @@ namespace type
     snd   := Prod.snd }
 
   instance hasProductEq : HasProducts.HasProductEq type.{u} type.{v} :=
-  { introEq := λ ⟨_, _⟩ => rfl,
-    fstEq   := λ _ _    => rfl,
-    sndEq   := λ _ _    => rfl }
+  { introEq := λ _   => rfl,
+    fstEq   := λ _ _ => rfl,
+    sndEq   := λ _ _ => rfl }
 
-  -- `type` has internal equivalences given by `Equiv`. An `Equiv` essentially matches our
-  -- `EquivDesc`, so we can directly use the equivalence proofs from generic code.
+  -- Internal equivalences of `type` are a special case of `tsort`.
 
   instance hasInternalEquivalences : HasInternalEquivalences type.{u} :=
-  { defToFunFun := λ _ _ => HasTrivialFunctoriality.defFun,
-    isExt       := λ E => HasTrivialExtensionality.equivDescExt type.{u} (HasEquivalences.desc E) }
+  tsort.hasInternalEquivalences.{u + 1}
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition type.{u} :=
-  ⟨λ e => ⟨⟨e.toFun, e.invFun, e.left.inv, e.right.inv⟩, rfl, rfl⟩⟩
+  tsort.hasTrivialEquivalenceCondition.{u + 1}
 
   -- The target equality of dependent functors contains a cast (from `sort.hasOutCongrArg`),
   -- but we can eliminate it easily.
@@ -337,8 +455,7 @@ namespace type
   instance hasDependentCongrArg : HasDependentCongrArg sort.{u} type.{v} :=
   ⟨λ {_ _} _ {_ _} e => by subst e; rfl⟩
 
-  -- Dependent products are given by either `Sigma`, `PSigma`, or `Subtype`, depending on the
-  -- universe levels.
+  -- Use `Sigma` instead of `PSigma` where possible.
 
   instance hasDependentProducts : HasDependentProducts type.{u} type.{v} type.{max u v} :=
   { Sigma := Sigma,
@@ -348,34 +465,8 @@ namespace type
 
   instance hasDependentProductEq :
     HasDependentProducts.HasDependentProductEq type.{u} type.{v} (UxV := type.{max u v}) :=
-  { introEq := λ ⟨_, _⟩ => rfl,
-    fstEq   := λ _ _    => rfl,
-    sndEq   := λ _ _    => rfl }
-
-  instance (priority := low) hasDependentProducts' :
-    HasDependentProducts sort.{u} type.{v} sort.{max u (v + 1)} :=
-  { Sigma := PSigma,
-    intro := PSigma.mk,
-    fst   := PSigma.fst,
-    snd   := PSigma.snd }
-
-  instance (priority := low) hasDependentProductEq' :
-    HasDependentProducts.HasDependentProductEq sort.{u} type.{v} (UxV := sort.{max u (v + 1)}) :=
-  { introEq := λ ⟨_, _⟩ => rfl,
-    fstEq   := λ _ _    => rfl,
-    sndEq   := λ _ _    => rfl }
-
-  instance (priority := low) hasSubtypes :
-    HasDependentProducts sort.{u} prop tsort.{u} :=
-  { Sigma := Subtype,
-    intro := Subtype.mk,
-    fst   := Subtype.val,
-    snd   := Subtype.property }
-
-  instance (priority := low) hasSubtypeEq :
-    HasDependentProducts.HasDependentProductEq sort.{u} prop (UxV := tsort.{u}) :=
-  { introEq := λ ⟨_, _⟩ => rfl,
-    fstEq   := λ _ _    => rfl,
-    sndEq   := λ _ _    => HasTrivialIdentity.eq }
+  { introEq := λ _   => rfl,
+    fstEq   := λ _ _ => rfl,
+    sndEq   := λ _ _ => rfl }
 
 end type

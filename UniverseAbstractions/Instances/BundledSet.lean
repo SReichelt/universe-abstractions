@@ -265,6 +265,7 @@ namespace BundledSet
   instance hasInternalEquivalences : HasInternalEquivalences univ.{u} :=
   { defToFunFun := λ A B => defFun (A := A ⟷ B) (B := A ⟶ B) ⟨Equiv.toFun, And.left⟩,
     isExt       := λ E => { leftExt  := ⟨funext E.val.leftInv⟩,
-                            rightExt := ⟨funext E.val.rightInv⟩ } }
+                            rightExt := ⟨funext E.val.rightInv⟩ },
+    toFunInj    := Equiv.inj }
 
 end BundledSet

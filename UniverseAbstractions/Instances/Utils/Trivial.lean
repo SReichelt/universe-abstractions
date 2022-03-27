@@ -79,17 +79,25 @@ namespace HasTrivialIdentity
     Π{f} φ := 
   ⟨F, λ _ => eq⟩
 
+  instance hasPropCongrArg (U V : Universe) {UpV : Universe} [HasIdentity U]
+                           [HasTypeIdentity V] [HasFunctors U {V} UpV] [HasCongrArg U {V}]
+                           [HasTrivialIdentity V] :
+    HasPropCongrArg U V :=
+  { congrArgReflEq  := λ     φ         _   => eq (U := V),
+    congrArgSymmEq  := λ {_} φ {_ _}   _   => eq (U := V),
+    congrArgTransEq := λ {_} φ {_ _ _} _ _ => eq (U := V) }
+
   instance hasDependentCongrArg (U V : Universe) {UpV UV : Universe}
                                 [HasFunctors U {V} UpV] [HasDependentFunctors U V UV]
                                 [HasIdentity U] [HasTypeIdentity V] [HasTrivialIdentity V]
-                                [HasCongrArg U {V}] :
+                                [HasPropCongrArg U V] :
     HasDependentCongrArg U V :=
   ⟨λ {_ _} _ {_ _} _ => eq⟩
 
   instance hasDependentProductEq (U V : Universe) {UpV UxV : Universe}
                                  [HasFunctors U {V} UpV] [HasDependentProducts U V UxV]
                                  [HasIdentity U] [HasTrivialIdentity U] [HasTypeIdentity V]
-                                 [HasTrivialIdentity V] [HasCongrArg U {V}] [HasIdentity UxV]
+                                 [HasTrivialIdentity V] [HasPropCongrArg U V] [HasIdentity UxV]
                                  [HasTrivialIdentity UxV] :
     HasDependentProducts.HasDependentProductEq U V :=
   { introEq := λ _   => eq,
@@ -342,10 +350,18 @@ namespace HasTrivialExtensionality
     EquivDesc.IsExtensional e :=
   ⟨⟩
 
-  instance hasInternalEquivalences [HasTrivialFunctoriality U U] [HasEquivalences U U U] :
+  def hasInternalEquivalences [HasTrivialFunctoriality U U] [HasEquivalences U U U]
+                              (toFunInj : ∀ {A B : U} {E₁ E₂ : A ⟷ B},
+                                            HasEquivalences.toFun E₁ ≃ HasEquivalences.toFun E₂ →
+                                            E₁ ≃ E₂) :
     HasInternalEquivalences U :=
   { defToFunFun  := λ _ _ => HasTrivialFunctoriality.defFun,
-    isExt        := λ E => equivDescExt U (HasEquivalences.desc E) }
+    isExt        := λ E => equivDescExt U (HasEquivalences.desc E),
+    toFunInj     := toFunInj }
+
+  instance [HasTrivialFunctoriality U U] [HasEquivalences U U U] [HasTrivialIdentity U] :
+    HasInternalEquivalences U :=
+  hasInternalEquivalences U (λ _ => HasTrivialIdentity.eq)
 
 end HasTrivialExtensionality
 
@@ -384,16 +400,16 @@ end HasTrivialEquivalenceCondition
 
 class HasTrivialDependentFunctoriality (U V : Universe) {UV UpV : Universe} [HasTypeIdentity V]
                                        [HasFunctors U {V} UpV] [HasDependentFunctors U V UV] where
-(mkDefPi {A : U} {p : A → V} {φ : A ⟶{p} ⌊V⌋} (f : ∀ a, p a) : Π{f} φ)
+(mkDefPi {A : U} {φ : A ⟶ ⌊V⌋} (f : HasFunctors.Pi φ) : Π{f} (HasFunctors.toDefFun φ))
 
 namespace HasTrivialDependentFunctoriality
 
   def defPi {U V UV UpV : Universe} [HasTypeIdentity V] [HasFunctors U {V} UpV]
             [HasDependentFunctors U V UV] [h : HasTrivialDependentFunctoriality U V]
-            {A : U} {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f : ∀ a, p a} :
-    Π{f} φ :=
+            {A : U} {φ : A ⟶ ⌊V⌋} {f : HasFunctors.Pi φ} :
+    Π{f} (HasFunctors.toDefFun φ) :=
   h.mkDefPi f
 
-  -- TODO
+  -- TODO: actual dependent functors
 
 end HasTrivialDependentFunctoriality

@@ -124,6 +124,10 @@ namespace CategoryTheory
         mapHom F f₁ ≃ mapHom F f₂ :=
       HasCongrArg.congrArg ((preFun F).baseFun a b) e
 
+      def mapHomReflEq {a : A} {f : a ⇾ a} (e : f ≃ idHom a) :
+        mapHom F f ≃ idHom (F a) :=
+      reflEq F a • mapHomCongrArg F e
+
       def mapIsoDesc {a b : A} (e : IsoDesc a b) : IsoDesc (F a) (F b) :=
       { toHom  := mapHom F e.toHom,
         invHom := mapHom F e.invHom,

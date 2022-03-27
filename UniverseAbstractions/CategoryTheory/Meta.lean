@@ -15,8 +15,11 @@ import UniverseAbstractions.Axioms.Universes
 import UniverseAbstractions.Axioms.MetaRelations
 import UniverseAbstractions.Axioms.Universe.Identity
 import UniverseAbstractions.Axioms.Universe.Functors
+import UniverseAbstractions.Axioms.Universe.Singletons
+import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
 import UniverseAbstractions.Lemmas.DerivedFunctors
+import UniverseAbstractions.Lemmas.DerivedProductFunctors
 
 
 
@@ -213,21 +216,29 @@ namespace MetaRelation
     def transInv [HasLinearFunOp V] {a b c : α} (f : R a b) (g : R b c) : (g • f)⁻¹ ≃ f⁻¹ • g⁻¹ :=
     invEq (g • f) (f⁻¹ • g⁻¹)
 
-    def cancelLeft [HasCongrArg V V] {a b c : α} (f : R a b) (g : R c b) :
-      g • (g⁻¹ • f) ≃ f :=
-    cancelLeftId f (rightInv g) • (assoc f g⁻¹ g)⁻¹
+    def cancelLeftInv [HasCongrArg V V] {a b : α} (f : R a b) {e : R b a} (he : e ≃ f⁻¹) :
+      e • f ≃ HasRefl.refl (R := R) a :=
+    HalfInv.congrArgLeft he (leftInv f)
 
-    def cancelLeftInv [HasCongrArg V V] {a b c : α} (f : R a b) (g : R b c) :
+    def cancelRightInv [HasCongrFun V V] {a b : α} (f : R a b) {e : R b a} (he : e ≃ f⁻¹) :
+      f • e ≃ HasRefl.refl (R := R) b :=
+    HalfInv.congrArgRight he (rightInv f)
+
+    def cancelLeft [HasCongrArg V V] {a b c : α} (f : R a b) (g : R b c) :
       g⁻¹ • (g • f) ≃ f :=
     cancelLeftId f (leftInv g) • (assoc f g g⁻¹)⁻¹
 
-    def cancelRight [HasCongrFun V V] {a b c : α} (f : R b a) (g : R b c) :
-      (g • f⁻¹) • f ≃ g :=
-    cancelRightId (leftInv f) g • assoc f f⁻¹ g
+    def cancelInvLeft [HasCongrArg V V] {a b c : α} (f : R a b) (g : R c b) :
+      g • (g⁻¹ • f) ≃ f :=
+    cancelLeftId f (rightInv g) • (assoc f g⁻¹ g)⁻¹
 
-    def cancelRightInv [HasCongrFun V V] {a b c : α} (f : R a b) (g : R b c) :
+    def cancelRight [HasCongrFun V V] {a b c : α} (f : R a b) (g : R b c) :
       (g • f) • f⁻¹ ≃ g :=
     cancelRightId (rightInv f) g • assoc f⁻¹ f g
+
+    def cancelInvRight [HasCongrFun V V] {a b c : α} (f : R b a) (g : R b c) :
+      (g • f⁻¹) • f ≃ g :=
+    cancelRightId (leftInv f) g • assoc f f⁻¹ g
 
   end IsGroupoidEquivalence
 
@@ -268,6 +279,42 @@ namespace MetaRelation
       rightInv := h.rightInv }
 
   end lift
+
+  namespace productRelation
+
+    open IsCategoricalPreorder IsGroupoidEquivalence HasProducts HasProductEq HasInternalProducts
+
+    variable [HasInternalFunctors V] [HasLinearFunOp V] [HasInternalProducts V]
+             [HasProductEq V V] (R S : MetaRelation α V)
+
+    instance isAssociative [HasTrans R] [HasTrans S] [HasTransFun R] [HasTransFun S]
+                           [hR : IsAssociative R] [hS : IsAssociative S] :
+      IsAssociative (productRelation R S) :=
+    { assoc := λ f g h => introCongrArg (congrArgTransRight (hasTrans.fstEq R S f g)⁻¹ (fst h) •
+                                         hR.assoc (fst f) (fst g) (fst h) •
+                                         congrArgTransLeft (fst f) (hasTrans.fstEq R S g h))
+                                        (congrArgTransRight (hasTrans.sndEq R S f g)⁻¹ (snd h) •
+                                         hS.assoc (snd f) (snd g) (snd h) •
+                                         congrArgTransLeft (snd f) (hasTrans.sndEq R S g h)) }
+
+    instance isCategoricalPreorder [IsPreorder R] [IsPreorder S] [HasTransFun R] [HasTransFun S]
+                                   [hR : IsCategoricalPreorder R] [hS : IsCategoricalPreorder S] :
+      IsCategoricalPreorder (productRelation R S) :=
+    { rightId := λ {a b} f => introCongrArgEq (cancelRightId (hasRefl.fstEq R S a) (fst f))
+                                              (cancelRightId (hasRefl.sndEq R S a) (snd f)),
+      leftId  := λ {a b} f => introCongrArgEq (cancelLeftId (fst f) (hasRefl.fstEq R S b))
+                                              (cancelLeftId (snd f) (hasRefl.sndEq R S b)) }
+
+    instance isGroupoidEquivalence [IsEquivalence R] [IsEquivalence S]
+                                   [HasTransFun R] [HasTransFun S]
+                                   [hR : IsGroupoidEquivalence R] [hS : IsGroupoidEquivalence S] :
+      IsGroupoidEquivalence (productRelation R S) :=
+    { leftInv  := λ {a b} f => introCongrArg (cancelLeftInv (fst f) (hasSymm.fstEq R S f))
+                                             (cancelLeftInv (snd f) (hasSymm.sndEq R S f)),
+      rightInv := λ {a b} f => introCongrArg (cancelRightInv (fst f) (hasSymm.fstEq R S f))
+                                             (cancelRightInv (snd f) (hasSymm.sndEq R S f)) }
+
+  end productRelation
 
 end MetaRelation
 
@@ -493,6 +540,48 @@ namespace MetaFunctor
 
   end symmFun
 
+  namespace unitRelation
+
+    variable (α : Sort u) {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             [HasInternalTop V] {C : V} (c : C)
+
+    def metaFunctor :
+      MetaFunctor (constFun.constRelation α (HasTop.top V)) (constFun.constRelation α c) :=
+    ⟨λ _ _ => HasInternalTop.elimFun c⟩
+
+    instance isReflFunctor  : IsReflFunctor  (metaFunctor α c) := ⟨λ _   => byDef⟩
+    instance isSymmFunctor  : IsSymmFunctor  (metaFunctor α c) := ⟨λ _   => byDef⟩
+    instance isTransFunctor : IsTransFunctor (metaFunctor α c) := ⟨λ _ _ => byDef⟩
+
+    instance isPreorderFunctor    : IsPreorderFunctor    (metaFunctor α c) := ⟨⟩
+    instance isEquivalenceFunctor : IsEquivalenceFunctor (metaFunctor α c) := ⟨⟩
+
+  end unitRelation
+
+  namespace emptyRelation
+
+    open IsGroupoidEquivalence
+
+    variable {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+             (S : MetaRelation PEmpty.{u} V)
+
+    def metaFunctor : MetaFunctor (MetaRelation.emptyRelation.{u} V) (S) :=
+    ⟨λ e _ => PEmpty.elim e⟩
+
+    instance isReflFunctor [HasRefl S] : IsReflFunctor (metaFunctor S) :=
+    ⟨λ e => PEmpty.elim e⟩
+
+    instance isSymmFunctor [HasSymm S] : IsSymmFunctor (metaFunctor S) :=
+    ⟨λ {e _} _ => PEmpty.elim e⟩
+
+    instance isTransFunctor [HasTrans S] : IsTransFunctor (metaFunctor S) :=
+    ⟨λ {e _ _} _ _ => PEmpty.elim e⟩
+
+    instance isPreorderFunctor    [IsPreorder    S] : IsPreorderFunctor    (metaFunctor S) := ⟨⟩
+    instance isEquivalenceFunctor [IsEquivalence S] : IsEquivalenceFunctor (metaFunctor S) := ⟨⟩
+
+  end emptyRelation
+
   @[reducible] def PreFunctor {α : Sort u} {β : Sort u'} {V : Universe.{v}}
                               {W : Universe.{w}} {VW : Universe.{vw}} [HasFunctors V W VW]
                               (R : MetaRelation α V) (S : MetaRelation β W) (φ : α → β) :=
@@ -574,6 +663,56 @@ namespace MetaFunctor
       instance isEquivalenceFunctor [IsEquivalence R] [IsEquivalence S] [IsEquivalence T] [HasSymmFun T] [HasTransFun T] [IsEquivalenceFunctor F] [IsEquivalenceFunctor G] : IsEquivalenceFunctor (preFunctor F G) := inferInstance
 
     end compFun
+
+    namespace unitRelation
+
+      variable (α : Sort u) {β : Sort u'} {V : Universe.{v}} [HasIdentity.{v, iv} V]
+               [HasInternalFunctors V] [HasInternalTop V] (S : MetaRelation β V) (c : β)
+
+      def preFunctor [HasRefl S] :
+        PreFunctor (constFun.constRelation α (HasTop.top V)) S (Function.const α c) :=
+      unitRelation.metaFunctor α (HasRefl.refl c)
+
+      instance isReflFunctor [HasRefl S] : IsReflFunctor (preFunctor α S c) :=
+      MetaFunctor.unitRelation.isReflFunctor α (HasRefl.refl c)
+
+      variable [HasCongrFun V V]
+
+      instance isSymmFunctor [IsEquivalence S] [IsGroupoidEquivalence S] [HasSymmFun S] [HasTransFun S] :
+        IsSymmFunctor (preFunctor α S c) :=
+      ⟨λ _ => (IsGroupoidEquivalence.reflInv c • congrArgSymm byDef)⁻¹ • byDef⟩
+
+      instance isTransFunctor [IsPreorder S] [IsCategoricalPreorder S] [HasTransFun S] :
+        IsTransFunctor (preFunctor α S c) :=
+      ⟨λ _ _ => (IsCategoricalPreorder.leftId (HasRefl.refl c) •
+                 congrArgTrans byDef byDef)⁻¹ •
+                byDef⟩
+
+      instance isPreorderFunctor[IsPreorder S] [IsCategoricalPreorder S] [HasTransFun S] :
+        IsPreorderFunctor (preFunctor α S c) :=
+      ⟨⟩
+
+      instance isEquivalenceFunctor [IsEquivalence S] [IsGroupoidEquivalence S] [HasSymmFun S] [HasTransFun S] :
+        IsEquivalenceFunctor (preFunctor α S c) :=
+      ⟨⟩
+
+    end unitRelation
+
+    namespace emptyRelation
+
+      variable {β : Sort u'} {V : Universe.{v}} [HasIdentity.{v, iv} V] [HasInternalFunctors V]
+               (S : MetaRelation β V)
+
+      @[reducible] def preFunctor : PreFunctor (MetaRelation.emptyRelation.{u} V) S PEmpty.elim :=
+      emptyRelation.metaFunctor (MetaRelation.lift S PEmpty.elim)
+
+      instance isReflFunctor [HasRefl S] : IsReflFunctor (preFunctor.{u} S) := inferInstance
+      instance isSymmFunctor [HasSymm S] : IsSymmFunctor (preFunctor.{u} S) := inferInstance
+      instance isTransFunctor [HasTrans S] : IsTransFunctor (preFunctor.{u} S) := inferInstance
+      instance isPreorderFunctor [IsPreorder S] : IsPreorderFunctor (preFunctor.{u} S) := inferInstance
+      instance isEquivalenceFunctor [IsEquivalence S] : IsEquivalenceFunctor (preFunctor.{u} S) := inferInstance
+
+    end emptyRelation
 
   end PreFunctor
 
@@ -696,12 +835,12 @@ namespace MetaQuantification
                     {φ ψ : α → β} {F : PreFunctor R S φ} {G : PreFunctor R S ψ}
                     (η : MetaQuantification S φ ψ) [hη : IsNatural F G η] :
         IsNatural G F (MetaQuantification.symm S η) :=
-      ⟨λ {a b} f => cancelLeftInv (F f • (η a)⁻¹) (η b) •
+      ⟨λ {a b} f => cancelLeft (F f • (η a)⁻¹) (η b) •
                     congrArgTransRight (assoc (η a)⁻¹ (F f) (η b)) (η b)⁻¹ •
                     assoc (η a)⁻¹ (η b • F f) (η b)⁻¹ •
                     congrArgTransLeft (η a)⁻¹ (congrArgTransRight (hη.nat f)⁻¹ (η b)⁻¹ •
                                                assoc (η a) (G f) (η b)⁻¹) •
-                    (cancelRightInv (η a) ((η b)⁻¹ • G f))⁻¹⟩
+                    (cancelRight (η a) ((η b)⁻¹ • G f))⁻¹⟩
 
       instance trans [HasTrans S] [IsAssociative S] [HasTransFun S] {φ ψ χ : α → β}
                      {F : PreFunctor R S φ} {G : PreFunctor R S ψ} {H : PreFunctor R S χ}

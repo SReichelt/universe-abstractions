@@ -203,9 +203,9 @@ namespace HasEquivalences
 
   end
 
-  structure DefEquiv (A : U) (B : V) (e : A ⮂ B)
-                     [HasIdentity UV] [HasIdentity VU] where
-  (E        : A ⟷ B)
+  -- Note: `invFunEq` is redundant but included anyway because it is often a reflexivity instance.
+  structure DefEquiv (A : U) (B : V) (e : A ⮂ B) [HasIdentity UV] [HasIdentity VU] where
+  (E       : A ⟷ B)
   (toFunEq  : toFun  E ≃ e.toFun)
   (invFunEq : invFun E ≃ e.invFun)
 
@@ -254,12 +254,12 @@ class HasInternalEquivalences (U : Universe.{u}) [HasIdentity U] [HasInternalFun
   extends HasEquivalences U U U where
 (defToFunFun (A B : U) : (A ⟷ B) ⟶{λ E => HasEquivalences.toFun E} (A ⟶ B))
 [isExt {A B : U} (E : A ⟷ B) : EquivDesc.IsExtensional (desc E)]
---(equivDescInj {A B : U} {E₁ E₂ : A ⟷ B} :
---   (desc E₁).toFun ≃ (desc E₂).toFun → E₁ ≃ E₂)
+(toFunInj {A B : U} {E₁ E₂ : A ⟷ B} :
+   HasEquivalences.toFun E₁ ≃ HasEquivalences.toFun E₂ → E₁ ≃ E₂)
 
 namespace HasInternalEquivalences
 
-  open MetaRelation HasFunctors HasLinearFunOp HasEquivalences
+  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasEquivalences
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasLinearFunOp U]
            [HasLinearFunExt U] [HasInternalEquivalences U]
@@ -279,6 +279,14 @@ namespace HasInternalEquivalences
   def leftInvExt  (E : A ⟷ B) : invFun E • toFun E ≃{▻ leftInv  E ◅} idFun A := (isExt E).leftExt.invExt
   def rightInvExt (E : A ⟷ B) : toFun E • invFun E ≃{▻ rightInv E ◅} idFun B := (isExt E).rightExt.invExt
 
+  def toFunCongrArg {E₁ E₂ : A ⟷ B} :
+    E₁ ≃ E₂ → HasEquivalences.toFun E₁ ≃ HasEquivalences.toFun E₂ :=
+  defCongrArg (defToFunFun A B)
+
+  def toCongrArg {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) (a : A) :
+    HasEquivalences.to E₁ a ≃ HasEquivalences.to E₂ a :=
+  congrFun (toFunCongrArg e) a
+
 end HasInternalEquivalences
 
 
@@ -295,7 +303,8 @@ class HasEquivOp (U : Universe.{u}) [HasIdentity U] [HasInternalFunctors U]
 
 namespace HasEquivOp
 
-  open MetaRelation HasFunctors HasCongrArg HasLinearFunOp HasEquivalences HasInternalEquivalences
+  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasLinearFunExt
+       HasEquivalences HasInternalEquivalences
 
   section
 
@@ -312,6 +321,29 @@ namespace HasEquivOp
       trans := trans }
 
     instance hasEquivalenceRelation : HasEquivalenceRelation U U := ⟨hEquiv.Equiv⟩
+
+    def reflToFunDef  (A : U) : toFun  (refl A) ≃ idFun A := byToFunDef
+    def reflInvFunDef (A : U) : invFun (refl A) ≃ idFun A := byInvFunDef
+
+    def symmToFunDef  {A B : U} (E : A ⟷ B) : toFun  E⁻¹ ≃ invFun E := byToFunDef
+    def symmInvFunDef {A B : U} (E : A ⟷ B) : invFun E⁻¹ ≃ toFun  E := byInvFunDef
+
+    def transToFunDef  {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : toFun  (F • E) ≃ toFun  F • toFun  E := byToFunDef
+    def transInvFunDef {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : invFun (F • E) ≃ invFun E • invFun F := byInvFunDef
+
+    -- TODO: Define all laws.
+    -- TODO: Use category theory (e.g. `IsGroupoidEquivalence`) instead?
+
+    def symmRefl (A : U) : (refl A)⁻¹ ≃ refl A :=
+    toFunInj ((reflToFunDef A)⁻¹ • reflInvFunDef A • symmToFunDef (refl A))
+
+    def transRefl {A B : U} (E : A ⟷ B) : E • refl A ≃ E :=
+    toFunInj (rightId (toFun E) •
+              defCongrArg (defRevCompFunFun A (toFun E)) (reflToFunDef A) •
+              transToFunDef (refl A) E)
+
+    def transReflRefl (A : U) : refl A • refl A ≃ refl A :=
+    transRefl (refl A)
 
   end
 
@@ -348,6 +380,14 @@ namespace HasEquivOp
     { F := invFunFun A B,
       a := E,
       e := byDef }
+
+    def invFunCongrArg {E₁ E₂ : A ⟷ B} :
+      E₁ ≃ E₂ → HasEquivalences.invFun E₁ ≃ HasEquivalences.invFun E₂ :=
+    defCongrArg (defInvFunFun A B)
+
+    def invCongrArg {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) (b : B) :
+      HasEquivalences.inv E₁ b ≃ HasEquivalences.inv E₂ b :=
+    congrFun (invFunCongrArg e) b
 
   end HasEquivOpFun
 
@@ -390,12 +430,6 @@ namespace DependentEquivalence
     a ≃[F • E] c :=
   compIndDep e f • byDef • byToDef
 
-  def fromEq {A : U} {a₁ a₂ : A} (e : a₁ ≃ a₂) : a₁ ≃[HasRefl.refl A] a₂ :=
-  e •' refl a₁
-
-  def toEq {A : U} {a₁ a₂ : A} (e : a₁ ≃[HasRefl.refl A] a₂) : a₁ ≃ a₂ :=
-  e •' (refl a₁)⁻¹
-
   instance isDependentEquivalence : IsDependentEquivalence (R := hEquiv.Equiv) DependentEquivalence :=
   { refl  := refl,
     symm  := symm
@@ -406,6 +440,16 @@ namespace DependentEquivalence
   -- specifically for `DependentEquivalence`.
   notation:90 g:91 " [•] " f:90 => DependentEquivalence.trans f g
   postfix:max "[⁻¹]" => DependentEquivalence.symm
+
+  def fromEq {A : U} {a₁ a₂ : A} (e : a₁ ≃ a₂) : a₁ ≃[HasRefl.refl A] a₂ :=
+  e •' refl a₁
+
+  def toEq {A : U} {a₁ a₂ : A} (e : a₁ ≃[HasRefl.refl A] a₂) : a₁ ≃ a₂ :=
+  e •' (refl a₁)⁻¹
+
+  def cast {A B : U} {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) {a : A} {b : B} :
+    a ≃[E₁] b → a ≃[E₂] b :=
+  λ f => f • (toCongrArg e a)⁻¹
 
 end DependentEquivalence
 
@@ -426,28 +470,40 @@ namespace HasTypeIdentity
 
   open HasFunctors HasLinearFunOp HasEquivalences HasEquivOp
 
-  variable {U : Universe} [HasTypeIdentity U]
+  section
 
-  instance : HasIdentity             U := hasIdentity
-  instance : HasInternalFunctors     U := hasInternalFunctors
-  instance : HasLinearFunOp          U := hasLinearFunOp
-  instance : HasLinearFunExt         U := hasLinearFunExt
-  instance : HasInternalEquivalences U := hasInternalEquivalences
-  instance : HasEquivOp              U := hasEquivOp
+    variable (U : Universe) [h : HasTypeIdentity U]
 
-  instance typeEquivalences : HasInstanceEquivalences {U} U := ⟨λ _ => hasEquivalenceRelation⟩
+    instance : HasIdentity             U := h.hasIdentity
+    instance : HasInternalFunctors     U := h.hasInternalFunctors
+    instance : HasLinearFunOp          U := h.hasLinearFunOp
+    instance : HasLinearFunExt         U := h.hasLinearFunExt
+    instance : HasInternalEquivalences U := h.hasInternalEquivalences
+    instance : HasEquivOp              U := h.hasEquivOp
 
-  def castTo  {A B : U} (E : A ≃ B) (a : A) : B := to  E a
-  def castInv {A B : U} (E : A ≃ B) (b : B) : A := inv E b
+    instance typeEquivalences : HasInstanceEquivalences {U} U := ⟨λ _ => hasEquivalenceRelation⟩
 
-  def castToDef  {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → U}
-                 {φ : B ⟶{f} ⌊U⌋} {b : B} (a : ⌈⸥(fromDefFun φ) b⸤⌉) :
-    f b :=
-  castTo  byDef a
+    instance : HasIdentity (HasIdentity.univ {U}) := h.hasIdentity
 
-  def castInvDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → U}
-                 {φ : B ⟶{f} ⌊U⌋} {b : B} (a : f b) :
-    ⌈⸥(fromDefFun φ) b⸤⌉ :=
-  castInv byDef a
+  end
+
+  section
+
+    variable {U : Universe} [HasTypeIdentity U]
+
+    def castTo  {A B : U} (E : A ≃ B) (a : A) : B := to  E a
+    def castInv {A B : U} (E : A ≃ B) (b : B) : A := inv E b
+
+    def castToDef  {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → U}
+                   {φ : B ⟶{f} ⌊U⌋} {b : B} (a : ⌈⸥(fromDefFun φ) b⸤⌉) :
+      f b :=
+    castTo  byDef a
+
+    def castInvDef {V VpU : Universe} [HasFunctors V {U} VpU] {B : V} {f : B → U}
+                   {φ : B ⟶{f} ⌊U⌋} {b : B} (a : f b) :
+      ⌈⸥(fromDefFun φ) b⸤⌉ :=
+    castInv byDef a
+
+  end
 
 end HasTypeIdentity

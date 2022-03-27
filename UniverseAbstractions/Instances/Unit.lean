@@ -133,12 +133,20 @@ namespace unit
   instance hasTrivialInPropertyCondition (U : Universe.{u}) : HasTrivialFunctoriality U {unit} :=
   ⟨λ _ => HasTrivialIdentity.defFun inst⟩
 
-  instance (priority := high) hasDependentInFunctors (U : Universe.{u}) : HasDependentFunctors U unit unit :=
+  instance (priority := high) hasDependentInFunctors (U : Universe.{u}) :
+    HasDependentFunctors U unit unit :=
   { Pi    := λ _   => Inst,
     apply := λ _ _ => inst }
 
-  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) : HasTrivialDependentFunctoriality U unit :=
+  instance hasTrivialDependentInFunctoriality (U : Universe.{u}) :
+    HasTrivialDependentFunctoriality U unit :=
   ⟨λ _ => HasTrivialIdentity.defPi inst⟩
+
+  instance hasOutPropCongrArg (V : Universe.{v}) [HasTypeIdentity V] :
+    HasPropCongrArg unit V :=
+  { congrArgReflEq  := λ     φ         _   => HasInstanceEquivalences.refl (HasEquivOp.refl (φ inst)),
+    congrArgSymmEq  := λ {_} φ {_ _}   _   => (HasEquivOp.symmRefl (φ inst))⁻¹,
+    congrArgTransEq := λ {_} φ {_ _ _} _ _ => (HasEquivOp.transReflRefl (φ inst))⁻¹ }
 
   instance hasDependentOutFunctors (V : Universe.{v}) : HasDependentFunctors unit V V :=
   { Pi    := λ φ   => φ inst,
@@ -146,10 +154,11 @@ namespace unit
 
   instance hasTrivialDependentOutFunctoriality (V : Universe.{v}) [HasTypeIdentity V] :
     HasTrivialDependentFunctoriality unit V :=
-  ⟨λ {_ _ φ} f => { F   := HasEquivalences.invFun (φ.eff inst) (f inst),
-                    eff := λ _ => HasEquivalences.rightInv (φ.eff inst) (f inst) }⟩
+  ⟨λ f => { F   := f inst,
+            eff := λ _ => DependentEquivalence.refl (f inst) }⟩
 
-  instance hasDependentOutCongrArg (V : Universe.{v}) [HasTypeIdentity V] : HasDependentCongrArg unit V :=
+  instance hasDependentOutCongrArg (V : Universe.{v}) [HasTypeIdentity V] :
+    HasDependentCongrArg unit V :=
   ⟨λ {_ _} f {_ _} _ => DependentEquivalence.refl (f inst)⟩
 
   -- Same for dependent products.

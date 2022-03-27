@@ -15,6 +15,9 @@ import UniverseAbstractions.Axioms.Universe.Functors
 import UniverseAbstractions.Axioms.Universe.FunctorExtensionality
 import UniverseAbstractions.Axioms.Universe.Products
 import UniverseAbstractions.Axioms.Universe.Equivalences
+import UniverseAbstractions.Axioms.Universe.DependentTypes.Properties
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentFunctors
+import UniverseAbstractions.Axioms.Universe.DependentTypes.DependentProducts
 import UniverseAbstractions.Instances.Utils.Bundled
 import UniverseAbstractions.Instances.Utils.Trivial
 import UniverseAbstractions.Instances.Sort
@@ -22,21 +25,29 @@ import UniverseAbstractions.Instances.Sort
 
 
 set_option autoBoundImplicitLocal false
+set_option synthInstance.maxHeartbeats 4000
 --set_option pp.universes true
 
-universe u v w w'
+universe u v w w' upv
 
 
 
 namespace Setoid
 
-  open Bundled MetaRelation HasFunctors HasCongrArg HasCongrFun HasLinearFunOp
+  open Bundled MetaRelation HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasPropCongrArg
 
   def typeClass : SimpleTypeClass.{u, max 1 u} := Setoid.{u}
   @[reducible] def univ : Universe.{u, u + 1} := Bundled.univ typeClass.{u}
   @[reducible] def tuniv := univ.{max 1 u}
 
   instance inst (A : univ.{u}) : Setoid.{u} A := A.inst
+
+  def lift {α : Sort u} {ω : Sort w} (s : Setoid α) (l : ω → α) :
+    Setoid ω :=
+  { r     := λ a b => l a ≈ l b,
+    iseqv := { refl  := λ a   => Setoid.refl  (l a),
+               symm  := λ h   => Setoid.symm  h,
+               trans := λ h i => Setoid.trans h i } }
 
   -- Instance equivalences
 
@@ -48,6 +59,20 @@ namespace Setoid
 
   -- Functors
 
+  def FunctionEquiv {α : Sort u} {φ : α → univ} (f₁ f₂ : ∀ a, φ a) : Prop :=
+  ∀ a, f₁ a ≈ f₂ a
+
+  instance functionSetoid {α : Sort u} (φ : α → univ.{v}) :
+    Setoid.{imax u v} (∀ a, φ a) :=
+  { r     := FunctionEquiv,
+    iseqv := { refl  := λ f   a => (inst (φ a)).refl  (f a),
+               symm  := λ h   a => (inst (φ a)).symm  (h a),
+               trans := λ h i a => (inst (φ a)).trans (h a) (i a) } }
+
+  instance biFunctionSetoid {α : Sort u} {β : Sort v} (φ : α → β → univ.{w}) :
+    Setoid.{imax u v w} (∀ a b, φ a b) :=
+  inferInstance
+
   def IsFun {U : Universe} [HasIdentity U] {A : U} {B : univ} (f : A → B) : Prop :=
   ∀ {a₁ a₂ : A}, a₁ ≃ a₂ → f a₁ ≈ f a₂
 
@@ -58,15 +83,9 @@ namespace Setoid
   instance hasFunctoriality (U : Universe.{u}) [HasIdentity U] :
   HasFunctoriality U univ.{v} := ⟨IsFun⟩
 
-  def FunEquiv {α : Sort u} {φ : α → univ} (f₁ f₂ : ∀ a, φ a) : Prop :=
-  ∀ a, f₁ a ≈ f₂ a
-
   instance funSetoid {U : Universe.{u}} [HasIdentity U] (A : U) (B : univ.{v}) :
     Setoid.{max 1 u v} (HasFunctoriality.Fun A B) :=
-  { r     := λ F₁ F₂ => FunEquiv F₁.f F₂.f,
-    iseqv := { refl  := λ F   a => (inst B).refl  (F.f a),
-               symm  := λ h   a => (inst B).symm  (h a),
-               trans := λ h i a => (inst B).trans (h a) (i a) } }
+  lift (functionSetoid (Function.const A B)) HasFunctoriality.Fun.f
 
   instance hasFunctorialityInstances (U : Universe.{u}) [HasIdentity U] :
     HasFunctorialityInstances U univ.{v} typeClass.{max 1 u v} :=
@@ -291,17 +310,21 @@ namespace Setoid
 
   -- Products
 
-  instance prodSetoid (A : univ.{u}) (B : univ.{v}) : Setoid.{max 1 u v} (PProd A B) :=
+  instance productSetoid (α : Sort u) (β : Sort v) [Setoid α] [Setoid β] :
+    Setoid.{max 1 u v} (PProd α β) :=
   { r     := λ p₁ p₂ => p₁.fst ≈ p₂.fst ∧ p₁.snd ≈ p₂.snd,
     iseqv := { refl  := λ p   => ⟨Setoid.refl  p.fst,         Setoid.refl  p.snd⟩,
                symm  := λ h   => ⟨Setoid.symm  h.left,        Setoid.symm  h.right⟩,
                trans := λ h i => ⟨Setoid.trans h.left i.left, Setoid.trans h.right i.right⟩ } }
 
+  instance prodSetoid (A : univ.{u}) (B : univ.{v}) : Setoid.{max 1 u v} (PProd A B) :=
+  productSetoid A B
+
   instance hasProductInstances : HasProductInstances univ.{u} univ.{v} typeClass.{max 1 u v} :=
   ⟨prodSetoid⟩
 
   instance hasProductEq : HasProducts.HasProductEq univ.{u} univ.{v} :=
-  { introEq := λ p   => ⟨Setoid.refl p.fst, Setoid.refl p.snd⟩,
+  { introEq := λ p   => Setoid.refl p,
     fstEq   := λ a b => Setoid.refl a,
     sndEq   := λ a b => Setoid.refl b }
 
@@ -314,10 +337,7 @@ namespace Setoid
   -- Equivalences
 
   instance equivSetoid (A : univ.{u}) (B : univ.{v}) : Setoid.{max 1 u v} (A ⮂ B) :=
-  { r     := λ e₁ e₂ => e₁.toFun ≈ e₂.toFun,
-    iseqv := { refl  := λ e   => Setoid.refl  e.toFun,
-               symm  := λ h   => Setoid.symm  h,
-               trans := λ h i => Setoid.trans h i } }
+  lift (funSetoid A B) EquivDesc.toFun
 
   instance hasEquivalenceInstances :
     HasEquivalenceInstances univ.{u} univ.{v} typeClass.{max 1 u v} :=
@@ -327,11 +347,91 @@ namespace Setoid
 
   instance hasInternalEquivalences : HasInternalEquivalences tuniv.{u} :=
   { defToFunFun := λ A B => defFun id,
-    isExt       := HasTrivialExtensionality.equivDescExt tuniv.{u} }
+    isExt       := HasTrivialExtensionality.equivDescExt tuniv.{u},
+    toFunInj    := id }
 
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition tuniv.{u} :=
   ⟨λ e => { E        := e,
             toFunEq  := Setoid.refl e.toFun,
             invFunEq := Setoid.refl e.invFun }⟩
+
+  -- Dependent functors
+
+  instance hasTypeIdentity : HasTypeIdentity tuniv.{u} := ⟨⟩
+
+  def IsPi {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+           [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}]
+           {A : U} {φ : A ⟶ ⌊tuniv.{v}⌋} (f : HasFunctors.Pi φ) :
+    Prop :=
+  ∀ {a₁ a₂ : A} (e : a₁ ≃ a₂), f a₁ ≃[propCongrArg φ e] f a₂
+
+  instance hasDependentFunctoriality (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+                                     [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}] :
+  HasDependentFunctoriality U tuniv.{v} := ⟨IsPi⟩
+
+  instance piSetoid {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+                    [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}]
+                    {A : U} (φ : A ⟶ ⌊tuniv.{v}⌋) :
+    Setoid.{max 1 u v} (HasDependentFunctoriality.Pi φ) :=
+  lift (functionSetoid (HasFunctors.apply φ)) HasDependentFunctoriality.Pi.f
+
+  instance hasDependentFunctorialityInstances (U : Universe.{u}) {UpV : Universe.{upv}}
+                                              [HasIdentity U] [HasFunctors U {tuniv.{v}} UpV]
+                                              [HasPropCongrArg U tuniv.{v}] :
+    HasDependentFunctorialityInstances U tuniv.{v} typeClass.{max 1 u v} :=
+  ⟨piSetoid⟩
+
+  instance hasDependentCongrArg (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+                                [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}] :
+    HasDependentCongrArg U tuniv.{v} :=
+  ⟨HasDependentFunctoriality.Pi.isFun⟩
+
+  -- Lean bug :-(
+  noncomputable def defInPi {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+                            [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}]
+                            {A : U} {φ : A ⟶ ⌊tuniv.{v}⌋} (f : HasFunctors.Pi φ) (isFun : IsPi f) :
+    Π{f} (HasFunctors.toDefFun φ) :=
+  Bundled.HasDependentFunctorialityInstances.defPi isFun
+
+  -- Dependent products
+
+  instance sigmaSetoid {U : Universe.{u}} {UpV : Universe.{upv}} [HasIdentity U]
+                       [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}]
+                       {A : U} (φ : A ⟶ ⌊tuniv.{v}⌋) :
+    Setoid.{max 1 u v} (PSigma (λ a => φ a)) :=
+  { r     := λ p₁ p₂ => ∃ e : p₁.fst ≃ p₂.fst, ⌈p₁.snd ≃[propCongrArg φ e] p₂.snd⌉,
+    iseqv := { refl  := λ p             => ⟨HasInstanceEquivalences.refl p.fst,
+                                            DependentEquivalence.depCongrArgRefl  p.snd⟩,
+               symm  := λ ⟨e, h⟩        => ⟨e⁻¹,
+                                            DependentEquivalence.depCongrArgSymm  h⟩,
+               trans := λ ⟨e, h⟩ ⟨f, i⟩ => ⟨f • e,
+                                            DependentEquivalence.depCongrArgTrans h i⟩ } }
+
+  instance hasDependentProductInstances (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+                                        [HasFunctors U {tuniv.{v}} UpV]
+                                        [HasPropCongrArg U tuniv.{v}] :
+    HasDependentProductInstances U tuniv.{v} typeClass.{max 1 u v} :=
+  ⟨sigmaSetoid⟩
+
+  instance hasDependentProducts (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+                                [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}] :
+    HasDependentProducts U tuniv.{v} tuniv.{max u v} :=
+  Bundled.hasDependentProducts U tuniv.{v}
+
+  instance hasDependentProductEq (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+                                 [HasFunctors U {tuniv.{v}} UpV] [HasPropCongrArg U tuniv.{v}] :
+    HasDependentProducts.HasDependentProductEq U tuniv.{v} :=
+  { introEq := λ p   => Setoid.refl p,
+    fstEq   := λ a b => HasInstanceEquivalences.refl a,
+    sndEq   := λ a b => DependentEquivalence.depCongrArgRefl b }
+
+  -- TODO
+  --instance hasInternalDependentProducts (U : Universe.{u}) {UpV : Universe.{upv}} [HasIdentity U]
+  --                                      [HasFunctors U {tuniv.{u}} UpV] [HasPropCongrArg U tuniv.{u}] :
+  --  HasInternalDependentProducts U tuniv.{u} :=
+  --{ defIntroFun    := λ a B   => defFun (λ h   => ⟨Setoid.refl a, h⟩),
+  --  defIntroFunFun := λ A B   => defFun (λ h b => ⟨h, Setoid.refl b⟩),
+  --  defElimFun     := λ F     => defFun (λ h   => isFun₂ F h.left h.right),
+  --  defElimFunFun  := λ A B C => defFun (λ h p => h p.fst p.snd) }
 
 end Setoid

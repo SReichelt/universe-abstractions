@@ -13,8 +13,8 @@ universe u v w w'
 -- its instances can be regarded as types.
 -- * The canonical instance of `HasInstances` is `Sort u` itself (with `Prop` as a special case),
 --   as defined below as `sortHasInstances`.
--- * Another common case is `Bundled φ` (see below) for a type class `φ : Sort u → Sort v` (say,
---   `Group`, `Ring`, `Category`, etc.). I.e., for a given `A : Bundled φ`, we can treat `A` as a
+-- * Another common case is `Bundled Φ` (see below) for a type class `Φ : Sort u → Sort v` (say,
+--   `Group`, `Ring`, `Category`, etc.). I.e., for a given `A : Bundled Φ`, we can treat `A` as a
 --   type.
 --
 -- `I` can be considered an index type, where each index stands for a type.
@@ -38,19 +38,19 @@ end HasInstances
 
 
 
--- For a type class `φ : α → Sort w`, we can define a "bundled instance" `S : Bundled φ` as a
--- dependent pair of an `a : α` and `inst : φ α`.
+-- For a type class `Φ : α → Sort w`, we can define a "bundled instance" `S : Bundled Φ` as a
+-- dependent pair of an `a : α` and `inst : Φ α`.
 -- The most important use case is that if `a` is a type (i.e. we have `HasInstances α`), we can
 -- treat `S` as a type by "forgetting" `inst`.
 
-structure Bundled {α : Sort u} (φ : α → Sort v) : Sort (max 1 u v) where
+structure Bundled {α : Sort u} (Φ : α → Sort v) : Sort (max 1 u v) where
 (a    : α)
-[inst : φ a]
+[inst : Φ a]
 
 namespace Bundled
 
-  instance hasInstances {I : Sort v} [HasInstances.{u, v} I] (φ : I → Sort w) :
-    HasInstances.{u, max 1 v w} (Bundled φ) :=
+  instance hasInstances {I : Sort v} [HasInstances.{u, v} I] (Φ : I → Sort w) :
+    HasInstances.{u, max 1 v w} (Bundled Φ) :=
   ⟨λ S => S.a⟩
 
 end Bundled
@@ -59,7 +59,7 @@ end Bundled
 
 -- An abstract "universe" type that enriches the Lean universe `u` with additional information.
 -- This is just a bundled version of `HasInstances` itself. I.e. everything which satisfies
--- `HasInstances` (such as `Sort u` and any `Bundled φ`, see above) can be considered as a
+-- `HasInstances` (such as `Sort u` and any `Bundled Φ`, see above) can be considered as a
 -- `Universe`.
 --
 -- A `Universe` on its own is usually not very useful, but can have additional structure defined as
@@ -94,12 +94,12 @@ def unit : Universe.{0, 0} := ⟨True⟩
 
 namespace Bundled
 
-  def univ {U : Universe.{u, v}} (φ : U → Sort w) : Universe.{u, max 1 v w} :=
-  ⟨Bundled φ⟩
+  def univ {U : Universe.{u, v}} (Φ : U → Sort w) : Universe.{u, max 1 v w} :=
+  ⟨Bundled Φ⟩
 
-  def univ.inst {U : Universe.{u, v}} {φ : U → Sort w} (A : univ φ) : φ A.a := A.inst
+  def univ.inst {U : Universe.{u, v}} {Φ : U → Sort w} (A : univ Φ) : Φ A.a := A.inst
 
-  def type {U : Universe.{u, v}} {φ : U → Sort w} {A : U} (inst : φ A) : univ φ :=
+  def type {U : Universe.{u, v}} {Φ : U → Sort w} {A : U} (inst : Φ A) : univ Φ :=
   { a    := A,
     inst := inst }
 
@@ -111,10 +111,10 @@ def UniverseClass := Universe.univ.{u, v} → Sort w
 
 namespace UniverseClass
 
-  def univ (φ : UniverseClass.{u, v, w}) : Universe.{v, max 1 (u + 1) (v + 1) w} :=
-  Bundled.univ φ
+  def univ (Φ : UniverseClass.{u, v, w}) : Universe.{v, max 1 (u + 1) (v + 1) w} :=
+  Bundled.univ Φ
 
-  instance {φ : UniverseClass.{u, v, w}} (U : univ φ) : HasInstances.{u, v} U :=
+  instance {Φ : UniverseClass.{u, v, w}} (U : univ Φ) : HasInstances.{u, v} U :=
   Universe.instInst U.a
 
 end UniverseClass

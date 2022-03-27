@@ -40,7 +40,7 @@ namespace Setoid.IsHomUniverse
   instance catDescSetoid {U : Universe.{u}} (R : BundledRelation U homUniv.{u, w}) :
     Setoid.{max 1 u w} (CatDesc R) :=
   { r     := CatDescEquiv,
-    iseqv := { refl  := λ C   => ⟨λ a   => Setoid.refl  (C.homIsPreorder.refl a),
+    iseqv := { refl  := λ C   => ⟨λ a   => Setoid.refl  (C.homIsPreorder.refl  a),
                                   λ f g => Setoid.refl  (C.homIsPreorder.trans f g)⟩,
                symm  := λ h   => ⟨λ a   => Setoid.symm  (h.reflEq  a),
                                   λ f g => Setoid.symm  (h.transEq f g)⟩,
@@ -72,10 +72,7 @@ namespace Setoid.IsHomUniverse
     variable {U : Universe.{u}}
 
     instance isoDescSetoid {A : Cat.{u, w} U} (a b : A) : Setoid.{max 1 u w} (IsoDesc a b) :=
-    { r     := λ e₁ e₂ => e₁.toHom ≈ e₂.toHom,
-      iseqv := { refl  := λ e   => Setoid.refl  e.toHom,
-                 symm  := λ h   => Setoid.symm  h,
-                 trans := λ h i => Setoid.trans h i } }
+    lift (inst (a ⇾ b)) IsoDesc.toHom
 
     def IsoRel (A : Cat.{u, w} U) : MetaRelation A homUniv.{u, w} :=
     λ a b => { a    := IsoDesc       a b,
@@ -116,16 +113,9 @@ namespace Setoid.IsHomUniverse
 
     variable {U V : Universe.{u}}
 
-    structure FunDescEquiv {A : Cat.{u, w} U} {B : Cat.{u, w} V} (φ : A → B) (F G : FunDesc φ) :
-      Prop where
-    (eq (a b : A) : F.F.baseFun a b ≈ G.F.baseFun a b)
-
     instance funDescSetoid {A : Cat.{u, w} U} {B : Cat.{u, w} V} (φ : A → B) :
       Setoid.{max 1 u w} (FunDesc φ) :=
-    { r     := FunDescEquiv φ,
-      iseqv := { refl  := λ F   => ⟨λ a b => Setoid.refl  (F.F.baseFun a b)⟩,
-                 symm  := λ h   => ⟨λ a b => Setoid.symm  (h.eq a b)⟩,
-                 trans := λ h i => ⟨λ a b => Setoid.trans (h.eq a b) (i.eq a b)⟩ } }
+    lift (biFunctionSetoid (λ a b => (a ⇾ b) ⟶ (φ a ⇾ φ b))) (λ F => F.F.baseFun)
 
     def FunProp (A : Cat.{u, w} U) (B : Cat.{u, w} V) : MetaProperty (A → B) homUniv.{u, w} :=
     λ φ => { a    := FunDesc       φ,
@@ -186,16 +176,9 @@ namespace Setoid.IsHomUniverse
 
     variable {U V : Universe.{u}}
 
-    structure NatDescEquiv {A : Cat.{u, w} U} {B : Cat.{u, w} V} (F G : A ⮕ B) (η ε : NatDesc F G) :
-      Prop where
-    (eq (a : A) : η.η a ≈ ε.η a)
-
     instance natDescSetoid {A : Cat.{u, w} U} {B : Cat.{u, w} V} (F G : A ⮕ B) :
       Setoid.{max 1 u w} (NatDesc F G) :=
-    { r     := NatDescEquiv F G,
-      iseqv := { refl  := λ η   => ⟨λ a => Setoid.refl  (η.η a)⟩,
-                 symm  := λ h   => ⟨λ a => Setoid.symm  (h.eq a)⟩,
-                 trans := λ h i => ⟨λ a => Setoid.trans (h.eq a) (i.eq a)⟩ } }
+    lift (functionSetoid (λ a => F a ⇾ G a)) NatDesc.η
 
     def NatRel (A : Cat.{u, w} U) (B : Cat.{u, w} V) : MetaRelation (A ⮕ B) homUniv.{u, w} :=
     λ F G => { a    := NatDesc       F G,
@@ -204,7 +187,7 @@ namespace Setoid.IsHomUniverse
     instance hasNaturalityRelation (A : Cat.{u, w} U) (B : Cat.{u, w} V) : HasNatRel A B :=
     { Nat       := NatRel A B,
       desc      := id,
-      defNatFun := λ _ _ a => Setoid.defFun (λ h => h.eq a) }
+      defNatFun := λ _ _ a => Setoid.defFun (λ h => h a) }
 
     def defNat {A : Cat.{u, w} U} {B : Cat.{u, w} V} {F G : A ⮕ B} (η : NatDesc F G) :
       HasNatRel.DefNat η :=
@@ -217,7 +200,7 @@ namespace Setoid.IsHomUniverse
 
     instance hasTrivialNatEquiv (A : Cat.{u, w} U) (B : Cat.{u, w} V) :
       HasNatRel.HasTrivialNatEquiv A B :=
-    ⟨λ _ _ h => ⟨h⟩⟩
+    ⟨λ _ _ => id⟩
 
     instance natIsPreorder (A : Cat.{u, w} U) (B : Cat.{u, w} V) : IsPreorder (NatRel A B) :=
     HasNatOp.natIsPreorder A B
@@ -230,10 +213,10 @@ namespace Setoid.IsHomUniverse
     variable {U V : Universe.{u + 1}}
 
     noncomputable instance hasNaturality (A : Cat' U) (B : Cat' V) : HasNaturality A B :=
-    { natHasTransFun := { defTransFun    := λ η _ => Setoid.defFun (λ {ε₁ ε₂} h => ⟨λ a => have h₁ : ⌈ε₁.η a ≃ ε₂.η a⌉ := h.eq a;
-                                                                                           HasTransFun.congrArgTransLeft (η.η a) h₁⟩),
-                          defTransFunFun := λ _ _ _ => Setoid.defFun (λ {η₁ η₂} h ε => ⟨λ a => have h₂ : ⌈η₁.η a ≃ η₂.η a⌉ := h.eq a;
-                                                                                               HasTransFun.congrArgTransRight h₂ (ε.η a)⟩) },
+    { natHasTransFun := { defTransFun    := λ η _ => Setoid.defFun (λ {ε₁ ε₂} h a => have h₁ : ⌈ε₁.η a ≃ ε₂.η a⌉ := h a;
+                                                                                     HasTransFun.congrArgTransLeft (η.η a) h₁),
+                          defTransFunFun := λ _ _ _ => Setoid.defFun (λ {η₁ η₂} h ε a => have h₂ : ⌈η₁.η a ≃ η₂.η a⌉ := h a;
+                                                                                         HasTransFun.congrArgTransRight h₂ (ε.η a)) },
       defFunCat      := HasCatProp.HasTrivialCatProp.defCat }
 
     noncomputable instance hasIsoNat {A : Cat' U} {B : Cat' V} (F G : A ⮕' B) : HasIsoNat F G :=
@@ -278,7 +261,7 @@ namespace Setoid.IsHomUniverse
 
     noncomputable def defFunFunBase : HasNaturality.DefFunFunBase desc :=
     { defNat     := λ _     => HasNatRel.HasTrivialNaturalityCondition.defNat,
-      defNatFun  := λ a₁ a₂ => Setoid.defFun (λ h => ⟨λ b => HasCongrArg.defCongrArg (desc.defNatDescFun a₁ a₂ b) h⟩),
+      defNatFun  := λ a₁ a₂ => Setoid.defFun (λ h b => HasCongrArg.defCongrArg (desc.defNatDescFun a₁ a₂ b) h),
       natReflEq  := λ _     => HasNatRel.HasTrivialNatEquiv.natEquiv,
       natTransEq := λ _ _   => HasNatRel.HasTrivialNatEquiv.natEquiv }
 

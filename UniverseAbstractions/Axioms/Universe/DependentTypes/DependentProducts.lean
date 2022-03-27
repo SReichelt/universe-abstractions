@@ -23,14 +23,14 @@ class HasDependentProducts (U : Universe.{u}) (V : Universe.{v}) {UpV : Universe
 
 namespace HasDependentProducts
 
-  open HasFunctors HasCongrArg
+  open HasPropCongrArg
 
   notation:20 "Σ " φ:21 => HasDependentProducts.Sigma φ
   
   class HasDependentProductEq (U : Universe.{u}) (V : Universe.{v}) {UpV : Universe.{upv}}
                               [HasFunctors U {V} UpV] {UxV : Universe.{uv}}
                               [HasDependentProducts U V UxV] [HasIdentity U]
-                              [HasTypeIdentity V] [HasCongrArg U {V}] [HasIdentity UxV] where
+                              [HasTypeIdentity V] [HasPropCongrArg U V] [HasIdentity UxV] where
   (introEq {A : U} {φ : A ⟶ ⌊V⌋} (P : Σ φ)             : intro (fst P) (snd P) ≃ P)
   (fstEq   {A : U} {φ : A ⟶ ⌊V⌋} (a : A) (b : ⌈⸥φ a⸤⌉) : fst (intro a b) ≃ a)
   (sndEq   {A : U} {φ : A ⟶ ⌊V⌋} (a : A) (b : ⌈⸥φ a⸤⌉) : snd (intro a b) ≃[propCongrArg φ (fstEq a b)] b)

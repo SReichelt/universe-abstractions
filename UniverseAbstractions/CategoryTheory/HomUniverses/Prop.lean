@@ -7,6 +7,7 @@ import UniverseAbstractions.CategoryTheory.Functors.Basic
 import UniverseAbstractions.CategoryTheory.Functors.Nested
 import UniverseAbstractions.CategoryTheory.FunctorExtensionality
 import UniverseAbstractions.CategoryTheory.Utils.Trivial
+import UniverseAbstractions.Lemmas.FunctorCategory
 
 
 
@@ -270,5 +271,10 @@ namespace prop.IsHomUniverse
   noncomputable instance isSortNatUniverse.hasFullNatIso :
     IsSortNatUniverse.HasFullNatIso.{u} prop :=
   inferInstance
+
+  -- Type category
+
+  instance hasTypeCat : HasTypeCat prop :=
+  { defTypeCat := HasCatProp.HasTrivialCatProp.defCat }
 
 end prop.IsHomUniverse

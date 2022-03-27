@@ -176,7 +176,7 @@ class HasCongrFun (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [Ha
 
 namespace HasCongrFun
 
-  open HasFunctors
+  open HasFunctors HasCongrArg
 
   section
 
@@ -288,33 +288,53 @@ namespace HasCongrFun
 
   section
 
-    variable {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW] [HasIdentity W] [HasIdentity VW]
-             [HasCongrFun V W]
+    variable {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW] [HasIdentity W]
+             [HasIdentity VW] [HasCongrFun V W]
 
     def byFunDef {A : U} {B : V} {C : W} {f : A → (B ⟶ C)} {F : A ⟶{f} (B ⟶ C)} {a : A} {b : B} :
       (fromDefFun F) a b ≃ (f a) b :=
     congrFun byDef b
 
-    def byDef₂ {A : U} {B : V} {C : W} {f : A → B → C} {F' : ∀ a, B ⟶{f a} C} {F : A ⟶{λ a => F' a} (B ⟶ C)} {a : A} {b : B} :
+    def byDef₂ {A : U} {B : V} {C : W} {f : A → B → C} {F' : ∀ a, B ⟶{f a} C}
+               {F : A ⟶{λ a => F' a} (B ⟶ C)} {a : A} {b : B} :
       (fromDefFun F) a b ≃ f a b :=
     byDef • byFunDef
+
+    section
+
+      variable [HasIdentity U] [HasIdentity V] [HasCongrArg V W] [HasCongrArg U VW]
+
+      def congrArg₂ {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) {a₁ a₂ : A} {b₁ b₂ : B} :
+        a₁ ≃ a₂ → b₁ ≃ b₂ → F a₁ b₁ ≃ F a₂ b₂ :=
+      λ ha hb => congrFun (congrArg F ha) b₂ • congrArg (F a₁) hb
+
+      def defCongrArg₂ {A : U} {B : V} {C : W} {f : A → B → C} {F' : ∀ a, B ⟶{f a} C}
+                       (F : A ⟶{λ a => F' a} (B ⟶ C)) {a₁ a₂ : A} {b₁ b₂ : B} :
+        a₁ ≃ a₂ → b₁ ≃ b₂ → f a₁ b₁ ≃ f a₂ b₂ :=
+      λ ha hb => byDef₂ • congrArg₂ (fromDefFun F) ha hb • byDef₂⁻¹
+
+    end
 
   end
 
   section
 
-    variable {U V UV : Universe} [HasFunctors V V V] [HasFunctors U V UV] [HasIdentity V] [HasCongrFun V V]
+    variable {U V UV : Universe} [HasFunctors V V V] [HasFunctors U V UV] [HasIdentity V]
+             [HasCongrFun V V]
 
-    def byFunDef₂ {A : U} {B C D : V} {f : A → (B ⟶ C ⟶ D)} {F : A ⟶{f} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
+    def byFunDef₂ {A : U} {B C D : V} {f : A → (B ⟶ C ⟶ D)} {F : A ⟶{f} (B ⟶ C ⟶ D)}
+                  {a : A} {b : B} {c : C} :
       (fromDefFun F) a b c ≃ (f a) b c :=
     congrFun byFunDef c
 
-    def byDef₃ {A : U} {B C D : V} {f : A → B → C → D} {F'' : ∀ a b, C ⟶{f a b} D} {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D)}
+    def byDef₃ {A : U} {B C D : V} {f : A → B → C → D} {F'' : ∀ a b, C ⟶{f a b} D}
+               {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D)}
                {F : A ⟶{λ a => F' a} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
       (fromDefFun F) a b c ≃ f a b c :=
     byDef • congrFun byDef₂ c
 
-    def byFunDef₃ {A : U} {B C D E : V} {f : A → (B ⟶ C ⟶ D ⟶ E)} {F : A ⟶{f} (B ⟶ C ⟶ D ⟶ E)} {a : A} {b : B} {c : C} {d : D} :
+    def byFunDef₃ {A : U} {B C D E : V} {f : A → (B ⟶ C ⟶ D ⟶ E)} {F : A ⟶{f} (B ⟶ C ⟶ D ⟶ E)}
+                  {a : A} {b : B} {c : C} {d : D} :
       (fromDefFun F) a b c d ≃ (f a) b c d :=
     congrFun byFunDef₂ d
 
@@ -739,9 +759,9 @@ namespace MetaRelation
 
       @[reducible] def symmFun (a b : α) : R a b ⟶ R b a := h.defSymmFun a b
 
-      instance symm.isFunApp {a b : α} {e : R a b} : IsFunApp (R a b) e⁻¹ :=
+      instance symm.isFunApp {a b : α} {f : R a b} : IsFunApp (R a b) f⁻¹ :=
       { F := symmFun R a b,
-        a := e,
+        a := f,
         e := byDef }
 
     end

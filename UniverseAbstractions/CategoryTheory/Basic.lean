@@ -37,9 +37,9 @@ namespace CategoryTheory
   --     are `Prop`-valued).
   --   * On the other hand, functors contain morphisms and are thus at least as large. But having
   --     internal functors means that functors are objects of some category.
-  -- TODO: What is the problem exactly?
-  -- (At least the second point implies that there is no universe with internal functors that
-  -- contains the category defined in `FunctorCategory.lean`.)
+  -- TODO: What is the problem exactly? Do we really need this?
+  -- (This also affects the category defined in `FunctorCategory.lean`, in particular with respect
+  -- to internal functors.)
   structure BundledRelation (U : Universe.{u, uu}) (V : Universe.{v, vv}) :
     Sort (max 1 u uu vv) where
   (A   : U)
