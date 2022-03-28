@@ -45,8 +45,12 @@ theorem trans_leftInv {α : Sort u₁} {β : Sort u₂} {γ : Sort u₃} (e₁ :
   e₁.invFun (e₂.invFun (e₂.toFun (e₁.toFun x))) = x :=
 Eq.trans (congrArg e₁.invFun (e₂.leftInv (e₁.toFun x))) (e₁.leftInv x)
 
+theorem trans_rightInv {α : Sort u₁} {β : Sort u₂} {γ : Sort u₃} (e₁ : α ≃ β) (e₂ : β ≃ γ) (y : γ) :
+  e₂.toFun (e₁.toFun (e₁.invFun (e₂.invFun y))) = y :=
+trans_leftInv (symm e₂) (symm e₁) y
+
 def trans {α : Sort u₁} {β : Sort u₂} {γ : Sort u₃} (e₁ : α ≃ β) (e₂ : β ≃ γ) : α ≃ γ :=
-⟨e₂.toFun ∘ e₁.toFun, e₁.invFun ∘ e₂.invFun, trans_leftInv e₁ e₂, trans_leftInv (symm e₂) (symm e₁)⟩
+⟨e₂.toFun ∘ e₁.toFun, e₁.invFun ∘ e₂.invFun, trans_leftInv e₁ e₂, trans_rightInv e₁ e₂⟩
 
 variable {α : Sort u₁} {β : Sort u₂} {γ : Sort u₃} {δ : Sort u₄}
 

@@ -66,6 +66,12 @@ namespace BundledSet
 
   def asFun {A B : univ} (F : FunSet A B) : A ⟶ B := F
 
+  def defFun {A B : univ} (F : FunSet A B) {f : A → B}
+             -- Work around Lean defeq problems.
+             (h : ∀ a : A, F.val a.val = (f a).val := by intro; rfl) :
+    A ⟶{f} B :=
+  toDefFun' (asFun F) h
+
   instance hasCongrArg : HasCongrArg univ.{u} univ.{v} :=
   ⟨λ {_ _} F {_ _} h => _root_.congrArg F.val h⟩
 
@@ -73,12 +79,6 @@ namespace BundledSet
   ⟨λ h a => _root_.congrFun h a.val⟩
 
   instance hasInternalFunctors : HasInternalFunctors univ.{u} := ⟨⟩
-
-  def defFun {A B : univ} (F : FunSet A B) {f : A → B}
-             -- Work around Lean defeq problems.
-             (h : ∀ a : A, F.val a.val = (f a).val := by intro; rfl) :
-    A ⟶{f} B :=
-  toDefFun' (asFun F) h
 
   instance hasIdFun : HasIdFun univ.{u} := ⟨λ A => defFun ⟨id, id⟩⟩
 
@@ -262,10 +262,27 @@ namespace BundledSet
                       left   := ⟨λ a => E.val.leftInv  a.val⟩,
                       right  := ⟨λ b => E.val.rightInv b.val⟩ } }
 
+  def defEquiv {A : univ.{u}} {B : univ.{v}} {e : A ⮂ B}
+               (leftInv  : ∀ a : A.α, e.invFun.val (e.toFun.val a) = a)
+               (rightInv : ∀ b : B.α, e.toFun.val (e.invFun.val b) = b) :
+    A ⟷{e} B :=
+  { E        := ⟨⟨e.toFun.val, e.invFun.val, leftInv, rightInv⟩,
+                 ⟨e.toFun.property, e.invFun.property⟩⟩,
+    toFunEq  := rfl,
+    invFunEq := rfl }
+
   instance hasInternalEquivalences : HasInternalEquivalences univ.{u} :=
   { defToFunFun := λ A B => defFun (A := A ⟷ B) (B := A ⟶ B) ⟨Equiv.toFun, And.left⟩,
     isExt       := λ E => { leftExt  := ⟨funext E.val.leftInv⟩,
                             rightExt := ⟨funext E.val.rightInv⟩ },
     toFunInj    := Equiv.inj }
+
+  instance hasEquivOp : HasEquivOp univ.{u} :=
+  { defRefl  := λ A   => defEquiv (λ _ => rfl) (λ _ => rfl),
+    defSymm  := λ E   => defEquiv E.val.rightInv E.val.leftInv,
+    defTrans := λ E F => defEquiv (Equiv.trans_leftInv  E.val F.val)
+                                  (Equiv.trans_rightInv E.val F.val) }
+
+  instance hasTypeIdentity : HasTypeIdentity univ.{u} := ⟨⟩
 
 end BundledSet
