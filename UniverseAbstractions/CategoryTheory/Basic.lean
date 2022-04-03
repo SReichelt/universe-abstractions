@@ -256,10 +256,10 @@ namespace CategoryTheory
       def rightInv {a b : A} (e : a ⇿ b) : HalfInv (invHom e) (toHom e) :=
       (h.desc e).isInv.rightInv
 
-      def toHomCongrArg  {a b : A} {e₁ e₂ : a ⇿ b} (he : e₁ ≃ e₂) : toHom  e₁ ≃ toHom  e₂ :=
+      def toHom.congrArg  {a b : A} {e₁ e₂ : a ⇿ b} (he : e₁ ≃ e₂) : toHom  e₁ ≃ toHom  e₂ :=
       defCongrArg (h.defToHomFun a b) he
-      def invHomCongrArg {a b : A} {e₁ e₂ : a ⇿ b} (he : e₁ ≃ e₂) : invHom e₁ ≃ invHom e₂ :=
-      IsoDesc.toInvEquiv (toHomCongrArg he)
+      def invHom.congrArg {a b : A} {e₁ e₂ : a ⇿ b} (he : e₁ ≃ e₂) : invHom e₁ ≃ invHom e₂ :=
+      IsoDesc.toInvEquiv (toHom.congrArg he)
 
       structure DefIso {a b : A} (desc : IsoDesc a b) where
       (e    : a ⇿ b)
@@ -330,45 +330,45 @@ namespace CategoryTheory
 
       @[reducible] def idIso (a : A) : a ⇿ a := HasRefl.refl a
 
-      def toHomReflEq (a : A) : toHom (idIso a) ≃ idHom a := byToDef
-      def toHomSymmEq {a b : A} (e : a ⇿ b) : toHom e⁻¹ ≃ invHom e := byToDef
-      def toHomTransEq {a b c : A} (e : a ⇿ b) (f : b ⇿ c) : toHom (f • e) ≃ toHom f • toHom e :=
+      def toHom.reflEq (a : A) : toHom (idIso a) ≃ idHom a := byToDef
+      def toHom.symmEq {a b : A} (e : a ⇿ b) : toHom e⁻¹ ≃ invHom e := byToDef
+      def toHom.transEq {a b c : A} (e : a ⇿ b) (f : b ⇿ c) : toHom (f • e) ≃ toHom f • toHom e :=
       byToDef
 
-      def invHomReflEq (a : A) : invHom (idIso a) ≃ idHom a := byInvDef
-      def invHomSymmEq {a b : A} (e : a ⇿ b) : invHom e⁻¹ ≃ toHom e := byInvDef
-      def invHomTransEq {a b c : A} (e : a ⇿ b) (f : b ⇿ c) : invHom (f • e) ≃ invHom e • invHom f :=
+      def invHom.reflEq (a : A) : invHom (idIso a) ≃ idHom a := byInvDef
+      def invHom.symmEq {a b : A} (e : a ⇿ b) : invHom e⁻¹ ≃ toHom e := byInvDef
+      def invHom.transEq {a b c : A} (e : a ⇿ b) (f : b ⇿ c) : invHom (f • e) ≃ invHom e • invHom f :=
       byInvDef
 
       def isoAssoc {a b c d : A} (e : a ⇿ b) (f : b ⇿ c) (g : c ⇿ d) :
         (g • f) • e ≃ g • (f • e) :=
-      h.toHomInj ((congrArgTransRight (toHomTransEq e f) (toHom g) •
-                   toHomTransEq (f • e) g)⁻¹ •
+      h.toHomInj ((congrArgTransRight (toHom.transEq e f) (toHom g) •
+                   toHom.transEq (f • e) g)⁻¹ •
                   assoc (toHom e) (toHom f) (toHom g) •
-                  (congrArgTransLeft (toHom e) (toHomTransEq f g) •
-                   toHomTransEq e (g • f)))
+                  (congrArgTransLeft (toHom e) (toHom.transEq f g) •
+                   toHom.transEq e (g • f)))
 
       def isoRightId {a b : A} (e : a ⇿ b) : e • idIso a ≃ e :=
       h.toHomInj (rightId (toHom e) •
-                  (congrArgTransRight (toHomReflEq a) (toHom e) •
-                   toHomTransEq (idIso a) e))
+                  (congrArgTransRight (toHom.reflEq a) (toHom e) •
+                   toHom.transEq (idIso a) e))
 
       def isoLeftId {a b : A} (e : a ⇿ b) : idIso b • e ≃ e :=
       h.toHomInj (leftId (toHom e) •
-                  (congrArgTransLeft (toHom e) (toHomReflEq b) •
-                   toHomTransEq e (idIso b)))
+                  (congrArgTransLeft (toHom e) (toHom.reflEq b) •
+                   toHom.transEq e (idIso b)))
 
       def isoLeftInv {a b : A} (e : a ⇿ b) : e⁻¹ • e ≃ idIso a :=
-      h.toHomInj ((toHomReflEq a)⁻¹ •
+      h.toHomInj ((toHom.reflEq a)⁻¹ •
                   leftInv e •
-                  (congrArgTransLeft (toHom e) (toHomSymmEq e) •
-                   toHomTransEq e e⁻¹))
+                  (congrArgTransLeft (toHom e) (toHom.symmEq e) •
+                   toHom.transEq e e⁻¹))
 
       def isoRightInv {a b : A} (e : a ⇿ b) : e • e⁻¹ ≃ idIso b :=
-      h.toHomInj ((toHomReflEq b)⁻¹ •
+      h.toHomInj ((toHom.reflEq b)⁻¹ •
                   rightInv e •
-                  (congrArgTransRight (toHomSymmEq e) (toHom e) •
-                   toHomTransEq e⁻¹ e))
+                  (congrArgTransRight (toHom.symmEq e) (toHom e) •
+                   toHom.transEq e⁻¹ e))
 
     end
 

@@ -290,29 +290,29 @@ namespace MetaRelation
     instance isAssociative [HasTrans R] [HasTrans S] [HasTransFun R] [HasTransFun S]
                            [hR : IsAssociative R] [hS : IsAssociative S] :
       IsAssociative (productRelation R S) :=
-    { assoc := λ f g h => introCongrArg (congrArgTransRight (hasTrans.fstEq R S f g)⁻¹ (fst h) •
-                                         hR.assoc (fst f) (fst g) (fst h) •
-                                         congrArgTransLeft (fst f) (hasTrans.fstEq R S g h))
-                                        (congrArgTransRight (hasTrans.sndEq R S f g)⁻¹ (snd h) •
-                                         hS.assoc (snd f) (snd g) (snd h) •
-                                         congrArgTransLeft (snd f) (hasTrans.sndEq R S g h)) }
+    { assoc := λ f g h => intro.congrArg (congrArgTransRight (hasTrans.fstEq R S f g)⁻¹ (fst h) •
+                                          hR.assoc (fst f) (fst g) (fst h) •
+                                          congrArgTransLeft (fst f) (hasTrans.fstEq R S g h))
+                                         (congrArgTransRight (hasTrans.sndEq R S f g)⁻¹ (snd h) •
+                                          hS.assoc (snd f) (snd g) (snd h) •
+                                          congrArgTransLeft (snd f) (hasTrans.sndEq R S g h)) }
 
     instance isCategoricalPreorder [IsPreorder R] [IsPreorder S] [HasTransFun R] [HasTransFun S]
                                    [hR : IsCategoricalPreorder R] [hS : IsCategoricalPreorder S] :
       IsCategoricalPreorder (productRelation R S) :=
-    { rightId := λ {a b} f => introCongrArgEq (cancelRightId (hasRefl.fstEq R S a) (fst f))
-                                              (cancelRightId (hasRefl.sndEq R S a) (snd f)),
-      leftId  := λ {a b} f => introCongrArgEq (cancelLeftId (fst f) (hasRefl.fstEq R S b))
-                                              (cancelLeftId (snd f) (hasRefl.sndEq R S b)) }
+    { rightId := λ {a b} f => intro.congrArgEq (cancelRightId (hasRefl.fstEq R S a) (fst f))
+                                               (cancelRightId (hasRefl.sndEq R S a) (snd f)),
+      leftId  := λ {a b} f => intro.congrArgEq (cancelLeftId (fst f) (hasRefl.fstEq R S b))
+                                               (cancelLeftId (snd f) (hasRefl.sndEq R S b)) }
 
     instance isGroupoidEquivalence [IsEquivalence R] [IsEquivalence S]
                                    [HasTransFun R] [HasTransFun S]
                                    [hR : IsGroupoidEquivalence R] [hS : IsGroupoidEquivalence S] :
       IsGroupoidEquivalence (productRelation R S) :=
-    { leftInv  := λ {a b} f => introCongrArg (cancelLeftInv (fst f) (hasSymm.fstEq R S f))
-                                             (cancelLeftInv (snd f) (hasSymm.sndEq R S f)),
-      rightInv := λ {a b} f => introCongrArg (cancelRightInv (fst f) (hasSymm.fstEq R S f))
-                                             (cancelRightInv (snd f) (hasSymm.sndEq R S f)) }
+    { leftInv  := λ {a b} f => intro.congrArg (cancelLeftInv (fst f) (hasSymm.fstEq R S f))
+                                              (cancelLeftInv (snd f) (hasSymm.sndEq R S f)),
+      rightInv := λ {a b} f => intro.congrArg (cancelRightInv (fst f) (hasSymm.fstEq R S f))
+                                              (cancelRightInv (snd f) (hasSymm.sndEq R S f)) }
 
   end productRelation
 

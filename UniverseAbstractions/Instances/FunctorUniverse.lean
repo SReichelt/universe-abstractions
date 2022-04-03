@@ -84,7 +84,7 @@ namespace functorUniverse
                [HasLinearFunOp U] [HasLinearFunExt U]
 
       instance hasIndependentCongrArg : HasCongrArg ({A ⟶} U) ({A ⟶} U) :=
-      ⟨λ {B C : U} (G : B ⟶ C) {F₁ F₂ : A ⟶ B} h => defCongrArg (defRevCompFunFun A G) h⟩
+      ⟨λ {B C : U} (G : B ⟶ C) {F₁ F₂ : A ⟶ B} h => revCompFun.congrArg G h⟩
 
       instance hasDependentFunctors : HasFunctors U ({A ⟶} U) ({A ⟶} U) :=
       { Fun   := h.Fun,
@@ -93,7 +93,7 @@ namespace functorUniverse
       def dependentFunctor {B C : U} (F : A !⟶ (B ⟶ C)) : B ⟶ (A !⟶ C) := F
 
       instance hasDependentCongrArg : HasCongrArg U ({A ⟶} U) :=
-      ⟨λ {B C : U} (G : A ⟶ B ⟶ C) {b₁ b₂ : B} h => defCongrArg (defSwapFunFun G) h⟩
+      ⟨λ {B C : U} (G : A ⟶ B ⟶ C) {b₁ b₂ : B} h => swapFun.congrArg G h⟩
 
       variable [HasLinearFunExt U]
 
@@ -121,7 +121,7 @@ namespace functorUniverse
       def independentDependentCompFun {B C D : U} (G : B ⟶ C) (H : A ⟶ C ⟶ D) : A ⟶ B ⟶ D := compFunFun G D • H
       def independentDependentCompFun.eff {B C D : U} (G : B ⟶ C) (H : A ⟶ C ⟶ D) (b : B) :
         swapFun (independentDependentCompFun A G H) b ≃ swapFun H (G b) :=
-      defCongrArg (HasCompFunFun.defCompFunFun H D) (swapCompFun G b D) • swapComp H (compFunFun G D) b
+      compFun.congrArg H (swapCompFun G b D) • swapComp H (compFunFun G D) b
 
       instance hasIndependentDependentCompFun : HasCompFun U U ({A ⟶} U) :=
       ⟨λ G H => ⟨independentDependentCompFun A G H, independentDependentCompFun.eff A G H⟩⟩
@@ -130,7 +130,7 @@ namespace functorUniverse
       def dependentIndependentCompFun.eff {B C D : U} (G : A ⟶ B ⟶ C) (H : C ⟶ D) (b : B) :
         swapFun (dependentIndependentCompFun A G H) b ≃ H • swapFun G b :=
       compAssoc G (revAppFun b C) H •
-      defCongrArg (HasCompFunFun.defCompFunFun G D) (swapRevCompFun H b) •
+      compFun.congrArg G (swapRevCompFun H b) •
       swapComp G (revCompFunFun B H) b
 
       instance hasDependentIndependentCompFun : HasCompFun U ({A ⟶} U) ({A ⟶} U) :=
@@ -146,14 +146,14 @@ namespace functorUniverse
 
         def defEmbedFun (B : U) : B ⟶{λ b => embed A b} (A !⟶ B) :=
         HasFunctors.toDefFun' (dependentFunctor A (constFun A (idFun B)))
-                              (λ b => defCongrArg (defConstFunFun A B) byDef • swapConst A (idFun B) b)
+                              (λ b => constFun.congrArg A byDef • swapConst A (idFun B) b)
 
         @[reducible] def embedFun (B : U) : B ⟶ (A !⟶ B) := defEmbedFun A B
 
         def dependentConstFun (B : U) {C : U} (F : A ⟶ C) : A ⟶ B ⟶ C := constFunFun B C • F
         def dependentConstFun.eff (B : U) {C : U} (F : A ⟶ C) (b : B) :
           swapFun (dependentConstFun A B F) b ≃ F :=
-        leftId F • defCongrArg (HasCompFunFun.defCompFunFun F C) (swapConstFun b C) • swapComp F (constFunFun B C) b
+        leftId F • compFun.congrArg F (swapConstFun b C) • swapComp F (constFunFun B C) b
 
         instance hasDependentConstFun : HasConstFun U ({A ⟶} U) :=
         ⟨λ B {C} F => ⟨dependentConstFun A B F, dependentConstFun.eff A B F⟩⟩
@@ -165,7 +165,7 @@ namespace functorUniverse
     variable {U : Universe.{u}} (A : U) [HasIdentity.{u, iu} U] [h : HasStandardFunctors U]
 
     def embed.congrArg {B : U} {b₁ b₂ : B} (e : b₁ ≃ b₂) : embed A b₁ ≃ embed A b₂ :=
-    defCongrArg (defConstFunFun A B) e
+    constFun.congrArg A e
 
     instance hasFunctors : HasFunctors ({A ⟶} U) ({A ⟶} U) ({A ⟶} U) :=
     { Fun   := h.Fun,
@@ -182,7 +182,7 @@ namespace functorUniverse
     rightId F • substConstFun (idFun A) F
 
     instance hasCongrArg : HasCongrArg ({A ⟶} U) ({A ⟶} U) :=
-    ⟨λ {B C : U} (G : A ⟶ B ⟶ C) {F₁ F₂ : A ⟶ B} h => defCongrArg (defRevSubstFunFun G) h⟩
+    ⟨λ {B C : U} (G : A ⟶ B ⟶ C) {F₁ F₂ : A ⟶ B} h => revSubstFun.congrArg G h⟩
 
     instance hasInternalFunctors : HasInternalFunctors ({A ⟶} U) := ⟨⟩
 
@@ -209,13 +209,11 @@ namespace functorUniverse
     def baseCompFunFun {B C : U} (G : A ⟶ B ⟶ C) (D : U) : A ⟶ (C ⟶ D) ⟶ (B ⟶ D) := compFunFunFun B C D • G
     def baseCompFunFun.eff {B C : U} (G : A ⟶ B ⟶ C) (D : U) (H : A ⟶ C ⟶ D) :
       substFun H (baseCompFunFun A G D) ≃ baseCompFun A G H :=
-    defCongrArg (defDupFunFun A (B ⟶ D))
-                (compAssoc H (swapFunFun (compFunFunFun B C D)) (compFunFun G (B ⟶ D))) •
+    dupFun.congrArg (compAssoc H (swapFunFun (compFunFunFun B C D)) (compFunFun G (B ⟶ D))) •
     dupSwap ((compFunFun G (B ⟶ D) • swapFunFun (compFunFunFun B C D)) • H) •
-    defCongrArg (defDupFunFun A (B ⟶ D))
-                (defCongrArg (defRevCompFunFun A (compFunFun H (B ⟶ D)))
-                             (reverseSwap (swapCompExt G (compFunFunFun B C D))) •
-                 swapCompExt H (compFunFun G (B ⟶ D) • swapFunFun (compFunFunFun B C D)))⁻¹
+    dupFun.congrArg (revCompFun.congrArg (compFunFun H (B ⟶ D))
+                                         (reverseSwap (swapCompExt G (compFunFunFun B C D))) •
+                     swapCompExt H (compFunFun G (B ⟶ D) • swapFunFun (compFunFunFun B C D)))⁻¹
 
     def baseCompFunFunFun (B C D : U) : A ⟶ (B ⟶ C) ⟶ (C ⟶ D) ⟶ (B ⟶ D) := embedFunctor A (compFunFunFun B C D)
     def baseCompFunFunFun.eff (B C D : U) (G : A ⟶ B ⟶ C) :
@@ -223,21 +221,21 @@ namespace functorUniverse
     substConstFun G (compFunFunFun B C D)
 
     instance hasLinearFunOp : HasLinearFunOp ({A ⟶} U) :=
-    { defIdFun         := λ B     => ⟨baseIdFun         A B,     baseIdFun.eff         A B⟩,
-      defRevAppFun     := λ F C   => ⟨baseAppFun        A F C,   baseAppFun.eff        A F C⟩,
-      defRevAppFunFun  := λ B C   => ⟨baseAppFunFun     A B C,   baseAppFunFun.eff     A B C⟩,
-      defCompFun       := λ G H   => ⟨baseCompFun       A G H,   baseCompFun.eff       A G H⟩,
-      defCompFunFun    := λ G D   => ⟨baseCompFunFun    A G D,   baseCompFunFun.eff    A G D⟩,
-      defCompFunFunFun := λ B C D => ⟨baseCompFunFunFun A B C D, baseCompFunFunFun.eff A B C D⟩ }
+    { defIdFun     := λ B     => ⟨baseIdFun A B, baseIdFun.eff A B⟩,
+      defRevAppFun := λ B C   => ⟨λ F => ⟨baseAppFun A F C, baseAppFun.eff A F C⟩,
+                                  ⟨baseAppFunFun A B C, baseAppFunFun.eff A B C⟩⟩,
+      defCompFun   := λ B C D => ⟨λ G => ⟨λ H => ⟨baseCompFun A G H, baseCompFun.eff A G H⟩,
+                                          ⟨baseCompFunFun A G D, baseCompFunFun.eff A G D⟩⟩,
+                                  ⟨baseCompFunFunFun A B C D, baseCompFunFunFun.eff A B C D⟩⟩ }
 
     def baseConstFun (B : U) {C : U} (F : A ⟶ C) : A ⟶ B ⟶ C := constFunFun B C • F
     def baseConstFun.eff (B : U) {C : U} (F : A ⟶ C) (G : A ⟶ B) :
       substFun G (baseConstFun A B F) ≃ F :=
     dupConst F •
     dupSwap (constFun A F) •
-    defCongrArg (defDupFunFun A C) ((swapConstExt A F)⁻¹ •
-                                    defCongrArg (HasCompFunFun.defCompFunFun F (A ⟶ C)) (leftConstExt G C) •
-                                    (compAssoc F (constFunFun B C) (compFunFun G C))⁻¹)
+    dupFun.congrArg ((swapConstExt A F)⁻¹ •
+                     compFun.congrArg F (leftConstExt G C) •
+                     (compAssoc F (constFunFun B C) (compFunFun G C))⁻¹)
 
     def baseConstFunFun (B C : U) : A ⟶ C ⟶ B ⟶ C := embedFunctor A (constFunFun B C)
     def baseConstFunFun.eff (B C : U) (F : A ⟶ C) :
@@ -245,8 +243,8 @@ namespace functorUniverse
     substConstFun F (constFunFun B C)
 
     instance hasAffineFunOp : HasAffineFunOp ({A ⟶} U) :=
-    { defConstFun    := λ B {_} F => ⟨baseConstFun    A B F, baseConstFun.eff    A B F⟩,
-      defConstFunFun := λ B C     => ⟨baseConstFunFun A B C, baseConstFunFun.eff A B C⟩ }
+    { defConstFun := λ B C => ⟨λ F => ⟨baseConstFun A B F, baseConstFun.eff A B F⟩,
+                               ⟨baseConstFunFun A B C, baseConstFunFun.eff A B C⟩⟩ }
 
     def baseDupFun {B C : U} (G : A ⟶ B ⟶ B ⟶ C) : A ⟶ B ⟶ C := dupFunFun B C • G
     def baseDupFun.eff {B C : U} (G : A ⟶ B ⟶ B ⟶ C) (F : A ⟶ B) :
@@ -259,8 +257,8 @@ namespace functorUniverse
     substConstFun G (dupFunFun B C)
 
     instance hasFullFunOp : HasFullFunOp ({A ⟶} U) :=
-    { defDupFun    := λ G   => ⟨baseDupFun    A G,   baseDupFun.eff    A G⟩,
-      defDupFunFun := λ B C => ⟨baseDupFunFun A B C, baseDupFunFun.eff A B C⟩ }
+    { defDupFun := λ B C => ⟨λ G => ⟨baseDupFun A G, baseDupFun.eff A G⟩,
+                             ⟨baseDupFunFun A B C, baseDupFunFun.eff A B C⟩⟩ }
 
     class HasSimpEmbed {B : U} (b : B) where
     (simpEmbed   : A !⟶ B)
@@ -425,8 +423,7 @@ namespace functorUniverse
       def baseElimFun.eff {B : U} (F : A ⟶ B) (G : A ⟶ Top U) :
         substFun G (baseElimFun A F) ≃ F :=
       baseConstFun.eff A (Top U) F G •
-      defCongrArg (defSubstFunFun G B) (defCongrArg (HasCompFunFun.defCompFunFun F (Top U ⟶ B))
-                                                    (elimFunFunConstEq B))
+      substFun.congrArg G (compFun.congrArg F (elimFunFunConstEq B))
 
       instance hasInternalTop : HasInternalTop ({A ⟶} U) :=
       { defElimFun := λ F => ⟨baseElimFun A F, baseElimFun.eff A F⟩ }
@@ -434,10 +431,10 @@ namespace functorUniverse
       def baseElimFunEq {B : U} {F : A ⟶ B} {G : A ⟶ Top U ⟶ B} (e : substFun (introFun A) G ≃ F) :
         G ≃ baseElimFun A F :=
       bySwap ((elimFunConstEq F • elimFunEq (e • (substConstArg (top U) G)⁻¹ • byDef))⁻¹ •
-              defCongrArg (defConstFunFun (Top U) (A ⟶ B)) (leftId F • byDef) •
+              constFun.congrArg (Top U) (leftId F • byDef) •
               rightConst (Top U) (idFun B) (compFunFun F B) •
-              defCongrArg (defRevCompFunFun (Top U) (compFunFun F B))
-                          (elimFunConstEq (idFun B) • swapSwapExt (elimFun (idFun B))) •
+              revCompFun.congrArg (compFunFun F B)
+                                  (elimFunConstEq (idFun B) • swapSwapExt (elimFun (idFun B))) •
               swapCompExt F (elimFunFun B))
 
       instance hasTopExt [HasSubsingletonExt U U] : HasTopExt ({A ⟶} U) :=

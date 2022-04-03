@@ -33,9 +33,9 @@ namespace CategoryTheory
                        [hTop : HasInternalTop V] [hTopEq : HasTop.HasTopEq V] :
       GrpoidDesc (unitRel.{u} V) :=
     { homIsEquivalence         := unitEquiv V,
-      homHasSymmFun            := { defSymmFun     := λ _ _   => hTop.defElimFun (HasTop.top V) },
-      homHasTransFun           := { defTransFun    := λ _ _   => hTop.defElimFun (HasTop.top V),
-                                    defTransFunFun := λ _ _ _ => hTop.defElimFun (HasInternalTop.elimFun (HasTop.top V)) },
+      homHasSymmFun            := ⟨λ _ _   => hTop.defElimFun (HasTop.top V)⟩,
+      homHasTransFun           := ⟨λ _ _ _ => ⟨λ _ => hTop.defElimFun (HasTop.top V),
+                                               hTop.defElimFun (HasInternalTop.elimFun (HasTop.top V))⟩⟩,
       homIsGroupoidEquivalence := { assoc    := λ _ _ _ => HasInstanceEquivalences.refl (HasTop.top V),
                                     rightId  := λ _     => (hTopEq.topEq _)⁻¹,
                                     leftId   := λ _     => (hTopEq.topEq _)⁻¹,

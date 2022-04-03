@@ -63,116 +63,254 @@ namespace HasFunctors
     IsFunApp₂ A₂ A₃ b where
   (h₃ : IsFunApp A₁ b)
 
-  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
-
-  structure DefFun (A : U) (B : V) (f : A → B) where
-  (F           : A ⟶ B)
-  (eff (a : A) : F a ≃ f a)
-
-  notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
-
-  variable {A : U} {B : V}
-
-  def toDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) : A ⟶{f} B := ⟨F, h⟩
-
-  def toDefFun               (F : A ⟶ B)    : A ⟶{apply F} B := toDefFun' F (λ a => HasInstanceEquivalences.refl (F a))
-  def fromDefFun {f : A → B} (F : A ⟶{f} B) : A ⟶ B          := F.F
-
-  def byDef {f : A → B} {F : A ⟶{f} B} {a : A} : (fromDefFun F) a ≃ f a := F.eff a
-
-  notation:60 F:61 " ◄ " h:61 => HasFunctors.toDefFun' F (λ _ => HasInstanceEquivalences.trans HasFunctors.byDef h)
-
-  @[simp] theorem fromToDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) :
-    fromDefFun (toDefFun' F h) = F :=
-  rfl
-  @[simp] theorem fromToDefFun (F : A ⟶ B) : fromDefFun (toDefFun F) = F := rfl
-
-  @[simp] theorem toFromDefFun' {f : A → B} (F : A ⟶{f} B) : toDefFun' (fromDefFun F) F.eff = F :=
-  by induction F; rfl
-
-  instance {F : A ⟶ B} : CoeDep (A ⟶ B) F  (A ⟶{apply F} B) := ⟨toDefFun F⟩
-  instance {f : A → B} : Coe    (A ⟶{f} B) (A ⟶ B)          := ⟨fromDefFun⟩
-
-  def castFun (F : A ⟶ B) (f : A → B) (h : ∀ a, F a ≃ f a) : A ⟶ B := fromDefFun (toDefFun' F h)
-
-  @[simp] theorem simpCastFun (F : A ⟶ B) (f : A → B) (h : ∀ a, F a ≃ f a) :
-    castFun F f h = F :=
-  fromToDefFun' F h
-
-  def castDefFun {f f' : A → B} (F : A ⟶{f} B) (h : ∀ a, f a ≃ f' a) : A ⟶{f'} B :=
-  ⟨F.F, λ a => h a • F.eff a⟩
-
-  @[simp] theorem fromCastDefFun {f f' : A → B} (F : A ⟶{f} B) (h : ∀ a, f a ≃ f' a) :
-    fromDefFun (castDefFun F h) = fromDefFun F :=
-  rfl
-
-  namespace IsFunApp
-
-    instance (priority := low) refl (F : A ⟶ B) (a : A) : IsFunApp A (F a) :=
-    { F := F,
-      a := a,
-      e := HasInstanceEquivalences.refl (F a) }
-
-    def fromDef {f : A → B} (F : A ⟶{f} B) (a : A) : IsFunApp A (f a) :=
-    { F := fromDefFun F,
-      a := a,
-      e := byDef }
-
-  end IsFunApp
-
-  def defAppFun (F : A ⟶ B) : A ⟶{λ a => F a} B := F
-  @[reducible] def appFun (F : A ⟶ B) : A ⟶ B := defAppFun F
-
 end HasFunctors
-
-
 
 class HasCongrArg (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [HasFunctors U V UV]
                   [hId_U : HasIdentity.{u, iu} U] [hId_V : HasIdentity.{v, iv} V] where
 (congrArg {A : U} {B : V} (F : A ⟶ B) {a₁ a₂ : A} : a₁ ≃ a₂ → F a₁ ≃ F a₂)
 
-namespace HasCongrArg
-
-  open HasFunctors
-
-  variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity U] [HasIdentity V] [HasCongrArg U V]
-
-  def applyCongrArg {A : U} {B : V} (F : A ⟶ B) {a₁ a₂ : A} (h : a₁ ≃ a₂)
-                    {b₁ b₂ : B} (h₁ : F a₁ ≃ b₁) (h₂ : F a₂ ≃ b₂) :
-    b₁ ≃ b₂ :=
-  h₂ • congrArg F h • h₁⁻¹
-
-  def defCongrArg {A : U} {B : V} {f : A → B} (F : A ⟶{f} B) {a₁ a₂ : A} : a₁ ≃ a₂ → f a₁ ≃ f a₂ :=
-  λ h => applyCongrArg (fromDefFun F) h byDef byDef
-
-  def byArgDef {X XU : Universe} [HasFunctors X U XU] {A : X} {B : U} {C : V}
-               {f : A → B} {F : A ⟶{f} B} {G : B ⟶ C} {a : A} :
-    G ((fromDefFun F) a) ≃ G (f a) :=
-  congrArg G byDef
-
-  def byDefDef {X XU : Universe} [HasFunctors X U XU] {A : X} {B : U} {C : V}
-               {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {a : A} :
-    (fromDefFun G) ((fromDefFun F) a) ≃ g (f a) :=
-  byDef • byArgDef
-
-  def byArgDefDef {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
-                  [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
-                  {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {H : C ⟶ D} {a : A} :
-    H ((fromDefFun G) ((fromDefFun F) a)) ≃ H (g (f a)) :=
-  congrArg H byDefDef
-
-  def byDefDefDef {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
-                  [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
-                  {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {h : C → D} {H : C ⟶{h} D}
-                  {a : A} :
-    (fromDefFun H) ((fromDefFun G) ((fromDefFun F) a)) ≃ h (g (f a)) :=
-  byDef • byArgDefDef
-
-end HasCongrArg
-
 class HasCongrFun (U : Universe.{u}) (V : Universe.{v}) {UV : Universe.{uv}} [HasFunctors U V UV]
-                  [hId_U : HasIdentity.{v, iv} V] [hId_UV : HasIdentity.{uv, iuv} UV] where
+                  [hId_V : HasIdentity.{v, iv} V] [hId_UV : HasIdentity.{uv, iuv} UV] where
 (congrFun {A : U} {B : V} {F₁ F₂ : A ⟶ B} (h : F₁ ≃ F₂) (a : A) : F₁ a ≃ F₂ a)
+
+
+
+namespace HasFunctors
+
+  open HasCongrArg HasCongrFun
+
+  section
+
+    variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity V]
+
+    -- TODO: include proof of `congrArg` (also for multifunctors)
+    -- (Then `congrFun` should probably be a prerequisite instead of derived.)
+    structure DefFun (A : U) (B : V) (f : A → B) where
+    (F           : A ⟶ B)
+    (eff (a : A) : F a ≃ f a)
+
+    notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
+
+    variable {A : U} {B : V}
+
+    def toDefFun' (F : A ⟶ B) {f : A → B} (h : ∀ a, F a ≃ f a) : A ⟶{f} B := ⟨F, h⟩
+    def toDefFun (F : A ⟶ B) : A ⟶{apply F} B := toDefFun' F (λ a => HasInstanceEquivalences.refl (F a))
+    @[reducible] def fromDefFun {f : A → B} (F : A ⟶{f} B) : A ⟶ B := F.F
+
+    def byDef {f : A → B} {F : A ⟶{f} B} {a : A} : (fromDefFun F) a ≃ f a := F.eff a
+
+    notation:60 F:61 " ◄ " h:61 => HasFunctors.toDefFun' F (λ _ => HasInstanceEquivalences.trans HasFunctors.byDef h)
+
+    instance {F : A ⟶ B} : CoeDep (A ⟶ B) F  (A ⟶{apply F} B) := ⟨toDefFun F⟩
+    instance {f : A → B} : Coe    (A ⟶{f} B) (A ⟶ B)          := ⟨fromDefFun⟩
+
+    def castFun (F : A ⟶ B) (f : A → B) (h : ∀ a, F a ≃ f a) : A ⟶ B := fromDefFun (toDefFun' F h)
+
+    def castDefFun {f f' : A → B} (F : A ⟶{f} B) (h : ∀ a, f a ≃ f' a) : A ⟶{f'} B :=
+    ⟨F.F, λ a => h a • F.eff a⟩
+
+    namespace IsFunApp
+
+      instance (priority := low) refl (F : A ⟶ B) (a : A) : IsFunApp A (F a) :=
+      { F := F,
+        a := a,
+        e := HasInstanceEquivalences.refl (F a) }
+
+      def fromDef {f : A → B} (F : A ⟶{f} B) (a : A) : IsFunApp A (f a) :=
+      { F := fromDefFun F,
+        a := a,
+        e := byDef }
+
+    end IsFunApp
+
+    def defAppFun (F : A ⟶ B) : A ⟶{λ a => F a} B := F
+    @[reducible] def appFun (F : A ⟶ B) : A ⟶ B := defAppFun F
+
+    variable [HasIdentity U] [HasCongrArg U V]
+
+    def byArgDef {X XU : Universe} [HasFunctors X U XU] {A : X} {B : U} {C : V}
+                 {f : A → B} {F : A ⟶{f} B} {G : B ⟶ C} {a : A} :
+      G ((fromDefFun F) a) ≃ G (f a) :=
+    congrArg G byDef
+
+    def byDefDef {X XU : Universe} [HasFunctors X U XU] {A : X} {B : U} {C : V}
+                 {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {a : A} :
+      (fromDefFun G) ((fromDefFun F) a) ≃ g (f a) :=
+    byDef • byArgDef
+
+    def byArgDefDef {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
+                    [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
+                    {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {H : C ⟶ D} {a : A} :
+      H ((fromDefFun G) ((fromDefFun F) a)) ≃ H (g (f a)) :=
+    congrArg H byDefDef
+
+    def byDefDefDef {W VW X XU : Universe} [HasFunctors V W VW] [HasIdentity W] [HasCongrArg V W]
+                    [HasFunctors X U XU] {A : X} {B : U} {C : V} {D : W}
+                    {f : A → B} {F : A ⟶{f} B} {g : B → C} {G : B ⟶{g} C} {h : C → D} {H : C ⟶{h} D}
+                    {a : A} :
+      (fromDefFun H) ((fromDefFun G) ((fromDefFun F) a)) ≃ h (g (f a)) :=
+    byDef • byArgDefDef
+
+  end
+
+  section
+
+    variable {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW] [HasIdentity W]
+             [HasIdentity VW]
+
+    structure DefFun₂ (A : U) (B : V) (C : W) (f : A → B → C) where
+    (defFun (a : A) : B ⟶{f a} C)
+    (defFunFun      : A ⟶{λ a => defFun a} (B ⟶ C))
+
+    notation:20 A:21 " ⟶ " B:21 " ⟶{" f:0 "} " C:21 => HasFunctors.DefFun₂ A B C f
+
+    variable {A : U} {B : V} {C : W}
+
+    def toDefFun₂' (F : A ⟶ B ⟶ C) {f : A → B → C} (h : ∀ a b, F a b ≃ f a b) : A ⟶ B ⟶{f} C :=
+    ⟨λ a => toDefFun' (F a) (h a), toDefFun F⟩
+
+    def toDefFun₂ (F : A ⟶ B ⟶ C) : A ⟶ B ⟶{λ a => apply (F a)} C :=
+    toDefFun₂' F (λ a b => HasInstanceEquivalences.refl (F a b))
+
+    @[reducible] def fromDefFun₂ {f : A → B → C} (F : A ⟶ B ⟶{f} C) : A ⟶ B ⟶ C := F.defFunFun
+
+    instance {F : A ⟶ B ⟶ C} : CoeDep (A ⟶ B ⟶ C) F  (A ⟶ B ⟶{λ a => apply (F a)} C) := ⟨toDefFun₂ F⟩
+    instance {f : A → B → C} : Coe    (A ⟶ B ⟶{f} C) (A ⟶ B ⟶ C)                     := ⟨fromDefFun₂⟩
+
+    def castFun₂ (F : A ⟶ B ⟶ C) (f : A → B → C) (h : ∀ a b, F a b ≃ f a b) : A ⟶ B ⟶ C :=
+    fromDefFun₂ (toDefFun₂' F h)
+
+    def castDefFun₂ {f f' : A → B → C} (F : A ⟶ B ⟶{f} C) (h : ∀ a b, f a b ≃ f' a b) :
+      A ⟶ B ⟶{f'} C :=
+    ⟨λ a => castDefFun (F.defFun a) (h a), F.defFunFun⟩
+
+    variable [HasCongrFun V W]
+
+    def byFunDef {f : A → (B ⟶ C)} {F : A ⟶{f} (B ⟶ C)} {a : A} {b : B} :
+      (fromDefFun F) a b ≃ (f a) b :=
+    congrFun byDef b
+
+    -- This works for `DefFun₂` but is more general.
+    def byDef₂ {f : A → B → C} {F' : ∀ a, B ⟶{f a} C} {F : A ⟶{λ a => F' a} (B ⟶ C)} {a : A} {b : B} :
+      (fromDefFun F) a b ≃ f a b :=
+    byDef • byFunDef
+
+    notation:60 F:61 " ◄◄ " h:61 => HasFunctors.toDefFun₂' F (λ _ _ => HasInstanceEquivalences.trans HasFunctors.byDef₂ h)
+
+  end
+
+  section
+
+    variable {U V W X WX VWX UVWX : Universe} [HasFunctors W X WX] [HasFunctors V WX VWX]
+             [HasFunctors U VWX UVWX] [HasIdentity X] [HasIdentity WX] [HasIdentity VWX]
+
+    structure DefFun₃ (A : U) (B : V) (C : W) (D : X) (f : A → B → C → D) where
+    (defFun (a : A) : B ⟶ C ⟶{f a} D)
+    (defFunFunFun   : A ⟶{λ a => defFun a} (B ⟶ C ⟶ D))
+
+    notation:20 A:21 " ⟶ " B:21 " ⟶ " C:21 " ⟶{" f:0 "} " D:21 => HasFunctors.DefFun₃ A B C D f
+
+    variable {A : U} {B : V} {C : W} {D : X}
+
+    def DefFun₃.defFunFun {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) :
+      A ⟶ B ⟶{λ a b => fromDefFun ((F.defFun a).defFun b)} (C ⟶ D) :=
+    ⟨λ a => (F.defFun a).defFunFun, F.defFunFunFun⟩
+
+    def toDefFun₃' (F : A ⟶ B ⟶ C ⟶ D) {f : A → B → C → D} (h : ∀ a b c, F a b c ≃ f a b c) :
+      A ⟶ B ⟶ C ⟶{f} D :=
+    ⟨λ a => toDefFun₂' (F a) (h a), toDefFun F⟩
+
+    def toDefFun₃ (F : A ⟶ B ⟶ C ⟶ D) : A ⟶ B ⟶ C ⟶{λ a b => apply (F a b)} D :=
+    toDefFun₃' F (λ a b c => HasInstanceEquivalences.refl (F a b c))
+
+    @[reducible] def fromDefFun₃ {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) : A ⟶ B ⟶ C ⟶ D :=
+    F.defFunFunFun
+
+    instance {F : A ⟶ B ⟶ C ⟶ D} : CoeDep (A ⟶ B ⟶ C ⟶ D) F  (A ⟶ B ⟶ C ⟶{λ a b => apply (F a b)} D) := ⟨toDefFun₃ F⟩
+    instance {f : A → B → C → D} : Coe    (A ⟶ B ⟶ C ⟶{f} D) (A ⟶ B ⟶ C ⟶ D)                         := ⟨fromDefFun₃⟩
+
+    def castFun₃ (F : A ⟶ B ⟶ C ⟶ D) (f : A → B → C → D) (h : ∀ a b c, F a b c ≃ f a b c) : A ⟶ B ⟶ C ⟶ D :=
+    fromDefFun₃ (toDefFun₃' F h)
+
+    def castDefFun₃ {f f' : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) (h : ∀ a b c, f a b c ≃ f' a b c) :
+      A ⟶ B ⟶ C ⟶{f'} D :=
+    ⟨λ a => castDefFun₂ (F.defFun a) (h a), F.defFunFunFun⟩
+
+    variable [HasCongrFun V WX] [HasCongrFun W X]
+
+    def byFunDef₂ {f : A → (B ⟶ C ⟶ D)} {F : A ⟶{f} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
+      (fromDefFun F) a b c ≃ (f a) b c :=
+    congrFun byFunDef c
+
+    def byDef₃ {f : A → B → C → D} {F'' : ∀ a b, C ⟶{f a b} D} {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D)}
+               {F : A ⟶{λ a => F' a} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
+      (fromDefFun F) a b c ≃ f a b c :=
+    byDef • congrFun byDef₂ c
+
+    notation:60 F:61 " ◄◄◄ " h:61 => HasFunctors.toDefFun₃' F (λ _ _ _ => HasInstanceEquivalences.trans HasFunctors.byDef₃ h)
+
+  end
+
+  section
+
+    variable {U V W X Y XY WXY VWXY UVWXY : Universe} [HasFunctors X Y XY] [HasFunctors W XY WXY]
+             [HasFunctors V WXY VWXY] [HasFunctors U VWXY UVWXY] [HasIdentity Y] [HasIdentity XY]
+             [HasIdentity WXY] [HasIdentity VWXY]
+
+    structure DefFun₄ (A : U) (B : V) (C : W) (D : X) (E : Y) (f : A → B → C → D → E) where
+    (defFun (a : A)  : B ⟶ C ⟶ D ⟶{f a} E)
+    (defFunFunFunFun : A ⟶{λ a => defFun a} (B ⟶ C ⟶ D ⟶ E))
+
+    notation:20 A:21 " ⟶ " B:21 " ⟶ " C:21 " ⟶ " D:21 " ⟶{" f:0 "} " E:21 => HasFunctors.DefFun₄ A B C D E f
+
+    variable {A : U} {B : V} {C : W} {D : X} {E : Y}
+
+    def DefFun₄.defFunFun {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) :
+      A ⟶ B ⟶ C ⟶{λ a b c => fromDefFun (((F.defFun a).defFun b).defFun c)} (D ⟶ E) :=
+    ⟨λ a => (F.defFun a).defFunFun, F.defFunFunFunFun⟩
+
+    def DefFun₄.defFunFunFun {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) :
+      A ⟶ B ⟶{λ a b => fromDefFun₂ ((F.defFun a).defFun b)} (C ⟶ D ⟶ E) :=
+    DefFun₃.defFunFun (DefFun₄.defFunFun F)
+
+    def toDefFun₄' (F : A ⟶ B ⟶ C ⟶ D ⟶ E) {f : A → B → C → D → E} (h : ∀ a b c d, F a b c d ≃ f a b c d) :
+      A ⟶ B ⟶ C ⟶ D ⟶{f} E :=
+    ⟨λ a => toDefFun₃' (F a) (h a), toDefFun F⟩
+
+    def toDefFun₄ (F : A ⟶ B ⟶ C ⟶ D ⟶ E) : A ⟶ B ⟶ C ⟶ D ⟶{λ a b c => apply (F a b c)} E :=
+    toDefFun₄' F (λ a b c d => HasInstanceEquivalences.refl (F a b c d))
+
+    @[reducible] def fromDefFun₄ {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) : A ⟶ B ⟶ C ⟶ D ⟶ E :=
+    F.defFunFunFunFun
+
+    instance {F : A ⟶ B ⟶ C ⟶ D ⟶ E} : CoeDep (A ⟶ B ⟶ C ⟶ D ⟶ E) F  (A ⟶ B ⟶ C ⟶ D ⟶{λ a b c => apply (F a b c)} E) := ⟨toDefFun₄ F⟩
+    instance {f : A → B → C → D → E} : Coe    (A ⟶ B ⟶ C ⟶ D ⟶{f} E) (A ⟶ B ⟶ C ⟶ D ⟶ E)                             := ⟨fromDefFun₄⟩
+
+    def castFun₄ (F : A ⟶ B ⟶ C ⟶ D ⟶ E) (f : A → B → C → D → E) (h : ∀ a b c d, F a b c d ≃ f a b c d) : A ⟶ B ⟶ C ⟶ D ⟶ E :=
+    fromDefFun₄ (toDefFun₄' F h)
+
+    def castDefFun₄ {f f' : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) (h : ∀ a b c d, f a b c d ≃ f' a b c d) :
+      A ⟶ B ⟶ C ⟶ D ⟶{f'} E :=
+    ⟨λ a => castDefFun₃ (F.defFun a) (h a), F.defFunFunFunFun⟩
+
+    variable [HasCongrFun V WXY] [HasCongrFun W XY] [HasCongrFun X Y]
+
+    def byFunDef₃ {f : A → (B ⟶ C ⟶ D ⟶ E)} {F : A ⟶{f} (B ⟶ C ⟶ D ⟶ E)}
+                  {a : A} {b : B} {c : C} {d : D} :
+      (fromDefFun F) a b c d ≃ (f a) b c d :=
+    congrFun byFunDef₂ d
+
+    def byDef₄ {f : A → B → C → D → E} {F''': ∀ a b c, D ⟶{f a b c} E}
+               {F'' : ∀ a b, C ⟶{λ c => F''' a b c} (D ⟶ E)} {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D ⟶ E)}
+               {F : A ⟶{λ a => F' a} (B ⟶ C ⟶ D ⟶ E)} {a : A} {b : B} {c : C} {d : D} :
+      (fromDefFun F) a b c d ≃ f a b c d :=
+    byDef • congrFun byDef₃ d
+
+    notation:60 F:61 " ◄◄◄◄ " h:61 => HasFunctors.toDefFun₄' F (λ _ _ _ _ => HasInstanceEquivalences.trans HasFunctors.byDef₄ h)
+
+  end
+
+end HasFunctors
 
 namespace HasCongrFun
 
@@ -184,14 +322,14 @@ namespace HasCongrFun
 
     section
 
-      variable [HasCongrFun U V]
+      variable [HasCongrFun U V] {A : U} {B : V}
 
-      def applyCongrFun {A : U} {B : V} {F₁ F₂ : A ⟶ B} (h : F₁ ≃ F₂) (a : A)
-                        {b₁ b₂ : B} (h₁ : F₁ a ≃ b₁) (h₂ : F₂ a ≃ b₂) :
+      def applyCongrFun {F₁ F₂ : A ⟶ B} (h : F₁ ≃ F₂) (a : A) {b₁ b₂ : B} (h₁ : F₁ a ≃ b₁)
+                        (h₂ : F₂ a ≃ b₂) :
         b₁ ≃ b₂ :=
       h₂ • congrFun h a • h₁⁻¹
 
-      def defCongrFun {A : U} {B : V} {f₁ f₂ : A → B} {F₁ : A ⟶{f₁} B} {F₂ : A ⟶{f₂} B}
+      def defCongrFun {f₁ f₂ : A → B} {F₁ : A ⟶{f₁} B} {F₂ : A ⟶{f₂} B}
                       (h : fromDefFun F₁ ≃ fromDefFun F₂) (a : A) :
         f₁ a ≃ f₂ a :=
       applyCongrFun h a byDef byDef
@@ -208,6 +346,8 @@ namespace HasCongrFun
       -- so the implementation shrinks to a proof of `F₁ ≃ F₂` given `∀ a, F₁ a ≃ F₂ a`. If functors
       -- are extensional, then this proof is completely generic (see `Trivial.lean`). In general it
       -- can be regarded as a proof that the instance of `F₁ a ≃ F₂ a` is natural in `a`.
+
+      -- TODO: Stack extensionality in the same way as functors.
 
       def IsExtensional (F₁ F₂ : A ⟶ B) (h : ∀ a, F₁ a ≃ F₂ a) := F₁ ≃ F₂
       notation:25 F₁:26 " ≃{" h:0 "} " F₂:26 => HasCongrFun.IsExtensional F₁ F₂ h
@@ -238,9 +378,7 @@ namespace HasCongrFun
       notation:25 F₁:26 " ≃{" hf₁:0 " ▻ " h:0 " ◅ " hf₂:0 "} " F₂:26 => HasCongrFun.IsExtensional''' F₁ F₂ h (λ _ => hf₁ • HasFunctors.byDef) (λ _ => hf₂ • HasFunctors.byDef)
       notation:25 F₁:26 " ≃⦃" A':0 " ▻ " h:0 " ◅ " B':0 "⦄ " F₂:26 => HasCongrFun.IsExtensional''' (A := A') (B := B') F₁ F₂ h (λ _ => HasFunctors.byDef) (λ _ => HasFunctors.byDef)
 
-      def IsDefExtensional {f₁ f₂ : A → B} (F₁ : A ⟶{f₁} B) (F₂ : A ⟶{f₂} B)
-                           (h : ∀ a, f₁ a ≃ f₂ a) :=
-      fromDefFun F₁ ≃{▻ h ◅} fromDefFun F₂
+      def IsDefExtensional {f₁ f₂ : A → B} (F₁ F₂ : A ⟶{f₁} B) := fromDefFun F₁ ≃{▻-◅} fromDefFun F₂
 
     end
 
@@ -262,8 +400,7 @@ namespace HasCongrFun
         e₁ := hf₁ a,
         e₂ := hf₂ a }
 
-      instance invCongrFun [HasCongrFun U V] {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : F₁ ≃ F₂)
-                           (a : A) :
+      instance invCongrFun [HasCongrFun U V] {A : U} {B : V} {F₁ F₂ : A ⟶ B} (e : F₁ ≃ F₂) (a : A) :
         IsExtApp A (congrFun e a) :=
       { e  := e,
         a  := a,
@@ -286,61 +423,64 @@ namespace HasCongrFun
 
   end
 
+end HasCongrFun
+
+namespace HasCongrArg
+
+  open HasFunctors HasCongrFun
+
+  section
+
+    variable {U V UV : Universe} [HasFunctors U V UV] [HasIdentity U] [HasIdentity V] [HasCongrArg U V]
+
+    def applyCongrArg {A : U} {B : V} (F : A ⟶ B) {a₁ a₂ : A} (h : a₁ ≃ a₂)
+                      {b₁ b₂ : B} (h₁ : F a₁ ≃ b₁) (h₂ : F a₂ ≃ b₂) :
+      b₁ ≃ b₂ :=
+    h₂ • congrArg F h • h₁⁻¹
+
+    def defCongrArg {A : U} {B : V} {f : A → B} (F : A ⟶{f} B) {a₁ a₂ : A} : a₁ ≃ a₂ → f a₁ ≃ f a₂ :=
+    λ h => applyCongrArg (fromDefFun F) h byDef byDef
+
+  end
+
   section
 
     variable {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW] [HasIdentity W]
-             [HasIdentity VW] [HasCongrFun V W]
+             [HasIdentity VW] {A : U} {B : V} {C : W}
 
-    def byFunDef {A : U} {B : V} {C : W} {f : A → (B ⟶ C)} {F : A ⟶{f} (B ⟶ C)} {a : A} {b : B} :
-      (fromDefFun F) a b ≃ (f a) b :=
-    congrFun byDef b
+    def defCongrArg₂A [HasIdentity U] [HasCongrArg U VW] [HasCongrFun V W]
+                      {f : A → B → C} (F : A ⟶ B ⟶{f} C) {a₁ a₂ : A} (ha : a₁ ≃ a₂) (b : B) :
+      f a₁ b ≃ f a₂ b :=
+    defCongrFun (defCongrArg F.defFunFun ha) b
 
-    def byDef₂ {A : U} {B : V} {C : W} {f : A → B → C} {F' : ∀ a, B ⟶{f a} C}
-               {F : A ⟶{λ a => F' a} (B ⟶ C)} {a : A} {b : B} :
-      (fromDefFun F) a b ≃ f a b :=
-    byDef • byFunDef
+    def defCongrArg₂B [HasIdentity V] [HasCongrArg V W]
+                      {f : A → B → C} (F : A ⟶ B ⟶{f} C) (a : A) {b₁ b₂ : B} (hb : b₁ ≃ b₂) :
+      f a b₁ ≃ f a b₂ :=
+    defCongrArg (F.defFun a) hb
 
     section
 
-      variable [HasIdentity U] [HasIdentity V] [HasCongrArg V W] [HasCongrArg U VW]
+      variable [HasIdentity U] [HasIdentity V] [HasCongrArg V W] [HasCongrArg U VW] [HasCongrFun V W]
+               {A : U} {B : V} {C : W}
 
-      def congrArg₂ {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) {a₁ a₂ : A} {b₁ b₂ : B} :
+      def congrArg₂ (F : A ⟶ B ⟶ C) {a₁ a₂ : A} {b₁ b₂ : B} :
         a₁ ≃ a₂ → b₁ ≃ b₂ → F a₁ b₁ ≃ F a₂ b₂ :=
       λ ha hb => congrFun (congrArg F ha) b₂ • congrArg (F a₁) hb
 
-      def defCongrArg₂ {A : U} {B : V} {C : W} {f : A → B → C} {F' : ∀ a, B ⟶{f a} C}
-                       (F : A ⟶{λ a => F' a} (B ⟶ C)) {a₁ a₂ : A} {b₁ b₂ : B} :
+      def applyCongrArg₂ (F : A ⟶ B ⟶ C) {a₁ a₂ : A} (ha : a₁ ≃ a₂) {b₁ b₂ : B} (hb : b₁ ≃ b₂)
+                         {c₁ c₂ : C} (h₁ : F a₁ b₁ ≃ c₁) (h₂ : F a₂ b₂ ≃ c₂) :
+        c₁ ≃ c₂ :=
+      h₂ • congrArg₂ F ha hb • h₁⁻¹
+
+      def defCongrArg₂ {f : A → B → C} (F : A ⟶ B ⟶{f} C) {a₁ a₂ : A} {b₁ b₂ : B} :
         a₁ ≃ a₂ → b₁ ≃ b₂ → f a₁ b₁ ≃ f a₂ b₂ :=
-      λ ha hb => byDef₂ • congrArg₂ (fromDefFun F) ha hb • byDef₂⁻¹
+      λ ha hb => applyCongrArg₂ (fromDefFun₂ F) ha hb byDef₂ byDef₂
 
     end
 
   end
 
-  section
-
-    variable {U V UV : Universe} [HasFunctors V V V] [HasFunctors U V UV] [HasIdentity V]
-             [HasCongrFun V V]
-
-    def byFunDef₂ {A : U} {B C D : V} {f : A → (B ⟶ C ⟶ D)} {F : A ⟶{f} (B ⟶ C ⟶ D)}
-                  {a : A} {b : B} {c : C} :
-      (fromDefFun F) a b c ≃ (f a) b c :=
-    congrFun byFunDef c
-
-    def byDef₃ {A : U} {B C D : V} {f : A → B → C → D} {F'' : ∀ a b, C ⟶{f a b} D}
-               {F' : ∀ a, B ⟶{λ b => F'' a b} (C ⟶ D)}
-               {F : A ⟶{λ a => F' a} (B ⟶ C ⟶ D)} {a : A} {b : B} {c : C} :
-      (fromDefFun F) a b c ≃ f a b c :=
-    byDef • congrFun byDef₂ c
-
-    def byFunDef₃ {A : U} {B C D E : V} {f : A → (B ⟶ C ⟶ D ⟶ E)} {F : A ⟶{f} (B ⟶ C ⟶ D ⟶ E)}
-                  {a : A} {b : B} {c : C} {d : D} :
-      (fromDefFun F) a b c d ≃ (f a) b c d :=
-    congrFun byFunDef₂ d
-
-  end
-
-end HasCongrFun
+end HasCongrArg
 
 
 
@@ -424,13 +564,16 @@ class HasCompFunFun (U W : Universe) {UW : Universe} [HasFunctors U W UW] [HasFu
 
 namespace HasCompFunFun
 
-  open HasFunctors
+  open HasFunctors HasCompFun
 
   variable {U W UW : Universe} [HasFunctors U W UW] [HasFunctors W UW UW]
            [HasFunctors W W W] [HasIdentity W] [HasIdentity UW] [HasCompFunFun U W]
 
+  def defCompFun₂ {A : U} {B : W} (F : A ⟶ B) (C : W) : (B ⟶ C) ⟶ A ⟶{λ G a => G (F a)} C :=
+  ⟨λ G => defCompFun F G, defCompFunFun F C⟩
+
   @[reducible] def compFunFun {A : U} {B : W} (F : A ⟶ B) (C : W) : (B ⟶ C) ⟶ (A ⟶ C) :=
-  defCompFunFun F C
+  defCompFun₂ F C
 
   instance compFun.isFunApp {A : U} {B C : W} {F : A ⟶ B} {G : B ⟶ C} :
     IsFunApp (B ⟶ C) (G ⊙ F) :=
@@ -447,13 +590,16 @@ class HasRevCompFunFun (U W : Universe) {UW : Universe} [HasFunctors U U U] [Has
 
 namespace HasRevCompFunFun
 
-  open HasFunctors
+  open HasFunctors HasCompFun
 
   variable {U W UW : Universe} [HasFunctors U U U] [HasFunctors U W UW]
            [HasFunctors U UW UW] [HasIdentity W] [HasIdentity UW] [HasRevCompFunFun U W]
 
+  def defRevCompFun₂ (A : U) {B : U} {C : W} (G : B ⟶ C) : (A ⟶ B) ⟶ A ⟶{λ F a => G (F a)} C :=
+  ⟨λ F => defCompFun F G, defRevCompFunFun A G⟩
+
   @[reducible] def revCompFunFun (A : U) {B : U} {C : W} (G : B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
-  defRevCompFunFun A G
+  defRevCompFun₂ A G
 
   instance (priority := low) compFun.isFunApp {A B : U} {C : W} {F : A ⟶ B} {G : B ⟶ C} :
     IsFunApp (A ⟶ B) (G ⊙ F) :=
@@ -469,16 +615,24 @@ class HasSwapFun (U V W : Universe) {VW UVW UW : Universe} [HasFunctors V W VW] 
 
 namespace HasSwapFun
 
+  open HasFunctors
+
   variable {U V W VW UVW UW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
            [HasFunctors U W UW] [HasIdentity W] [HasSwapFun U V W]
 
   @[reducible] def swapFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := defSwapFun F b
 
-  def defSwapDefFun [HasIdentity VW] [HasCongrFun V W] {A : U} {B : V} {C : W} {f : A → (B ⟶ C)}
-                    (F : A ⟶{f} (B ⟶ C)) (b : B) :
+  def defSwapDefFun' [HasIdentity VW] [HasCongrFun V W] {A : U} {B : V} {C : W} {f : A → (B ⟶ C)}
+                     (F : A ⟶{f} (B ⟶ C)) (b : B) :
     A ⟶{λ a => (f a) b} C :=
   swapFun F b
-  ◄ HasCongrFun.byFunDef
+  ◄ byFunDef
+
+  def defSwapDefFun [HasIdentity VW] [HasCongrFun V W] {A : U} {B : V} {C : W} {f : A → B → C}
+                    (F : A ⟶ B ⟶{f} C) (b : B) :
+    A ⟶{λ a => f a b} C :=
+  swapFun F b
+  ◄ byDef₂
 
 end HasSwapFun
 
@@ -496,13 +650,21 @@ namespace HasSwapFunFun
            [HasFunctors U W UW] [HasFunctors V UW VUW] [HasIdentity W] [HasIdentity UW]
            [HasSwapFunFun U V W]
 
-  @[reducible] def swapFunFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := defSwapFunFun F
+  def defSwapFun₂ {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶{λ b a => F a b} C :=
+  ⟨λ b => defSwapFun F b, defSwapFunFun F⟩
+
+  @[reducible] def swapFunFun {A : U} {B : V} {C : W} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := defSwapFun₂ F
 
   instance swapFun.isFunApp {A : U} {B : V} {C : W} {F : A ⟶ B ⟶ C} {b : B} :
     IsFunApp B (swapFun F b) :=
   { F := swapFunFun F,
     a := b,
     e := byDef }
+
+  def defSwapDefFun₂ [HasIdentity VW] [HasCongrFun U W] [HasCongrFun V W] {A : U} {B : V} {C : W}
+                     {f : A → B → C} (F : A ⟶ B ⟶{f} C) :
+    B ⟶ A ⟶{λ b a => f a b} C :=
+  ⟨λ b => defSwapDefFun F b, defSwapFunFun (fromDefFun₂ F)⟩
 
 end HasSwapFunFun
 
@@ -511,6 +673,8 @@ class HasDupFun (U V : Universe) {UV UUV : Universe} [HasFunctors U V UV] [HasFu
 (defDupFun {A : U} {B : V} (F : A ⟶ A ⟶ B) : A ⟶{λ a => F a a} B)
 
 namespace HasDupFun
+
+  open HasFunctors
 
   variable {U V UV UUV : Universe} [HasFunctors U V UV] [HasFunctors U UV UUV] [HasIdentity V]
            [HasDupFun U V]
@@ -521,7 +685,7 @@ namespace HasDupFun
                    (F : A ⟶{f} (A ⟶ B)) :
     A ⟶{λ a => (f a) a} B :=
   dupFun F
-  ◄ HasCongrFun.byFunDef
+  ◄ byFunDef
 
 end HasDupFun
 
@@ -531,16 +695,24 @@ class HasSubstFun (U V W : Universe) {UV VW UVW UW : Universe} [HasFunctors U V 
 
 namespace HasSubstFun
 
+  open HasFunctors
+
   variable {U V W UV VW UVW UW : Universe} [HasFunctors U V UV] [HasFunctors V W VW] [HasFunctors U W UW]
            [HasFunctors U VW UVW] [HasFunctors U W UW] [HasIdentity W] [HasSubstFun U V W]
 
   @[reducible] def substFun {A : U} {B : V} {C : W} (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶ C := defSubstFun F G
 
+  def defSubstDefFun' [HasIdentity V] [HasIdentity VW] [HasCongrArg V W] [HasCongrFun V W]
+                      {A : U} {B : V} {C : W} {f : A → B} (F : A ⟶{f} B) {g : A → (B ⟶ C)} (G : A ⟶{g} (B ⟶ C)) :
+    A ⟶{λ a => (g a) (f a)} C :=
+  substFun (B := B) F G
+  ◄ byFunDef • byArgDef
+
   def defSubstDefFun [HasIdentity V] [HasIdentity VW] [HasCongrArg V W] [HasCongrFun V W]
-                     {A : U} {B : V} {C : W} {f : A → B} (F : A ⟶{f} B) {g : A → (B ⟶ C)} (G : A ⟶{g} (B ⟶ C)) :
+                     {A : U} {B : V} {C : W} {f : A → B} (F : A ⟶{f} B) {g : A → B → C} (G : A ⟶ B ⟶{g} C) :
     A ⟶{λ a => g a (f a)} C :=
   substFun (B := B) F G
-  ◄ HasCongrFun.byFunDef • HasCongrArg.byArgDef
+  ◄ byDef₂ • byArgDef
 
 end HasSubstFun
 
@@ -556,8 +728,11 @@ namespace HasRevSubstFunFun
   variable {U W : Universe} {UW : Universe} [HasFunctors U U U] [HasFunctors U W UW]
            [HasFunctors U UW UW] [HasIdentity W] [HasIdentity UW] [HasRevSubstFunFun U W]
 
+  def defRevSubstFun₂ {A B : U} {C : W} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶ A ⟶{λ F a => G a (F a)} C :=
+  ⟨λ F => defSubstFun F G, defRevSubstFunFun G⟩
+
   @[reducible] def revSubstFunFun {A B : U} {C : W} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
-  defRevSubstFunFun G
+  defRevSubstFun₂ G
 
   instance (priority := low) substFun.isFunApp {A B : U} {C : W} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
     IsFunApp (A ⟶ B) (substFun F G) :=
@@ -600,9 +775,13 @@ namespace HasRevBiCompFunFun
            [HasFunctors U X UX] [HasFunctors V UX VUX] [HasFunctors U UX UUX] [HasIdentity X]
            [HasIdentity UX] [HasRevBiCompFunFun U V X]
 
+  def defRevBiCompFun₂ {A : U} {B : V} {C : U} {D : X} (H : B ⟶ C ⟶ D) (F : A ⟶ B) :
+    (A ⟶ C) ⟶ A ⟶{λ G a => H (F a) (G a)} D :=
+  ⟨λ G => defBiCompFun F G H, defRevBiCompFunFun H F⟩
+
   @[reducible] def revBiCompFunFun {A : U} {B : V} {C : U} {D : X} (H : B ⟶ C ⟶ D) (F : A ⟶ B) :
     (A ⟶ C) ⟶ (A ⟶ D) :=
-  defRevBiCompFunFun H F
+  defRevBiCompFun₂ H F
 
   instance (priority := low) biCompFun.isFunApp {A : U} {B : V} {C : U} {D : X}
                                                 {F : A ⟶ B} {G : A ⟶ C} {H : B ⟶ C ⟶ D} :
@@ -626,9 +805,13 @@ namespace HasRevBiCompFunFunFun
   variable {U X UX : Universe} [HasFunctors U U U] [HasFunctors U X UX] [HasFunctors U UX UX]
            [HasIdentity X] [HasIdentity UX] [HasRevBiCompFunFunFun U X]
 
+  def defRevBiCompFun₃ (A : U) {B C : U} {D : X} (H : B ⟶ C ⟶ D) :
+    (A ⟶ B) ⟶ (A ⟶ C) ⟶ A ⟶{λ F G a => H (F a) (G a)} D :=
+  ⟨λ F => defRevBiCompFun₂ H F, defRevBiCompFunFunFun A H⟩
+
   @[reducible] def revBiCompFunFunFun (A : U) {B C : U} {D : X} (H : B ⟶ C ⟶ D) :
     (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ D) :=
-  defRevBiCompFunFunFun A H
+  defRevBiCompFun₃ A H
 
   instance (priority := low) revBiCompFunFun.isFunApp {A B C : U} {D : X} {F : A ⟶ B} {H : B ⟶ C ⟶ D} :
     IsFunApp (A ⟶ B) (revBiCompFunFun H F) :=
@@ -702,19 +885,24 @@ end IsLeftFunctorial
 
 class IsBiFunctorial {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
                      [HasIdentity W] [HasIdentity VW]
-                     {A : U} {B : V} {C : W} (f : A → B → C) extends
-  IsRightFunctorial f where
-(defRightFunFun : A ⟶{λ a => IsRightFunctorial.rightFun f a} (B ⟶ C))
+                     {A : U} {B : V} {C : W} (f : A → B → C) where
+(defFun : A ⟶ B ⟶{f} C)
 
 namespace IsBiFunctorial
 
-  open HasFunctors HasCongrFun HasSwapFun HasSwapFunFun
+  open HasFunctors HasCongrArg HasCongrFun HasSwapFun HasSwapFunFun
 
   variable {U V W VW UVW : Universe} [HasFunctors V W VW] [HasFunctors U VW UVW]
            [HasIdentity W] [HasIdentity VW] {A : U} {B : V} {C : W} (f : A → B → C)
            [h : IsBiFunctorial f]
 
-  @[reducible] def rightFunFun : A ⟶ B ⟶ C := h.defRightFunFun
+  instance : IsRightFunctorial f := ⟨h.defFun.defFun⟩
+
+  @[reducible] def rightFunFun : A ⟶ B ⟶ C := h.defFun.defFunFun
+
+  def rightFun.congrArg [HasIdentity U] [HasCongrArg U VW] {a₁ a₂ : A} (ha : a₁ ≃ a₂) :
+    IsRightFunctorial.rightFun f a₁ ≃ IsRightFunctorial.rightFun f a₂ :=
+  defCongrArg h.defFun.defFunFun ha
 
   variable {UW : Universe} [HasFunctors U W UW] [HasCongrFun V W]
 
@@ -725,25 +913,28 @@ namespace IsBiFunctorial
 
   instance [HasSwapFun U V W] : IsLeftFunctorial f := ⟨defLeftFun f⟩
 
-  def defLeftFunFun {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW]
-                    [HasSwapFunFun U V W] :
-    B ⟶{λ b => IsLeftFunctorial.leftFun f b} (A ⟶ C) :=
-  defSwapFunFun (rightFunFun f)
-
-  @[reducible] def leftFunFun {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW]
-                              [HasSwapFunFun U V W] :
-    B ⟶ A ⟶ C :=
-  defLeftFunFun f
-
   instance isFunApp₂ [HasSwapFun U V W] (a : A) (b : B) : IsFunApp₂ A B (f a b) :=
   { toIsFunApp := IsRightFunctorial.isFunApp f a b,
     h₂         := IsLeftFunctorial.isFunApp  f a b }
 
+  variable {VUW : Universe} [HasFunctors V UW VUW] [HasIdentity UW] [HasCongrFun U W]
+           [HasSwapFunFun U V W]
+
+  def defRevFun : B ⟶ A ⟶{λ b a => f a b} C := defSwapDefFun₂ h.defFun
+
+  @[reducible] def leftFunFun : B ⟶ A ⟶ C := (defRevFun f).defFunFun
+
+  def leftFun.congrArg [HasIdentity V] [HasCongrArg V UW] {b₁ b₂ : B} (hb : b₁ ≃ b₂) :
+    IsLeftFunctorial.leftFun f b₁ ≃ IsLeftFunctorial.leftFun f b₂ :=
+  defCongrArg (defRevFun f).defFunFun hb
+
 end IsBiFunctorial
+
+
 
 namespace MetaRelation
 
-  open HasFunctors HasCongrArg HasCongrFun HasSwapFun HasSwapFunFun
+  open HasFunctors HasCongrArg HasSwapFun HasSwapFunFun
 
   variable {α : Sort u} {V : Universe.{v}} {VV : Universe.{vv}} [HasIdentity.{v, iv} V]
            [HasFunctors V V VV]
@@ -768,8 +959,7 @@ namespace MetaRelation
 
     variable {R : MetaRelation α V} [HasSymm R] [HasSymmFun R] [HasCongrArg V V]
 
-    def congrArgSymm {a b : α} {e₁ e₂ : R a b} (he : e₁ ≃ e₂) :
-      e₁⁻¹ ≃ e₂⁻¹ :=
+    def congrArgSymm {a b : α} {e₁ e₂ : R a b} (he : e₁ ≃ e₂) : e₁⁻¹ ≃ e₂⁻¹ :=
     defCongrArg (defSymmFun a b) he
 
   end HasSymmFun
@@ -777,8 +967,7 @@ namespace MetaRelation
   variable [HasIdentity.{vv, ivv} VV] [HasFunctors V VV VV]
 
   class HasTransFun (R : MetaRelation α V) [hR : HasTrans R] where
-  (defTransFun    {a b   : α} (f : R a b) (c : α) : R b c ⟶{λ g => g • f} R a c)
-  (defTransFunFun (a b c : α)                     : R a b ⟶{λ f => defTransFun f c} (R b c ⟶ R a c))
+  (defTransFun (a b c : α) : R a b ⟶ R b c ⟶{λ f g => g • f} R a c)
 
   namespace HasTransFun
 
@@ -786,8 +975,8 @@ namespace MetaRelation
 
       variable (R : MetaRelation α V) [hR : HasTrans R] [h : HasTransFun R]
 
-      @[reducible] def transFun {a b : α} (f : R a b) (c : α) : R b c ⟶ R a c := h.defTransFun f c
-      @[reducible] def transFunFun (a b c : α) : R a b ⟶ R b c ⟶ R a c := h.defTransFunFun a b c
+      @[reducible] def transFun {a b : α} (f : R a b) (c : α) : R b c ⟶ R a c := (h.defTransFun a b c).defFun f
+      @[reducible] def transFunFun (a b c : α) : R a b ⟶ R b c ⟶ R a c := h.defTransFun a b c
 
       instance (priority := low) trans.isFunApp {a b c : α} {f : R a b} {g : R b c} : IsFunApp (R b c) (g • f) :=
       { F := transFun R f c,
@@ -799,53 +988,56 @@ namespace MetaRelation
         a := f,
         e := byDef }
 
-      variable [HasCongrFun V V]
+      def transFun.congrArg [HasCongrArg V VV] {a b : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) (c : α) :
+        transFun R f₁ c ≃ transFun R f₂ c :=
+      defCongrArg (h.defTransFun a b c).defFunFun hf
 
-      def defRevTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
-        R a b ⟶{λ f => g • f} R a c :=
-      swapFun (transFunFun R a b c) g
-      ◄ byDef₂
+      variable [HasCongrFun V V] [HasSwapFunFun V V V]
 
-      @[reducible] def revTransFun [HasSwapFun V V V] (a : α) {b c : α} (g : R b c) :
+      def defRevTransFun (a b c : α) :
+        R b c ⟶ R a b ⟶{λ g f => g • f} R a c :=
+      defSwapDefFun₂ (h.defTransFun a b c)
+
+      @[reducible] def revTransFun (a : α) {b c : α} (g : R b c) :
         R a b ⟶ R a c :=
-      defRevTransFun R a g
+      (defRevTransFun R a b c).defFun g
 
-      def defRevTransFunFun [HasSwapFunFun V V V] (a b c : α) :
-        R b c ⟶{λ g => revTransFun R a g} (R a b ⟶ R a c) :=
-      defSwapFunFun (transFunFun R a b c)
+      @[reducible] def revTransFunFun (a b c : α) : R b c ⟶ R a b ⟶ R a c :=
+      defRevTransFun R a b c
 
-      @[reducible] def revTransFunFun [HasSwapFunFun V V V] (a b c : α) : R b c ⟶ R a b ⟶ R a c :=
-      defRevTransFunFun R a b c
-
-      instance revTransFun.isFunApp [HasSwapFunFun V V V] {a b c : α} {g : R b c} :
+      instance revTransFun.isFunApp {a b c : α} {g : R b c} :
         IsFunApp (R b c) (revTransFun R a g) :=
       { F := revTransFunFun R a b c,
         a := g,
         e := byDef }
 
-      instance (priority := low) trans.isFunApp₂ [HasSwapFun V V V] {a b c : α} {f : R a b} {g : R b c} :
+      instance (priority := low) trans.isFunApp₂ {a b c : α} {f : R a b} {g : R b c} :
         IsFunApp₂ (R a b) (R b c) (g • f) :=
       ⟨{ F := revTransFun R a g,
          a := f,
          e := byDef }⟩
 
+      def revTransFun.congrArg [HasCongrArg V VV] (a : α) {b c : α} {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
+        revTransFun R a g₁ ≃ revTransFun R a g₂ :=
+      defCongrArg (defRevTransFun R a b c).defFunFun hg
+
     end
 
     variable {R : MetaRelation α V} [HasTrans R] [h : HasTransFun R]
 
-    def congrArgTransLeft [HasCongrArg V V] {a b c : α} (f : R a b) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
-      g₁ • f ≃ g₂ • f :=
-    defCongrArg (defTransFun f c) hg
-
     def congrArgTransRight [HasCongrFun V V] [HasCongrArg V VV]
                            {a b c : α} {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) (g : R b c) :
       g • f₁ ≃ g • f₂ :=
-    defCongrFun (defCongrArg (defTransFunFun a b c) hf) g
+    defCongrArg₂A (h.defTransFun a b c) hf g
+
+    def congrArgTransLeft [HasCongrArg V V] {a b c : α} (f : R a b) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
+      g₁ • f ≃ g₂ • f :=
+    defCongrArg₂B (h.defTransFun a b c) f hg
 
     def congrArgTrans [HasCongrArg V V] [HasCongrFun V V] [HasCongrArg V VV] {a b c : α}
                       {f₁ f₂ : R a b} (hf : f₁ ≃ f₂) {g₁ g₂ : R b c} (hg : g₁ ≃ g₂) :
       g₁ • f₁ ≃ g₂ • f₂ :=
-    congrArgTransRight hf g₂ • congrArgTransLeft f₁ hg
+    defCongrArg₂ (h.defTransFun a b c) hf hg
 
   end HasTransFun
 
@@ -855,13 +1047,12 @@ namespace MetaRelation
 
     instance hasSymmFun [HasSymm R] [h : HasSymmFun R] :
       HasSymmFun (opposite R) :=
-    { defSymmFun := λ a b => h.defSymmFun b a }
+    ⟨λ a b => h.defSymmFun b a⟩
 
     instance hasTransFun [HasIdentity VV] [HasFunctors V VV VV] [HasCongrFun V V]
                          [HasSwapFunFun V V V] [HasTrans R] [h : HasTransFun R] :
       HasTransFun (opposite R) :=
-    { defTransFun    := λ f   c => HasTransFun.defRevTransFun R c f,
-      defTransFunFun := λ a b c => HasTransFun.defRevTransFunFun R c b a }
+    ⟨λ a b c => HasTransFun.defRevTransFun R c b a⟩
 
   end opposite
 
@@ -871,12 +1062,11 @@ namespace MetaRelation
 
     instance hasSymmFun [HasSymm R] [h : HasSymmFun R] :
       HasSymmFun (lift R l) :=
-    { defSymmFun := λ a b => h.defSymmFun (l a) (l b) }
+    ⟨λ a b => h.defSymmFun (l a) (l b)⟩
 
     instance hasTransFun [HasIdentity VV] [HasFunctors V VV VV] [HasTrans R] [h : HasTransFun R] :
       HasTransFun (lift R l) :=
-    { defTransFun    := λ f   c => h.defTransFun f (l c),
-      defTransFunFun := λ a b c => h.defTransFunFun (l a) (l b) (l c) }
+    ⟨λ a b c => h.defTransFun (l a) (l b) (l c)⟩
 
   end lift
 
@@ -887,11 +1077,10 @@ namespace MetaRelation.emptyRelation
   variable (V : Universe.{v}) {VV : Universe.{vv}} [HasIdentity.{v, iv} V] [HasFunctors V V VV]
 
   instance hasSymmFun : HasSymmFun (emptyRelation V) :=
-  { defSymmFun := λ e _ => PEmpty.elim e }
+  ⟨λ e _ => PEmpty.elim e⟩
 
   instance hasTransFun [HasIdentity VV] [HasFunctors V VV VV] : HasTransFun (emptyRelation V) :=
-  { defTransFun    := λ {e _} _ _ => PEmpty.elim e,
-    defTransFunFun := λ e _ _     => PEmpty.elim e }
+  ⟨λ e _ _ => PEmpty.elim e⟩
 
 end MetaRelation.emptyRelation
 
@@ -923,45 +1112,56 @@ class HasInternalFunctors (U : Universe.{u}) [HasIdentity.{u, iu} U] extends
 
 
 
-class HasLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends
-  HasIdFun U, HasRevAppFun U, HasCompFunFun U U where
-(defRevAppFunFun  (A B : U)   : A ⟶{λ a => HasRevAppFun.revAppFun a B} ((A ⟶ B) ⟶ B))
-(defCompFunFunFun (A B C : U) : (A ⟶ B) ⟶{λ F => HasCompFunFun.compFunFun F C} ((B ⟶ C) ⟶ (A ⟶ C)))
+class HasLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
+(defIdFun     (A     : U) : A ⟶{id} A)
+(defRevAppFun (A B   : U) : A ⟶ (A ⟶ B) ⟶{λ a F => F a} B)
+(defCompFun   (A B C : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ A ⟶{λ F G a => G (F a)} C)
 
 namespace HasLinearFunOp
 
-  open MetaRelation HasFunctors HasCongrArg HasCongrFun HasCompFunFun
+  open MetaRelation HasFunctors HasCongrArg
 
   variable {U : Universe} [HasIdentity U] [hFun : HasInternalFunctors U] [HasLinearFunOp U]
 
+  instance : HasIdFun U := ⟨defIdFun⟩
+
   @[reducible] def idFun (A : U) : A ⟶ A := HasIdFun.idFun A
 
+  def defAppFun (A B : U) : (A ⟶ B) ⟶ A ⟶{λ F a => F a} B :=
+  ⟨λ F => HasFunctors.defAppFun F, defIdFun (A ⟶ B)⟩
+
   @[reducible] def appFun {A B : U} (F : A ⟶ B) : A ⟶ B := HasFunctors.appFun F
-  def defAppFunFun (A B : U) : (A ⟶ B) ⟶{λ F => appFun F} (A ⟶ B) := HasIdFun.defIdFun (A ⟶ B)
-  @[reducible] def appFunFun (A B : U) : (A ⟶ B) ⟶ A ⟶ B := defAppFunFun A B
+  @[reducible] def appFunFun (A B : U) : (A ⟶ B) ⟶ A ⟶ B := defAppFun A B
 
   instance appFun.isFunApp {A B : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (appFun F) :=
   { F := appFunFun A B,
     a := F,
     e := byDef }
 
+  instance : HasRevAppFun U := ⟨λ {A} a B => (defRevAppFun A B).defFun a⟩
+
   @[reducible] def revAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶ B := HasRevAppFun.revAppFun a B
-  @[reducible] def revAppFunFun (A B : U) : A ⟶ (A ⟶ B) ⟶ B := defRevAppFunFun A B
+  @[reducible] def revAppFunFun (A B : U) : A ⟶ (A ⟶ B) ⟶ B := defRevAppFun A B
 
   instance revAppFun.isFunApp {A B : U} {a : A} : IsFunApp A (revAppFun a B) :=
   { F := revAppFunFun A B,
     a := a,
     e := byDef }
 
+  instance : HasCompFunFun U U :=
+  { defCompFun    := λ {A B C} F G => ((defCompFun A B C).defFun F).defFun G,
+    defCompFunFun := λ {A B} F C   => ((defCompFun A B C).defFun F).defFunFun }
+
   @[reducible] def compFun {A B C : U} (F : A ⟶ B) (G : B ⟶ C) : A ⟶ C := HasCompFun.compFun F G
   @[reducible] def compFunFun {A B : U} (F : A ⟶ B) (C : U) : (B ⟶ C) ⟶ (A ⟶ C) := HasCompFunFun.compFunFun F C
-  @[reducible] def compFunFunFun (A B C : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C) := defCompFunFunFun A B C
+  @[reducible] def compFunFunFun (A B C : U) : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C) := defCompFun A B C
 
   instance compFun.isFunApp {A B C : U} {F : A ⟶ B} {G : B ⟶ C} :
     IsFunApp (B ⟶ C) (compFun F G) :=
   HasCompFunFun.compFun.isFunApp
 
-  instance compFunFun.isFunApp {A B C : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (HasCompFunFun.compFunFun F C) :=
+  instance compFunFun.isFunApp {A B C : U} {F : A ⟶ B} :
+    IsFunApp (A ⟶ B) (HasCompFunFun.compFunFun F C) :=
   { F := compFunFunFun A B C,
     a := F,
     e := byDef }
@@ -971,30 +1171,46 @@ namespace HasLinearFunOp
     trans := HasCompFun.compFun }
 
   instance hasTransFun : HasTransFun hFun.Fun :=
-  { defTransFun    := defCompFunFun,
-    defTransFunFun := defCompFunFunFun }
+  ⟨λ A B C => DefFun₃.defFunFun (defCompFun A B C)⟩
+
+  def revAppFun.congrArg {A : U} {a₁ a₂ : A} (ha : a₁ ≃ a₂) (B : U) :
+    revAppFun a₁ B ≃ revAppFun a₂ B :=
+  defCongrArg (defRevAppFun A B).defFunFun ha
+
+  def compFun.congrArg {A B C : U} (F : A ⟶ B) {G₁ G₂ : B ⟶ C} (hG : G₁ ≃ G₂) :
+    compFun F G₁ ≃ compFun F G₂ :=
+  defCongrArg ((defCompFun A B C).defFun F).defFunFun hG
+
+  def compFunFun.congrArg {A B : U} {F₁ F₂ : A ⟶ B} (hF : F₁ ≃ F₂) (C : U) :
+    compFunFun F₁ C ≃ compFunFun F₂ C :=
+  defCongrArg (defCompFun A B C).defFunFunFun hF
 
 end HasLinearFunOp
 
 
 
-class HasSubLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends
-  HasConstFun U U where
-(defConstFunFun (A B : U) : B ⟶{λ b => HasConstFun.constFun A b} (A ⟶ B))
+class HasSubLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
+(defConstFun (A B : U) : B ⟶ A ⟶{λ b a => b} B)
 
 namespace HasSubLinearFunOp
 
-  open HasFunctors
+  open HasFunctors HasCongrArg
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasSubLinearFunOp U]
 
+  instance : HasConstFun U U := ⟨λ A {B} b => (defConstFun A B).defFun b⟩
+
   @[reducible] def constFun (A : U) {B : U} (b : B) : A ⟶ B := HasConstFun.constFun A b
-  @[reducible] def constFunFun (A B : U) : B ⟶ (A ⟶ B) := defConstFunFun A B
+  @[reducible] def constFunFun (A B : U) : B ⟶ (A ⟶ B) := defConstFun A B
 
   instance constFun.isFunApp {A B : U} {b : B} : IsFunApp B (constFun A b) :=
   { F := constFunFun A B,
     a := b,
     e := byDef }
+
+  def constFun.congrArg (A : U) {B : U} {b₁ b₂ : B} (hb : b₁ ≃ b₂) :
+    constFun A b₁ ≃ constFun A b₂ :=
+  defCongrArg (defConstFun A B).defFunFun hb
 
 end HasSubLinearFunOp
 
@@ -1003,23 +1219,28 @@ class HasAffineFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] exte
 
 
 
-class HasNonLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] extends
-  HasDupFun U U where
-(defDupFunFun (A B : U) : (A ⟶ A ⟶ B) ⟶{λ F => HasDupFun.dupFun F} (A ⟶ B))
+class HasNonLinearFunOp (U : Universe) [HasIdentity U] [HasInternalFunctors U] where
+(defDupFun (A B : U) : (A ⟶ A ⟶ B) ⟶ A ⟶{λ F a => F a a} B)
 
 namespace HasNonLinearFunOp
 
-  open HasFunctors
+  open HasFunctors HasCongrArg
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasNonLinearFunOp U]
 
+  instance : HasDupFun U U := ⟨λ {A B} F => (defDupFun A B).defFun F⟩
+
   @[reducible] def dupFun {A B : U} (F : A ⟶ A ⟶ B) : A ⟶ B := HasDupFun.dupFun F
-  @[reducible] def dupFunFun (A B : U) : (A ⟶ A ⟶ B) ⟶ (A ⟶ B) := defDupFunFun A B
+  @[reducible] def dupFunFun (A B : U) : (A ⟶ A ⟶ B) ⟶ (A ⟶ B) := defDupFun A B
 
   instance dupFun.isFunApp {A B : U} {F : A ⟶ A ⟶ B} : IsFunApp (A ⟶ A ⟶ B) (dupFun F) :=
   { F := dupFunFun A B,
     a := F,
     e := byDef }
+
+  def dupFun.congrArg {A B : U} {F₁ F₂ : A ⟶ A ⟶ B} (hF : F₁ ≃ F₂) :
+    dupFun F₁ ≃ dupFun F₂ :=
+  defCongrArg (defDupFun A B).defFunFun hF
 
 end HasNonLinearFunOp
 

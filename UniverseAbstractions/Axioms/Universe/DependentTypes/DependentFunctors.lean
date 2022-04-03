@@ -54,25 +54,11 @@ namespace HasDependentFunctors
     (fromDefPi F) a ≃[φ.eff a] f a :=
   F.eff a
 
-  @[simp] theorem fromToDefPi' {p : A → V} {φ : A ⟶ ⌊V⌋} (F : Π φ) {f : ∀ a, p a}
-                               (hφ : ∀ a, φ a ≃ ⸤p a⸥) (hF : ∀ a, F a ≃[hφ a] f a) :
-    fromDefPi (toDefPi' F hφ hF) = F :=
-  rfl
-  @[simp] theorem fromToDefPi {φ : A ⟶ ⌊V⌋} (F : Π φ) : fromDefPi (toDefPi F) = F := rfl
-
-  --@[simp] theorem toFromDefPi' {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f : ∀ a, p a} (F : Π{f} φ) :
-  --  toFromDefFun' φ ▸ toDefPi' (fromDefPi F) φ.eff F.eff = F :=
-  --sorry
-
   instance             {φ : A ⟶ ⌊V⌋}    (F : Π φ)      : CoeDep (Π    φ) F (Π{apply F} (toDefFun   φ)) := ⟨toDefPi F⟩
   instance {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f : ∀ a, p a} : Coe    (Π{f} φ)   (Π          (fromDefFun φ)) := ⟨fromDefPi⟩
 
   def castDefPi {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f f' : ∀ a, p a} (F : Π{f} φ) (h : ∀ a, f a ≃ f' a) : Π{f'} φ :=
   ⟨F.F, λ a => h a • F.eff a⟩
-
-  @[simp] theorem fromCastDefPi {p : A → V} {φ : A ⟶{p} ⌊V⌋} {f f' : ∀ a, p a} (F : Π{f} φ) (h : ∀ a, f a ≃ f' a) :
-    fromDefPi (castDefPi F h) = fromDefPi F :=
-  rfl
 
 end HasDependentFunctors
 

@@ -97,9 +97,9 @@ namespace Setoid.IsHomUniverse
 
     -- Lean bug :-(
     noncomputable instance hasIsomorphisms (A : Cat.{u, w} U) : HasIsomorphisms A :=
-    { isoHasSymmFun  := { defSymmFun     := λ _ _   => Setoid.defFun (λ h => IsoDesc.toInvEquiv h) },
-      isoHasTransFun := { defTransFun    := λ e _   => Setoid.defFun (λ h => HasTransFun.congrArgTransLeft e.toHom h),
-                          defTransFunFun := λ _ _ _ => Setoid.defFun (λ h f => HasTransFun.congrArgTransRight (R := A.Hom) h f.toHom) },
+    { isoHasSymmFun  := ⟨λ _ _   => Setoid.defFun (λ h => IsoDesc.toInvEquiv h)⟩,
+      isoHasTransFun := ⟨λ _ _ _ => ⟨λ e => Setoid.defFun (λ h => HasTransFun.congrArgTransLeft e.toHom h),
+                                     Setoid.defFun (λ h f => HasTransFun.congrArgTransRight (R := A.Hom) h f.toHom)⟩⟩,
       defIsoCat      := HasCatProp.HasTrivialCatProp.defCat }
 
   end
@@ -137,7 +137,7 @@ namespace Setoid.IsHomUniverse
     noncomputable instance hasIsoFun {A : Cat.{u, w} U} {B : Cat.{u, w} V} (F : A ⮕ B) :
       HasIsoFun F :=
     { defMapIso    := λ _   => HasIsoRel.HasTrivialIsomorphismCondition.defIso,
-      defMapIsoFun := λ _ _ => Setoid.defFun (HasFunProp.Functor.mapHomCongrArg F),
+      defMapIsoFun := λ _ _ => Setoid.defFun (HasFunProp.Functor.mapHom.congrArg F),
       defIsoFun    := HasFunProp.HasTrivialFunctorialityCondition.defFun }
 
   end
@@ -213,15 +213,15 @@ namespace Setoid.IsHomUniverse
     variable {U V : Universe.{u + 1}}
 
     noncomputable instance hasNaturality (A : Cat' U) (B : Cat' V) : HasNaturality A B :=
-    { natHasTransFun := { defTransFun    := λ η _ => Setoid.defFun (λ {ε₁ ε₂} h a => have h₁ : ⌈ε₁.η a ≃ ε₂.η a⌉ := h a;
-                                                                                     HasTransFun.congrArgTransLeft (η.η a) h₁),
-                          defTransFunFun := λ _ _ _ => Setoid.defFun (λ {η₁ η₂} h ε a => have h₂ : ⌈η₁.η a ≃ η₂.η a⌉ := h a;
-                                                                                         HasTransFun.congrArgTransRight h₂ (ε.η a)) },
+    { natHasTransFun := ⟨λ _ _ _ => ⟨λ η => Setoid.defFun (λ {ε₁ ε₂} h a => have h₁ : ⌈ε₁.η a ≃ ε₂.η a⌉ := h a;
+                                                                            HasTransFun.congrArgTransLeft (η.η a) h₁),
+                                     Setoid.defFun (λ {η₁ η₂} h ε a => have h₂ : ⌈η₁.η a ≃ η₂.η a⌉ := h a;
+                                                                       HasTransFun.congrArgTransRight h₂ (ε.η a))⟩⟩,
       defFunCat      := HasCatProp.HasTrivialCatProp.defCat }
 
     noncomputable instance hasIsoNat {A : Cat' U} {B : Cat' V} (F G : A ⮕' B) : HasIsoNat F G :=
     { defNatIso    := λ _ _ => HasIsoRel.HasTrivialIsomorphismCondition.defIso,
-      defNatIsoFun := λ a   => Setoid.defFun (λ h => HasNatRel.natCongrArg h a) }
+      defNatIsoFun := λ a   => Setoid.defFun (λ h => HasNatRel.nat.congrArg h a) }
 
     noncomputable instance hasIsoNaturality (A : Cat' U) (B : Cat' V) : HasIsoNaturality A B := ⟨⟩
 

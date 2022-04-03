@@ -87,7 +87,7 @@ namespace CategoryTheory
           a := η,
           e := byDef }
 
-        def natCongrArg {η₁ η₂ : h.Nat F G} (e : η₁ ≃ η₂) (a : A) : nat η₁ a ≃ nat η₂ a :=
+        def nat.congrArg {η₁ η₂ : h.Nat F G} (e : η₁ ≃ η₂) (a : A) : nat η₁ a ≃ nat η₂ a :=
         defCongrArg (h.defNatFun F G a) e
 
         def naturality (η : h.Nat F G) {a b : A} (f : a ⇾ b) :
@@ -188,31 +188,31 @@ namespace CategoryTheory
 
       variable {A : Category U W} {B : Category V W} [HasFunProp A B] [h : HasNatOp A B]
 
-      def natReflEq (F : A ⮕ B) (a : A) :
+      def nat.reflEq (F : A ⮕ B) (a : A) :
         nat (HasRefl.refl F) a ≃ idHom (F a) :=
       byNatDef
 
-      def natTransEq {F G H : A ⮕ B} (η : h.Nat F G) (ε : h.Nat G H) (a : A) :
+      def nat.transEq {F G H : A ⮕ B} (η : h.Nat F G) (ε : h.Nat G H) (a : A) :
         nat (ε • η) a ≃ nat ε a • nat η a :=
       byNatDef
 
-      def natAssoc {F G H I : A ⮕ B} (η : h.Nat F G) (ε : h.Nat G H) (θ : h.Nat H I) (a : A) :
+      def nat.assoc {F G H I : A ⮕ B} (η : h.Nat F G) (ε : h.Nat G H) (θ : h.Nat H I) (a : A) :
         nat ((θ • ε) • η) a ≃ nat (θ • (ε • η)) a :=
-      (congrArgTransRight (natTransEq η ε a) (nat θ a) •
-       natTransEq (ε • η) θ a)⁻¹ •
-      assoc (nat η a) (nat ε a) (nat θ a) •
-      (congrArgTransLeft (nat η a) (natTransEq ε θ a) •
-       natTransEq η (θ • ε) a)
+      (congrArgTransRight (nat.transEq η ε a) (nat θ a) •
+       nat.transEq (ε • η) θ a)⁻¹ •
+      IsAssociative.assoc (nat η a) (nat ε a) (nat θ a) •
+      (congrArgTransLeft (nat η a) (nat.transEq ε θ a) •
+       nat.transEq η (θ • ε) a)
 
-      def natRightId {F G : A ⮕ B} (η : h.Nat F G) (a : A) :
+      def nat.rightId {F G : A ⮕ B} (η : h.Nat F G) (a : A) :
         nat (η • HasRefl.refl F) a ≃ nat η a :=
-      cancelRightId (natReflEq F a) (nat η a) •
-      natTransEq (HasRefl.refl F) η a
+      cancelRightId (nat.reflEq F a) (nat η a) •
+      nat.transEq (HasRefl.refl F) η a
 
-      def natLeftId {F G : A ⮕ B} (η : h.Nat F G) (a : A) :
+      def nat.leftId {F G : A ⮕ B} (η : h.Nat F G) (a : A) :
         nat (HasRefl.refl G • η) a ≃ nat η a :=
-      cancelLeftId (nat η a) (natReflEq G a) •
-      natTransEq η (HasRefl.refl G) a
+      cancelLeftId (nat η a) (nat.reflEq G a) •
+      nat.transEq η (HasRefl.refl G) a
 
     end
 
@@ -223,11 +223,11 @@ namespace CategoryTheory
                       (A : Category U W) (B : Category V W) [hFunProp : HasFunProp A B] extends
     HasNatOp A B where
   (assoc {F G H I : A ⮕ B} (η : Nat F G) (ε : Nat G H) (θ : Nat H I) :
-     HasNatRel.NatEquiv ((θ • ε) • η) (θ • (ε • η)) (HasNatOp.natAssoc η ε θ))
+     HasNatRel.NatEquiv ((θ • ε) • η) (θ • (ε • η)) (HasNatOp.nat.assoc η ε θ))
   (rightId {F G : A ⮕ B} (η : Nat F G) :
-     HasNatRel.NatEquiv (η • HasRefl.refl F) η (HasNatOp.natRightId η))
+     HasNatRel.NatEquiv (η • HasRefl.refl F) η (HasNatOp.nat.rightId η))
   (leftId {F G : A ⮕ B} (η : Nat F G) :
-     HasNatRel.NatEquiv (HasRefl.refl G • η) η (HasNatOp.natLeftId η))
+     HasNatRel.NatEquiv (HasRefl.refl G • η) η (HasNatOp.nat.leftId η))
 
   namespace HasNatOpEquiv
 
@@ -301,29 +301,29 @@ namespace CategoryTheory
 
         variable {A : Category U W} {B : Category V W} [HasFunProp A B] [h : HasNaturality A B]
 
-        def natReflEq' (F : A ⮕' B) (a : A) :
+        def nat.reflEq' (F : A ⮕' B) (a : A) :
           nat (idHom F) a ≃' idHom (F a) :=
-        natReflEq F a • natCongrArg (DefCat.catReflEq F) a
+        nat.reflEq F a • nat.congrArg (DefCat.catReflEq F) a
 
-        def natTransEq' {F G H : A ⮕' B} (η : F ⇾ G) (ε : G ⇾ H) (a : A) :
+        def nat.transEq' {F G H : A ⮕' B} (η : F ⇾ G) (ε : G ⇾ H) (a : A) :
           nat (compHom η ε) a ≃' nat ε a • nat η a :=
-        natTransEq η ε a • natCongrArg (DefCat.catTransEq η ε) a
+        nat.transEq η ε a • nat.congrArg (DefCat.catTransEq η ε) a
 
         variable {F G : A ⮕' B}
 
-        def natHalfInv {η : F ⇾ G} {ε : G ⇾ F} (e : HalfInv η ε) (a : A) :
+        def nat.halfInv {η : F ⇾ G} {ε : G ⇾ F} (e : HalfInv η ε) (a : A) :
           HalfInv (nat η a) (nat ε a) :=
-        natReflEq' F a • natCongrArg e a • (natTransEq' η ε a)⁻¹
+        nat.reflEq' F a • nat.congrArg e a • (nat.transEq' η ε a)⁻¹
 
-        instance natIsInv (η : F ⇾ G) (ε : G ⇾ F) [isInv : IsInv η ε] (a : A) :
+        instance nat.isInv (η : F ⇾ G) (ε : G ⇾ F) [isInv : IsInv η ε] (a : A) :
           IsInv (nat η a) (nat ε a) :=
-        { leftInv  := natHalfInv isInv.leftInv  a,
-          rightInv := natHalfInv isInv.rightInv a }
+        { leftInv  := nat.halfInv isInv.leftInv  a,
+          rightInv := nat.halfInv isInv.rightInv a }
 
         def natIsoDesc (η : IsoDesc F G) (a : A) : IsoDesc (F a) (G a) :=
         { toHom  := nat η.toHom  a,
           invHom := nat η.invHom a,
-          isInv  := natIsInv η.toHom η.invHom (isInv := η.isInv) a }
+          isInv  := nat.isInv η.toHom η.invHom (isInv := η.isInv) a }
 
       end
 
@@ -382,37 +382,37 @@ namespace CategoryTheory
       def strict {φ : A → B} {F G : hFunProp.Fun φ} (hEq : NatDesc.StrictNaturality F G) :
         NatIsoDesc ⟨F⟩ ⟨G⟩ :=
       { η        := λ a => idIso (φ a),
-        isToNat  := { nat := λ {a b} f => (cancelRightId (toHomReflEq (φ a)) (mapHom ⟨G⟩ f))⁻¹ •
+        isToNat  := { nat := λ {a b} f => (cancelRightId (toHom.reflEq (φ a)) (mapHom ⟨G⟩ f))⁻¹ •
                                           hEq f •
-                                          cancelLeftId (mapHom ⟨F⟩ f) (toHomReflEq (φ b)) }
-        isInvNat := { nat := λ {a b} f => (cancelRightId (invHomReflEq (φ a)) (mapHom ⟨F⟩ f))⁻¹ •
+                                          cancelLeftId (mapHom ⟨F⟩ f) (toHom.reflEq (φ b)) }
+        isInvNat := { nat := λ {a b} f => (cancelRightId (invHom.reflEq (φ a)) (mapHom ⟨F⟩ f))⁻¹ •
                                           (hEq f)⁻¹ •
-                                          cancelLeftId (mapHom ⟨G⟩ f) (invHomReflEq (φ b)) }, }
+                                          cancelLeftId (mapHom ⟨G⟩ f) (invHom.reflEq (φ b)) }, }
 
       def refl (F : A ⮕ B) : NatIsoDesc F F :=
       { η        := MetaQuantification.refl hBIso.Iso F.φ,
-        isToNat  := { nat := λ {a b} f => (cancelRightId (toHomReflEq (F a)) (mapHom F f))⁻¹ •
-                                          cancelLeftId (mapHom F f) (toHomReflEq (F b)) },
-        isInvNat := { nat := λ {a b} f => (cancelRightId (invHomReflEq (F a)) (mapHom F f))⁻¹ •
-                                          cancelLeftId (mapHom F f) (invHomReflEq (F b)) } }
+        isToNat  := { nat := λ {a b} f => (cancelRightId (toHom.reflEq (F a)) (mapHom F f))⁻¹ •
+                                          cancelLeftId (mapHom F f) (toHom.reflEq (F b)) },
+        isInvNat := { nat := λ {a b} f => (cancelRightId (invHom.reflEq (F a)) (mapHom F f))⁻¹ •
+                                          cancelLeftId (mapHom F f) (invHom.reflEq (F b)) } }
 
       def symm {F G : A ⮕ B} (η : NatIsoDesc F G) : NatIsoDesc G F :=
       { η        := MetaQuantification.symm hBIso.Iso η.η,
-        isToNat  := { nat := λ {a b} f => (congrArgTransRight (toHomSymmEq (η.η a)) (mapHom F f))⁻¹ •
+        isToNat  := { nat := λ {a b} f => (congrArgTransRight (toHom.symmEq (η.η a)) (mapHom F f))⁻¹ •
                                           η.isInvNat.nat f •
-                                          congrArgTransLeft (mapHom G f) (toHomSymmEq (η.η b)) },
-        isInvNat := { nat := λ {a b} f => (congrArgTransRight (invHomSymmEq (η.η a)) (mapHom G f))⁻¹ •
+                                          congrArgTransLeft (mapHom G f) (toHom.symmEq (η.η b)) },
+        isInvNat := { nat := λ {a b} f => (congrArgTransRight (invHom.symmEq (η.η a)) (mapHom G f))⁻¹ •
                                           η.isToNat.nat f •
-                                          congrArgTransLeft (mapHom F f) (invHomSymmEq (η.η b)) } }
+                                          congrArgTransLeft (mapHom F f) (invHom.symmEq (η.η b)) } }
 
       def trans {F G H : A ⮕ B} (η : NatIsoDesc F G) (ε : NatIsoDesc G H) : NatIsoDesc F H :=
       { η        := MetaQuantification.trans hBIso.Iso η.η ε.η,
-        isToNat  := { nat := λ {a b} f => (congrArgTransRight (toHomTransEq (η.η a) (ε.η a)) (mapHom H f))⁻¹ •
+        isToNat  := { nat := λ {a b} f => (congrArgTransRight (toHom.transEq (η.η a) (ε.η a)) (mapHom H f))⁻¹ •
                                           (IsNatural.trans _ _ (hη := η.isToNat) (hε := ε.isToNat)).nat f •
-                                          congrArgTransLeft (mapHom F f) (toHomTransEq (η.η b) (ε.η b)) },
-        isInvNat := { nat := λ {a b} f => (congrArgTransRight (invHomTransEq (η.η a) (ε.η a)) (mapHom F f))⁻¹ •
+                                          congrArgTransLeft (mapHom F f) (toHom.transEq (η.η b) (ε.η b)) },
+        isInvNat := { nat := λ {a b} f => (congrArgTransRight (invHom.transEq (η.η a) (ε.η a)) (mapHom F f))⁻¹ •
                                           (IsNatural.trans _ _ (hη := ε.isInvNat) (hε := η.isInvNat)).nat f •
-                                          congrArgTransLeft (mapHom H f) (invHomTransEq (η.η b) (ε.η b)) } }
+                                          congrArgTransLeft (mapHom H f) (invHom.transEq (η.η b) (ε.η b)) } }
 
       variable {F G : A ⮕ B} (η : NatIsoDesc F G)
 
@@ -432,15 +432,15 @@ namespace CategoryTheory
       (defToNat  : DefNat (toNatDesc  η))
       (defInvNat : DefNat (invNatDesc η))
       (leftInv   : NatEquiv (defInvNat.η • defToNat.η) (HasRefl.refl F)
-                            (λ a => (natReflEq F a)⁻¹ •
+                            (λ a => (nat.reflEq F a)⁻¹ •
                                     leftInv (η.η a) •
                                     congrArgTrans byNatDef byNatDef •
-                                    natTransEq defToNat.η defInvNat.η a))
+                                    nat.transEq defToNat.η defInvNat.η a))
       (rightInv  : NatEquiv (defToNat.η • defInvNat.η) (HasRefl.refl G)
-                            (λ b => (natReflEq G b)⁻¹ •
+                            (λ b => (nat.reflEq G b)⁻¹ •
                                     rightInv (η.η b) •
                                     congrArgTrans byNatDef byNatDef •
-                                    natTransEq defInvNat.η defToNat.η b))
+                                    nat.transEq defInvNat.η defToNat.η b))
 
       namespace IsoDescBuilder
 
@@ -468,10 +468,10 @@ namespace CategoryTheory
       def isoNaturality {a b : A} (e : a ⇿ b) :
         natIso η b • mapIso F e ≃' mapIso G e • natIso η a :=
       toHomInj ((congrArgTransLeft (natToHom η a) (toHomComm G e) •
-                 toHomTransEq (natIso η a) (mapIso G e))⁻¹ •
+                 toHom.transEq (natIso η a) (mapIso G e))⁻¹ •
                 η.isToNat.nat (toHom e) •
                 (congrArgTransRight (toHomComm F e) (natToHom η b) •
-                 toHomTransEq (mapIso F e) (natIso η b)))
+                 toHom.transEq (mapIso F e) (natIso η b)))
 
       instance natIso.isNat :
         IsNatural (preFun (isoFunctor F)) (preFun (isoFunctor G)) (natIso η) :=
@@ -522,7 +522,7 @@ namespace CategoryTheory
         a := η,
         e := byDef }
 
-      def natIsoCongrArg {η₁ η₂ : F ⇿ G} (e : η₁ ≃ η₂) (a : A) :
+      def natIso.congrArg {η₁ η₂ : F ⇿ G} (e : η₁ ≃ η₂) (a : A) :
         natIso η₁ a ≃ natIso η₂ a :=
       defCongrArg (h.defNatIsoFun a) e
 
@@ -558,10 +558,10 @@ namespace CategoryTheory
         def byNatIsoDef : natIso η.η a ≃ NatIsoDesc.natIso desc a := η.natEq a
 
         def byNatIsoToHomDef  : nat (toHom  η.η) a ≃' NatIsoDesc.natToHom  desc a :=
-        toHomCongrArg  byNatIsoDef • (natIsoToHomComm  η.η a)⁻¹
+        toHom.congrArg  byNatIsoDef • (natIsoToHomComm  η.η a)⁻¹
 
         def byNatIsoInvHomDef : nat (invHom η.η) a ≃' NatIsoDesc.natInvHom desc a :=
-        invHomCongrArg byNatIsoDef • (natIsoInvHomComm η.η a)⁻¹
+        invHom.congrArg byNatIsoDef • (natIsoInvHomComm η.η a)⁻¹
 
       end
 
@@ -578,10 +578,10 @@ namespace CategoryTheory
       def byStrictNatIsoDef : natIso η.η a ≃ idIso (φ a) := byNatIsoDef
 
       def byStrictNatIsoToHomDef  : nat (toHom  η.η) a ≃ idHom (φ a) :=
-      toHomReflEq  (φ a) • byNatIsoToHomDef
+      toHom.reflEq  (φ a) • byNatIsoToHomDef
 
       def byStrictNatIsoInvHomDef : nat (invHom η.η) a ≃ idHom (φ a) :=
-      invHomReflEq (φ a) • byNatIsoInvHomDef
+      invHom.reflEq (φ a) • byNatIsoInvHomDef
 
     end
 
@@ -609,23 +609,23 @@ namespace CategoryTheory
       instance (F G : A ⮕' B) : HasIsoNat F G := h.hasIsoNat F G
 
       def natIsoReflEq (F : A ⮕' B) (a : A) : natIso (idIso F) a ≃ idIso (F a) :=
-      toHomInj ((toHomReflEq (F a))⁻¹ •
-                natReflEq' F a •
-                (natCongrArg (toHomReflEq F) a •
+      toHomInj ((toHom.reflEq (F a))⁻¹ •
+                nat.reflEq' F a •
+                (nat.congrArg (toHom.reflEq F) a •
                  natIsoToHomComm (idIso F) a))
 
       def natIsoSymmEq {F G : A ⮕' B} (η : F ⇿ G) (a : A) : natIso η⁻¹ a ≃ (natIso η a)⁻¹ :=
       toHomInj ((natIsoInvHomComm η a •
-                 toHomSymmEq (natIso η a))⁻¹ •
-                (natCongrArg (toHomSymmEq η) a •
+                 toHom.symmEq (natIso η a))⁻¹ •
+                (nat.congrArg (toHom.symmEq η) a •
                  natIsoToHomComm η⁻¹ a))
 
       def natIsoTransEq {F G H : A ⮕' B} (η : F ⇿ G) (ε : G ⇿ H) (a : A) :
         natIso (ε • η) a ≃ natIso ε a • natIso η a :=
       toHomInj ((congrArgTrans (natIsoToHomComm η a) (natIsoToHomComm ε a) •
-                 toHomTransEq (natIso η a) (natIso ε a))⁻¹ •
-                natTransEq' (toHom η) (toHom ε) a •
-                (natCongrArg (toHomTransEq η ε) a •
+                 toHom.transEq (natIso η a) (natIso ε a))⁻¹ •
+                nat.transEq' (toHom η) (toHom ε) a •
+                (nat.congrArg (toHom.transEq η ε) a •
                  natIsoToHomComm (ε • η) a))
 
     end

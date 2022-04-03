@@ -169,7 +169,7 @@ namespace Lean.Functoriality
           let hId_WV : mkHasIdentity WV ← mkHasIdentity.synthesize
           let F_G ← constructLambdaFunctor' ⟨φ.A, C _⟶ φ.B⟩ G forcePrimitive
           let hCongrFun : mkHasCongrFun W φ.V ← InstanceExpr.synthesize
-          let defSwapFun := HasSwapFun.defSwapDefFun (U := φ.U) (V := W) (W := φ.V) F_G.F c'
+          let defSwapFun := HasSwapFun.defSwapDefFun' (U := φ.U) (V := W) (W := φ.V) F_G.F c'
           FunctorLambdaAbstraction.FunDef.mkWithEquiv' f defSwapFun e
         | none => do
           if ← c.isId then
@@ -193,7 +193,7 @@ namespace Lean.Functoriality
           let F_G ← constructLambdaFunctor' ⟨φ.A, C _⟶ φ.B⟩ G forcePrimitive
           let hCongrArg : mkHasCongrArg W φ.V ← InstanceExpr.synthesize
           let hCongrFun : mkHasCongrFun W φ.V ← InstanceExpr.synthesize
-          let defSubstFun := HasSubstFun.defSubstDefFun (U := φ.U) (V := W) (W := φ.V) F_c.F F_G.F
+          let defSubstFun := HasSubstFun.defSubstDefFun' (U := φ.U) (V := W) (W := φ.V) F_c.F F_G.F
           FunctorLambdaAbstraction.FunDef.mkWithEquiv' f defSubstFun e
 
   end

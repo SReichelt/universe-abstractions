@@ -60,7 +60,7 @@ namespace coFunctorUniverse
              [HasLinearFunOp U]
 
     instance hasIndependentCongrArg : HasCongrArg (U {⟶ A}) (U {⟶ A}) :=
-    ⟨λ {B C : U} (F : C ⟶ B) {G₁ G₂ : B ⟶ A} h => defCongrArg (HasCompFunFun.defCompFunFun F A) h⟩
+    ⟨λ {B C : U} (F : C ⟶ B) {G₁ G₂ : B ⟶ A} h => compFun.congrArg F h⟩
 
     variable [HasLinearFunExt U]
 

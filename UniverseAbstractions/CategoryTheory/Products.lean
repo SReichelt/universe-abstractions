@@ -111,10 +111,8 @@ namespace CategoryTheory
              [HasInternalProducts W] [HasProductExt W] [h : IsSortProdUniverse W]
 
     instance hasInternalProducts : HasInternalProducts (univ W) :=
-    { defIntroFun    := sorry,
-      defIntroFunFun := sorry,
-      defElimFun     := sorry,
-      defElimFunFun  := sorry }
+    { defIntroFun := sorry,
+      defElimFun  := sorry }
 
     instance hasProductExt [HasLinearCatFun W] : HasProductExt (univ W) :=
     { introEqExt      := sorry,

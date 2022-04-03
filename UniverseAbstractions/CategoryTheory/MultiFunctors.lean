@@ -89,7 +89,7 @@ namespace CategoryTheory
 
         def byFunFunDef {G : DefFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} :
           nat (mapHom (toFunctor G) f) b ≃' (desc.natDesc f).η b :=
-        byNatDef • natCongrArg (byFunFunDefNat (G := G)) b
+        byNatDef • nat.congrArg (byFunFunDefNat (G := G)) b
 
       end DefFunFun
 
@@ -135,9 +135,9 @@ namespace CategoryTheory
         structure DefNatNatBase (desc : NatNatDesc F G η) where
         (natEquiv {a₁ a₂ : A} (f : a₁ ⇾ a₂) :
            NatEquiv (compHom (mapHom F f) (η a₂)) (compHom (η a₁) (mapHom G f))
-                    (λ b => (natTransEq' (η a₁) (mapHom G f) b)⁻¹ •
+                    (λ b => (nat.transEq' (η a₁) (mapHom G f) b)⁻¹ •
                             desc.natEq f b •
-                            natTransEq' (mapHom F f) (η a₂) b))
+                            nat.transEq' (mapHom F f) (η a₂) b))
 
         namespace DefNatNatBase
 
@@ -190,7 +190,7 @@ namespace CategoryTheory
                               {hNatEq : NatNatDesc.StrictNaturality₂ F G}
                               {ε : StrictDefNatNat η hNatEq} {a : A} {b : B} :
           nat (nat ε.η a) b ≃ idHom (φ a b) :=
-        byStrictNatDef • natCongrArg (byNatNatDef (ε := ε)) b
+        byStrictNatDef • nat.congrArg (byNatNatDef (ε := ε)) b
 
       end
 
@@ -255,7 +255,7 @@ namespace CategoryTheory
 
         def byFunFunFunDef {G : DefFunFunFun desc} {a₁ a₂ : A} {f : a₁ ⇾ a₂} {b : B} {c : C} :
           nat (nat (mapHom (toFunctor G) f) b) c ≃' ((desc.revFunFunDesc b).natDesc f).η c :=
-        byNatDef • natCongrArg (byFunFunFunDefNat (G := G)) c
+        byNatDef • nat.congrArg (byFunFunFunDefNat (G := G)) c
 
       end DefFunFunFun
 
@@ -309,9 +309,9 @@ namespace CategoryTheory
         structure DefNatNatNatBase (desc : NatNatNatDesc F G η) where
         (natNatEquiv {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) :
            NatEquiv (compHom (nat (mapHom F f) b) (nat (η a₂) b)) (compHom (nat (η a₁) b) (nat (mapHom G f) b))
-                    (λ c => (natTransEq' (nat (η a₁) b) (nat (mapHom G f) b) c)⁻¹ •
+                    (λ c => (nat.transEq' (nat (η a₁) b) (nat (mapHom G f) b) c)⁻¹ •
                             desc.natNatEq f b c •
-                            natTransEq' (nat (mapHom F f) b) (nat (η a₂) b) c))
+                            nat.transEq' (nat (mapHom F f) b) (nat (η a₂) b) c))
 
         namespace DefNatNatNatBase
 
@@ -368,7 +368,7 @@ namespace CategoryTheory
                                  {hNatNatEq : NatNatNatDesc.StrictNaturality₃ F G}
                                  {ε : StrictDefNatNatNat η hNatNatEq} {a : A} {b : B} {c : C} :
           nat (nat (nat ε.η a) b) c ≃ idHom (φ a b c) :=
-        byStrictNatNatDef • natCongrArg (natCongrArg (byNatNatNatDef (ε := ε)) b) c
+        byStrictNatNatDef • nat.congrArg (nat.congrArg (byNatNatNatDef (ε := ε)) b) c
 
       end
 
@@ -437,9 +437,9 @@ namespace CategoryTheory
         (natNatNatEquiv {a₁ a₂ : A} (f : a₁ ⇾ a₂) (b : B) (c : C) :
            NatEquiv (compHom (nat (nat (mapHom F f) b) c) (nat (nat (η a₂) b) c))
                     (compHom (nat (nat (η a₁) b) c) (nat (nat (mapHom G f) b) c))
-                    (λ d => (natTransEq' (nat (nat (η a₁) b) c) (nat (nat (mapHom G f) b) c) d)⁻¹ •
+                    (λ d => (nat.transEq' (nat (nat (η a₁) b) c) (nat (nat (mapHom G f) b) c) d)⁻¹ •
                             desc.natNatNatEq f b c d •
-                            natTransEq' (nat (nat (mapHom F f) b) c) (nat (nat (η a₂) b) c) d))
+                            nat.transEq' (nat (nat (mapHom F f) b) c) (nat (nat (η a₂) b) c) d))
 
         namespace DefNatNatNatNatBase
 
@@ -509,7 +509,7 @@ namespace CategoryTheory
                                     {a : A} {b : B} {c : C} {d : D} :
           nat (nat (nat (nat ε.η a) b) c) d ≃ idHom (φ a b c d) :=
         byStrictNatNatNatDef •
-        natCongrArg (natCongrArg (natCongrArg (byNatNatNatNatDef (ε := ε)) b) c) d
+        nat.congrArg (nat.congrArg (nat.congrArg (byNatNatNatNatDef (ε := ε)) b) c) d
 
       end
 

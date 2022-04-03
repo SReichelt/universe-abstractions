@@ -15,39 +15,52 @@ set_option autoBoundImplicitLocal false
 
 namespace HasInternalTop
 
-  open HasFunctors HasCongrArg HasCongrFun HasRevAppFun HasLinearFunOp HasSubLinearFunOp HasAffineFunOp
+  open HasFunctors HasCongrArg HasCongrFun HasLinearFunOp HasSubLinearFunOp HasAffineFunOp
        HasSubsingletonExt HasLinearFunExt HasAffineFunExt HasTop HasTopEq HasTopExt
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalTop U]
 
-  def defIntroFun [HasConstFun U U] (A : U) : A ⟶{λ _ => top U} Top U :=
-  HasConstFun.defConstFun A (top U)
+  section
 
-  @[reducible] def introFun [HasConstFun U U] (A : U) : A ⟶ Top U := defIntroFun A
+    variable [HasConstFun U U]
 
-  def HasTopExt.introFunEq [HasConstFun U U] [HasSubsingletonExt U U] [HasTopEq U]
-                           {A : U} (F : A ⟶ Top U) :
-    F ≃{λ a => topEq (F a) ◅} introFun A :=
-  eqExt F (introFun A)
+    def defIntroFun (A : U) : A ⟶{λ _ => top U} Top U :=
+    HasConstFun.defConstFun A (top U)
 
-  def HasTopExt.elimFunConstEq [HasConstFun U U] [HasTopExt U] {A : U} (a : A) :
-    elimFun a ≃ HasConstFun.constFun (Top U) a :=
-  (elimFunEq byDef)⁻¹
+    @[reducible] def introFun (A : U) : A ⟶ Top U := defIntroFun A
 
-  def defElimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
-    A ⟶{λ a => elimFun a} (Top U ⟶ A) :=
-  swapFunFun (elimFun (idFun A))
-  ◄ elimFunEq (F := swapFun (elimFun (idFun A)) _) (byDef₂ • byDef)
+    def HasTopExt.introFunEq [HasSubsingletonExt U U] [HasTopEq U]
+                            {A : U} (F : A ⟶ Top U) :
+      F ≃{λ a => topEq (F a) ◅} introFun A :=
+    eqExt F (introFun A)
 
-  @[reducible] def elimFunFun [HasLinearFunOp U] [HasTopExt U] (A : U) :
-    A ⟶ Top U ⟶ A :=
-  defElimFunFun A
+    def HasTopExt.elimFunConstEq [HasTopExt U] {A : U} (a : A) :
+      elimFun a ≃ HasConstFun.constFun (Top U) a :=
+    (elimFunEq byDef)⁻¹
 
-  instance elimFun.isFunApp [HasLinearFunOp U] [HasTopExt U] {A : U} {a : A} :
-    IsFunApp A (elimFun a) :=
-  { F := elimFunFun A,
-    a := a,
-    e := byDef }
+  end
+
+  section
+
+    variable [HasLinearFunOp U] [HasTopExt U]
+
+    def defElimFun₂ (A : U) :
+      A ⟶ Top U ⟶{λ a _ => a} A :=
+    ⟨λ a => defElimFun a,
+     swapFunFun (elimFun (idFun A))
+     ◄ elimFunEq (F := swapFun (elimFun (idFun A)) _) (byDef₂ • byDef)⟩
+
+    @[reducible] def elimFunFun (A : U) :
+      A ⟶ Top U ⟶ A :=
+    defElimFun₂ A
+
+    instance elimFun.isFunApp {A : U} {a : A} :
+      IsFunApp A (elimFun a) :=
+    { F := elimFunFun A,
+      a := a,
+      e := byDef }
+
+  end
 
   def HasTopExt.elimFunEqExt [HasLinearFunOp U] [HasLinearFunExt U] [HasTopExt U] {A : U}
                              {F : A ⟶ Top U ⟶ A} (h : swapFun F (top U) ≃ idFun A) :
@@ -58,10 +71,16 @@ namespace HasInternalTop
     elimFunFun A ≃ constFunFun (Top U) A :=
   (elimFunEqExt (swapConstFun (top U) A))⁻¹
 
-  def defInvElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶{λ F => F (top U)} A :=
-  defRevAppFun (top U) A
+  section
 
-  @[reducible] def invElimFun [HasLinearFunOp U] (A : U) : (Top U ⟶ A) ⟶ A := defInvElimFun A
+    variable [HasLinearFunOp U]
+
+    def defInvElimFun (A : U) : (Top U ⟶ A) ⟶{λ F => F (top U)} A :=
+    HasRevAppFun.defRevAppFun (top U) A
+
+    @[reducible] def invElimFun (A : U) : (Top U ⟶ A) ⟶ A := defInvElimFun A
+
+  end
 
 end HasInternalTop
 
@@ -73,12 +92,18 @@ namespace HasInternalBot
 
   variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalBot U]
 
-  def contraIntroFun [HasLinearFunOp U] (A : U) : A ⟶ Not A ⟶ Bot U :=
-  revAppFunFun A (Bot U)
+  section
 
-  def notNotFun [HasLinearFunOp U] (A : U) : A ⟶ Not (Not A) := contraIntroFun A
+    variable [HasLinearFunOp U]
 
-  def notTopIntroFun [HasLinearFunOp U] [HasInternalTop U] : Not (HasTop.Top U) ⟶ Bot U :=
-  HasInternalTop.invElimFun (Bot U)
+    def contraIntroFun (A : U) : A ⟶ Not A ⟶ Bot U :=
+    revAppFunFun A (Bot U)
+
+    def notNotFun (A : U) : A ⟶ Not (Not A) := contraIntroFun A
+
+    def notTopIntroFun [HasInternalTop U] : Not (HasTop.Top U) ⟶ Bot U :=
+    HasInternalTop.invElimFun (Bot U)
+
+  end
 
 end HasInternalBot

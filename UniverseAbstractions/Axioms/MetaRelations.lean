@@ -9,11 +9,11 @@ import UniverseAbstractions.MathlibFragments.Init.Notation
 set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 
-universe u v w
+universe u v w vv
 
 
 
-def MetaRelation (α : Sort u) (V : Universe.{v, w}) := α → α → V
+def MetaRelation (α : Sort u) (V : Universe.{v, vv}) := α → α → V
 
 namespace MetaRelation
 
@@ -111,8 +111,8 @@ end MetaRelation
 
 
 
-class HasEquivalenceRelation (α : Sort u) (V : outParam Universe.{v, w}) :
-  Sort (max u (v + 1) w) where
+class HasEquivalenceRelation (α : Sort u) (V : outParam Universe.{v, vv}) :
+  Sort (max 1 u v vv) where
 (R : MetaRelation α V)
 [h : MetaRelation.IsEquivalence R]
 
@@ -124,6 +124,7 @@ namespace HasEquivalenceRelation
 
   instance isEquivalence : IsEquivalence h.R := h.h
 
+  -- Overload `≃` symbol. (TODO: Is there a better way, or a better symbol to use?)
   instance hasEquivalence : HasEquivalence α α := ⟨h.R⟩
   instance : IsEquivalence (HasEquivalence.Equiv (α := α) (β := α)) := isEquivalence
   instance : HasInstances (HasEquivalence.γ α α) := Universe.instInst V

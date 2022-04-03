@@ -56,15 +56,14 @@ namespace HasLinearFunOp
   def funDomainDesc {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc (compFunFun e.toFun C) (compFunFun e.invFun C) :=
   ⟨λ F => rightId F •
-          defCongrArg (defRevCompFunFun B F) he.rightExt.invExt •
+          revCompFun.congrArg F he.rightExt.invExt •
           compAssoc e.invFun e.toFun F •
           byDefDef⟩
 
-  instance funDomainDesc.isExt {A B : U} (e : A ⮂ B)
-                               [he : EquivDesc.IsExtensional e] (C : U) :
+  instance funDomainDesc.isExt {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc.IsExtensional (funDomainDesc e C) :=
   ⟨rightIdExt B C •
-   defCongrArg (defCompFunFunFun B B C) he.rightExt.invExt •
+   compFunFun.congrArg he.rightExt.invExt C •
    compAssocExt e.invFun e.toFun C⟩
 
   def funCodomainDesc {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
@@ -74,11 +73,10 @@ namespace HasLinearFunOp
           (compAssoc F e.toFun e.invFun)⁻¹ •
           byDefDef⟩
 
-  instance funCodomainDesc.isExt {A B : U} (e : A ⮂ B)
-                                 [he : EquivDesc.IsExtensional e] (C : U) :
+  instance funCodomainDesc.isExt {A B : U} (e : A ⮂ B) [he : EquivDesc.IsExtensional e] (C : U) :
     HalfEquivDesc.IsExtensional (funCodomainDesc e C) :=
   ⟨leftIdExt C A •
-   defCongrArg (defRevCompFunFunFun C A A) he.leftExt.invExt •
+   revCompFunFun.congrArg C he.leftExt.invExt •
    (compAssocRightExt C e.toFun e.invFun)⁻¹⟩
 
   class HasLinearStandardEquivalences where

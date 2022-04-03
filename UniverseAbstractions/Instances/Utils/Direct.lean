@@ -15,74 +15,6 @@ variable (U : Universe) [HasIdentity U] [HasInternalFunctors U]
 
 
 
-class HasDirectLinearFunOp where
-(idFun     (A : U)                                     : A ⟶ A)
-(idEq      {A : U} (a : A)                             : (idFun A) a ≃ a)
-(revAppFun (A B : U)                                   : A ⟶ (A ⟶ B) ⟶ B)
-(appEq     {A B : U} (a : A) (F : A ⟶ B)               : (revAppFun A B) a F ≃ F a)
-(compFun   (A B C : U)                                 : (A ⟶ B) ⟶ (B ⟶ C) ⟶ (A ⟶ C))
-(compEq    {A B C : U} (F : A ⟶ B) (G : B ⟶ C) (a : A) : (compFun A B C) F G a ≃ G (F a))
-
-namespace HasDirectLinearFunOp
-
-  open MetaRelation.HasRefl HasFunctors HasCongrFun
-
-  instance hasLinearFunOp [HasDirectLinearFunOp U] : HasLinearFunOp U :=
-  { defIdFun         := λ A           => ⟨idFun A,             idEq⟩,
-    defRevAppFun     := λ {A} a B     => ⟨(revAppFun A B) a,   appEq a⟩,
-    defRevAppFunFun  := λ A B         => ⟨revAppFun A B,       λ a => refl ((revAppFun A B) a)⟩,
-    defCompFun       := λ {A B C} F G => ⟨(compFun A B C) F G, compEq F G⟩,
-    defCompFunFun    := λ {A B} F {C} => ⟨(compFun A B C) F,   λ G => refl ((compFun A B C) F G)⟩,
-    defCompFunFunFun := λ A B C       => ⟨compFun A B C,       λ F => refl ((compFun A B C) F)⟩ }
-
-  def fromLinearFunOp [HasLinearFunOp U] : HasDirectLinearFunOp U :=
-  { idFun     := HasLinearFunOp.idFun,
-    idEq      := λ _ => byDef,
-    revAppFun := HasLinearFunOp.revAppFunFun,
-    appEq     := λ _ _ => byDef₂,
-    compFun   := HasLinearFunOp.compFunFunFun,
-    compEq    := λ _ _ _ => byDef₃ }
-
-end HasDirectLinearFunOp
-
-class HasDirectSubLinearFunOp where
-(constFun (A B : U)                 : B ⟶ A ⟶ B)
-(constEq  {A B : U} (b : B) (a : A) : (constFun A B) b a ≃ b)
-
-namespace HasDirectSubLinearFunOp
-
-  open MetaRelation.HasRefl HasFunctors HasCongrFun
-
-  instance hasSubLinearFunOp [HasDirectSubLinearFunOp U] : HasSubLinearFunOp U :=
-  { defConstFun    := λ A {B} b => ⟨(constFun A B) b, constEq b⟩,
-    defConstFunFun := λ A B     => ⟨constFun A B,     λ b => refl ((constFun A B) b)⟩ }
-
-  def fromSubLinearFunOp [HasAffineFunOp U] : HasDirectSubLinearFunOp U :=
-  { constFun := HasSubLinearFunOp.constFunFun,
-    constEq  := λ _ _ => byDef₂ }
-
-end HasDirectSubLinearFunOp
-
-class HasDirectNonLinearFunOp where
-(dupFun (A B : U)                         : (A ⟶ A ⟶ B) ⟶ (A ⟶ B))
-(dupEq  {A B : U} (F : A ⟶ A ⟶ B) (a : A) : (dupFun A B) F a ≃ F a a)
-
-namespace HasDirectNonLinearFunOp
-
-  open MetaRelation.HasRefl HasFunctors HasCongrFun
-
-  instance hasNonLinearFunOp [HasDirectNonLinearFunOp U] : HasNonLinearFunOp U :=
-  { defDupFun    := λ {A B} F => ⟨(dupFun A B) F, dupEq F⟩,
-    defDupFunFun := λ A B     => ⟨dupFun A B,     λ F => refl ((dupFun A B) F)⟩ }
-
-  def fromNonLinearFunOp [HasFullFunOp U] : HasDirectNonLinearFunOp U :=
-  { dupFun := HasNonLinearFunOp.dupFunFun,
-    dupEq  := λ _ _ => byDef₂ }
-
-end HasDirectNonLinearFunOp
-
-
-
 namespace HasLinearFunOp
 
   open HasFunctors HasCongrArg HasCongrFun HasCompFun
@@ -282,7 +214,7 @@ namespace HasFullFunOp
       substFunFun F C • revCompFunFun A (dupFunFun B C) ≃ substFunFun F C • substFunFun F (B ⟶ C) :=
     applyCongrFun (substDup A B C) F
                   (byDefDef • byDef)
-                  (byDef₂ • congrFun byArgDef (substFunFun F C) • byFunDef • byArgDef • byDef)
+                  (byDef • congrFun byDefDef (substFunFun F C) • byFunDef • byArgDef • byDef)
 
     def substDupCongrCongr {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) :
       substFun F (dupFunFun B C • G) ≃ substFun F (substFun F G) :=

@@ -52,11 +52,11 @@ namespace Test
   -- `revAppFunFun`
 
   @[reducible] def revAppFunFunDefExt_a_id (A B : U) :
-    (Λ a => (revAppFunFun A B) a) ≃⦃A ▻ λ a => (defRevAppFunFun A B).eff a ◅ (A ⟶ B) ⟶ B⦄ (Λ a => revAppFun a B) :=
+    (Λ a => (revAppFunFun A B) a) ≃⦃A ▻ λ a => (defRevAppFun A B).defFunFun.eff a ◅ (A ⟶ B) ⟶ B⦄ (Λ a => revAppFun a B) :=
   by extensionality
 
   @[reducible] def revAppFunFunDefExt_a_fun {X A : U} (F : X ⟶ A) (B : U) :
-    (Λ x => (revAppFunFun A B) (F x)) ≃⦃X ▻ λ x => (defRevAppFunFun A B).eff (F x) ◅ (A ⟶ B) ⟶ B⦄ (Λ x => revAppFun (F x) B) :=
+    (Λ x => (revAppFunFun A B) (F x)) ≃⦃X ▻ λ x => (defRevAppFun A B).defFunFun.eff (F x) ◅ (A ⟶ B) ⟶ B⦄ (Λ x => revAppFun (F x) B) :=
   by extensionality
 
   -- `compFun`
@@ -106,11 +106,11 @@ namespace Test
   -- `compFunFunFun`
 
   @[reducible] def compFunFunFunDefExt_F_id (A B C : U) :
-    (Λ F => (compFunFunFun A B C) F) ≃⦃A ⟶ B ▻ λ F => (defCompFunFunFun A B C).eff F ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ F => compFunFun F C) :=
+    (Λ F => (compFunFunFun A B C) F) ≃⦃A ⟶ B ▻ λ F => (defCompFun A B C).defFunFunFun.eff F ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ F => compFunFun F C) :=
   by extensionality
 
   @[reducible] def compFunFunFunDefExt_F_fun {X A B : U} (F : X ⟶ (A ⟶ B)) (C : U) :
-    (Λ x => (compFunFunFun A B C) (F x)) ≃⦃X ▻ λ x => (defCompFunFunFun A B C).eff (F x) ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ x => compFunFun (F x) C) :=
+    (Λ x => (compFunFunFun A B C) (F x)) ≃⦃X ▻ λ x => (defCompFun A B C).defFunFunFun.eff (F x) ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ x => compFunFun (F x) C) :=
   by extensionality
 
   -- `constFun`
@@ -134,11 +134,11 @@ namespace Test
   -- `constFunFun`
 
   @[reducible] def constFunFunDef_b_id (A B : U) :
-    (Λ b => (constFunFun A B) b) ≃⦃B ▻ λ b => (defConstFunFun A B).eff b ◅ A ⟶ B⦄ (Λ b => constFun A b) :=
+    (Λ b => (constFunFun A B) b) ≃⦃B ▻ λ b => (defConstFun A B).defFunFun.eff b ◅ A ⟶ B⦄ (Λ b => constFun A b) :=
   by extensionality
 
   @[reducible] def constFunFunDef_b_fun {X : U} (A : U) {B : U} (F : X ⟶ B) :
-    (Λ x => (constFunFun A B) (F x)) ≃⦃X ▻ λ x => (defConstFunFun A B).eff (F x) ◅ A ⟶ B⦄ (Λ x => constFun A (F x)) :=
+    (Λ x => (constFunFun A B) (F x)) ≃⦃X ▻ λ x => (defConstFun A B).defFunFun.eff (F x) ◅ A ⟶ B⦄ (Λ x => constFun A (F x)) :=
   by extensionality
 
   -- `revAppFun`
@@ -183,9 +183,6 @@ namespace Test
   @[reducible] def compFunFunDefExt_G_id_F_fun {A B C : U} (F : (B ⟶ C) ⟶ (A ⟶ B)) :
     (Λ G => (compFunFun (F G) C) G) ≃⦃B ⟶ C ▻ λ G => (HasCompFunFun.defCompFunFun (F G) C).eff G ◅ A ⟶ C⦄ (Λ G => G • F G) :=
   by extensionality
-  defCongrArg (defDupFunFun (B ⟶ C) (A ⟶ C))
-              (defCongrArg (HasCompFunFun.defCompFunFun F ((B ⟶ C) ⟶ (A ⟶ C)))
-                           (swapSwapExt (compFunFunFun A B C))⁻¹)
 
   @[reducible] def compFunFunDefExt_G_fun_F_fun {X A B C : U} (F : X ⟶ (A ⟶ B)) (G : X ⟶ (B ⟶ C)) :
     (Λ x => (compFunFun (F x) C) (G x)) ≃⦃X ▻ λ x => (HasCompFunFun.defCompFunFun (F x) C).eff (G x) ◅ A ⟶ C⦄ (Λ x => G x • F x) :=
@@ -230,11 +227,11 @@ namespace Test
   -- `dupFunFun`
 
   @[reducible] def dupFunFunDefExt_F_id (A B : U) :
-    (Λ F => (dupFunFun A B) F) ≃⦃A ⟶ A ⟶ B ▻ λ F => (defDupFunFun A B).eff F ◅ A ⟶ B⦄ (Λ F => dupFun F) :=
+    (Λ F => (dupFunFun A B) F) ≃⦃A ⟶ A ⟶ B ▻ λ F => (defDupFun A B).defFunFun.eff F ◅ A ⟶ B⦄ (Λ F => dupFun F) :=
   by extensionality
 
   @[reducible] def dupFunFunDefExt_F_fun {X A B : U} (F : X ⟶ (A ⟶ A ⟶ B)) :
-    (Λ x => (dupFunFun A B) (F x)) ≃⦃X ▻ λ x => (defDupFunFun A B).eff (F x) ◅ A ⟶ B⦄ (Λ x => dupFun (F x)) :=
+    (Λ x => (dupFunFun A B) (F x)) ≃⦃X ▻ λ x => (defDupFun A B).defFunFun.eff (F x) ◅ A ⟶ B⦄ (Λ x => dupFun (F x)) :=
   by extensionality
 
 end Test

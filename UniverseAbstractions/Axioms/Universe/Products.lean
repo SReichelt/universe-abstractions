@@ -39,15 +39,13 @@ end HasProducts
 -- by `A ⟶ B ⟶ A ⊓ B`, i.e. given an `A` and a `B`, we can construct their product. For
 -- elimination, we take an indirect approach that works well with `HasLinearFunOp`,
 -- `HasAffineFunOp`, and `HasFullFunOp`: If only `HasLinearFunOp` is given, it is both allowed and
--- required to always use both sides of a product; eliminating to either `A` or `B` requires
+-- required to always use both sides of a product; projecting to either `A` or `B` requires
 -- `constFun`.
 
 class HasInternalProducts (U : Universe.{u}) [HasIdentity.{u, iu} U] [HasInternalFunctors U] extends
   HasProducts U U U where
-(defIntroFun    {A : U} (a : A) (B : U)     : B ⟶{λ b => HasProducts.intro a b} A ⊓ B)
-(defIntroFunFun (A B : U)                   : A ⟶{λ a => defIntroFun a B} (B ⟶ A ⊓ B))
-(defElimFun     {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶{λ P => F (HasProducts.fst P) (HasProducts.snd P)} C)
-(defElimFunFun  (A B C : U)                 : (A ⟶ B ⟶ C) ⟶{λ F => defElimFun F} (A ⊓ B ⟶ C))
+(defIntroFun (A B   : U) : A ⟶ B ⟶{λ a b => HasProducts.intro a b} A ⊓ B)
+(defElimFun  (A B C : U) : (A ⟶ B ⟶ C) ⟶ A ⊓ B ⟶{λ F P => F (HasProducts.fst P) (HasProducts.snd P)} C)
 
 namespace HasInternalProducts
 
@@ -57,8 +55,8 @@ namespace HasInternalProducts
 
     variable {U : Universe} [HasIdentity U] [HasInternalFunctors U] [HasInternalProducts U]
 
-    @[reducible] def introFun {A : U} (a : A) (B : U) : B ⟶ A ⊓ B := defIntroFun a B
-    @[reducible] def introFunFun (A B : U) : A ⟶ B ⟶ A ⊓ B := defIntroFunFun A B
+    @[reducible] def introFun {A : U} (a : A) (B : U) : B ⟶ A ⊓ B := (defIntroFun A B).defFun a
+    @[reducible] def introFunFun (A B : U) : A ⟶ B ⟶ A ⊓ B := defIntroFun A B
 
     instance intro.isFunApp {A B : U} {a : A} {b : B} : IsFunApp B (intro a b) :=
     { F := introFun a B,
@@ -70,8 +68,8 @@ namespace HasInternalProducts
       a := a,
       e := byDef }
 
-    @[reducible] def elimFun {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶ C := defElimFun F
-    @[reducible] def elimFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⊓ B ⟶ C) := defElimFunFun A B C
+    @[reducible] def elimFun {A B C : U} (F : A ⟶ B ⟶ C) : A ⊓ B ⟶ C := (defElimFun A B C).defFun F
+    @[reducible] def elimFunFun (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⊓ B ⟶ C) := defElimFun A B C
 
     instance elimFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} : IsFunApp (A ⟶ B ⟶ C) (elimFun F) :=
     { F := elimFunFun A B C,

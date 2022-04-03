@@ -58,10 +58,10 @@ namespace HalfEquivDesc
                       [he : IsExtensional e] [hf : IsExtensional f] :
       IsExtensional (trans e f) :=
     ⟨he.invExt •
-     defCongrArg (defRevCompFunFun A eInvFun)
-                 (leftId eToFun •
-                  defCongrArg (HasCompFunFun.defCompFunFun eToFun B) hf.invExt •
-                  (compAssoc eToFun fToFun fInvFun)⁻¹) •
+     revCompFun.congrArg eInvFun
+                         (leftId eToFun •
+                          compFun.congrArg eToFun hf.invExt •
+                          (compAssoc eToFun fToFun fInvFun)⁻¹) •
      compAssoc (fToFun • eToFun) fInvFun eInvFun⟩
 
   end IsExtensional
@@ -218,8 +218,6 @@ namespace HasEquivalences
   def toDefEquiv (E : A ⟷ B) : A ⟷{desc E} B := ⟨E, HasRefl.refl (toFun E), HasRefl.refl (invFun E)⟩
   def fromDefEquiv {e : A ⮂ B} (E : A ⟷{e} B) : A ⟷ B := E.E
 
-  @[simp] theorem fromToDefEquiv (E : A ⟷ B) : fromDefEquiv (toDefEquiv E) = E := rfl
-
   instance {E : A ⟷ B} : CoeDep ⌈A ⟷ B⌉ E  (A ⟷{desc E} B) := ⟨toDefEquiv E⟩
   instance {e : A ⮂ B} : Coe    (A ⟷{e} B) ⌈A ⟷ B⌉         := ⟨fromDefEquiv⟩
 
@@ -279,13 +277,13 @@ namespace HasInternalEquivalences
   def leftInvExt  (E : A ⟷ B) : invFun E • toFun E ≃{▻ leftInv  E ◅} idFun A := (isExt E).leftExt.invExt
   def rightInvExt (E : A ⟷ B) : toFun E • invFun E ≃{▻ rightInv E ◅} idFun B := (isExt E).rightExt.invExt
 
-  def toFunCongrArg {E₁ E₂ : A ⟷ B} :
+  def congrArgToFun {E₁ E₂ : A ⟷ B} :
     E₁ ≃ E₂ → HasEquivalences.toFun E₁ ≃ HasEquivalences.toFun E₂ :=
   defCongrArg (defToFunFun A B)
 
-  def toCongrArg {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) (a : A) :
+  def congrArgTo {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) (a : A) :
     HasEquivalences.to E₁ a ≃ HasEquivalences.to E₂ a :=
-  congrFun (toFunCongrArg e) a
+  congrFun (congrArgToFun e) a
 
 end HasInternalEquivalences
 
@@ -339,7 +337,7 @@ namespace HasEquivOp
 
     def transRefl {A B : U} (E : A ⟷ B) : E • refl A ≃ E :=
     toFunInj (rightId (toFun E) •
-              defCongrArg (defRevCompFunFun A (toFun E)) (reflToFunDef A) •
+              revCompFun.congrArg (toFun E) (reflToFunDef A) •
               transToFunDef (refl A) E)
 
     def transReflRefl (A : U) : refl A • refl A ≃ refl A :=
@@ -381,13 +379,13 @@ namespace HasEquivOp
       a := E,
       e := byDef }
 
-    def invFunCongrArg {E₁ E₂ : A ⟷ B} :
+    def congrArgInvFun {E₁ E₂ : A ⟷ B} :
       E₁ ≃ E₂ → HasEquivalences.invFun E₁ ≃ HasEquivalences.invFun E₂ :=
     defCongrArg (defInvFunFun A B)
 
-    def invCongrArg {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) (b : B) :
+    def congrArgInv {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) (b : B) :
       HasEquivalences.inv E₁ b ≃ HasEquivalences.inv E₂ b :=
-    congrFun (invFunCongrArg e) b
+    congrFun (congrArgInvFun e) b
 
   end HasEquivOpFun
 
@@ -449,7 +447,7 @@ namespace DependentEquivalence
 
   def cast {A B : U} {E₁ E₂ : A ⟷ B} (e : E₁ ≃ E₂) {a : A} {b : B} :
     a ≃[E₁] b → a ≃[E₂] b :=
-  λ f => f • (toCongrArg e a)⁻¹
+  λ f => f • (congrArgTo e a)⁻¹
 
 end DependentEquivalence
 

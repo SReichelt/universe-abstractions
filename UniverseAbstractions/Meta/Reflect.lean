@@ -111,15 +111,23 @@ namespace Lean
       none
 
     def mkFun {u v : Level} (α : ⌜Sort u⌝) (β : ⌜Sort v⌝) : ⌜Sort (imax u v)⌝ := ⌜$α → $β⌝
+    def mkApp {u v : Level} {α : ⌜Sort u⌝} {β : ⌜Sort v⌝} (f : mkFun α β) (a : α) : β := ⌜$f $a⌝
 
     instance hasFunctors : HasFunctors _sort _sort _sort :=
     { Fun   := λ A B => ⟨mkFun A.α B.α⟩,
-      apply := λ {A B} (f : mkFun A.α B.α) (a : A.α) => ⌜$f $a⌝ }
+      apply := λ {A B} (f : mkFun A.α B.α) (a : A.α) => mkApp f a }
 
     -- When using this, make sure that `f` is defeq to what `f'` specifies.
     def defFun {A B : _sort} {f' : A → B} (f : mkFun A.α B.α) : A ⟶{f'} B :=
     { F   := f,
       eff := λ _ => none }
+
+    def defFun₂ {A B C : _sort} {f' : A → B → C} (f : mkFun A.α (mkFun B.α C.α)) : A ⟶ B ⟶{f'} C :=
+    ⟨λ a => defFun (mkApp f a), defFun f⟩
+
+    def defFun₃ {A B C D : _sort} {f' : A → B → C → D} (f : mkFun A.α (mkFun B.α (mkFun C.α D.α))) :
+      A ⟶ B ⟶ C ⟶{f'} D :=
+    ⟨λ a => defFun₂ (mkApp f a), defFun f⟩
 
     instance hasCongrArg : HasCongrArg _sort _sort :=
     ⟨λ A B (f : mkFun A.α B.α) {a₁ a₂ : A.α} h => match h with
@@ -134,20 +142,15 @@ namespace Lean
     instance hasInternalFunctors : HasInternalFunctors _sort := ⟨⟩
 
     instance hasLinearFunOp : HasLinearFunOp _sort :=
-    { defIdFun         := λ A                                               => defFun ⌜id⌝,
-      defRevAppFun     := λ {A} (a : A.α) B                                 => defFun ⌜λ f => f $a⌝,
-      defRevAppFunFun  := λ A B                                             => defFun ⌜λ a f => f a⌝,
-      defCompFun       := λ {A B C} (f : mkFun A.α B.α) (g : mkFun B.α C.α) => defFun ⌜$g ∘ $f⌝,
-      defCompFunFun    := λ {A B} (f : mkFun A.α B.α) C                     => defFun ⌜λ g => g ∘ $f⌝,
-      defCompFunFunFun := λ A B C                                           => defFun ⌜λ f g => g ∘ f⌝ }
+    { defIdFun     := λ _     => defFun  ⌜id⌝,
+      defRevAppFun := λ _ _   => defFun₂ ⌜λ a f => f a⌝,
+      defCompFun   := λ _ _ _ => defFun₃ ⌜λ f g => g ∘ f⌝ }
 
     instance hasAffineFunOp : HasAffineFunOp _sort :=
-    { defConstFun    := λ A {B} (b : B.α) => defFun ⌜Function.const _ $b⌝
-      defConstFunFun := λ A B             => defFun ⌜Function.const _⌝ }
+    { defConstFun := λ _ _ => defFun₂ ⌜Function.const _⌝ }
 
     instance hasFullFunOp : HasFullFunOp _sort :=
-    { defDupFun    := λ {A B} (f : mkFun A.α (mkFun A.α B.α)) => defFun ⌜λ a => $f a a⌝,
-      defDupFunFun := λ A B                                   => defFun ⌜λ f a => f a a⌝ }
+    { defDupFun := λ _ _ => defFun₂ ⌜λ f a => f a a⌝ }
 
   end _sort
 
@@ -1188,7 +1191,7 @@ namespace Lean
 
     def mkDefRevAppFunFun (A B : _⌈U⌉_) : mkDefRevAppFunFunType A B :=
     let _ := h.h
-    ⌜HasLinearFunOp.defRevAppFunFun $A $B⌝
+    ⌜(HasLinearFunOp.defRevAppFun $A $B).defFunFun⌝
 
     def mkRevAppFunFun (A B : _⌈U⌉_) : (A _⟶ B) _⟶ B :=
     let _ := h.h
@@ -1234,7 +1237,7 @@ namespace Lean
 
     def mkDefCompFunFunFun (A B C : _⌈U⌉_) : mkDefCompFunFunFunType A B C :=
     let _ := h.h
-    ⌜HasLinearFunOp.defCompFunFunFun $A $B $C⌝
+    ⌜(HasLinearFunOp.defCompFun $A $B $C).defFunFunFun⌝
 
     def mkCompFunFunFun (A B C : _⌈U⌉_) : (A _⟶ B) _⟶ (B _⟶ C) _⟶ (A _⟶ C) :=
     let _ := h.h
@@ -1245,7 +1248,7 @@ namespace Lean
                       (b : Q($B)) :
       A _⟶{⌜λ a => $F a $b⌝} C :=
     let _ := h.h
-    ⌜HasLinearFunOp.defSwapFun $F $b⌝
+    ⌜HasSwapFun.defSwapFun $F $b⌝
 
     def mkDefSwapFun {A B C : _⌈U⌉_} (F : A _⟶ B _⟶ C) (b : B) :=
     mkDefSwapFun' A B C F b
@@ -1265,7 +1268,7 @@ namespace Lean
                          (F : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h A (B _⟶ C)) :
       mkDefSwapFunFunType A B C F :=
     let _ := h.h
-    ⌜HasLinearFunOp.defSwapFunFun $F⌝
+    ⌜HasSwapFunFun.defSwapFunFun $F⌝
 
     def mkDefSwapFunFun {A B C : _⌈U⌉_} (F : A _⟶ B _⟶ C) :=
     mkDefSwapFunFun' A B C F
@@ -1281,7 +1284,7 @@ namespace Lean
 
     def mkDefSwapFunFunFun (A B C : _⌈U⌉_) : mkDefSwapFunFunFunType A B C :=
     let _ := h.h
-    ⌜HasLinearFunOp.defSwapFunFunFun $A $B $C⌝
+    ⌜(HasLinearFunOp.defSwapFun $A $B $C).defFunFunFun⌝
 
     def mkSwapFunFunFun (A B C : _⌈U⌉_) : (A _⟶ B _⟶ C) _⟶ (B _⟶ A _⟶ C) :=
     let _ := h.h
@@ -1296,7 +1299,7 @@ namespace Lean
                             (G : mkHasFunctors.mkFunInst mkHasFunctors.toInstanceExpr.h B C) :
       mkDefRevCompFunFunType A B C G :=
     let _ := h.h
-    ⌜HasLinearFunOp.defRevCompFunFun $A $G⌝
+    ⌜HasRevCompFunFun.defRevCompFunFun $A $G⌝
 
     def mkDefRevCompFunFun (A : _⌈U⌉_) {B C : _⌈U⌉_} (G : B _⟶ C) := mkDefRevCompFunFun' A B C G
 
@@ -1311,19 +1314,19 @@ namespace Lean
 
     def mkDefRevCompFunFunFun (A B C : _⌈U⌉_) : mkDefRevCompFunFunFunType A B C :=
     let _ := h.h
-    ⌜HasLinearFunOp.defRevCompFunFunFun $A $B $C⌝
+    ⌜(HasLinearFunOp.defRevCompFun $A $B $C).defFunFunFun⌝
 
     def mkRevCompFunFunFun (A B C : _⌈U⌉_) : (B _⟶ C) _⟶ (A _⟶ B) _⟶ (A _⟶ C) :=
     let _ := h.h
     ⌜HasLinearFunOp.revCompFunFunFun $A $B $C⌝
 
     instance reflect : HasLinearFunOp U :=
-    { defIdFun         := λ A => mkHasFunctors.mkDefFun.reflect' (mkDefIdFun A) (mkIdFun A),
-      defRevAppFun     := λ a B => mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFun a B) (mkRevAppFun a B),
-      defRevAppFunFun  := λ A B => mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFunFun A B) (mkRevAppFunFun (h := h) A B),
-      defCompFun       := λ F G => mkHasFunctors.mkDefFun.reflect' (mkDefCompFun F G) (mkCompFun F G),
-      defCompFunFun    := λ F C => mkHasFunctors.mkDefFun.reflect' (mkDefCompFunFun F C) (mkCompFunFun F C),
-      defCompFunFunFun := λ A B C => mkHasFunctors.mkDefFun.reflect' (mkDefCompFunFunFun A B C) (mkCompFunFunFun A B C) }
+    { defIdFun     := λ A => mkHasFunctors.mkDefFun.reflect' (mkDefIdFun A) (mkIdFun A),
+      defRevAppFun := λ A B => ⟨λ a => mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFun a B) (mkRevAppFun a B),
+                                mkHasFunctors.mkDefFun.reflect' (mkDefRevAppFunFun A B) (mkRevAppFunFun (h := h) A B)⟩,
+      defCompFun   := λ A B C => ⟨λ F => ⟨λ G => mkHasFunctors.mkDefFun.reflect' (mkDefCompFun F G) (mkCompFun F G),
+                                          mkHasFunctors.mkDefFun.reflect' (mkDefCompFunFun F C) (mkCompFunFun F C)⟩,
+                                  mkHasFunctors.mkDefFun.reflect' (mkDefCompFunFunFun A B C) (mkCompFunFunFun A B C)⟩ }
 
   end mkHasLinearFunOp
 

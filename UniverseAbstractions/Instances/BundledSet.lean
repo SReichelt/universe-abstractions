@@ -127,18 +127,25 @@ namespace BundledSet
                             λ {f} hf {g} hg {a} ha => H.property (hf ha) (hg ha)⟩⟩
 
   instance hasLinearFunOp : HasLinearFunOp univ.{u} :=
-  { defRevAppFunFun  := λ A B   => defFun (A := A) (B := (A ⟶ B) ⟶ B)
-                                          ⟨λ a f => f a, λ {a} ha {f} hf => hf ha⟩,
-    defCompFunFunFun := λ A B C => defFun (A := A ⟶ B) (B := (B ⟶ C) ⟶ (A ⟶ C))
-                                          ⟨λ f g => g ∘ f, λ {f} hf {g} hg => hg ∘ hf⟩ }
+  { defIdFun     := λ A     => defFun ⟨id, id⟩,
+    defRevAppFun := λ A B   => ⟨λ a => defFun (A := A ⟶ B) ⟨λ f => f a.val, λ h => h a.property⟩,
+                                defFun (A := A) (B := (A ⟶ B) ⟶ B)
+                                       ⟨λ a f => f a, λ {a} ha {f} hf => hf ha⟩⟩,
+    defCompFun   := λ A B C => ⟨λ F => ⟨λ G => defFun ⟨G.val ∘ F.val, G.property ∘ F.property⟩,
+                                        defFun (A := B ⟶ C) (B := A ⟶ C)
+                                               ⟨λ g => g ∘ F.val, λ h => h ∘ F.property⟩⟩,
+                                defFun (A := A ⟶ B) (B := (B ⟶ C) ⟶ (A ⟶ C))
+                                       ⟨λ f g => g ∘ f, λ {f} hf {g} hg => hg ∘ hf⟩⟩ }
 
   instance hasAffineFunOp : HasAffineFunOp univ.{u} :=
-  { defConstFunFun := λ A B => defFun (A := B) (B := A ⟶ B)
-                                      ⟨λ b _ => b, λ {b} hb {_} _ => hb⟩ }
+  { defConstFun := λ A B => ⟨λ b => defFun ⟨Function.const A.α b.val, λ _ => b.property⟩,
+                             defFun (A := B) (B := A ⟶ B)
+                                    ⟨λ b _ => b, λ {b} hb {_} _ => hb⟩⟩ }
 
   instance hasFullFunOp : HasFullFunOp univ.{u} :=
-  { defDupFunFun := λ A B => defFun (A := A ⟶ A ⟶ B) (B := A ⟶ B)
-                                    ⟨λ f a => f a a, λ {f} hf {a} ha => hf ha ha⟩ }
+  { defDupFun := λ A B => ⟨λ F => defFun ⟨λ a => F.val a a, λ h => F.property h h⟩,
+                           defFun (A := A ⟶ A ⟶ B) (B := A ⟶ B)
+                                  ⟨λ f a => f a a, λ {f} hf {a} ha => hf ha ha⟩⟩ }
 
   -- Functor extensionality does not hold trivially because two functors to be equivalent if their
   -- corresponding functions are equal, and those have domains that are larger than the designated
@@ -234,14 +241,14 @@ namespace BundledSet
     sndEq   := λ _ _ => rfl }
 
   instance hasInternalProducts : HasInternalProducts univ.{u} :=
-  { defIntroFun    := λ {A} a B   => defFun (B := A ⊓ B)
-                                            ⟨λ b => ⟨a.val, b⟩, λ h => And.intro a.property h⟩,
-    defIntroFunFun := λ A B       => defFun (B := B ⟶ A ⊓ B)
-                                            ⟨λ a b => ⟨a, b⟩, λ {a} ha {b} hb => ⟨ha, hb⟩⟩,
-    defElimFun     := λ {A B C} F => defFun (A := A ⊓ B)
-                                            ⟨λ p => F.val p.fst p.snd, λ h => F.property h.left h.right⟩,
-    defElimFunFun  := λ A B C     => defFun (A := A ⟶ B ⟶ C) (B := A ⊓ B ⟶ C)
-                                            ⟨λ f p => f p.fst p.snd, λ {f} hf {p} hp => hf hp.left hp.right⟩ }
+  { defIntroFun    := λ A B   => ⟨λ a => defFun (B := A ⊓ B)
+                                                ⟨λ b => ⟨a.val, b⟩, λ h => And.intro a.property h⟩,
+                                  defFun (B := B ⟶ A ⊓ B)
+                                         ⟨λ a b => ⟨a, b⟩, λ {a} ha {b} hb => ⟨ha, hb⟩⟩⟩,
+    defElimFun     := λ A B C => ⟨λ F => defFun (A := A ⊓ B)
+                                                ⟨λ p => F.val p.fst p.snd, λ h => F.property h.left h.right⟩,
+                                  defFun (A := A ⟶ B ⟶ C) (B := A ⊓ B ⟶ C)
+                                         ⟨λ f p => f p.fst p.snd, λ {f} hf {p} hp => hf hp.left hp.right⟩⟩ }
 
   instance hasProductExt : HasInternalProducts.HasProductExt univ.{u} :=
   { introEqExt      := λ _ _   => rfl,

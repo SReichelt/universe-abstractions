@@ -52,11 +52,11 @@ namespace HasLinearFunOp.HasLinearFunExt
   -- `revAppFunFun`
 
   @[reducible] def revAppFunFunDefExt_a_id (A B : U) :
-    (Λ a => (revAppFunFun A B) a) ≃⦃A ▻ λ a => (defRevAppFunFun A B).eff a ◅ (A ⟶ B) ⟶ B⦄ (Λ a => revAppFun a B) :=
+    (Λ a => (revAppFunFun A B) a) ≃⦃A ▻ λ a => (defRevAppFun A B).defFunFun.eff a ◅ (A ⟶ B) ⟶ B⦄ (Λ a => revAppFun a B) :=
   HasRefl.refl (revAppFunFun A B)
 
   @[reducible] def revAppFunFunDefExt_a_fun {X A : U} (F : X ⟶ A) (B : U) :
-    (Λ x => (revAppFunFun A B) (F x)) ≃⦃X ▻ λ x => (defRevAppFunFun A B).eff (F x) ◅ (A ⟶ B) ⟶ B⦄ (Λ x => revAppFun (F x) B) :=
+    (Λ x => (revAppFunFun A B) (F x)) ≃⦃X ▻ λ x => (defRevAppFun A B).defFunFun.eff (F x) ◅ (A ⟶ B) ⟶ B⦄ (Λ x => revAppFun (F x) B) :=
   HasRefl.refl (revAppFunFun A B • F)
 
   -- `compFun`
@@ -106,11 +106,11 @@ namespace HasLinearFunOp.HasLinearFunExt
   -- `compFunFunFun`
 
   @[reducible] def compFunFunFunDefExt_F_id (A B C : U) :
-    (Λ F => (compFunFunFun A B C) F) ≃⦃A ⟶ B ▻ λ F => (defCompFunFunFun A B C).eff F ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ F => compFunFun F C) :=
+    (Λ F => (compFunFunFun A B C) F) ≃⦃A ⟶ B ▻ λ F => (defCompFun A B C).defFunFunFun.eff F ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ F => compFunFun F C) :=
   HasRefl.refl (compFunFunFun A B C)
 
   @[reducible] def compFunFunFunDefExt_F_fun {X A B : U} (F : X ⟶ (A ⟶ B)) (C : U) :
-    (Λ x => (compFunFunFun A B C) (F x)) ≃⦃X ▻ λ x => (defCompFunFunFun A B C).eff (F x) ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ x => compFunFun (F x) C) :=
+    (Λ x => (compFunFunFun A B C) (F x)) ≃⦃X ▻ λ x => (defCompFun A B C).defFunFunFun.eff (F x) ◅ (B ⟶ C) ⟶ (A ⟶ C)⦄ (Λ x => compFunFun (F x) C) :=
   HasRefl.refl (compFunFunFun A B C • F)
 
 end HasLinearFunOp.HasLinearFunExt
@@ -144,11 +144,11 @@ namespace HasAffineFunOp.HasAffineFunExt
   -- `constFunFun`
 
   @[reducible] def constFunFunDef_b_id (A B : U) :
-    (Λ b => (constFunFun A B) b) ≃⦃B ▻ λ b => (defConstFunFun A B).eff b ◅ A ⟶ B⦄ (Λ b => constFun A b) :=
+    (Λ b => (constFunFun A B) b) ≃⦃B ▻ λ b => (defConstFun A B).defFunFun.eff b ◅ A ⟶ B⦄ (Λ b => constFun A b) :=
   HasRefl.refl (constFunFun A B)
 
   @[reducible] def constFunFunDef_b_fun {X : U} (A : U) {B : U} (F : X ⟶ B) :
-    (Λ x => (constFunFun A B) (F x)) ≃⦃X ▻ λ x => (defConstFunFun A B).eff (F x) ◅ A ⟶ B⦄ (Λ x => constFun A (F x)) :=
+    (Λ x => (constFunFun A B) (F x)) ≃⦃X ▻ λ x => (defConstFun A B).defFunFun.eff (F x) ◅ A ⟶ B⦄ (Λ x => constFun A (F x)) :=
   HasRefl.refl (constFunFun A B • F)
 
 end HasAffineFunOp.HasAffineFunExt
@@ -166,7 +166,7 @@ namespace HasFullFunOp.HasFullFunExt
 
   @[reducible] def revAppFunDefExt_G_id_F_fun {A B : U} (F : (A ⟶ B) ⟶ A) :
     (Λ G => (revAppFun (F G) B) G) ≃⦃A ⟶ B ▻ λ G => (HasRevAppFun.defRevAppFun (F G) B).eff G ◅ B⦄ (Λ G => G (F G)) :=
-  defCongrArg (defDupFunFun (A ⟶ B) B) (rightId (compFunFun F B))⁻¹ •
+  dupFun.congrArg (rightId (compFunFun F B))⁻¹ •
   dupCompRevApp F
 
   @[reducible] def revAppFunDefExt_G_fun_F_fun {X A B : U} (F : X ⟶ A) (G : X ⟶ (A ⟶ B)) :
@@ -248,11 +248,11 @@ namespace HasFullFunOp.HasFullFunExt
   -- `dupFunFun`
 
   @[reducible] def dupFunFunDefExt_F_id (A B : U) :
-    (Λ F => (dupFunFun A B) F) ≃⦃A ⟶ A ⟶ B ▻ λ F => (defDupFunFun A B).eff F ◅ A ⟶ B⦄ (Λ F => dupFun F) :=
+    (Λ F => (dupFunFun A B) F) ≃⦃A ⟶ A ⟶ B ▻ λ F => (defDupFun A B).defFunFun.eff F ◅ A ⟶ B⦄ (Λ F => dupFun F) :=
   HasRefl.refl (dupFunFun A B)
 
   @[reducible] def dupFunFunDefExt_F_fun {X A B : U} (F : X ⟶ (A ⟶ A ⟶ B)) :
-    (Λ x => (dupFunFun A B) (F x)) ≃⦃X ▻ λ x => (defDupFunFun A B).eff (F x) ◅ A ⟶ B⦄ (Λ x => dupFun (F x)) :=
+    (Λ x => (dupFunFun A B) (F x)) ≃⦃X ▻ λ x => (defDupFun A B).defFunFun.eff (F x) ◅ A ⟶ B⦄ (Λ x => dupFun (F x)) :=
   HasRefl.refl (dupFunFun A B • F)
 
 end HasFullFunOp.HasFullFunExt

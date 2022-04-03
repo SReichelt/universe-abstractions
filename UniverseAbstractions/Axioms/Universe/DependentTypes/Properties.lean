@@ -181,7 +181,7 @@ end HasFunctors
 
 namespace HasProducts
 
-  open HasCongrFun HasRightTypeFun HasLeftTypeFun HasTypeBiFun HasBiCompFun
+  open HasFunctors HasRightTypeFun HasLeftTypeFun HasTypeBiFun HasBiCompFun
 
   variable {U V W VxW : Universe} [h : HasProducts V W VxW]
 
@@ -210,7 +210,7 @@ end HasProducts
 
 namespace HasEquivalences
 
-  open HasCongrFun HasRightTypeFun HasLeftTypeFun HasTypeBiFun HasBiCompFun
+  open HasFunctors HasRightTypeFun HasLeftTypeFun HasTypeBiFun HasBiCompFun
 
   variable {U V W VV WW VW WV V_W : Universe} [HasIdentity V] [HasIdentity W]
            [HasIdentity VV] [HasIdentity WW] [HasFunctors V W VW] [HasFunctors W V WV]

@@ -83,19 +83,20 @@ class HasInternalDependentProducts (U : Universe.{u}) (V : Universe.{v}) {UpV Vt
                                    [HasDependentFunctors U V V] [HasFunctors {V} {V} VtV]
                                    [HasLeftTypeFun h.hasInternalFunctors.Fun] [HasCompFun U {V} {V}]
   extends HasDependentProducts U V V where
+-- TODO: Generic `DefFunPi` type to combine the two `intro`s?
 (defIntroFun   {A : U} (φ : A ⟶ ⌊V⌋) (a : A) :
    φ a ⟶{λ b => HasDependentProducts.intro a b} (Σ φ))
 (defIntroFunPi {A : U} (φ : A ⟶ ⌊V⌋) :
    Π{λ a => HasFunctors.fromDefFun (defIntroFun φ a)} (HasFunctors.defLeftFunProp φ (Σ φ)))
-(defElimFun    {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶ C})) :
+(defElimFun    {A : U} (φ : A ⟶ ⌊V⌋) (C : V) :
+   (Π (φ {⟶ C}))
+   ⟶
    (Σ φ)
-   ⟶{λ P => HasFunctors.apply (HasTypeIdentity.castTo (A := (φ {⟶ C}) (HasDependentProducts.fst P))
-                                                      HasFunctors.byDef
-                                                      (F (HasDependentProducts.fst P)))
-                              (HasDependentProducts.snd P)}
+   ⟶{λ F P => HasFunctors.apply (HasTypeIdentity.castTo (A := (φ {⟶ C}) (HasDependentProducts.fst P))
+                                                        HasFunctors.byDef
+                                                        (F (HasDependentProducts.fst P)))
+                                (HasDependentProducts.snd P)}
    C)
-(defElimFunFun {A : U} (φ : A ⟶ ⌊V⌋) (C : V) :
-   (Π (φ {⟶ C})) ⟶{λ F => defElimFun F} ((Σ φ) ⟶ C))
 
 namespace HasInternalDependentProducts
 
@@ -106,8 +107,8 @@ namespace HasInternalDependentProducts
 
   @[reducible] def introFun {A : U} (φ : A ⟶ ⌊V⌋) (a : A) : φ a ⟶ Σ φ := defIntroFun φ a
   @[reducible] def introFunPi {A : U} (φ : A ⟶ ⌊V⌋) : Π (φ {⟶ Σ φ}) := defIntroFunPi φ
-  @[reducible] def elimFun {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶ C})) : (Σ φ) ⟶ C := defElimFun F
-  @[reducible] def elimFunFun {A : U} (φ : A ⟶ ⌊V⌋) (C : V) : (Π (φ {⟶ C})) ⟶ ((Σ φ) ⟶ C) := defElimFunFun φ C
+  @[reducible] def elimFun {A : U} {φ : A ⟶ ⌊V⌋} {C : V} (F : Π (φ {⟶ C})) : (Σ φ) ⟶ C := (defElimFun φ C).defFun F
+  @[reducible] def elimFunFun {A : U} (φ : A ⟶ ⌊V⌋) (C : V) : (Π (φ {⟶ C})) ⟶ ((Σ φ) ⟶ C) := defElimFun φ C
 
 end HasInternalDependentProducts
 

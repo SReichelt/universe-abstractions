@@ -43,7 +43,7 @@ namespace CategoryTheory
       nat (mapHom (dupFunFun A B) η) a :=
     bySwapFunFunFunDef •
     byDupFunFunDef (η := mapHom (swapFunFunFun A A B) η) •
-    natCongrArg (byCompFunDef (F := swapFunFunFun A A B) (G := dupFunFun A B)) a
+    nat.congrArg (byCompFunDef (F := swapFunFunFun A A B) (G := dupFunFun A B)) a
     ▹{nat (nat η a) a}◃
     byDupFunFunDef
 
@@ -55,16 +55,16 @@ namespace CategoryTheory
       mapHom (dupFun (constFun A F)) f
       ≃'{F a₁ ⇾ F a₂}
       mapHom F f :=
-    cancelRightId (natReflEq' F a₁ • natCongrArg (byConstFunDef (b := F) (f := f)) a₁) (mapHom F f) •
+    cancelRightId (nat.reflEq' F a₁ • nat.congrArg (byConstFunDef (b := F) (f := f)) a₁) (mapHom F f) •
     byDupFunDef
 
     def dupConstNatNat (A B : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (a : A) :
       nat (mapHom (dupFunFun A B • constFunFun A (A ⟶ B)) η) a
       ≃'{F₁ a ⇾ F₂ a}
       nat (mapHom (idFun (A ⟶ B)) η) a :=
-    natCongrArg byConstFunFunDef a •
+    nat.congrArg byConstFunFunDef a •
     byDupFunFunDef •
-    natCongrArg (byCompFunDef (F := constFunFun A (A ⟶ B)) (G := dupFunFun A B)) a
+    nat.congrArg (byCompFunDef (F := constFunFun A (A ⟶ B)) (G := dupFunFun A B)) a
     ▹{nat η a}◃
     byAppFunFunDef
 
@@ -76,12 +76,12 @@ namespace CategoryTheory
       mapHom (dupFun (revCompFunFun A G • F)) f
       ≃'{G (F a₁ a₁) ⇾ G (F a₂ a₂)}
       mapHom (G • dupFun F) f :=
-    congrArgTrans (byRevCompFunFunDef • natCongrArg (byCompFunDef (F := F) (G := revCompFunFun A G)) a₁)
+    congrArgTrans (byRevCompFunFunDef • nat.congrArg (byCompFunDef (F := F) (G := revCompFunFun A G)) a₁)
                   (byCompFunDef (F := F a₂) (G := G)) •
     byDupFunDef (F := revCompFunFun A G • F)
     ▹{mapHom G (mapHom (F a₂) f) • mapHom G (nat (mapHom F f) a₁)}◃
-    transEq G (nat (mapHom F f) a₁) (mapHom (F a₂) f) •
-    mapHomCongrArg G byDupFunDef •
+    mapHom.transEq G (nat (mapHom F f) a₁) (mapHom (F a₂) f) •
+    mapHom.congrArg G byDupFunDef •
     byCompFunDef (F := dupFun F) (G := G)
 
     def rightDupNatNat {A B : univ.{u} W} (F : A ⟶ A ⟶ B) (C : univ.{u} W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) :
@@ -89,10 +89,10 @@ namespace CategoryTheory
       ≃'{G₁ (F a a) ⇾ G₂ (F a a)}
       nat (mapHom (compFunFun (dupFun F) C) ε) a :=
     byRevCompFunFunFunDef (F := F a) •
-    natCongrArg (byCompFunFunDef (ε := mapHom (revCompFunFunFun A B C) ε) •
-                 natCongrArg (byCompFunDef (F := revCompFunFunFun A B C) (G := compFunFun F (A ⟶ C))) a) a •
+    nat.congrArg (byCompFunFunDef (ε := mapHom (revCompFunFunFun A B C) ε) •
+                 nat.congrArg (byCompFunDef (F := revCompFunFunFun A B C) (G := compFunFun F (A ⟶ C))) a) a •
     byDupFunFunDef (η := mapHom (compFunFun F (A ⟶ C) • revCompFunFunFun A B C) ε) •
-    natCongrArg (byCompFunDef (F := compFunFun F (A ⟶ C) • revCompFunFunFun A B C) (G := dupFunFun A C)) a
+    nat.congrArg (byCompFunDef (F := compFunFun F (A ⟶ C) • revCompFunFunFun A B C) (G := dupFunFun A C)) a
     ▹{nat ε (F a a)}◃
     byCompFunFunDef (F := dupFun F)
 
@@ -103,23 +103,23 @@ namespace CategoryTheory
       ≃'{G (F₁ a a) ⇾ G (F₂ a a)}
       nat (nat (mapHom (compFunFunFun A B C • dupFunFun A B) η) G) a :=
     byRevCompFunFunDef •
-    natCongrArg (byCompFunFunFunDef (G := revCompFunFun A G) •
-                 natCongrArg (byCompFunFunDef (F := revCompFunFunFun A B C)
-                                              (ε := mapHom (compFunFunFun A (A ⟶ B) (A ⟶ C)) η) •
-                              natCongrArg (byCompFunDef (F := compFunFunFun A (A ⟶ B) (A ⟶ C))
-                                                        (G := compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C))) G) a) a •
+    nat.congrArg (byCompFunFunFunDef (G := revCompFunFun A G) •
+                  nat.congrArg (byCompFunFunDef (F := revCompFunFunFun A B C)
+                                                (ε := mapHom (compFunFunFun A (A ⟶ B) (A ⟶ C)) η) •
+                                nat.congrArg (byCompFunDef (F := compFunFunFun A (A ⟶ B) (A ⟶ C))
+                                                           (G := compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C))) G) a) a •
     byDupFunFunDef (η := nat (mapHom (compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
                                       compFunFunFun A (A ⟶ B) (A ⟶ C)) η) G) •
-    natCongrArg (byRevCompFunFunDef (G := dupFunFun A C)
-                                    (η := mapHom (compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
-                                                  compFunFunFun A (A ⟶ B) (A ⟶ C)) η) •
-                 natCongrArg (byCompFunDef (F := compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
-                                                 compFunFunFun A (A ⟶ B) (A ⟶ C))
-                                           (G := revCompFunFun (B ⟶ C) (dupFunFun A C))) G) a
+    nat.congrArg (byRevCompFunFunDef (G := dupFunFun A C)
+                                     (η := mapHom (compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
+                                                   compFunFunFun A (A ⟶ B) (A ⟶ C)) η) •
+                  nat.congrArg (byCompFunDef (F := compFunFun (revCompFunFunFun A B C) (A ⟶ A ⟶ C) •
+                                                   compFunFunFun A (A ⟶ B) (A ⟶ C))
+                                             (G := revCompFunFun (B ⟶ C) (dupFunFun A C))) G) a
     ▹{mapHom G (nat (nat η a) a)}◃
-    mapHomCongrArg G byDupFunFunDef •
+    mapHom.congrArg G byDupFunFunDef •
     byCompFunFunFunDef (η := mapHom (dupFunFun A B) η) •
-    natCongrArg (natCongrArg (byCompFunDef (F := dupFunFun A B) (G := compFunFunFun A B C)) G) a
+    nat.congrArg (nat.congrArg (byCompFunDef (F := dupFunFun A B) (G := compFunFunFun A B C)) G) a
 
     class HasRightDupNat (A B C : univ.{u} W) where
     (defRightDupNat (F : A ⟶ A ⟶ B) (G : B ⟶ C) : StrictDefNatIso (φ := λ a => G (F a a)) (rightDupNat F G))
@@ -134,14 +134,14 @@ namespace CategoryTheory
           (nat (mapHom (G a₂) (mapHom F f)) (F a₁))
           (mapHom (G a₂ (F a₂)) (mapHom F f)) •
     congrArgTrans (byDupFunFunDef (η := mapHom G f) (a := F a₁) •
-                   natCongrArg (byCompFunDef (F := G) (G := dupFunFun B C)) (F a₁))
+                   nat.congrArg (byCompFunDef (F := G) (G := dupFunFun B C)) (F a₁))
                   (byDupFunDef (F := G a₂)) •
     bySubstFunDef (F := F) (G := dupFunFun B C • G) (f := f)
     ▹{mapHom (G a₂ (F a₂)) (mapHom F f) •
       nat (mapHom (G a₂) (mapHom F f)) (F a₁) •
       nat (nat (mapHom G f) (F a₁)) (F a₁)}◃
-    congrArgTransRight (natTransEq' (nat (mapHom G f) (F a₁)) (mapHom (G a₂) (mapHom F f)) (F a₁) •
-                        natCongrArg (bySubstFunDef (F := F) (G := G) (f := f)) (F a₁)) (mapHom (G a₂ (F a₂))
+    congrArgTransRight (nat.transEq' (nat (mapHom G f) (F a₁)) (mapHom (G a₂) (mapHom F f)) (F a₁) •
+                        nat.congrArg (bySubstFunDef (F := F) (G := G) (f := f)) (F a₁)) (mapHom (G a₂ (F a₂))
                        (mapHom F f)) •
     bySubstFunDef (F := F) (G := substFun F G) (f := f)
 
@@ -152,17 +152,17 @@ namespace CategoryTheory
     let e₁ : nat (mapHom (substFunFun F C) (mapHom (revCompFunFun A (dupFunFun B C)) ε)) a ≃'
              nat (nat (nat ε a) (F a)) (F a) :=
         byDupFunFunDef (η := nat ε a) (a := F a) •
-        natCongrArg (byRevCompFunFunDef (G := dupFunFun B C)) (F a) •
+        nat.congrArg (byRevCompFunFunDef (G := dupFunFun B C)) (F a) •
         bySubstFunFunDef (ε := mapHom (revCompFunFun A (dupFunFun B C)) ε);
     let e₂ : nat (mapHom (substFunFun F C) (mapHom (substFunFun F (B ⟶ C)) ε)) a ≃'
              nat (nat (nat ε a) (F a)) (F a) :=
-        natCongrArg bySubstFunFunDef (F a) •
+        nat.congrArg bySubstFunFunDef (F a) •
         bySubstFunFunDef (ε := mapHom (substFunFun F (B ⟶ C)) ε);
     e₁ •
-    natCongrArg (byCompFunDef (F := revCompFunFun A (dupFunFun B C))) a
+    nat.congrArg (byCompFunDef (F := revCompFunFun A (dupFunFun B C))) a
     ▹{nat (nat (nat ε a) (F a)) (F a)}◃
     e₂ •
-    natCongrArg (byCompFunDef (F := substFunFun F (B ⟶ C))) a
+    nat.congrArg (byCompFunDef (F := substFunFun F (B ⟶ C))) a
 
     def substDupNatNatNat (A B C : univ.{u} W) {F₁ F₂ : A ⟶ B} (η : F₁ ⇾ F₂) (G : A ⟶ B ⟶ B ⟶ C) (a : A) :
       nat (nat (mapHom (compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C) • substFunFunFun A B C) η) G) a
@@ -171,31 +171,31 @@ namespace CategoryTheory
                                                          substFunFunFun A B (B ⟶ C))) η) G) a :=
     byDupFunDef (F := G a) (f := nat η a) •
     bySubstFunFunFunDef (G := dupFunFun B C • G) •
-    natCongrArg (byCompFunFunDef (F := revCompFunFun A (dupFunFun B C))
-                                 (ε := mapHom (substFunFunFun A B C) η) •
-                 natCongrArg (byCompFunDef (F := substFunFunFun A B C)
-                                           (G := compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C))) G) a
+    nat.congrArg (byCompFunFunDef (F := revCompFunFun A (dupFunFun B C))
+                                  (ε := mapHom (substFunFunFun A B C) η) •
+                  nat.congrArg (byCompFunDef (F := substFunFunFun A B C)
+                                             (G := compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C))) G) a
     ▹{mapDupHom (G a) (nat η a)}◃
-    congrArgTrans (natCongrArg bySubstFunFunFunDef (F₁ a) •
+    congrArgTrans (nat.congrArg bySubstFunFunFunDef (F₁ a) •
                    bySubstFunFunDef (ε := nat (mapHom (substFunFunFun A B (B ⟶ C)) η) G))
                   (bySubstFunFunFunDef (G := substFun F₂ G)) •
-    natTransEq' (mapHom (substFunFun F₁ C) (nat (mapHom (substFunFunFun A B (B ⟶ C)) η) G))
-                (nat (mapHom (substFunFunFun A B C) η) (HasFunctors.apply (substFunFun F₂ (B ⟶ C)) G))
-                a •
-    natCongrArg (congrArgTrans (byCompFunFunFunDef (η := mapHom (substFunFunFun A B (B ⟶ C)) η))
-                               (byCompFunFunDef (ε := mapHom (substFunFunFun A B C) η)) •
-                 natTransEq' (nat (mapHom (compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C))
-                                          (mapHom (substFunFunFun A B (B ⟶ C)) η))
-                                  (substFunFun F₁ C))
-                             (mapHom (compFunFun (substFunFun F₂ (B ⟶ C)) (A ⟶ C))
-                                     (mapHom (substFunFunFun A B C) η))
-                             G •
-                 natCongrArg (congrArgTransRight (natCongrArg (byCompFunDef (F := substFunFunFun A B (B ⟶ C))
-                                                                            (G := compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C)))
-                                                              (substFunFun F₁ C))
-                                                 (mapHom (compFunFun (substFunFun F₂ (B ⟶ C)) (A ⟶ C))
-                                                         (mapHom (substFunFunFun A B C) η)) •
-                              bySubstFunDef (F := substFunFunFun A B C)) G) a
+    nat.transEq' (mapHom (substFunFun F₁ C) (nat (mapHom (substFunFunFun A B (B ⟶ C)) η) G))
+                 (nat (mapHom (substFunFunFun A B C) η) (HasFunctors.apply (substFunFun F₂ (B ⟶ C)) G))
+                 a •
+    nat.congrArg (congrArgTrans (byCompFunFunFunDef (η := mapHom (substFunFunFun A B (B ⟶ C)) η))
+                                (byCompFunFunDef (ε := mapHom (substFunFunFun A B C) η)) •
+                  nat.transEq' (nat (mapHom (compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C))
+                                            (mapHom (substFunFunFun A B (B ⟶ C)) η))
+                                    (substFunFun F₁ C))
+                               (mapHom (compFunFun (substFunFun F₂ (B ⟶ C)) (A ⟶ C))
+                                       (mapHom (substFunFunFun A B C) η))
+                               G •
+                  nat.congrArg (congrArgTransRight (nat.congrArg (byCompFunDef (F := substFunFunFun A B (B ⟶ C))
+                                                                               (G := compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C)))
+                                                                 (substFunFun F₁ C))
+                                                   (mapHom (compFunFun (substFunFun F₂ (B ⟶ C)) (A ⟶ C))
+                                                           (mapHom (substFunFunFun A B C) η)) •
+                                bySubstFunDef (F := substFunFunFun A B C)) G) a
 
     class HasSubstDupNat (A B C : univ.{u} W) where
     (defSubstDupNat (F : A ⟶ B) (G : A ⟶ B ⟶ B ⟶ C) : StrictDefNatIso (φ := λ a => G a (F a) (F a)) (substDupNat F G))

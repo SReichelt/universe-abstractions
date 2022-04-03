@@ -30,7 +30,7 @@ namespace CategoryTheory
       mapHom (G • constFun A b) f
       ≃'{G b ⇾ G b}
       mapHom (constFun A (G b)) f :=
-    reflEq G b • mapHomCongrArg G byConstFunDef • byCompFunDef ▹{idHom (G b)}◃ byConstFunDef
+    mapHom.reflEq G b • mapHom.congrArg G byConstFunDef • byCompFunDef ▹{idHom (G b)}◃ byConstFunDef
 
     def rightConstNatNat (A : univ.{u} W) {B : univ.{u} W} (b : B) (C : univ.{u} W) {G₁ G₂ : B ⟶ C} (ε : G₁ ⇾ G₂) (a : A) :
       nat (mapHom (compFunFun (constFun A b) C) ε) a
@@ -40,24 +40,24 @@ namespace CategoryTheory
     ▹{nat ε b}◃
     byRevAppFunDef •
     byConstFunFunDef •
-    natCongrArg (byCompFunDef (F := revAppFun b C) (G := constFunFun A C)) a
+    nat.congrArg (byCompFunDef (F := revAppFun b C) (G := constFunFun A C)) a
 
     def rightConstNatNatNat (A B C : univ.{u} W) {b₁ b₂ : B} (g : b₁ ⇾ b₂) (G : B ⟶ C) (a : A) :
       nat (nat (mapHom (compFunFunFun A B C • constFunFun A B) g) G) a
       ≃'{G b₁ ⇾ G b₂}
       nat (nat (mapHom (revCompFunFun (B ⟶ C) (constFunFun A C) • revAppFunFun B C) g) G) a :=
-    mapHomCongrArg G byConstFunFunDef •
+    mapHom.congrArg G byConstFunFunDef •
     byCompFunFunFunDef (η := mapHom (constFunFun A B) g) •
-    natCongrArg (natCongrArg (byCompFunDef (F := constFunFun A B)
-                                           (G := compFunFunFun A B C)
-                                           (f := g)) G) a
+    nat.congrArg (nat.congrArg (byCompFunDef (F := constFunFun A B)
+                                             (G := compFunFunFun A B C)
+                                             (f := g)) G) a
     ▹{mapHom G g}◃
     byRevAppFunFunDef •
     byConstFunFunDef (g := nat (mapHom (revAppFunFun B C) g) G) •
-    natCongrArg (byRevCompFunFunDef (G := constFunFun A C) (η := mapHom (revAppFunFun B C) g) •
-                 natCongrArg (byCompFunDef (F := revAppFunFun B C)
-                                           (G := revCompFunFun (B ⟶ C) (constFunFun A C))
-                                           (f := g)) G) a
+    nat.congrArg (byRevCompFunFunDef (G := constFunFun A C) (η := mapHom (revAppFunFun B C) g) •
+                  nat.congrArg (byCompFunDef (F := revAppFunFun B C)
+                                             (G := revCompFunFun (B ⟶ C) (constFunFun A C))
+                                             (f := g)) G) a
 
     class HasRightConstNat (A B C : univ.{u} W) where
     (defRightConstNat (b : B) (G : B ⟶ C) : StrictDefNatIso (φ := λ _ => G b) (rightConstNat A b G))
@@ -76,7 +76,7 @@ namespace CategoryTheory
       nat (mapHom (constFunFun A C) h) a :=
     byConstFunFunDef •
     byCompFunFunDef (ε := mapHom (constFunFun B C) h) •
-    natCongrArg (byCompFunDef (F := constFunFun B C) (G := compFunFun F C)) a
+    nat.congrArg (byCompFunDef (F := constFunFun B C) (G := compFunFun F C)) a
     ▹{h}◃
     byConstFunFunDef
 
@@ -86,13 +86,13 @@ namespace CategoryTheory
       nat (nat (mapHom (constFun (A ⟶ B) (constFunFun A C)) η) c) a :=
     byConstFunDef •
     byCompFunFunFunDef (G := constFun B c) •
-    natCongrArg (byCompFunFunDef (F := constFunFun B C) (ε := mapHom (compFunFunFun A B C) η) •
-                 natCongrArg (byCompFunDef (F := compFunFunFun A B C)
-                                           (G := compFunFun (constFunFun B C) (A ⟶ C))) c) a
+    nat.congrArg (byCompFunFunDef (F := constFunFun B C) (ε := mapHom (compFunFunFun A B C) η) •
+                  nat.congrArg (byCompFunDef (F := compFunFunFun A B C)
+                                             (G := compFunFun (constFunFun B C) (A ⟶ C))) c) a
     ▹{idHom c}◃
-    natReflEq' (constFun A c) a •
-    natCongrArg (natReflEq' (constFunFun A C) c •
-                 natCongrArg (byConstFunDef (b := constFunFun A C)) c) a
+    nat.reflEq' (constFun A c) a •
+    nat.congrArg (nat.reflEq' (constFunFun A C) c •
+                  nat.congrArg (byConstFunDef (b := constFunFun A C)) c) a
 
     class HasLeftConstNat (A B C : univ.{u} W) where
     (defLeftConstNat (F : A ⟶ B) (c : C) : StrictDefNatIso (φ := λ _ => c) (leftConstNat F c))

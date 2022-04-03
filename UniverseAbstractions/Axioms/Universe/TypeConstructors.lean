@@ -97,7 +97,7 @@ namespace HasTypeBiFun
 
   instance hasRightTypeFun : HasRightTypeFun T := ⟨⟩
 
-  @[reducible] def typeFunFun : ⌊U⌋ ⟶ ⌊V⌋ ⟶ ⌊W⌋ := h.defRightFunFun
+  @[reducible] def typeFunFun : ⌊U⌋ ⟶ ⌊V⌋ ⟶ ⌊W⌋ := IsBiFunctorial.rightFunFun T
 
   variable {UtW : Universe} [HasFunctors {U} {W} UtW] [HasCongrFun {V} {W}]
 

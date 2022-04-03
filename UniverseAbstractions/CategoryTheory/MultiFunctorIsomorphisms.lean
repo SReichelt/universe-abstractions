@@ -123,13 +123,13 @@ namespace CategoryTheory
                  {ε : StrictDefNatNatIso η hNatEq} {a : A} {b : B}
 
         def byStrictNatNatIsoDef : natIso (natIso ε.η a) b ≃ idIso (φ a b) :=
-        byStrictNatIsoDef • natIsoCongrArg (byNatNatIsoDef (ε := ε)) b
+        byStrictNatIsoDef • natIso.congrArg (byNatNatIsoDef (ε := ε)) b
 
         def byStrictNatNatIsoToHomDef  : nat (nat (toHom  ε.η) a) b ≃ idHom (φ a b) :=
-        byStrictNatIsoToHomDef  • natCongrArg (byNatNatIsoToHomDef  (ε := ε)) b
+        byStrictNatIsoToHomDef  • nat.congrArg (byNatNatIsoToHomDef  (ε := ε)) b
 
         def byStrictNatNatIsoInvHomDef : nat (nat (invHom ε.η) a) b ≃ idHom (φ a b) :=
-        byStrictNatIsoInvHomDef • natCongrArg (byNatNatIsoInvHomDef (ε := ε)) b
+        byStrictNatIsoInvHomDef • nat.congrArg (byNatNatIsoInvHomDef (ε := ε)) b
 
       end
 
@@ -244,13 +244,13 @@ namespace CategoryTheory
                  {ε : StrictDefNatNatNatIso η hNatNatEq} {a : A} {b : B} {c : C}
 
         def byStrictNatNatNatIsoDef : natIso (natIso (natIso ε.η a) b) c ≃ idIso (φ a b c) :=
-        byStrictNatNatIsoDef • natIsoCongrArg (natIsoCongrArg (byNatNatNatIsoDef (ε := ε)) b) c
+        byStrictNatNatIsoDef • natIso.congrArg (natIso.congrArg (byNatNatNatIsoDef (ε := ε)) b) c
 
         def byStrictNatNatNatIsoToHomDef  : nat (nat (nat (toHom  ε.η) a) b) c ≃ idHom (φ a b c) :=
-        byStrictNatNatIsoToHomDef  • natCongrArg (natCongrArg (byNatNatNatIsoToHomDef  (ε := ε)) b) c
+        byStrictNatNatIsoToHomDef  • nat.congrArg (nat.congrArg (byNatNatNatIsoToHomDef  (ε := ε)) b) c
 
         def byStrictNatNatNatIsoInvHomDef : nat (nat (nat (invHom ε.η) a) b) c ≃ idHom (φ a b c) :=
-        byStrictNatNatIsoInvHomDef • natCongrArg (natCongrArg (byNatNatNatIsoInvHomDef (ε := ε)) b) c
+        byStrictNatNatIsoInvHomDef • nat.congrArg (nat.congrArg (byNatNatNatIsoInvHomDef (ε := ε)) b) c
 
       end
 
@@ -379,17 +379,17 @@ namespace CategoryTheory
 --        def byStrictNatNatNatNatIsoDef :
 --          natIso (natIso (natIso (natIso ε.η a) b) c) d ≃ idIso (φ a b c d) :=
 --        byStrictNatNatNatIsoDef •
---        natIsoCongrArg (natIsoCongrArg (natIsoCongrArg (byNatNatNatNatIsoDef (ε := ε)) b) c) d
+--        natIso.congrArg (natIso.congrArg (natIso.congrArg (byNatNatNatNatIsoDef (ε := ε)) b) c) d
 --
 --        def byStrictNatNatNatNatIsoToHomDef  :
 --          nat (nat (nat (nat (toHom  ε.η) a) b) c) d ≃ idHom (φ a b c d) :=
 --        byStrictNatNatNatIsoToHomDef  •
---        natCongrArg (natCongrArg (natCongrArg (byNatNatNatNatIsoToHomDef  (ε := ε)) b) c) d
+--        nat.congrArg (nat.congrArg (nat.congrArg (byNatNatNatNatIsoToHomDef  (ε := ε)) b) c) d
 --
 --        def byStrictNatNatNatNatIsoInvHomDef :
 --          nat (nat (nat (nat (invHom ε.η) a) b) c) d ≃ idHom (φ a b c d) :=
 --        byStrictNatNatNatIsoInvHomDef •
---        natCongrArg (natCongrArg (natCongrArg (byNatNatNatNatIsoInvHomDef (ε := ε)) b) c) d
+--        nat.congrArg (nat.congrArg (nat.congrArg (byNatNatNatNatIsoInvHomDef (ε := ε)) b) c) d
 
       end
 

@@ -58,7 +58,7 @@ namespace HasLinearFunOp
   (leftId  {A B : U} (F : A ⟶ B) : idFun B • F ≃{byDef    ▻|} F)
   (rightIdExt (A B : U) : compFunFun    (idFun A) B ≃{▻ λ F => rightId F ◅} idFun (A ⟶ B))
   (leftIdExt  (A B : U) : revCompFunFun A (idFun B) ≃{▻ λ F => leftId  F ◅} idFun (A ⟶ B))
-  (swapRevApp {A B : U} (F : A ⟶ B) : swapFun (revAppFunFun A B) F ≃{byDef • byFunDef ▻-◅} appFun F)
+  (swapRevApp {A B : U} (F : A ⟶ B) : swapFun (revAppFunFun A B) F ≃{byDef₂ ▻-◅} appFun F)
   (swapRevAppExt (A B : U) : swapFunFun (revAppFunFun A B) ≃{▻ λ F => swapRevApp F ◅} appFunFun A B)
   (swapCompFun {A B : U} (F : A ⟶ B) (a : A) (C : U) :
      swapFun (compFunFun F C) a ≃{byDef₂ ▻-◅} revAppFun (F a) C)
@@ -238,7 +238,7 @@ namespace HasFullFunOp
      substFunFun F C • substFunFun F (B ⟶ C))
   (substDupExtExt (A B C : U) :
      compFunFun (revCompFunFun A (dupFunFun B C)) (A ⟶ C) • substFunFunFun A B C
-     ≃{byDefDef ▻ λ F => substDupExt F C ◅ byDef₂ • congrFun byArgDef _ • byFunDef • byArgDef}
+     ≃{byDefDef ▻ λ F => substDupExt F C ◅ byDef • congrFun byDefDef _ • byFunDef • byArgDef}
      substFun (substFunFunFun A B C) (compFunFunFun (A ⟶ B ⟶ B ⟶ C) (A ⟶ B ⟶ C) (A ⟶ C) •
      substFunFunFun A B (B ⟶ C)))
 

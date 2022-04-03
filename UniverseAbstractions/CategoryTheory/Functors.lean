@@ -113,20 +113,20 @@ namespace CategoryTheory
       @[reducible] def preFun : PreFunctor (Hom A) (Hom B) F.φ := (desc F).F
       @[reducible] def mapHom {a b : A} (f : a ⇾ b) : F a ⇾ F b := (preFun F) f
 
-      def reflEq (a : A) : mapHom F (idHom a) ≃ idHom (F a) :=
+      def mapHom.reflEq (a : A) : mapHom F (idHom a) ≃ idHom (F a) :=
       IsReflFunctor.reflEq (F := preFun F) a
 
-      def transEq {a b c : A} (f : a ⇾ b) (g : b ⇾ c) :
+      def mapHom.transEq {a b c : A} (f : a ⇾ b) (g : b ⇾ c) :
         mapHom F (g • f) ≃ mapHom F g • mapHom F f :=
       IsTransFunctor.transEq (F := preFun F) f g
 
-      def mapHomCongrArg {a b : A} {f₁ f₂ : a ⇾ b} (e : f₁ ≃ f₂) :
+      def mapHom.congrArg {a b : A} {f₁ f₂ : a ⇾ b} (e : f₁ ≃ f₂) :
         mapHom F f₁ ≃ mapHom F f₂ :=
       HasCongrArg.congrArg ((preFun F).baseFun a b) e
 
       def mapHomReflEq {a : A} {f : a ⇾ a} (e : f ≃ idHom a) :
         mapHom F f ≃ idHom (F a) :=
-      reflEq F a • mapHomCongrArg F e
+      mapHom.reflEq F a • mapHom.congrArg F e
 
       def mapIsoDesc {a b : A} (e : IsoDesc a b) : IsoDesc (F a) (F b) :=
       { toHom  := mapHom F e.toHom,
@@ -205,23 +205,23 @@ namespace CategoryTheory
     def invHomComm {a b : A} (e : a ⇿ b) : invHom (mapIso F e) ≃ mapHom F (invHom e) := byInvDef
 
     def isoReflEq (a : A) : mapIso F (idIso a) ≃ idIso (F a) :=
-    toHomInj ((toHomReflEq (F a))⁻¹ •
-             reflEq F a •
-             (mapHomCongrArg F (toHomReflEq a) •
+    toHomInj ((toHom.reflEq (F a))⁻¹ •
+             mapHom.reflEq F a •
+             (mapHom.congrArg F (toHom.reflEq a) •
               toHomComm F (idIso a)))
 
     def isoSymmEq {a b : A} (e : a ⇿ b) : mapIso F e⁻¹ ≃ (mapIso F e)⁻¹ :=
     toHomInj ((invHomComm F e •
-              toHomSymmEq (mapIso F e))⁻¹ •
-             (mapHomCongrArg F (toHomSymmEq e) •
+              toHom.symmEq (mapIso F e))⁻¹ •
+             (mapHom.congrArg F (toHom.symmEq e) •
               toHomComm F e⁻¹))
 
     def isoTransEq {a b c : A} (e : a ⇿ b) (f : b ⇿ c) :
       mapIso F (f • e) ≃ mapIso F f • mapIso F e :=
     toHomInj ((congrArgTrans (toHomComm F e) (toHomComm F f) •
-              toHomTransEq (mapIso F e) (mapIso F f))⁻¹ •
-             transEq F (toHom e) (toHom f) •
-             (mapHomCongrArg F (toHomTransEq e f) •
+              toHom.transEq (mapIso F e) (mapIso F f))⁻¹ •
+             mapHom.transEq F (toHom e) (toHom f) •
+             (mapHom.congrArg F (toHom.transEq e f) •
               toHomComm F (f • e)))
 
     def isoPreFun : PreFunctor (Category.Iso A) (Category.Iso B) F.φ := ⟨mapIsoFun F⟩
