@@ -1,4 +1,4 @@
-import UniverseAbstractions.Universes
+import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
 import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors

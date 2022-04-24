@@ -304,8 +304,7 @@ Most of the universes defined above have functor types:
   \end{cases}\]
   and $\star(\star) := \star.$
   \item Functions in $\Set$ are functors.
-  \item In $\Cat,$ we can let $[A \to B]$ be the functor category from $A$ to $B.$ For most purposes
-  it is convenient to include both covariant and contravariant functors.
+  \item In $\Cat,$ we can let $[A \to B]$ be the functor category from $A$ to $B.$
   \item Universes of some algebraic structures have functors, depending on whether morphisms are
   again instances of the same structure. For example, this is the case for commutative semigroups
   and for vector spaces.
@@ -869,7 +868,7 @@ Counits, products, coproducts, and equivalences embed analogously.
 \subsection{Universes}
 
 \begin{definition}
-  A \defn{layer 2 universe} $(\U,\V,(\equiv_A)_{A : \U})$ is triple of
+  A \defn{layer 2 universe} $(\U,\V,(\equiv_A)_{A : \U})$ is a triple of
   \begin{itemize}
     \item a layer 1 universe $\U,$
     \item a layer 1 universe $\V$ with (at least) linear logic, and
@@ -988,12 +987,12 @@ combinators to match their description as given in proposition \ref{prp:layer1-c
   \ref{sec:layer2-universe-type}.)
 
   The common requirement on this notation is that given a term
-  \[q : \prod_{a_k : A_k} p_{a_1 \dots a_n}\]
+  \[f : \prod_{a_k : A_k} p_{a_1 \dots a_n}\]
   and concrete $a_k : A_k,$ we have a \defn{dependent functor application}
-  \[q(a_1,\dots,a_n) : p_{a_1 \dots a_n}.\]
+  \[f(a_1,\dots,a_n) : p_{a_1 \dots a_n}.\]
 
   \begin{itemize}
-    \item For the case that $q_{a_1 \dots a_n} : \V$ is an instance equivalence, we simply define
+    \item For the case that $p_{a_1 \dots a_n} : \V$ is an instance equivalence, we simply define
     \[\left[\prod_{a_k : A_k} [s_{a_1 \dots a_n} \equiv t_{a_1 \dots a_n}]\right] := [F \equiv G]\]
     with $B : \U$ such that $s_{a_1 \dots a_n},t_{a_1 \dots a_n} : B$ and
     \begin{align*}
@@ -1028,10 +1027,10 @@ combinators to match their description as given in proposition \ref{prp:layer1-c
   \end{itemize}
 \end{definition}
 
-As for functors, we wish to define instances $q : \prod_{a_k : A_k} p_{a_1 \dots a_n}$ via
+As for functors, we wish to define instances $f : \prod_{a_k : A_k} p_{a_1 \dots a_n}$ via
 \defn{dependent functor descriptions}
 \begin{align*}
-  q : A_1 \to \dots \to A_n &\to     p_{a_1 \dots a_n}\\
+  f : A_1 \to \dots \to A_n &\to     p_{a_1 \dots a_n}\\
       (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n},
 \end{align*}
 so we will list specific conditions that enable this.
@@ -1462,6 +1461,8 @@ so we will list specific conditions that enable this.
 \end{remarks}
 
 % TODO: other cases of dependent functors
+
+\subsection{Categorical prerelations}
 
 \subsection{Rewriting}
 

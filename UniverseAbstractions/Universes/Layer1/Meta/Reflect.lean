@@ -1,4 +1,4 @@
-import UniverseAbstractions.Universes
+import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 import UniverseAbstractions.Meta.TypedExpr
@@ -19,8 +19,8 @@ structure _Sort where
 (α : ⌜Sort u⌝)
 
 def exprUniverse {β : Type} (inst : β → _Sort) : Universe :=
-{ a    := β,
-  inst := ⟨λ b => (inst b).α⟩ }
+{ I := β,
+  h := ⟨λ b => (inst b).α⟩ }
 
 
 
@@ -166,8 +166,6 @@ namespace mkHasFunctors'
 
   end mkDefFun
 
-  def mkAppFun (A B : Q($U)) (F : Q($A ⟶ $B)) : Q($A ⟶ $B) := ⌜HasFunctors.appFun $F⌝
-
   def mkIsFunApp (A B : Q($U)) (b : Q($B)) : ClassExpr := ⟨⌜HasFunctors.IsFunApp $A $b⌝⟩
 
   namespace mkIsFunApp
@@ -280,8 +278,6 @@ namespace mkHasFunctors
 
   @[reducible] def _DefFun (A B : _⌈U⌉_) (f : A → B) := HasFunctors.DefFun (U := U) A B f
   notation:20 A:21 " _⟶{" f:0 "} " B:21 => mkHasFunctors._DefFun A B f
-
-  def mkAppFun {A B : _⌈U⌉_} (F : A _⟶ B) : A _⟶ B := mkHasFunctors'.mkAppFun h.h A B F
 
   def mkDefFun (A B : _⌈U⌉_) (f : A _⟶ B) := mkHasFunctors'.mkDefFun h.h A B f
 

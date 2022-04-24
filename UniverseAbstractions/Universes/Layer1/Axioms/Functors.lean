@@ -1,4 +1,4 @@
-import UniverseAbstractions.Universes
+import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 
 
 
@@ -22,6 +22,10 @@ namespace HasFunctors
   variable {U : Universe} [h : HasFunctors U]
 
   instance coeFun (A B : U) : CoeFun (A ⟶ B) (λ _ => A → B) := ⟨h.apply⟩
+
+  @[reducible] def apply₂ {A B C     : U} (F : A ⟶ B ⟶ C)         (a : A) (b : B)                 : C := F a b
+  @[reducible] def apply₃ {A B C D   : U} (F : A ⟶ B ⟶ C ⟶ D)     (a : A) (b : B) (c : C)         : D := F a b c
+  @[reducible] def apply₄ {A B C D E : U} (F : A ⟶ B ⟶ C ⟶ D ⟶ E) (a : A) (b : B) (c : C) (d : D) : E := F a b c d
 
   -- Helper classes for the `functoriality` tactic.
   section Helpers
@@ -122,61 +126,90 @@ namespace HasFunctors
     structure DefFun (A B : U) (f : A → B) where
     (F : A ⟶ B)
 
-    notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
+    namespace DefFun
 
-    def DefFun.isFunApp {A B : U} {f : A → B} (F : A ⟶{f} B) {a : A} : IsFunApp A (f a) := ⟨F.F, a⟩
+      notation:20 A:21 " ⟶{" f:0 "} " B:21 => HasFunctors.DefFun A B f
+
+      variable {A B : U}
+
+      def isFunApp {f : A → B} (F : A ⟶{f} B) {a : A} : IsFunApp A (f a) := ⟨F.F, a⟩
+
+      def defAppFun (F : A ⟶ B) : A ⟶{apply F} B := ⟨F⟩
+
+    end DefFun
 
     structure DefFun₂ (A B C : U) (f : A → B → C) where
     (app (a : A) : B ⟶{f a} C)
     (toDefFun : A ⟶{λ a => (app a).F} (B ⟶ C))
 
-    notation:20 A:21 " ⟶ " B:21 " ⟶{" f:0 "} " C:21 => HasFunctors.DefFun₂ A B C f
+    namespace DefFun₂
 
-    @[reducible] def DefFun₂.F {A B C : U} {f : A → B → C} (F : A ⟶ B ⟶{f} C) : A ⟶ B ⟶ C :=
-    F.toDefFun.F
+      notation:20 A:21 " ⟶ " B:21 " ⟶{" f:0 "} " C:21 => HasFunctors.DefFun₂ A B C f
 
-    def DefFun₂.isFunApp₂ {A B C : U} {f : A → B → C} (F : A ⟶ B ⟶{f} C) {a : A} {b : B} :
-      IsFunApp₂ A B (f a b) :=
-    ⟨F.F, a, b⟩
+      variable {A B C : U}
+
+      @[reducible] def F {f : A → B → C} (F : A ⟶ B ⟶{f} C) : A ⟶ B ⟶ C :=
+      F.toDefFun.F
+
+      def isFunApp₂ {f : A → B → C} (F : A ⟶ B ⟶{f} C) {a : A} {b : B} :
+        IsFunApp₂ A B (f a b) :=
+      ⟨F.F, a, b⟩
+
+      def defAppFun (F : A ⟶ B ⟶ C) : A ⟶ B ⟶{apply₂ F} C :=
+      ⟨λ a => DefFun.defAppFun (F a), DefFun.defAppFun F⟩
+
+    end DefFun₂
 
     structure DefFun₃ (A B C D : U) (f : A → B → C → D) where
     (app (a : A) : B ⟶ C ⟶{f a} D)
     (toDefFun : A ⟶{λ a => (app a).F} (B ⟶ C ⟶ D))
 
-    notation:20 A:21 " ⟶ " B:21 " ⟶ " C:21 " ⟶{" f:0 "} " D:21 => HasFunctors.DefFun₃ A B C D f
+    namespace DefFun₃
 
-    @[reducible] def DefFun₃.F {A B C D : U} {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) :
-      A ⟶ B ⟶ C ⟶ D :=
-    F.toDefFun.F
+      notation:20 A:21 " ⟶ " B:21 " ⟶ " C:21 " ⟶{" f:0 "} " D:21 => HasFunctors.DefFun₃ A B C D f
 
-    def DefFun₃.isFunApp₃ {A B C D : U} {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D)
-                          {a : A} {b : B} {c : C} :
-      IsFunApp₃ A B C (f a b c) :=
-    ⟨F.F, a, b, c⟩
+      variable {A B C D : U}
+
+      @[reducible] def F {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) :
+        A ⟶ B ⟶ C ⟶ D :=
+      F.toDefFun.F
+
+      def isFunApp₃ {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) {a : A} {b : B} {c : C} :
+        IsFunApp₃ A B C (f a b c) :=
+      ⟨F.F, a, b, c⟩
+
+      def defAppFun (F : A ⟶ B ⟶ C ⟶ D) : A ⟶ B ⟶ C ⟶{apply₃ F} D :=
+      ⟨λ a => DefFun₂.defAppFun (F a), DefFun.defAppFun F⟩
+
+    end DefFun₃
 
     structure DefFun₄ (A B C D E : U) (f : A → B → C → D → E) where
     (app (a : A) : B ⟶ C ⟶ D ⟶{f a} E)
     (toDefFun : A ⟶{λ a => (app a).F} (B ⟶ C ⟶ D ⟶ E))
 
-    notation:20 A:21 " ⟶ " B:21 " ⟶ " C:21 " ⟶ " D:21 " ⟶{" f:0 "} " E:21 => HasFunctors.DefFun₄ A B C D E f
+    namespace DefFun₄
 
-    @[reducible] def DefFun₄.F {A B C D E : U} {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) :
-      A ⟶ B ⟶ C ⟶ D ⟶ E :=
-    F.toDefFun.F
+      notation:20 A:21 " ⟶ " B:21 " ⟶ " C:21 " ⟶ " D:21 " ⟶{" f:0 "} " E:21 => HasFunctors.DefFun₄ A B C D E f
 
-    def DefFun₄.isFunApp₄ {A B C D E : U} {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E)
-                          {a : A} {b : B} {c : C} {d : D} :
-      IsFunApp₄ A B C D (f a b c d) :=
-    ⟨F.F, a, b, c, d⟩
+      variable {A B C D E : U}
+
+      @[reducible] def F {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) : A ⟶ B ⟶ C ⟶ D ⟶ E :=
+      F.toDefFun.F
+
+      def isFunApp₄ {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) {a : A} {b : B} {c : C} {d : D} :
+        IsFunApp₄ A B C D (f a b c d) :=
+      ⟨F.F, a, b, c, d⟩
+
+      def defAppFun (F : A ⟶ B ⟶ C ⟶ D ⟶ E) : A ⟶ B ⟶ C ⟶ D ⟶{apply₄ F} E :=
+      ⟨λ a => DefFun₃.defAppFun (F a), DefFun.defAppFun F⟩
+
+    end DefFun₄
 
   end DefFun
 
-  variable {A B : U}
-
-  def defAppFun (F : A ⟶ B) : A ⟶{λ a => F a} B := ⟨F⟩
-  @[reducible] def appFun (F : A ⟶ B) : A ⟶ B := (defAppFun F).F
-
 end HasFunctors
+
+open HasFunctors
 
 
 
@@ -187,14 +220,12 @@ class HasLinearLogic (U : Universe) [HasFunctors U] where
 
 namespace HasLinearLogic
 
-  open HasFunctors
-
   variable {U : Universe} [HasFunctors U] [HasLinearLogic U]
 
   @[reducible] def idFun (A : U) : A ⟶ A := (defIdFun A).F
 
   @[reducible] def defAppFun₂ (A B : U) : (A ⟶ B) ⟶ A ⟶{λ F a => F a} B :=
-  ⟨defAppFun, defIdFun (A ⟶ B)⟩
+  ⟨DefFun.defAppFun, defIdFun (A ⟶ B)⟩
 
   @[reducible] def appFun {A B : U} (F : A ⟶ B) : A ⟶ B := ((defAppFun₂ A B).app F).F
   @[reducible] def appFun₂ (A B : U) : (A ⟶ B) ⟶ A ⟶ B := (defAppFun₂ A B).F
@@ -232,8 +263,6 @@ class HasSubLinearLogic (U : Universe) [HasFunctors U] where
 
 namespace HasSubLinearLogic
 
-  open HasFunctors
-
   variable {U : Universe} [HasFunctors U] [HasSubLinearLogic U]
 
   @[reducible] def constFun (A : U) {B : U} (b : B) : A ⟶ B := ((defConstFun₂ A B).app b).F
@@ -251,8 +280,6 @@ class HasNonLinearLogic (U : Universe) [HasFunctors U] where
 (defDupFun₂ (A B : U) : (A ⟶ A ⟶ B) ⟶ A ⟶{λ F a => F a a} B)
 
 namespace HasNonLinearLogic
-
-  open HasFunctors
 
   variable {U : Universe} [HasFunctors U] [HasNonLinearLogic U]
 

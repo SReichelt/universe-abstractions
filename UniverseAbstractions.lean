@@ -1,5 +1,4 @@
-import UniverseAbstractions.Universes
-
+import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
 import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Axioms.Products
@@ -13,3 +12,8 @@ import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedProductFunctors
 
 import UniverseAbstractions.Universes.Layer1.Meta.Reflect
 import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
+
+import UniverseAbstractions.Universes.Layer1.Instances.FunctorUniverse
+
+import UniverseAbstractions.Universes.Layer2.Axioms.Universes
+import UniverseAbstractions.Universes.Layer2.Axioms.Functors

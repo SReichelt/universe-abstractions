@@ -1,4 +1,4 @@
-import UniverseAbstractions.Universes
+import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
 import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Axioms.Products
@@ -37,7 +37,7 @@ namespace Prerelation
     def HasSymm.symm {R : Prerelation α V} [h : HasSymm R] {a b : α} (e : R a b) : R b a :=
     (h.symmFun a b) e
 
-    scoped postfix:max "⁻¹" => Prerelation.HasSymm.symm
+    postfix:max "⁻¹" => Prerelation.HasSymm.symm
 
     class HasTrans (R : Prerelation α V) where
     (transFun₂ (a b c : α) : R a b ⟶ R b c ⟶ R a c)
@@ -46,7 +46,7 @@ namespace Prerelation
       R a c :=
     (h.transFun₂ a b c) f g
 
-    scoped notation:90 g:91 " • " f:90 => Prerelation.HasTrans.trans f g
+    notation:90 g:91 " • " f:90 => Prerelation.HasTrans.trans f g
 
     class IsPreorder (R : Prerelation α V) extends HasRefl R, HasTrans R
     class IsEquivalence (R : Prerelation α V) extends IsPreorder R, HasSymm R
@@ -89,9 +89,9 @@ namespace Prerelation
 
     section
 
-      open HasProducts HasProductFun
+      open HasProducts
 
-      variable [HasProductFun V] (R S : Prerelation α V)
+      variable [HasProducts V] (R S : Prerelation α V)
 
       def product : Prerelation α V := λ a b => R a b ⊓ S a b
 
@@ -206,8 +206,6 @@ namespace HasEquivalenceRelation
 
   instance isEquivalence : IsEquivalence h.R := h.h
 
-  scoped infix:25 " ≃ " => HasEquivalenceRelation.R
-
 end HasEquivalenceRelation
 
 
@@ -238,7 +236,7 @@ namespace DependentPrerelation
     S F⁻¹ b a :=
   (h.symmFun F a b) e
 
-  scoped postfix:max "[⁻¹]" => DependentPrerelation.HasDependentSymm.symm
+  postfix:max "[⁻¹]" => DependentPrerelation.HasDependentSymm.symm
 
   class HasDependentTrans (S : DependentPrerelation R W) [h : HasTrans R] where
   (transFun₂ {A B C : U} (F : R A B) (G : R B C) (a : A) (b : B) (c : C) :
@@ -250,7 +248,7 @@ namespace DependentPrerelation
     S (G • F) a c :=
   (h.transFun₂ F G a b c) f g
 
-  scoped notation:90 g:91 " [•] " f:90 => DependentPrerelation.HasDependentTrans.trans f g
+  notation:90 g:91 " [•] " f:90 => DependentPrerelation.HasDependentTrans.trans f g
 
   class IsDependentPreorder (S : DependentPrerelation R W) [h : IsPreorder R] extends
   HasDependentRefl S, HasDependentTrans S

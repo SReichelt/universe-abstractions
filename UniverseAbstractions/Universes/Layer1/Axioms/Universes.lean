@@ -1,4 +1,4 @@
-namespace UniverseAbstractions
+namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
 
@@ -9,9 +9,8 @@ universe u uu w
 -- A type class that says that a given type `I : Sort uu` can be used like `Sort u`, i.e. its
 -- instances can be regarded as types.
 -- * The canonical instance of `HasInstances` is `Sort u` itself (see `sortHasInstances`).
--- * Another common case is `Bundled Φ` (see below) for a type class `Φ : Sort u → Sort w` (say,
---   `Group`, `Ring`, `Category`, etc.). I.e., for a given `A : Bundled Φ`, we can treat `A` as a
---   type.
+-- * Another common case is `Bundled Φ` for a type class `Φ : Sort u → Sort w` (say, `Group`,
+--   `Ring`, `Category`, etc.). I.e., for a given `A : Bundled Φ`, we can treat `A` as a type.
 --
 -- `I` can be considered an index type, where each index stands for a type.
 -- `HasInstances` is essentially `CoeSort` without the (somewhat strange) output parameter.
@@ -34,45 +33,24 @@ end HasInstances
 
 
 
--- For a type class `Φ : α → Sort w`, we can define a "bundled instance" `S : Bundled Φ` as a
--- dependent pair of an `a : α` and `inst : Φ α`.
--- The most important use case is that if `a` is a type (i.e. we have `HasInstances α`), we can
--- treat `S` as a type by "forgetting" `inst`.
-
-structure Bundled {α : Sort u} (Φ : α → Sort w) : Sort (max 1 u w) where
-(a    : α)
-[inst : Φ a]
-
-namespace Bundled
-
-  instance hasInstances {I : Sort uu} [HasInstances.{u, uu} I] (Φ : I → Sort w) :
-    HasInstances.{u, max 1 uu w} (Bundled Φ) :=
-  ⟨λ S => S.a⟩
-
-end Bundled
-
-
-
 -- An abstract "universe" type that enriches the Lean universe `u` with additional information.
 -- This is just a bundled version of `HasInstances` itself. I.e. everything which satisfies
--- `HasInstances` (such as `Sort u` and any `Bundled Φ`, see above) can be considered as a
--- `Universe`.
+-- `HasInstances` (such as `Sort u` and any `Bundled Φ`) can be considered as a `Universe`.
 --
 -- A `Universe` on its own is usually not very useful, but can have additional structure defined as
 -- type classes on `Universe`. See e.g. `Functors.lean`.
 
-def Universe : Type (max u uu) := Bundled HasInstances.{u, uu}
+structure Universe : Type (max u uu) where
+(I : Sort uu)
+[h : HasInstances.{u, uu} I]
 
 namespace Universe
 
-  instance hasInstances : HasInstances.{uu, (max u uu) + 1} Universe.{u, uu} :=
-  Bundled.hasInstances HasInstances
-
-  def univ : Universe.{uu, (max u uu) + 1} := ⟨Universe.{u, uu}⟩
+  instance hasInstances : HasInstances.{uu, (max u uu) + 1} Universe.{u, uu} := ⟨Universe.I⟩
 
   variable (U : Universe.{u, uu})
 
-  instance instInst : HasInstances.{u, uu} U.a := U.inst
+  instance instInst : HasInstances.{u, uu} U.I := U.h
   instance : HasInstances U := instInst U
 
 end Universe
