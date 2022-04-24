@@ -8,10 +8,6 @@ Authors: Leonardo de Moura, Mario Carneiro
 
 
 
-import UniverseAbstractions.MathlibFragments.Init.Notation
-
-
-
 set_option autoBoundImplicitLocal false
 
 universe u₁ u₂ u₃ u₄ v
@@ -26,7 +22,8 @@ structure Equiv (α : Sort u₁) (β : Sort u₂) where
 
 namespace Equiv
 
-instance : HasEquivalence (Sort u₁) (Sort u₂) := ⟨Equiv⟩
+infix:25 " ≃ " => Equiv
+
 instance (α : Sort u₁) (β : Sort u₂) : CoeFun (α ≃ β) (λ _ => α → β) := ⟨Equiv.toFun⟩
 
 theorem ext {α : Sort u₁} {β : Sort u₂} {e₁ e₂ : α ≃ β} :

@@ -3,12 +3,16 @@
 \usepackage[margin=2.5cm]{geometry}
 \usepackage[parfill]{parskip}
 \usepackage[utf8]{inputenc}
+\usepackage{titlesec}
+\usepackage{xcolor}
 \usepackage{hyperref}
 
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 
-\title{Universe Abstractions\footnote{Still searching for a better title.}}
+\title{Higher Combinators}
 \author{Sebastian Reichelt}
+
+\titleformat{\paragraph}{\bfseries}{\theparagraph}{}{}
 
 \setlength{\skip\footins}{0.5cm}
 
@@ -26,9 +30,15 @@
 
 \newcommand{\defn}{\emph}
 
+\newcommand{\eqDef}{\overset{\text{def}}{=}}
+
 \renewcommand{\phi}{\varphi}
 \renewcommand{\equiv}{\simeq}
 \renewcommand{\emptyset}{\varnothing}
+\newcommand{\iso}{\cong}
+\newcommand{\equivto}{\overset{\equiv}{\rightsquigarrow}}
+
+\newcommand{\ZF}{\mathsf{ZF}}
 
 \newcommand{\A}{\mathcal{A}}
 \newcommand{\B}{\mathcal{B}}
@@ -47,9 +57,18 @@
 \newcommand{\Set}{\universe{Set}}
 \newcommand{\Cat}{\universe{Cat}}
 
+\newcommand{\Hom}{\mathrm{Hom}}
+\newcommand{\Iso}{\mathrm{Iso}}
+
 \newcommand{\id}{\nm{id}}
 \newcommand{\apply}{\nm{apply}}
-\newcommand{\congrArg}{\nm{wd}}
+\newcommand{\intro}{\nm{intro}}
+\newcommand{\elim}{\nm{elim}}
+\newcommand{\refl}{\nm{refl}}
+\newcommand{\symm}{\nm{symm}}
+\newcommand{\trans}{\nm{trans}}
+\newcommand{\congrArg}{\nm{congrArg}}
+\newcommand{\congrFun}{\nm{congrFun}}
 \newcommand{\fndef}[1]{\nm{def}_{#1}}
 
 \newcommand{\combinator}{\nm}
@@ -60,14 +79,38 @@
 \newcommand{\revCompFun}{\combinator{B}}
 \newcommand{\swapFun}{\combinator{C}}
 \newcommand{\dupFun}{\combinator{W}}
+\newcommand{\revSelfAppFun}{\combinator{O}}
 \newcommand{\substFun}{\combinator{S'}}
 \newcommand{\revSubstFun}{\combinator{S}}
+\newcommand{\constPi}{\combinator{Kd}}
+\newcommand{\appPi}{\combinator{Ad}}
+\newcommand{\compFunPi}{\combinator{Bd}}
 
-\newcommand{\eqDef}{\overset{\text{def}}{=}}
+\newcommand{\rightId}{\nm{rightId}}
+\newcommand{\leftId}{\nm{leftId}}
+\newcommand{\swapRevApp}{\nm{swapT}}
+\newcommand{\swapSwap}{\nm{swapSwap}}
+\newcommand{\swapCompFun}{\nm{swapB'}}
+\newcommand{\swapRevCompFun}{\nm{swapB}}
+\newcommand{\compAssoc}{\nm{assoc}}
+\newcommand{\rightConst}{\nm{rightConst}}
+\newcommand{\leftConst}{\nm{leftConst}}
+\newcommand{\dupSwap}{\nm{dupC}}
+\newcommand{\dupConst}{\nm{dupK}}
+\newcommand{\rightDup}{\nm{rightDup}}
+\newcommand{\substDup}{\nm{leftDup}}
+\newcommand{\dupDup}{\nm{dupW}}
+\newcommand{\substAltDef}{\nm{dupLeftC}}
+\newcommand{\substAssoc}{\nm{assocS}}
 
-\newenvironment{anonFun}{\left[\begin{aligned}[c]}{\end{aligned}\right]}
+\newcommand{\idFunExt}{\nm{extI}}
+\newcommand{\revAppFunExt}{\nm{extT}}
+\newcommand{\compFunExt}{\nm{extB'}}
+\newcommand{\constFunExt}{\nm{extK}}
+\newcommand{\dupFunExt}{\nm{extW}}
 
 \newcommand{\Lean}{\texttt}
+\newcommand{\redundant}{\textcolor{gray}}
 
 \begin{document}
 
@@ -75,62 +118,133 @@
 
 \section{Introduction}
 
-This work is an attempt to make the advantages of Homotopy Type Theory (HoTT) \cite{hottbook} available
-within more traditional mathematical foundations, by formalizing suitable models of type theories in
-a way that working with these models is as easy as working within HoTT itself. In short, the goal is to
-be able to \emph{use} HoTT as a mathematical theory whenever convenient, similarly to the way category
-theory is typically used.
+This project, which is still work in progress, is an attempt to define structures axiomatically in
+such a way that these axioms have models in all conceivable collections of higher categories,
+including bicategories and hopefully any of the different notions of $\infty$-categories (and also,
+of course, 1-categories and sets).
+Although somewhat inspired by Homotopy Type Theory (HoTT) \cite{hottbook}, the entire theory is
+compatible with standard (and, to a large extend, weaker) foundations, including Zermelo-Fraenkel
+($\ZF$) set theory and the dependent type theory implemented by the Lean 4 \cite{lean4} theorem
+prover. A primary objective is to automate abstract but mathematically trivial proofs in Lean, and
+this document is intended to serve as documentation of that formalization.
 
-In particular, one of the goals (which we have not reached yet but are getting close) is a
-``polymorphic'' definition of a higher category built on top of categories one level below. Iterating
-this definition gives a certain model of $\infty$-categories that (if successful) models HoTT in a
-more direct way than simplicial or cubical sets.
+The guiding principle (which somewhat matches categorical thinking outside of the HoTT realm) is to
+never assume equality in any axiom, as that equality becomes a more general equivalence at the next
+higher level. In particular, this means that 1-categories are not the right starting point for a
+completely generic formalization. Instead, the axioms have a type-theoretic flavor, with categories
+being just one of many models.
 
-This construction works in several different frameworks:
+We do not, however, assume any knowledge of type theory -- except in the following overview, which
+is specifically written with readers coming from a type theory background in mind. The rest of this
+document, as well as the formalization in Lean 4, are self-contained except for the descriptions of
+category-theoretic models of the axioms.
+
+\section{Overview}
+
+This section aims to give just enough of an overview so that readers with some knowledge of type
+theory can get an idea what to expect and not to expect.
+
+One particular thing \emph{not} to expect is a definition of a specific type theory, at least not in
+the usual sense, even though this documentation uses type-theoretic notation throughout. Instead,
+all definitions should be read primarily as notation for axioms defined in set theory -- though
+it does make sense to treat each model of these axioms as a model of a type theory. This axiomatic
+approach allows us to avoid any discussion (and Lean formalization) of syntax, which would just
+distract from the goal of automating proofs \emph{outside} of the type theory.
+
+The axioms are organized in ``layers.'' Although a strong connection between layers and
+type-theoretical universe levels (or homotopy levels in HoTT) exists, there is one important
+difference: Each model tends to satisfy the axioms of \emph{all} layers. If a model has too little
+internal structure for a particular layer, then it satisfies the axioms of that layer trivially
+instead of not at all.
+
+For example, the axioms of the first layer can loosely be interpreted as defining
+\defn{propositions}, but those same axioms are \emph{also} part of all other layers. One can think
+of layer $n$ as defining constraints governing each span of $n$ successive universe levels.
+
 \begin{itemize}
-  \item In this document, we describe the construction in the context of Zermelo-Fraenkel (ZF) set
-  theory with universes.
-  \item The accompanying formalization in the Lean 4 proof assistant \cite{lean4} is directly based
-  on the logic implemented in Lean, without assuming any additional axioms (such as univalence, which
-  is inconsistent with the foundation of Lean 3 and 4).
-  \item A large part of this formalization (the ``polymorphic'' part, essentially) can in principle be
-  carried out in a weak intuitionistic type theory with universes and $\Pi$ types (but without sum and
-  identity types).
+  \item \textbf{Layer 1} starts from a very simple definition of a Tarski-style \defn{universe}:
+  an index set $I$ (of \defn{types}) together with a function that assigns a set of \defn{instances}
+  (each written as $a : A$) to each type $A \in I.$ (Note that this is a self-contained
+  set-theoretic definition and not tied to any particular type theory.) Moreover:
+  \begin{itemize}
+    \item For any two types $A$ and $B$, we assume the existence of a type $[A \to B]$ such that
+    given an instance $F : A \to B$ and an instance $a : A$ we can obtain an instance $F(a) : B.$
+    We call $F$ a \defn{functor} due to its additional structure introduced in layers 2 and 3.
+    (In layer 1, we might call it an `implication' instead.)
+    \item We axiomatically assert the existence of certain functors, which in this layer correspond
+    to logical axioms, and in general are combinators \cite{combinators}. Thus in order to build
+    functors, we can use the well-known algorithm to convert arbitrary lambda terms into
+    applications of combinators.
+    \item We can optionally introduce further types such as \defn{units}, \defn{counits},
+    \defn{products}, and \defn{coproducts}. Functorial introduction and elimination rules enable
+    their integration into the above algorithm.
+    \item Lastly, for types $A$ and $B$ we introduce an \defn{equivalence type}
+    $[A \leftrightarrow B]$ and assert the existence of certain instances of this type, in
+    particular corresponding to reflexivity, symmetry, and transitivity. We also assert that there
+    is an instance of $[[A \leftrightarrow B] \to [A \to B]].$
+    (Importantly, equivalence is \emph{not} simply defined to be the product of two functors, as
+    that definition would not be reusable at higher layers.)
+  \end{itemize}
+  \item A \textbf{layer 2} universe is layer 1 universe $\U$ along with another layer 1 universe
+  $\V,$ which can be thought of as the next-lower-level universe. We introduce equivalences between
+  instances as well as a limited notion of dependent types.
+  \begin{itemize}
+    \item For every type $A : \U$ and instances $a,b : A,$ we demand the existence of a type
+    $[a \equiv b]$ in $\V$ that satisfies the axioms of a (functorial $\V$-valued) equivalence
+    relation.
+    \item For each of the concrete functors defined in layer 1, we introduce an axiom that specifies
+    the behavior of the functor up to equivalence.
+    \item For two functors $F : A \to B$ and $G : A \to C,$ we introduce a type
+    $[F \overset{\equiv}{\rightsquigarrow} G] : \V$ with axioms that let us interpret it as
+    \[\prod_{a,b : A}\:[F(a) \equiv F(b) \to G(a) \equiv G(b)].\]
+    Similarly to the combinators we use to build concrete functors, we define
+    \defn{higher combinators} to convert lambda terms into instances of this type. The combinators
+    also imply
+    \[\congrArg_F : \prod_{a,b : A}\:[a \equiv b \to F(a) \equiv F(b)].\]
+    \item Additional higher combinators guarantee \defn{extensionality} of functors with respect to
+    equivalence. This allows us to extend the $\Pi$ notation by simply defining
+    \[\prod_{a : A}\:[F(a) \equiv G(a)]\]
+    as notation for $[F \equiv G],$ as we can automatically translate any lambda term implementing
+    this $\Pi$ type to a proof of $F \equiv G.$ (In particular, this automates some tedious category
+    theory proofs.)
+    \item Similarly to $\Pi$ types in $\V,$ we introduce $\Sigma$ types in $\U,$ i.e.\ subtypes.
+    \item All types are required to respect instance equivalences in specific ways, so that the
+    translation of lambda terms into higher combinators also works for terms involving those types.
+    In particular, the two functors of an equivalence are required to be inverse to each other up
+    to instance equivalence.
+    \item We can axiomatically embed $\V$ in $\U,$ obtaining a notion of \defn{truncation}.
+    \item If $\V$ appears as a type in $\U,$ so that we have types of the form $[A \to \V]$ and
+    $[A \to A \to \V],$ we can define a more generic notion of dependent types that implies the
+    above axioms. Moreover, we can demand that instance equivalences of $\V$ are the same as type
+    equivalences. (This tends to fail if $\V$ is too large.)
+  \end{itemize}
+  \item \textbf{Layer 3} is derived from layer 2 by strengthening the universe $\V$ to a layer 2
+  universe. This means that we have equivalences of equivalences in a third (layer 1) universe $\W,$
+  suggesting an interpretation of the higher-level equivalences as isomorphisms.
+  \begin{itemize}
+    \item Types and instance equivalences in layer 3 are required to form a (weak) groupoid,
+    functors are required to be groupoid functors, and so on.
+    \item In particular, equivalences are required to be adjoint equivalences.
+    \item Optionally, we may add a concept of morphisms between types of $\U,$ by stating axioms
+    that ensure compatibility with instance equivalences when those are regarded as isomorphisms.
+    \item If $\V$ is a type in $\U,$ we can demand that morphisms of $\V$ are the same as functors.
+  \end{itemize}
 \end{itemize}
 
-A key difference to usual treatments of higher categories is that we do \emph{not} use 1-categories
-as a starting point. Instead, we define a ``potentially weak'' version of categories where equality
-is replaced with a more general notion of equivalence, the prerequisites of which we formalize first:
-The weakened definition is parameterized by a `universe' (see definition \ref{def:universe}) in
-which the `types' of its morphisms live, and this parameterization actually enables a \emph{single}
-definition of category to be used at every level.
+\section{Layer 1}
 
-Although the prerequisites are very generic, they enable some nontrivial automation based on
-algorithms from combinatorial logic \cite{combinators}: Proposition \ref{prp:functoriality} shows
-how functoriality can be proved automatically in many cases, based on a generalization of the fact
-that the category $\Cat$ of (small) categories is Cartesian closed. Theorem \ref{thm:extensionality}
-is a similar result for proofs of natural isomorphisms.
+This section introduces the `propositional' axioms that all layers are based on, without any
+prerequisites.
 
-The envisioned full implementation of HoTT will be able to automate proofs of isomorphism invariance
-(and transport of structure along isomorphisms) in a similar way.
-
-\section{Universes}
-\label{sec:universes}
-
-Although in this document, we specifically work in Zermelo-Fraenkel (ZF) set theory with (a finite
-number of) Grothendieck universes, we will ignore all issues related to the sizes of collections.
-Explicit universe constraints are given in the Lean formalization. Since the logic
-implemented in Lean has been proved to be equiconsistent with ZF plus choice and a finite
-number of inaccessible cardinals \cite{lean-type-theory}, it is safe to assume that analogous
-constraints are sufficient in the latter.
-
-Therefore, we reserve the word `universe' for our own use except where specified otherwise:
+\subsection{Universes}
+\label{sec:layer1-universes}
 
 \begin{definition}
-  \label{def:universe}
-  We define a \defn{universe} to be a pair $(I, (S_A)_{A \in I})$ of
+  \label{def:layer1-universe}
+  We define a \defn{layer 1 universe} to be a pair $(I, (S_A)_{A \in I})$ of
   \begin{itemize}
-    \item an index set $I,$ the members of which we call \defn{types}, and
+    \item an index set (or more general collection) $I,$ the members of which we call \defn{types},
+    and
     \item a family $(S_A)_{A \in I}$ of sets indexed by a type. We call the members of $S_A$ the
     \defn{instances} of $A.$
   \end{itemize}
@@ -138,1392 +252,1192 @@ Therefore, we reserve the word `universe' for our own use except where specified
 
 Given a universe $\U = (I, (S_A)_{A \in I}),$ we write
 \begin{itemize}
-  \item ``$A \in \U$'' for ``$A \in I$'' and
-  \item ``$a :_\U A$'' or usually just ``$a : A$'' for ``$a \in S_A.$''
+  \item ``$A : \U$'' for ``$A \in I$'' and
+  \item ``$a : A$'' for ``$a \in S_A.$''
 \end{itemize}
 
-Despite the use of type-theoretic notation and vocabulary, we would like to stress that we are not
-defining a type theory; our definitions are just \emph{informed} by type theory.\footnote{One
-could also say that we are directly working with \emph{models} of typed lambda calculi. In any case,
-we avoid defining the syntax of lambda calculus.}
-The words `universe', `type', and `instance' do not carry any meaning beyond what is defined above.
+(So this definition allows us to use type-theoretic notation without actually defining a type
+theory with concrete syntax.)
 
-It is important to distinguish between ``$a : A$'' and ``$a \in A$'' because $A$ may in fact be a
-set that is different from $S_A.$\footnote{$A$ is always a set in ZF in theory, but in our case it
-may also be a set in practice.} This difference can be regarded as an indirection, similarly to
-Tarski-style universes in type theory \cite{tarski}.
-
-Since the definition of a universe does not contain any axioms about types and instances, there
-are a lot of examples of such universes. Fix a Grothendieck universe $U.$
+There are obviously a lot of examples of universes as defined above. Some concrete universes that we
+will refer to throughout the rest of the document are:
 
 \begin{itemize}
-  \item For every collection $\C \subseteq U$ of sets in $U,$ $\Set_\C := (\C, (S)_{S \in \C})$ is a
-  universe for which ``$:$'' and ``$\in$'' coincide.
-  If $\C = U,$ we just write ``$\Set$'' (again, ignoring all size issues).
-  \item For every collection $\C$ of algebraic structures of the form $(S, t_S)$ with $S \in U,$
-  $(\C, (S)_{(S, t_S) \in \C})$ is a universe.\\
-  As an example, let $\C$ be the set of all $U$-small groups. Then each type $A$ is a group, and
-  each instance $a : A$ is member of the carrier set of $A$ (i.e.\ informally a member of $A$).\\
-  Universes of categories will be of particular importance, where types are categories and instances
-  are objects in those categories.\\
-  Another example is that $\C$ is a collection of universes. Then each type is itself a universe, and
-  its instances are the types in that universe.
-  \item The previous example generalizes to structures that are built not on sets but on types in a
-  universe $\U = (I, (S_A)_{A \in I}).$ Let $\C$ be a collection of structures of the form $(A,t_A)$ with
-  $A \in \U$. Then $(\C, (S_A)_{(A, t_A) \in \C})$ is also a universe.
-  \item For a universe $\U = (I, (S_A)_{A \in I}),$ any subset $J \subseteq I$ gives rise to a
-  \defn{subuniverse} $(J, (S_A)_{A \in J}).$
-  \item For any two universes $\U = (I, (S_A)_{A \in I})$ and $\V = (J, (T_B)_{B \in J}),$ we have a
-  \defn{product universe} $\U \times \V := (I{\times}J,\,(S_A{\times}T_B)_{(A,B) \in I{\times}J}),$ as
-  well as a \defn{sum universe} $\U \uplus \V := (I \uplus J,\,(R_A)_{A \in I \uplus J})$ with
-  $R_A := S_A$ for $A \in I$ and $R_B := T_B$ for $B \in J$ (where $I \times J$ denotes the Cartesian
-  product and $I \uplus J$ denotes the disjoint union of $I$ and $J$).
+  \item A universe $\Unit$ with a single type $\ast$ that has a single instance $\star : \ast.$
+  \item A universe $\Bool$ with an empty type $\bot$ and a type $\top$ with a single instance
+  $\star : \top.$\footnote{In the Lean formalization of this theory, we have two different universes
+  corresponding to the Lean types \Lean{Bool} and \Lean{Prop}. Both of them map to $\Bool$ in this
+  document.}
+  \item A universe $\Set$ of sets, such that $S_A := A$ for each set $A.$\footnote{It is possible
+  to use a universe of setoids in place of the universe of sets. In the Lean formalization, this
+  universe is the simplest nontrivial universe in a certain sense.}
+  \item Universes of algebraic data structures, such that $I$ is the collection of groups, vector
+  spaces over a given field, etc., and $S_A$ is the carrier set of the structure $A.$
+  \item A universe $\Cat$ of categories, such that $S_A$ is the set of objects of the category $A.$
+  \item Generalization from $\Cat$ to higher categories should be straightforward. (Ideally, we
+  would like to \emph{define} $\infty$-categories based on the universe axioms, but this is still
+  work in progress.)
 \end{itemize}
 
-Furthermore, we define two specific universes of interest:
-\begin{itemize}
-  \item $\Bool := \Set_{\{0, 1\}},$ where $0$ and $1$ are to be understood as von Neumann ordinals
-  \cite{von-neumann-ordinals}, so that $0$ is an empty type and $1$ is a type with a single
-  instance $\emptyset : 1.$\footnote{In the Lean formalization of this theory, we have two different universes
-  corresponding to the Lean types \Lean{Bool} and \Lean{Prop}. Both of them map to $\Bool$ in this document.}
-  \item $\Unit := \Set_{\{1\}}.$
-\end{itemize}
-
-Universes are too generic to prove general statements about all universes, so in the following sections
-we will define additional structure that universes may or may not have, and prove statements depending
-on such additional structure.
-
-\section{Meta-relations}
-\label{sec:meta-relations}
+\subsection{Functors}
 
 \begin{definition}
-  For a set $S$ and a universe $\V = (J, (T_B)_{B \in J}),$ we define a \defn{$\V$-valued meta-relation}
-  on $S$ to be a function $(\prec) : S \times S \to J.$
+  We say that a layer 1 universe $\U = (I, (S_A)_{A \in I})$ has \defn{functors} if for all types
+  $A,B : \U$ we have a \defn{functor type} $[A \to B] : \U$ and a function
+  $\apply_{AB} : S_{[A \to B]} \times S_A \to S_B.$
 \end{definition}
 
-(We reserve the word ``relation'' for section \ref{sec:relations}, where we replace the set $S$ with a type
-in a universe.)
+Given instances $F : A \to B$ and $a : A,$ we write ``$F(a)$'' for ``$\apply_{AB}(F,a).$''
+As usual, we let ``$\to$'' be right-associative, i.e.\ the notation ``$A \to B \to C$'' stands for
+``$A \to [B \to C].$'' We call such a functor $F$ a \defn{bifunctor} and write ``$F(a,b)$'' for
+``$F(a)(b).$'' (In section \ref{sec:layer1-products}, we will identify $A \to B \to C$ with
+$A \times B \to C,$ where $A \times B$ is a product type.)
 
-We will write $(\prec)$ in infix form, but note that $(\prec)$ is a function and for $a,b \in S,$ the
-expression ``$a \prec b$'' is not a formula but a type in $\V.$
-We say that $(\prec)$ is
+Most of the universes defined above have functor types:
 \begin{itemize}
-  \item \defn{reflexive} if for every $a \in S$ we have an instance $\id_a : a \prec a,$
-  \item \defn{symmetric} if for every $a,b \in S$ and $f : a \prec b$ we have an instance
-  $f^{-1} : b \prec a,$ and
-  \item \defn{transitive} if for every $a,b,c \in S,$ $f : a \prec b,$ and $g : b \prec c$ we have an
-  instance $g \circ f : a \prec c.$
+  \item In $\Unit,$ there is obviously only one choice $[\ast \to \ast] := \ast$ and
+  $\star(\star) := \star.$
+  \item In $\Bool,$ functors can be defined as logical implication:
+  \[[A \to B] := \begin{cases}
+    \bot & \text{if } A = \top \text{ and } B = \bot,\\
+    \top & \text{otherwise}
+  \end{cases}\]
+  and $\star(\star) := \star.$
+  \item Functions in $\Set$ are functors.
+  \item In $\Cat,$ we can let $[A \to B]$ be the functor category from $A$ to $B.$ For most purposes
+  it is convenient to include both covariant and contravariant functors.
+  \item Universes of some algebraic structures have functors, depending on whether morphisms are
+  again instances of the same structure. For example, this is the case for commutative semigroups
+  and for vector spaces.
 \end{itemize}
 
-Let us first justify the terminology, then the notation. So first consider a (set-theoretic) relation
-$(\sim)$ on $S.$ Then for $\V := \Bool$ and
-\[(a \prec b) := \begin{cases}
-  \, 1 & \text{if } a \sim b,\\
-  \, 0 & \text{otherwise}
-\end{cases}\]
-for $a,b \in S,$ $(\prec)$ is reflexive/symmetric/transitive whenever $(\sim)$ is.
-
-The notation we use for the three specific instances can be understood category-theoretically:
-Let $S$ be the set of objects in a category, and let $[a \to b]$ denote the set of morphisms
-from $a \in S$ to $b \in S.$ Then the morphism arrow $(\to)$ is in fact a $\Set$-valued
-meta-relation on $S,$ and all notations coincide:
-\begin{itemize}
-  \item A morphism $f : a \to b$ is indeed an instance of the type $[a \to b] \in \Set.$
-  \item For each $a \in S,$ we have $\id_a : a \to a.$
-  \item For an isomorphism $f : a \to b,$ we have $f^{-1} : b \to a.$
-  \item For morphisms $f : a \to b$ and $g : b \to c,$ we have $g \circ f : a \to c.$
-\end{itemize}
-
-So morphisms in a category form a reflexive and transitive $\Set$-valued meta-relation.
-Moreover, isomorphisms form a reflexive, symmetric, and transitive $\Set$-valued meta-relation.
-
-Note, however, that in general we do not assume that $(\circ)$ is associative, that $\id_a$ is
-an identity with respect to $(\circ),$ or that $f^{-1}$ is an inverse of $f.$ We will add such
-assumptions later when needed, but in a more general form that avoids equality. For now, we
-arbitrarily define the symbol ``$\circ$'' to be right-associative.
+\begin{definition}
+  For a set $S$ and a universe $\U = (I,\dots)$ with functors, we define a
+  \defn{$\U$-valued prerelation} on $S$ to be a function $(\prec) : S \times S \to I,$ which we
+  write in infix form.
+  We say that $(\prec)$ is
+  \begin{itemize}
+    \item \defn{reflexive} if for every $a \in S$ we have an instance $\id_a : a \prec a,$
+    \item \defn{symmetric} if for every $a,b \in S$ we have a functor
+    $(-)^{-1} : a \prec b \to b \prec a,$ and
+    \item \defn{transitive} if for every $a,b,c \in S$ we have a bifunctor
+    $(- \circ -) : a \prec b \to b \prec c \to a \prec c.$
+  \end{itemize}
+\end{definition}
 
 (See also \cite{hottbook}, section 2.1.)
 
-\subsection{Instance equivalences}
+Note in particular that the functor arrow $(\to)$ is a $\U$-valued prerelation on $I.$
 
 \begin{definition}
-  From now on, we will assume every universe $\U = (I, (S_A)_{A \in I})$ to be equipped with an
-  \defn{instance equivalence}, which we define to be
+  \label{def:layer1-combinators}
+  A layer 1 universe $\U$ with functors has \defn{linear logic} if for all types $A,B,C : \U$ there
+  are functors
   \begin{itemize}
-    \item a universe $\V,$ along with
-    \item for each type $A \in \U,$ a reflexive, symmetric, and transitive $\V$-valued
-    meta-relation $(\equiv)_A$ on $S_A.$ (In its infix form, we just write ``$\equiv$''.)
+    \item $\idFun_A : A \to A,$
+    \item $\revAppFun_{AB} : A \to [A \to B] \to B,$ and
+    \item $\compFun_{ABC} : [A \to B] \to [B \to C] \to [A \to C].$
   \end{itemize}
-\end{definition}
-
-We say that ``$\U$ has instances equivalences in $\V$.''
-
-The idea behind attaching an instance equivalence to a universe is that different universes
-have different `natural' notions of equivalence of the instances of their
-types.\footnote{When formalizing this theory in HoTT, it should be possible to assume that
-all of these instance equivalences are actually equalities.}
-Therefore, we will explicitly define instance equivalences for some, but not all, of the
-examples given in section \ref{sec:universes}.
-
-\begin{itemize}
-  \item For every collection $\C$ of sets, the universe $\Set_\C$ has instance equivalences
-  in $\Bool,$ by converting the set-theoretic equality relation on each set in $\C$ to a
-  meta-relation as specified in the previous section.\\
-  Note that the equivalences of both $\Bool$ and $\Unit$ are then actually in $\Unit$ (as a
-  subuniverse of $\Bool$), as each type in $\Bool$ and $\Unit$ has at most one instance.
-  \item Universes of simple algebraic structures (groups, rings, vector spaces, etc.)\ have
-  the same instance equivalences as $\Set.$ More specifically, universes of algebraic
-  structures inherit their instance equivalences from $\Set$ if their elements do not have
-  any internal structure that suggests a different definition of instance equivalence.
-  This generalizes to structures built on universes other than $\Set.$
-  \item In a universe of categories, we define $a \equiv b$ to be the set of isomorphisms
-  from $a$ to $b,$ as described in the previous section. Therefore, the universe of
-  1-categories has instance equivalences in $\Set$ instead of $\Bool,$ and in general a
-  universe of (weak) $n$-categories will have instance equivalences in the universe of (weak)
-  $(n-1)$-categories.
-  \item Subuniverses inherit instance equivalences from their superuniverse.
-  \item If $\U$ has instance equivalences in $\V,$ and $\U'$ has instance equivalences in
-  $\V',$ then the product and sum universes $\U \times \U'$ and $\U \uplus \U'$ have instance
-  equivalences in $\V \times \V'$ and $\V \uplus \V',$ respectively.
-\end{itemize}
-
-We will make sure that in the universes we deal with, for every sequence of universes
-$\U_1, \U_2, \ldots,$ where each $\U_k$ has instance equivalences in $\U_{k+1},$ there is
-a $k$ such that $\U_k = \U_{k+1} = \cdots = \Unit.$ However, at this point we do not consider
-the interactions between the steps in such a sequence.\footnote{Readers familiar with HoTT may
-have noticed that instance equivalences should have the structure of a higher groupoid that is
-reflected in this sequence. However, we want to specify our assumptions in a more fine-grained
-manner.}
-
-\section{Functors}
-\label{sec:functors}
-
-The next piece of structure that we attach to universes -- and the first that lets us derive
-some concrete results -- is a generalization of functions to what we call \defn{functors}.
-Although functors between categories are indeed one special case of this definition, the
-conditions are much weaker.
-
-\begin{definition}
-  For universes $\U = (I, (S_A)_{A \in I})$ and $\V = (J, (T_B)_{B \in J}),$ a
-  \defn{functor type} from $A \in \U$ to $B \in \V$ is a type $[A \to B]$ in a universe $\W$
-  with the following two properties:
+  It has \defn{affine logic} if there is additionally a functor
   \begin{itemize}
-    \item For every instance $F : A \to B$ (which we call a \defn{functor}) we have a
-    function $\apply_{ABF} : S_A \to T_B.$ Given $a : A,$ we will abbreviate
-    ``$\apply_{ABF}(a)$'' to ``$F(a).$''
-    \item Moreover, $\apply_{ABF}$ must respect instance equivalences: For each
-    $a,b : A,$ we have a function $\congrArg_{ABFab}$ that maps instances of the type
-    $a \equiv b$ to instances of $F(a) \equiv F(b).$\footnote{Although ideally we want
-    $\congrArg$ to be a functor as well, recursively, at this point we do not make such an
-    assumption.}
-    For an equivalence $e : a \equiv b,$ we write ``$F(e)$'' for $\congrArg_{ABFab}(e)$ as
-    well, matching the corresponding overloaded notation in category theory.
+    \item $\constFun_{AB} : B \to [A \to B],$
   \end{itemize}
-  
-  We say that we \defn{have functors from $\U$ to $\V$ in $\W$} if for every $A \in \U$ and
-  $B \in \V$ we have a functor type $[A \to B] \in \W.$
-  We say that a universe $\U$ has \defn{internal functors} if we have functors from $\U$ to
-  $\U$ in $\U.$
-
-  As is common practice, we define the symbol ``$\to$'' to be right-associative, i.e.\ the
-  notation ``$A \to B \to C$'' stands for ``$A \to [B \to C].$'' We call such a functor $F$ a
-  \defn{bifunctor}, and we write ``$F(a,b)$'' for ``$F(a)(b).$'' (In section \ref{sec:products},
-  we will identify $A \to B \to C$ with $A \times B \to C,$ where $A \times B$ is a product
-  type.)
-\end{definition}
-
-The definition of functors is so generic that we can, in principle, define functors between
-many different types in many different universes. However, universes with internal functors
-are much more rarer. Let us analyze a few examples.
-\begin{itemize}
-  \item The functors of $\Set$ are just functions, which respect equality and are obviously
-  in $\Set$.
-  \item The universe of categories has internal functors: For categories $\C$ and $\D,$ the
-  (categorical) functors from $\C$ to $\D$ form a category $\D^\C,$ and we define the type
-  $[\C \to \D]$ to be that category.\\
-  We need to verify that functors respect instance equivalences. Recall that for objects
-  $a$ and $b$ of either $\C$ or $\D,$ the type $a \equiv b$ is the set of isomorphisms from
-  $a$ to $b.$ Indeed, functors map isomorphisms to isomorphisms.
-  \item The same is true for the universe of groupoids, as a subuniverse of the universe of
-  categories, because the category of functors between two groupoids is a groupoid. (For
-  suitable definitions of instance equivalences, it should also generalize to higher
-  categories and groupoids.)
-  \item The morphisms of some, but not all, algebraic structures are also internal functors
-  in our sense: In some cases morphisms of a class of structures are themselves instances
-  of that class of structures, when operations on morphisms are defined `pointwise'.
-
-  For example, if $f,g : S \to T$ are two morphisms of commutative semigroups, then we can
-  define $f \star g$ to be the function that sends each $a \in S$ to $f(a) \ast g(a).$ This
-  is easily verified to be a morphism as well, based on associativity and commutativity
-  of $(\ast).$ Moreover $(\star)$ inherits associativity and commutativity from $(\ast),$
-  turning the set of morphisms from $S$ to $T$ into a semigroup.
-
-  We may investigate the necessary and sufficient conditions more generally later, but for
-  now, the following non-exhaustive list of structures with internal functors will have to
-  do:
+  and \defn{full logic} if there is additionally\footnote{We ignore \defn{relevant logic} because it
+  would add more complexity to definition \ref{def:layer2-dependent-combinators}.}
   \begin{itemize}
-    \item commutative semigroups, monoids, and groups
-    \item modules over a ring
-    \item vector spaces over a field
-  \end{itemize}
-  % TODO: Do commutative rings without 1 work?
-  \item Continuous functions between topological spaces can be regarded as internal
-  functors of a universe of topological spaces, by fixing a topology on them.
-  \item The universe $\Unit$ only has a single type $1,$ so we must set $[1 \to 1] := 1.$
-  The type $1$ has exactly one instance $\emptyset,$ so $\apply$ is completely
-  defined by $\apply_{11\emptyset}(\emptyset) := \emptyset,$ and $\congrArg$ is completely
-  defined by $\congrArg_{11\emptyset\emptyset\emptyset}(\emptyset) := \emptyset.$
-  \item For $\Bool,$ we set
-  \begin{align*}
-    [0 \to 0] &:= 1,\\
-    [0 \to 1] &:= 1,\\
-    [1 \to 0] &:= 0,\\
-    [1 \to 1] &:= 1,
-  \end{align*}
-  matching logical implication.\footnote{This can be regarded as a degenerate case of
-  the Curry-Howard correspondence.} Since $0$ has no instances and $1$ only has
-  $\emptyset,$ we need to define three functions $\apply_{00\emptyset},$
-  $\apply_{01\emptyset},$ and $\apply_{11\emptyset}.$ The first two have empty domains,
-  and the third is again completely defined by
-  $\apply_{11\emptyset}(\emptyset) := \emptyset.$
-\end{itemize}
-
-\begin{definition}
-  For universes $\U$ and $\V$ with functors in $\W,$ types $A \in \U$ and $B \in \V,$
-  and a family $(t_a)_{a : A}$ of instances $t_a : B$ (i.e.\ a function from the set of
-  instances of $A$ to the set of instances of $B$) we define the notation
-  \begin{align*}
-    F : A &\to     B\\
-        a &\mapsto t_a
-  \end{align*}
-  to mean that $F$ is a functor from $A$ to $B,$ and that for each $a : A$ we have an instance
-  equivalence
-  \[\fndef{F}(a) : F(a) \equiv t_a.\]
-  We call $\fndef{F}$ the \defn{definition of $F$}. If $\fndef{F}(a) = \id_B$ for all $a : A,$
-  we call the definition \defn{strict}.
-
-  We extend this notation to bifunctors: Given appropriate universes and types and a
-  family $(t_{ab})_{a : A, b : B},$ we define
-  \begin{align*}
-    F : A \to B &\to     C\\
-        (a,b)   &\mapsto t_{ab}
-  \end{align*}
-  to mean that $F$ is a functor from $A$ to $[B \to C],$ and that for each $a : A$ and $b : B$ we
-  have an instance equivalence $\fndef{F}(a,b) : F(a,b) \equiv t_{ab}.$
-
-  Likewise for \defn{trifunctors} $F : A \to B \to C \to D,$ and so on.
-\end{definition}
-
-Note that not every family of instances gives rise to a functor, even though the notation might
-suggest it (intentionally, as we will see). We will now assert the existence of certain functors
-axiomatically.
-
-\subsection{Functor operations}
-\label{sec:funop}
-
-\begin{definition}
-  We say that a universe $\U$ with internal functors has \defn{linear functor
-  operations}\footnote{The words ``linear'' and ``affine'' refer to linear and affine logic.
-  The theory can be modified to incorporate relevant logic as well.}
-  if we have the following three functors and six instance equivalences for all types
-  $A,B,C,D \in \U.$
-  \vspace{1ex}
-  \begin{gather*}
-    \begin{aligned}
-      \idFun_A : A &\to     A\\
-                 a &\mapsto a
-    \end{aligned}\\[1em]
-    \begin{aligned}
-      \revAppFun_{AB} : A \to [A \to B] &\to     B\\
-                        (a,F)           &\mapsto F(a)
-    \end{aligned}\\[1em]
-    \begin{aligned}
-      \compFun_{ABC} : [A \to B] \to [B \to C] \to A &\to     C\\
-                       (F,G,a)                       &\mapsto G(F(a))
-    \end{aligned}
-  \end{gather*}
-
-  Before stating the required equivalences, we derive two additional functors from $\revAppFun$
-  and $\compFun.$
-  To improve readability, we want to use the symbol ``$\circ$'' when $\compFun$ is applied to
-  two arguments, and indeed the functor arrow $(\to)$ is a $\U$-valued meta-relation on the
-  set of types, which, given linear functor operations, is
-  \begin{itemize}
-    \item reflexive with $\id_A := \idFun_A$ and
-    \item transitive with $G \circ F := \compFun_{ABC}(F,G)$ for $F : A \to B$ and
-    $G : B \to C.$
+    \item $\dupFun_{AB} : [A \to A \to B] \to [A \to B].$
   \end{itemize}
 
-  Now we define
-  \begin{align*}
-    \swapFun_{ABC} &:= \compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}) \circ \compFun_{A[B{\to}C]C}\\
-                   &: \begin{aligned}[t]
-                        [A \to B \to C] \to B \to A &\to     C\\
-                        (F,b,a)                     &\mapsto F(a,b)
-                      \end{aligned}
-  \end{align*}
-  and
-  \begin{align*}
-    \revCompFun_{ABC} &:= \swapFun(\compFun_{ABC})\\
-                      &: \begin{aligned}[t]
-                           [B \to C] \to [A \to B] \to A &\to     C\\
-                           (G,F,a)                       &\mapsto G(F(a))
-                         \end{aligned}
-  \end{align*}
-  (omitting the subscript of $\swapFun$ when applying it to an argument)
-  and assert the existence of the following instance equivalences.
-  %
-  \begin{align*}
-    \nm{rightId}_{AB} &: \compFun_{AAB}(\idFun_A) \equiv \idFun_{A{\to}B}\\
-    \nm{leftId}_{AB}  &: \revCompFun_{ABB}(\idFun_B) \equiv \idFun_{A{\to}B}\\
-    \nm{swapT}_{AB}   &: \swapFun(\revAppFun_{AB}) \equiv \idFun_{A{\to}B}\\
-    \nm{swapB'}_{ABC} &: \swapFun_{[B{\to}C]AC} \circ \compFun_{ABC} \equiv \revCompFun_{AB[[B{\to}C]{\to}C]}(\revAppFun_{BC})\\
-    \nm{swapB}_{ABC}  &: \swapFun_{[A{\to}B]AC} \circ \revCompFun_{ABC} \equiv \revCompFun_{A[[A{\to}B]{\to}B][[A{\to}B]{\to}C]}(\revAppFun_{AB}) \circ \revCompFun_{[A{\to}B]BC}\\
-    \nm{assoc}_{ABCD} &: \compFun_{[B{\to}C][[C{\to}D]{\to}[B{\to}D]][[C{\to}D]{\to}[A{\to}D]]}(\compFun_{BCD}) \circ \revCompFun_{[C{\to}D][B{\to}D][A{\to}D]} \circ \compFun_{ABD} \equiv\\
-                      &\:\ \ \revCompFun_{[B{\to}C][A{\to}C][[C{\to}D]{\to}[A{\to}D]]}(\compFun_{ACD}) \circ \compFun_{ABC}
-  \end{align*}
+  We generally omit type subscripts when the types are fully determined by arguments. Moreover,
+  if $\U$ has (at least) linear logic, then the prerelation $(\to)$ is reflexive and transitive with
+  \begin{itemize}
+    \item $\id_A = \idFun_A$ and
+    \item $G \circ F = \compFun(F,G)$ for $F : A \to B$ and $G : B \to C.$
+  \end{itemize}
 \end{definition}
-
-(For the meaning of these equivalences, see lemma \ref{lem:extensional} and proposition
-\ref{prp:extensionality-axioms}.)
-
-\begin{remark}
-  When defining $\swapFun$ and $\revCompFun,$ we implicitly assumed that we can derive
-  instance equivalences
-  \[\fndef{\swapFun}(F,b,a) : \swapFun(F,b,a) \equiv F(a,b) \quad \text{for } F : A \to B \to C,\ b : B,\ a : A\]
-  and
-  \[\fndef{\revCompFun}(G,F,a) : \revCompFun(G,F,a) \equiv G(F(a)) \quad \text{for } G : B \to C,\ F : A \to B,\ a : A.\]
-  In order to obtain these, we first establish one further aspect in which functors behave like
-  functions.
-\end{remark}
 
 \begin{proposition}
-  \label{prp:congrfun}
-  Given linear functor operations, two functors $F,G : A \to B,$ an instance equivalence
-  $e : F \equiv G,$ and an instance $a : A,$ we can obtain an instance equivalence
-  $e(a) : F(a) \equiv G(a).$
+From the functors defined above we can derive the following functors with given types.
+  \begin{itemize}
+    \item $\swapFun_{ABC} := \compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}) \circ \compFun_{A[B{\to}C]C} :
+                             [A \to B \to C] \to [B \to A \to C],$
+    \item $\revCompFun_{ABC} := \swapFun(\compFun_{ABC}) :
+                                [B \to C] \to [A \to B] \to [A \to C],$
+    and, assuming full logic,
+    \item $\revSelfAppFun_{AB} := \dupFun_{[A{\to}B]B} \circ \compFun_{[A{\to}B]AB} :
+                                  [[A \to B] \to A] \to [A \to B] \to B,$
+    \item $\begin{aligned}[t]
+      \substFun_{ABC} &:= \revCompFun_{[A{\to}B{\to}C][A{\to}A{\to}C][A{\to}C]}(\dupFun_{AC}) \circ
+                          \revCompFun_{A[B{\to}C][A{\to}C]} \circ
+                          \compFun_{ABC} :\\
+                      &\quad\ \ [A \to B] \to [A \to B \to C] \to [A \to C],
+    \end{aligned}$
+    \item $\revSubstFun_{ABC} := \swapFun(\substFun_{ABC}) :
+                                 [A \to B \to C] \to [A \to B] \to [A \to C].$
+  \end{itemize}
 \end{proposition}
-\vspace{-1ex}
-\begin{proof}
-  The functor $\revAppFun_{AB}(a)$ must respect instance equivalences, so we have an equivalence
-  \[\revAppFun_{AB}(a)(e) : \revAppFun_{AB}(a,F) \equiv \revAppFun_{AB}(a,G).\]
-  Applying the definition of $\revAppFun_{AB}$ yields an equivalence of the desired type:
-  \begin{align*}
-    e(a) &:= \fndef{\revAppFun_{AB}}(a,G) \circ \revAppFun_{AB}(a)(e) \circ (\fndef{\revAppFun_{AB}}(a,F))^{-1}\\
-         &: F(a) \equiv G(a).
-    \qedhere
-  \end{align*}
-\end{proof}
-
-Together with the other properties of instance equivalences, this proposition establishes
-that when constructing an instance equivalence involving functors, we may freely rewrite
-along other equivalences, i.e.\ substitute arbitrary subterms. Still, the result will be an
-explicit construction, which may be important if e.g.\ equivalences are
-isomorphisms.\footnote{In terms of type theory, we are simply doing proof-relevant mathematics.}
-
-We will usually avoid spelling out the details of such constructions,\footnote{Explicit
-constructions of all equivalences can be found in the Lean formalization.} but for
-demonstration purposes we will explicitly construct $\fndef{\swapFun}$ now.
-
-Recall that ``$\circ$'' is just a shorthand for $\compFun$ in reverse order. So for a given
-$F : A \to B \to C,$ the term
-$\swapFun(F) = (\compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}) \circ \compFun_{A[B{\to}C]C})(F)$
-is exactly the left side of an equivalence given by $\fndef{\compFun}$:
-\begin{align*}
-  e &:= \fndef{\compFun}(\compFun_{A[B{\to}C]C},\compFun_{B[[B{\to}C]{\to}C][A{\to}C]}(\revAppFun_{BC}),F)\\
-    &: \swapFun(F) \equiv \compFun_{A[B{\to}C]C}(F) \circ \revAppFun_{BC}.
-\end{align*}
-Applying proposition \ref{prp:congrfun} to $e$ and an instance $b : B,$ we obtain
-\[e(b) : \swapFun(F,b) \equiv (\compFun_{A[B{\to}C]C}(F) \circ \revAppFun_{BC})(b).\]
-The right side is again an application of $\compFun,$ so we have
-\begin{align*}
-  f &:= \fndef{\compFun}(\revAppFun_{BC},\compFun_{A[B{\to}C]C}(F),b)\\
-    &: (\compFun_{A[B{\to}C]C}(F) \circ \revAppFun_{BC})(b) \equiv \revAppFun_{BC}(b) \circ F,
-\end{align*}
-and, applying transitivity of $(\equiv),$
-\begin{align*}
-  g &:= f \circ e(b)\\
-    &: \swapFun(F,b) \equiv \revAppFun_{BC}(b) \circ F.
-\end{align*}
-Apply proposition \ref{prp:congrfun} to $g$ and an instance $a : A$ to obtain
-\[g(a) : \swapFun(F,b,a) \equiv (\revAppFun_{BC}(b) \circ F)(a).\]
-This time we have two relevant definitions
-\begin{align*}
-  h &:= \fndef{\compFun}(F,\revAppFun_{BC}(b))\\
-    &: (\revAppFun_{BC}(b) \circ F)(a) \equiv \revAppFun_{BC}(b,F(a)),\\[1ex]
-  i &:= \fndef{\revAppFun}(b,F(a))\\
-    &: \revAppFun_{BC}(b,F(a)) \equiv F(a,b).
-\end{align*}
-Finally, we can apply transitivity twice to arrive at
-\begin{align*}
-  \fndef{\swapFun}(F,b,a) &:= i \circ h \circ g(a)\\
-                          &: \swapFun(F,b,a) \equiv F(a,b).
-\end{align*}
-
-\begin{remarks}
-  For a bifunctor $F : A \to B \to C,$ the bifunctor $\swapFun(F) : B \to A \to C$ behaves
-  (up to instance equivalences) like $F$ with swapped arguments. So, informally speaking,
-  a bifunctor is a bifunctor regardless of the order of its arguments.
-
-  This should also help clarify the role of $\compFun$ and $\revCompFun.$ The existence
-  of $\compFun$ ensures that we can not only compose two functors $F : A \to B$ and
-  $G : B \to C$ to $G \circ F : A \to C,$ but also that composition itself is bifunctorial
-  in $F$ and $G.$ $\revCompFun,$ then, is the corresponding bifunctor with reversed
-  arguments, and in fact we could assert $\revCompFun$ as an axiom and derive $\compFun$
-  from it instead.\footnote{Due to a minor technical detail, $\compFun$ leads to a slightly
-  more convenient definition of $\swapFun.$}
-
-  Similarly $\revAppFun$ says that for each $a : A,$ the application of $a$ to an
-  $F : A \to B$ is functorial, and also that this application functor is functorial in
-  $a.$
-
-  Moreover, all of these functors can in fact be regarded as combinators \cite{combinators}
-  in a simply-typed lambda calculus \cite{simply-typed-lambda-calculus}, so we use
-  established names for these combinators as much as possible.
-\end{remarks}
-
 \vspace{1ex}
-\begin{definition}
-  We say that a universe $\U$ with internal functors has \defn{affine functor
-  operations} if it has linear functor operations and additionally the following functor
-  and equivalences for all types $A,B,C \in \U.$
-  \begin{align*}
-    \constFun_{AB} : B \to A &\to     B\\
-                     (b,a)   &\mapsto b
-  \end{align*}
-  \begin{align*}
-    \nm{rightConst}_{ABC} &: \compFun_{ABC} \circ \constFun_{AB} \equiv \revCompFun_{[B{\to}C]C[A{\to}C]}(\constFun_{AC}) \circ \revAppFun_{BC}\\
-    \nm{leftConst}_{ABC}  &: \compFun_{C[B{\to}C][A{\to}C]}(\constFun_{BC}) \circ \compFun_{ABC} \equiv \constFun_{[A{\to}B][C{\to}A{\to}C]}(\constFun_{AC})
-  \end{align*}
-\end{definition}
 
-\begin{definition}
-  We say that a universe $\U$ with internal functors has \defn{full functor
-  operations} if it has affine functor operations and additionally the following functor
-  and equivalences for all types $A,B,C \in \U.$
+From the choice of names, it may be obvious that these functors can be interpreted as combinators
+\cite{combinators} in a simply-typed lambda calculus \cite{simply-typed-lambda-calculus}. Therefore,
+we can construct functors using the standard algorithm to convert lambda terms to combinator
+applications.
 
-  First we assert the existence of
-  \begin{align*}
-    \dupFun_{AB} : [A \to A \to B] \to A &\to     B\\
-                   (F,a)                 &\mapsto F(a,a)
-  \end{align*}
-  and derive
-  \begin{align*}
-    \substFun_{ABC} &:= \revCompFun_{[A{\to}B{\to}C][A{\to}A{\to}C][A{\to}C]}(\dupFun_{AC}) \circ
-                        \revCompFun_{A[B{\to}C][A{\to}C]} \circ
-                        \compFun_{ABC}\\
-                    &: \begin{aligned}[t]
-                         [A \to B] \to [A \to B \to C] \to A &\to     C\\
-                         (F,G,a)                             &\mapsto G(a,F(a))
-                       \end{aligned}
-  \end{align*}
-  and
-  \begin{align*}
-    \revSubstFun_{ABC} &:= \swapFun(\substFun_{ABC})\\
-                       &: \begin{aligned}[t]
-                            [A \to B \to C] \to [A \to B] \to A &\to     C\\
-                            (G,F,a)                             &\mapsto G(a,F(a)).
-                          \end{aligned}
-  \end{align*}
-
-  Then we assert the existence of the following equivalences.
-  \begin{align*}
-    \nm{dupC}_{AB}      &: \dupFun_{AB} \circ \swapFun_{AAB} \equiv \dupFun_{AB}\\
-    \nm{dupK}_{AB}      &: \dupFun_{AB} \circ \constFun_{A[A{\to}B]} \equiv \idFun_{A{\to}B}\\
-    \nm{rightDup}_{ABC} &: \revCompFun_{[B{\to}C][A{\to}A{\to}C][A{\to}C]}(\dupFun_{AC}) \circ \compFun_{[B{\to}C][[A{\to}B]{\to}[A{\to}C]][A{\to}A{\to}C]}(\revCompFun_{ABC})\,\circ\\
-                        &\hspace{28em}\compFun_{A[A{\to}B][A{\to}C]} \equiv\\
-                        &\:\ \ \compFun_{ABC} \circ \dupFun_{AB}\\
-    \nm{leftDup}_{ABC}  &: \compFun_{[A{\to}B{\to}B{\to}C][A{\to}B{\to}C][A{\to}C]}(\revCompFun_{A[B{\to}B{\to}C][B{\to}C]}(\dupFun_{BC})) \circ \substFun_{ABC} \equiv\\
-                        &\:\ \ \substFun(\substFun_{ABC},\compFun_{[A{\to}B{\to}B{\to}C][A{\to}B{\to}C][A{\to}C]} \circ \substFun_{AB[B{\to}C]})
-  \end{align*}
-\end{definition}
-
-\begin{lemma}
-  \label{lem:extensional}
-  The axioms $\nm{rightId},\nm{leftId},\ldots$ hold trivially (whenever the functors
-  referenced in those axioms are defined) in any universe that satisfies the following
-  extensionality condition:
-
-  If $A$ and $B$ are types, $F,G : A \to B$ are functors, and for every $a : A$ we have
-  an equivalence $e(a) : F(a) \equiv G(a),$ then there is also an equivalence
-  $e : F \equiv G.$
-\end{lemma}
-
-(Note that proposition \ref{prp:congrfun} says that the converse is always true in
-a universe with linear functor operations.)
-
-\begin{proof}[Proof for $\nm{rightId}$]
-  Under the extensionality condition, the equivalence
-  \[\nm{rightId}_{AB} : \compFun_{AAB}(\idFun_A) \equiv \idFun_{A{\to}B}\]
-  exists if for every $F : A \to B$ we have an equivalence
-  \[\nm{rightId}_{AB}(F) : F \circ \idFun_A \equiv \idFun_{A{\to}B}(F).\]
-  By straightforward operations on equivalences and another application of the
-  extensionality condition, this equivalence exists if for every $a : A$ we have an
-  equivalence
-  \[\nm{rightId}_{AB}(F,a) : F(a) \equiv F(a),\]
-  which is given by $\id_{F(a)}.$
-
-  The other axioms are analogous.
-\end{proof}
-
-\begin{proof}[Alternative proof]
-  The functoriality algorithm presented in the next section does not depend on these
-  axioms. Therefore we may state them in the alternative form given in proposition
-  \ref{prp:extensionality-axioms}, from which lemma \ref{lem:extensional} follows
-  immediately.
-\end{proof}
-
-\begin{theorem}
-  \label{thm:funop}
-  The universes with internal functors that are listed in section \ref{sec:functors} have the
-  following functor operations.
-  \begin{itemize}
-    \item $\Unit,$ $\Bool,$ $\Set,$ and the universes of 1-categories and 1-groupoids have
-    full functor operations.
-    \item The listed universes of algebraic structures have linear functor operations.
-  \end{itemize}
-\end{theorem}
-
-\begin{proof}
-  We will give explicit proofs for some important cases; the remaining axioms and
-  universes are analogous.
-  %
-  \begin{itemize}
-    \item In $\Unit,$ we take each functor to be the single instance $\emptyset : 1.$
-    All axioms are trivially satisfied.
-    %
-    \item For $\Bool,$ we can show that all functors exist by doing a case-by-case
-    analysis on the types $A,B,\ldots$ being either $0$ or $1.$ This can be simplified by
-    treating ``$\to$'' as implication and observing that all implications hold, or even
-    further by applying the Curry-Howard correspondence \cite{curry-howard}.\\
-    Since $\Bool$ has instance equivalences in $\Unit,$ those are trivially satisfied.
-    %
-    \item The functors of $\Set$ are just functions. Since functions are
-    extensional,\footnote{The theory can also be formalized in a logic without function
-    extensionality by \emph{defining} functors between sets to be extensional functions.
-    Alternatively/additionally, it is possible to define a universe of setoids, which
-    is similar to $\Set$ except that equality is replaced with an equivalence relation.}
-    the axioms $\nm{rightId},\nm{leftId},\ldots$ hold by lemma \ref{lem:extensional}.
-    %
-    \item Structures forming a Cartesian closed category also form a universe with full
-    functor operations, and structures forming a closed monoidal category form a
-    universe with linear functor operations. This follows from the relationship between
-    such categories and simply-typed lambda calculus. (Caveat: We have not yet proved
-    that the extensionality axioms always hold for such structures, but we conjecture
-    that they do and that they are in fact equalities.)
-    %
-    \item Although the previous item includes 1-categories and 1-groupoids, we will
-    additionally sketch a more elementary proof that we will generalize to higher
-    categories later. First, we will show how $\constFun_{\C\D}$ can be constructed for
-    categories $\C$ and $\D,$ and then we will show the same for $\dupFun_{\C\D},$
-    which is in some sense the only nontrivial case.
-
-    The definition of $\constFun_{\C\D}$ says that for objects $c$ of $\C$ and $d$ of
-    $\D,$ $\constFun_{\C\D}(d,c)$ must be isomorphic to $d.$ In many cases, we do not
-    actually need this flexibility; we can construct a functor that maps strictly to
-    $d.$ That is, we show that the expression defining the functor is indeed functorial
-    in all arguments starting from the last.\footnote{In the Lean formalization, the
-    axioms are already divided into such individual steps, which is often more useful.}
-
-    So the first step is to show that for a fixed object $d$ of $\D$ we have a functor
-    \begin{align*}
-      K_d : \C &\to     \D\\
-            c  &\mapsto d,
-    \end{align*}
-    i.e. for objects $c,c'$ of $\C$ and a morphism $f : c \to c'$ we need to
-    provide a morphism $K_d(f) : K_d(c) \to K_d(c').$ But $K_d(c)$ and $K_d(c')$
-    are both $d,$ so we can define $K_d(f)$ to be the identity morphism on $d.$ (Then
-    $K_d$ is just the constant functor, of course.)
-
-    The second step is to show that the expression $K_d$ is functorial in $d,$ and
-    this will give the desired functor
-    \begin{align*}
-      \constFun_{\C\D} : \D &\to     \D^\C\\
-                         d  &\mapsto K_d.
-    \end{align*}
-    For objects $d,d'$ of $\D$ and a morphism $f : d \to d',$ we need to provide a
-    natural transformation $\constFun_{\C\D}(f) : K_d \Rightarrow K_{d'}.$
-    Thus, for each object $c$ of $\C$ we need to give a morphism
-    $g_c : K_d(c) \to K_{d'}(c).$ Since $K_d(c) = d$ and $K_{d'}(c) = d',$ we can
-    take $g_c := f.$ ($\constFun_{\C\D}$ is known as the diagonal functor.)
-    %
-    \item For $\dupFun_{\C\D},$ following the same strategy as before, first we fix a
-    functor $F : \C \to \D^\C$ and need to construct a functor
-    \begin{align*}
-      W_F : \C &\to     \D\\
-            c  &\mapsto F(c)(c).
-    \end{align*}
-    So for objects $c,c'$ of $\C$ and a morphism $f : c \to c'$ we need to provide
-    a morphism $W_F(f) : F(c)(c) \to F(c')(c').$ Since $F(f)$ is a natural
-    transformation, the two choices for this morphism are equal:
-    \[W_F(f) := (F(f))_{c'} \circ F(c)(f) = F(c')(f) \circ (F(f))_c.\]
-    $W_F$ is indeed a functor: We have
-    \[W_F(\id_c) = (\id_{F(c)})_{c} \circ \id_{F(c)(c)} = \id_{F(c)(c)}\]
-    and for morphisms $f : c \to c'$ and $g : c' \to c''$ in $\C$
-    \begin{align*}
-      W_F(g \circ f) &= (F(g \circ f))_{c''} \circ F(c)(g \circ f)\\
-                     &= (F(g))_{c''} \circ (F(f))_{c''} \circ F(c)(g) \circ F(c)(f)\\
-                     &= (F(g))_{c''} \circ F(c')(g) \circ (F(f))_{c'} \circ F(c)(f) \quad \text{by naturality of $F(f)$}\\
-                     &= W_F(g) \circ W_F(f).
-    \end{align*}
-    Now we need to show that $W_F$ is functorial in $F$ to obtain
-    \begin{align*}
-      \dupFun_{\C\D} : (\D^\C)^\C &\to     \D^\C\\
-                       F          &\mapsto W_F.
-    \end{align*}
-    Given two functors $F,F' : \C \to \D^C$ and a natural transformation
-    $\eta : F \Rightarrow F',$ we need to provide a natural transformation
-    $\dupFun_{\C\D}(\eta) : W_F \Rightarrow W_{F'}.$ We set
-    $(\dupFun_{\C\D}(\eta))_c := (\eta_c)_c$ for each object $c$ of $\C,$
-    and need to verify that this is natural in $c.$ Indeed, for every
-    morphism $f : c \to c'$ we have
-    \begin{align*}
-      (\eta_{c'})_{c'} \circ W_F(f) &= (\eta_{c'} \circ F(f))_{c'} \circ F(c)(f)\\
-                                    &= (F'(f) \circ \eta_c)_{c'} \circ F(c)(f) \quad \text{by naturality of $\eta$}\\
-                                    &= (F'(f))_{c'} \circ (\eta_c)_{c'} \circ F(c)(f)\\
-                                    &= (F'(f))_{c'} \circ F'(c)(f) \circ (\eta_c)_c \quad \text{by naturality of $\eta_c$}\\
-                                    &= W_{F'}(f) \circ (\eta_c)_c.
-    \end{align*}
-    It is easily verified that $\dupFun_{\C\D}$ respects identity and
-    composition of natural transformations.
-    \item Although lemma \ref{lem:extensional} does not apply to the universe of
-    categories, the proof strategy for $\nm{rightId},\ldots$ is the same
-    as in the proof of that lemma. The difference is that at each step where we
-    would apply the extensionality condition, instead we need to verify that the
-    equivalences $e(a)$ are natural in $a.$ \qedhere
-  \end{itemize}
-\end{proof}
-
-\subsection{Functoriality algorithm}
-
-After having shown that several important universes do in fact have linear or even full
-functor operations, we will now describe an algorithm to prove functoriality
-automatically, i.e.\ to obtain a functor that matches a given definition.
-
-This algorithm is actually just a slight adaptation of the well-known algorithm to
-transform lambda abstractions into terms built from combinators \cite{combinators}. In a
-simply-typed lambda calculus, this algorithm always terminates. So as long as one is
-not interested in the specific behavior of the functor (beyond how it maps instances),
-there is no need to execute the algorithm explicitly -- verifying the preconditions
-in the following proposition is sufficient.
+Instead of lambda notation, we will write such constructed functors as \defn{functor descriptions}
+\begin{align*}
+  F : A_1 \to \dots \to A_n &\to     B\\
+      (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n},
+\end{align*}
+and state the algorithm to construct a functor corresponding to a given description in a slightly
+informal way as follows.
 
 \begin{proposition}
-  \label{prp:functoriality}
-  Let $\U$ be a universe with internal functors and (at least) linear functor
-  operations, $A_1,\ldots,A_n$ and $B$ be types in $\U,$ and
-  $(t_{a_1 \ldots a_n})_{a_k : A_k}$ be a family of instances $t_{a_1 \ldots a_n} : B$
+  \label{prp:layer1-functoriality}
+  Let $\U$ be a universe with (at least) linear logic, $A_1,\dots,A_n$ and $B$ be types in $\U,$
+  and $(t_{a_1 \dots a_n})_{a_k : A_k}$ be a family of instances $t_{a_1 \dots a_n} : B$
   that are one of the following:
   \begin{itemize}
     \item a constant independent of all $a_k,$
     \item one of the variables $a_k,$ or
-    \item a functor application $G_{a_1 \ldots a_n}(b_{a_1 \ldots a_n})$ such that
-    both $G_{a_1 \ldots a_n}$ and $b_{a_1 \ldots a_n}$ recursively follow the same
-    rules.\footnote{Formally, the rules generate a family $(T_B)_{B \in \U}$ of
-    sets $T_B \subseteq F_B,$ where $F_B$ is the set of functions from
-    $S_{A_1} \times \dots \times S_{A_n}$ to $S_B,$ and $S_A$ is the set of
-    instances of $A$ for each $A \in \U.$}
+    \item a functor application $G_{a_1 \dots a_n}(b_{a_1 \dots a_n})$ such that both
+    $G_{a_1 \dots a_n}$ and $b_{a_1 \dots a_n}$ recursively follow the same rules.\footnote{More
+    formally, the rules generate a family $(T_B)_{B : \U}$ of sets $T_B \subseteq F_B,$ where
+    $F_B$ is the set of functions from $S_{A_1} \times \dots \times S_{A_n}$ to $S_B,$ and $S_A$ is
+    the set of instances of $A$ for each $A : \U.$}
   \end{itemize}
-  Then we have a functor
+  Then we can construct a functor
   \begin{align*}
     F : A_1 \to \dots \to A_n &\to     B\\
-        (a_1,\ldots,a_n)      &\mapsto t_{a_1 \ldots a_n}
+        (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n}
   \end{align*}
   if the following additional constraints are satisfied.
   \begin{itemize}
-    \item If $\U$ only has linear functor operations (but does not have affine
-    functor operations), each variable $a_k$ must occur exactly once in $t_{a_1 \ldots a_n}.$
-    \item If $\U$ only has affine functor operations (but does not have full
-    functor operations), each variable $a_k$ must occur at most once in $t_{a_1 \ldots a_n}.$
+    \item If $\U$ has linear but not affine logic, each variable $a_k$ must occur exactly once in
+    $t_{a_1 \dots a_n}.$
+    \item If $\U$ has affine but not full logic, each variable $a_k$ must occur at most once
+    in $t_{a_1 \dots a_n}.$
   \end{itemize}
 \end{proposition}
 
 \begin{proof}
-  First, we reduce definitions of bifunctors to definitions of functors; and analogously
-  trifunctors to bifunctors, and so on. This principle closely resembles the proof
-  strategy in theorem \ref{thm:funop}. To obtain a bifunctor
+  First, note that the case $n > 1$ can be reduced to two recursive applications of the same
+  algorithm with lower $n$ as follows. For constant $a_1 : A_1,$ construct the functor
   \begin{align*}
-    F : A_1 \to A_2 &\to     B\\
-        (a_1,a_2)   &\mapsto t_{a_1a_2},
+    F_{a_1} : A_2 \to \dots \to A_n &\to     B\\
+              (a_2,\dots,a_n)       &\mapsto t_{a_1 \dots a_n}.
   \end{align*}
-  first recursively obtain the functor
+  Then the result is given by
   \begin{align*}
-    F_{a_1} : A_2 &\to     B\\
-              a_2 &\mapsto t_{a_1a_2}
+    F : A_1 &\to     [A_2 \to \dots \to A_n \to B]\\
+        a_1 &\mapsto F_{a_1}.
   \end{align*}
-  for constant $a_1 : A_1.$
-  Then recursively obtain the functor
-  \begin{align*}
-    F' : A_1 &\to     [A_2 \to B]\\
-         a_1 &\mapsto F_{a_1}.
-  \end{align*}
-  Finally set $F := F',$ apply proposition \ref{prp:congrfun} to $\fndef{F'}$ to obtain
-  an equivalence $\fndef{F'}(a_1)(a_2) : F(a_1,a_2) \equiv F_{a_1}(a_2),$ and set
-  $\fndef{F}(a_1,a_2) := \fndef{F_{a_1}}(a_2) \circ \fndef{F'}(a_1)(a_2).$
 
   Due to this reduction, we can limit ourselves to the simple case
   \begin{align*}
     F : A &\to     B\\
         a &\mapsto t_a
   \end{align*}
-  and perform a (non-exhaustive and non-unique) case split on $t_a.$
+  and perform a (non-unique) case split on $t_a$ according to table \ref{tbl:layer1-functoriality}.
 
-  \begin{tabular}{ll|l}
-    Desired result & & $F$\\
-    \hline\hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     B\\
-          a &\mapsto b
-    \end{aligned}$ &
-    \parbox{3cm}{for $b : B$ (constant \\ with respect to $a$)} &
-    $\constFun_{AB}(b)$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     A\\
-          a &\mapsto a
-    \end{aligned}$ & &
-    $\idFun_A$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     B\\
-          a &\mapsto G(a)
-    \end{aligned}$ &
-    for $G : A \to B$ &
-    $G$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     C\\
-          a &\mapsto G(b_a)
-    \end{aligned}$ &
-    \parbox{3cm}{for $b_a : B$ \\ and $G : B \to C$} &
-    $\compFun_{ABC}(H,G)$ with
-    $\begin{aligned}
-      H : A &\to     B\\
-          a &\mapsto b_a
-    \end{aligned}$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : [B \to C] &\to     C\\
-          G         &\mapsto G(b)
-    \end{aligned}$ &
-    for $b : B$ &
-    $\revAppFun_{BC}(b)$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     C\\
-          a &\mapsto G_a(b)
-    \end{aligned}$ &
-    \parbox{3cm}{for $b : B$ \\ and $G_a : B \to C$} &
-    $\swapFun_{ABC}(G,b)$ with
-    $\begin{aligned}
-      G : A &\to     [B \to C]\\
-          a &\mapsto G_a
-    \end{aligned}$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     B\\
-          a &\mapsto G_a(a)
-    \end{aligned}$ &
-    for $G_a : A \to B$ &
-    $\dupFun_{AB}(G)$ with
-    $\begin{aligned}
-      G : A &\to     [A \to B]\\
-          a &\mapsto G_a
-    \end{aligned}$\\
-    \hline
-    \rule{0pt}{3em}
-    $\begin{aligned}
-      F : A &\to     C\\
-          a &\mapsto G_a(b_a)
-    \end{aligned}$ &
-    \parbox{3cm}{for $b_a : B$ \\ and $G_a : B \to C$} &
-    \parbox{6cm}{
-      $\substFun_{ABC}(H,G)$ with \\[1ex]
+  \begin{table}
+    \centering
+    \begin{tabular}{ll|l}
+      Definition & & Functor\\
+      \hline\hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     B\\
+            a &\mapsto b
+      \end{aligned}$ &
+      \parbox{3cm}{for $b : B$ (constant \\ with respect to $a$)} &
+      $\constFun_{AB}(b)$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     A\\
+            a &\mapsto a
+      \end{aligned}$ & &
+      $\idFun_A$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     B\\
+            a &\mapsto G(a)
+      \end{aligned}$ &
+      for $G : A \to B$ &
+      $G$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     C\\
+            a &\mapsto G(b_a)
+      \end{aligned}$ &
+      \parbox{3cm}{for $b_a : B$ \\ and $G : B \to C$} &
+      $\compFun(H,G)$ with
       $\begin{aligned}
         H : A &\to     B\\
             a &\mapsto b_a
-      \end{aligned}$
-      and
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : [B \to C] &\to     C\\
+            G         &\mapsto G(b)
+      \end{aligned}$ &
+      for $b : B$ &
+      $\revAppFun_{BC}(b)$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     C\\
+            a &\mapsto G_a(b)
+      \end{aligned}$ &
+      \parbox{3cm}{for $b : B$ \\ and $G_a : B \to C$} &
+      $\swapFun(G,b)$ with
       $\begin{aligned}
         G : A &\to     [B \to C]\\
             a &\mapsto G_a
-      \end{aligned}$
-    }
-  \end{tabular}
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     B\\
+            a &\mapsto G_a(a)
+      \end{aligned}$ &
+      for $G_a : A \to B$ &
+      $\dupFun(G)$ with
+      $\begin{aligned}
+        G : A &\to     [A \to B]\\
+            a &\mapsto G_a
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : [B \to C] &\to     C\\
+            G         &\mapsto G(b_G)
+      \end{aligned}$ &
+      for $b_G : B$ &
+      $\revSelfAppFun(H)$ with
+      $\begin{aligned}
+        H : [B \to C] &\to     B\\
+            G         &\mapsto b_G
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{3em}
+      $\begin{aligned}
+        F : A &\to     C\\
+            a &\mapsto G_a(b_a)
+      \end{aligned}$ &
+      \parbox{3cm}{for $b_a : B$ \\ and $G_a : B \to C$} &
+      \parbox{6cm}{
+        $\substFun(H,G)$ with \\[1ex]
+        $\begin{aligned}
+          H : A &\to     B\\
+              a &\mapsto b_a
+        \end{aligned}$
+        and
+        $\begin{aligned}
+          G : A &\to     [B \to C]\\
+              a &\mapsto G_a
+        \end{aligned}$
+      }
+    \end{tabular}
+    \caption{Conversion of functor description to combinator application}
+    \label{tbl:layer1-functoriality}
+  \end{table}
 
-  In all cases except the first two, $t_a$ is a functor application. In fact, the
-  last case is the most general possible functor application, and in a universe with
-  full functor operations, all other cases of functor applications may be regarded as
-  mere optimizations.\\
-  Note that a functor application with multiple arguments $F(a_1,\ldots,a_n)$ is
-  really an application of the functor $F(a_1,\ldots,a_{n-1})$ to the argument $a_n,$
-  and must be treated as such.
-
-  One piece of information missing from the table is that the algorithm must produce
-  not only the functor $F$ but also an instance equivalence
-  $\fndef{F}(a) : F(a) \equiv t_a$ for each $a : A.$ This equivalence is obtained by
-  composing the definition of the combinator with the definitions of the recursively
-  obtained functors that are passed to the combinator as arguments (if any).
+  In all cases except the first two, $t_a$ is a functor application. In fact, the last case is the
+  most general possible functor application, and in a universe with full logic, all other cases of
+  functor applications may be regarded as mere optimizations.
 \end{proof}
 
-\begin{remark}
+\begin{remarks}
+  Note that a functor application with multiple arguments $F(a_1,\dots,a_n)$ is really an
+  application of the functor $F(a_1,\dots,a_{n-1})$ to the argument $a_n,$ and must be treated as
+  such.
+
   The algorithm may produce terms of the form $\swapFun(\compFun,\ldots)$ or
   $\swapFun(\substFun,\ldots).$ By the definitions of $\revCompFun$ and $\revSubstFun,$
   these can be replaced with $\revCompFun(\ldots)$ and $\revSubstFun(\ldots),$
   respectively.
-\end{remark}
+\end{remarks}
 
-\begin{example}
-  Let us consider the simple case where we want to compose a bifunctor
-  $F : A \to B \to C$ with a functor $G : C \to D.$ This can be done in
-  two different ways: We can either construct this composition for fixed but
-  arbitrary $F$ and $G,$ or we can define it as a functor taking $F$ and $G$ as
-  arguments.
-  
-  For fixed $F$ and $G,$ the functor we want to construct is
-  \begin{align*}
-    H_{FG} : A \to B &\to     D\\
-             (a,b)   &\mapsto G(F(a,b)).
-  \end{align*}
-  The term $G(F(a,b))$ only consists of functor applications, references to the
-  constants $F$ and $G,$ and references to the variables $a$ and $b,$ so we
-  know that the functoriality algorithm can produce a functor matching this
-  definition. Since each variable occurs in this term exactly once, the
-  definition is valid in every universe with linear functor operations. If we
-  actually execute the algorithm, we find that it outputs
-  \[H_{FG} := \revCompFun_{BCD}(G) \circ F\]
-  and
-  \begin{align*}
-    \fndef{H_{FG}}(a,b) &:= \fndef{\revCompFun_{BCD}}(G,F(a),b) \circ \fndef{\compFun_{A[B{\to}C][B{\to}D]}}(F,\revCompFun_{BCD}(G),a)(b)\\
-                        &: H_{FG}(a,b) \equiv G(F(a,b)).
-  \end{align*}
-
-  We can now interpret this construction in specific universes, for example:
+\begin{proposition}
+  \label{prp:layer1-combinator-def}
+  The algorithm applied to each of the following functor descriptions outputs exactly the given
+  combinator, when taking the topmost possible alternative in case of nondeterminism.
   \begin{itemize}
-    \item In the universe of categories:\\
-    If $\A,\B,\C,\D$ are categories and $F : \A \to \C^\B$ and $G : \C \to \D$
-    are functors, then we have a functor $H : \A \to \D^\B$ such that
-    $H(a)(b)$ is isomorphic to $G(F(a)(b))$ for objects $a$ of $\A$ and $b$ of
-    $\B.$
-    \item In the universe of vector spaces over a field:\\
-    If $V,W,X,Y$ are vector spaces over $K,$ $f$ is a linear map from $V$
-    to the space of linear maps from $W$ to $X,$ and $g$ is a linear map
-    from $X$ to $Y,$ then we have a linear map $h$ from $V$ to the space of
-    linear maps from $W$ to $Y$ such that $h(v)(w) = g(f(v)(w))$ for vectors
-    $v$ of $V$ and $w$ of $W.$
+    \item $\begin{aligned}[t]
+      \constFun_{AB} : B \to A &\to     B\\
+                       (b,a)   &\mapsto b
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \idFun_A : A &\to     A\\
+                 a &\mapsto a
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \compFun_{ABC} : [A \to B] \to [B \to C] \to A &\to     C\\
+                       (F,G,a)                       &\mapsto G(F(a))
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \revCompFun_{ABC} : [B \to C] \to [A \to B] \to A &\to     C\\
+                          (G,F,a)                       &\mapsto G(F(a))
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \revAppFun_{AB} : A \to [A \to B] &\to     B\\
+                        (a,F)           &\mapsto F(a)
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \swapFun_{ABC} : [A \to B \to C] \to B \to A &\to     C\\
+                       (F,b,a)                     &\mapsto F(a,b)
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \dupFun_{AB} : [A \to A \to B] \to A &\to     B\\
+                     (F,a)                 &\mapsto F(a,a)
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \revSelfAppFun_{AB} : [[A \to B] \to A] \to [A \to B] &\to     B\\
+                            (F,G)                           &\mapsto G(F(G))
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \substFun_{ABC} : [A \to B] \to [A \to B \to C] \to A &\to     C\\
+                        (F,G,a)                             &\mapsto G(a,F(a))
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \revSubstFun_{ABC} : [A \to B \to C] \to [A \to B] \to A &\to     C\\
+                           (G,F,a)                             &\mapsto G(a,F(a))
+    \end{aligned}$
   \end{itemize}
-
-  If instead we want to construct a functor that takes $F$ and $G$ as
-  arguments, we can either execute the functoriality algorithm directly for
-  \begin{align*}
-    H : [A \to B \to C] \to [C \to D] \to A \to B &\to     D\\
-        (F,G,a,b)                                 &\mapsto G(F(a,b)),
-  \end{align*}
-  or we can use the previous result and construct
-  \begin{align*}
-    H : [A \to B \to C] \to [C \to D] &\to     [A \to B \to D]\\
-        (F,G)                         &\mapsto H_{FG} = \revCompFun_{BCD}(G) \circ F.
-  \end{align*}
-  The algorithm (always) produces the same result in both cases, which is
-  \[H := \compFun_{[C{\to}D][[B{\to}C]{\to}[B{\to}D]][A{\to}B{\to}D]}(\revCompFun_{BCD}) \circ \compFun_{A[B{\to}C][B{\to}D]}.\]
-\end{example}
+\end{proposition}
 
 \begin{remark}
-  The utility of the functoriality algorithm can be a bit subtle, especially when dealing
-  with concrete universes such as the universe of categories. As a rule of thumb, it can
-  be used to prove functoriality of terms where all of the objects that appear in the term
-  are already functorial. Or, from a reverse point of view, it eliminates the need to
-  compose and otherwise manipulate functors explicitly -- instead, functors may simply be
-  written as expressions that specify how to map objects, leaving the rest implicit.
-
-  The algorithm becomes even more useful by incorporating further structure that can be
-  described abstractly in terms of universes and functors. Then, similarly to the example
-  above, we can algorithmically construct functors that involve such structure, and the
-  resulting construction will be valid in many universes. Whenever something is
-  ``obviously functorial,'' it probably has a universe-based interpretation so that
-  functoriality indeed does not need to be proved.
+  Note, however, that this does \emph{not} imply that functors map instances exactly as specified
+  by the definition, as in layer 1 there are no axioms about specific instances. However, for the
+  concrete universes listed earlier this in fact the case.
 \end{remark}
 
 \begin{proposition}
-  \label{prp:funop-def}
-  Applying the functoriality algorithm to the definition of any of the combinators
-  $\constFun_{AB},\idFun_A,\compFun_{ABC},\revCompFun_{ABC},\revAppFun_{AB},\swapFun_{ABC},\dupFun_{AB},\substFun_{ABC},\revSubstFun_{ABC}$
-  results in exactly that combinator.
+  \label{prp:layer1-logic}
+  Of the universes listed earlier,
+  \begin{itemize}
+    \item $\Unit,$ $\Bool,$ $\Set,$ and $\Cat$ have full logic, and
+    \item the universes of commutative semigroups and of vector spaces have linear logic.
+  \end{itemize}
 \end{proposition}
-\vspace{-1ex}
-\begin{proof}
-  This is a simple exercise in executing the functoriality algorithm.
-\end{proof}
 
-\begin{proposition}
-  In a universe with linear/affine/full functor operations, the functoriality algorithm
-  is surjective in the sense that it outputs all functors that can be built from the
-  combinators that are valid in that universe.
-\end{proposition}
-\vspace{-1ex}
 \begin{proof}
-  For a functor $F : A_1 \to \dots \to A_n \to B,$ applying the functoriality algorithm to
+  The required functors can be defined easily. A strategy that works for all universes is to
+  algorithmically construct the combinators from smaller functors as shown in proposition
+  \ref{prp:layer1-combinator-def}. E.g.\ for $\revAppFun,$ the algorithm specifies that one first
+  needs to construct a functor
   \begin{align*}
-    F' : A_1 \to \dots \to A_n &\to     B\\
-         (a_1,\ldots,a_n)      &\mapsto F(a_1,\ldots,a_n)
+    T_a : [A \to B] &\to     B\\
+          F         &\mapsto F(a)
   \end{align*}
-  produces $F' = F$ by repeated application of the third case in the algorithm. This is
-  valid in any universe because each $a_k$ is used exactly once, and of course $F$ can be
-  a combinator.
+  and then to construct
+  \begin{align*}
+    \revAppFun_{AB} : A &\to     [[A \to B] \to B]\\
+                      a &\mapsto T_a,
+  \end{align*}
+  both of which are either trivial or simple depending on the universe.
+
+  Alternatively, a universe has full logic if its types form a Cartesian closed category, and linear
+  logic if its types form a closed monoidal category. (Note that the converse may not necessarily
+  hold, due to the lack of axioms on instances.)
 \end{proof}
 
-Although the proof is trivial, the proposition is important because we will often
-establish something ``for all families of terms that satisfy the constraints of
-proposition \ref{prp:functoriality},'' and in those case a suitably modified claim also
-holds ``for all functors that can be built from combinators.''
+\begin{remark}
+  Specifically for $\Cat,$ this means that we can construct functors between categories by simply
+  stating their functor description, without having to verify manually that this definition is
+  functorial. Similarly for linear maps between vector spaces, though in that case we need to
+  ensure that each variable is used exactly once.
+\end{remark}
 
-\subsection{Extensionality/naturality algorithm}
-
-In this section, we will introduce an algorithm to prove equivalences of functors given
-suitable equivalences of their values, i.e.\ to prove extensionality (which, in the
-universe of categories, corresponds to naturality).
-First, we introduce a notation for such equivalences.
+\subsection{Singletons}
+\label{sec:layer1-singletons}
 
 \begin{definition}
-  \label{def:extensional-equivalence}
-  Let $A_1\ldots,A_n,B$ be types in (potentially different) universes with functors such
-  that we have a functor type $[A_1 \to \dots \to A_n \to B],$ and
-  $(s_{a_1 \ldots a_n})_{a_k : A_k}$ and $(t_{a_1 \ldots a_n})_{a_k : A_k}$ be two families
-  of instances $s_{a_1 \ldots a_n},t_{a_1 \ldots a_n} : B.$ Then we define the notation
-  \begin{align*}
-    (A_1 \to \dots \to A_n &\to   B)\\
-    e(a_1,\ldots,a_n)      &\ :\  s_{a_1 \ldots a_n} \equiv t_{a_1 \ldots a_n}
-  \end{align*}
-  to mean that we have an equivalence $e : F_s \equiv F_t$ between the two functors
-  $F_s$ and $F_t$ that are obtained by applying the functoriality algorithm to
-  $(s_{a_1 \ldots a_n})_{a_k : A_k}$ and $(t_{a_1 \ldots a_n})_{a_k : A_k},$
-  respectively, taking the first possible alternative at each step that is nondeterministic.
+  A layer 1 universe $\U$ with functors may have a designated \defn{unit type} $\top : \U$ which
+  must satisfy the following two axioms.
+  \begin{itemize}
+    \item It must have an instance $\star : \top.$
+    \item For each type $A : \U$ there is a functor $\elim_A : A \to \top \to A$ (which matches
+    $\constFun_{\top A}$ but should exist even in the absence of affine logic, encoding the idea
+    that a unit instance contains no data).
+  \end{itemize}
+\end{definition}
 
-  We say that an equivalence $e_{a_1 \ldots a_n} : s_{a_1 \ldots a_n} \equiv t_{a_1 \ldots a_n}$
-  is \defn{extensional} in $a_1,\ldots,a_n$ if we can obtain an equivalence $e$ as defined above.
+\begin{definition}
+  Similarly, $\U$ may have an \defn{counit type} $\bot : \U,$ which must satisfy the
+  following axiom.
+  \begin{itemize}
+    \item For each type $A : \U$ there is a functor $\elim_A : \bot \to A.$
+  \end{itemize}
 \end{definition}
 
 \begin{remark}
-  In particular, if $F$ is the functor obtained for $(t_{a_1 \ldots a_n})_{a_k : A_k},$ we
-  have
+  Note that the above axioms do not imply that $\top$ has a single instance or that $\bot$ has no
+  instances. In particular the type $\ast : \Unit$ is both a unit type and a counit type.
+\end{remark}
+
+\subsection{Products and coproducts}
+\label{sec:layer1-products}
+
+\begin{definition}
+  A layer 1 universe $\U$ with functors has \defn{products} if for all $A,B : \U$ we have a
+  \defn{product type} $[A \times B] : \U$ with the following functors.
+  \begin{itemize}
+    \item $\intro_{AB} : A \to B \to A \times B$ (taking the symbol ``$\times$'' to bind more
+    strongly than ``$\to$'')
+    \item $\elim_{ABC} : [A \to B \to C] \to [A \times B \to C]$ for each $C : \U$
+  \end{itemize}
+
+  For $a : A$ and $b : B$ we define their pair as
+  \[(a,b) := \intro(a,b)\]
+  and extend the functor description notation such that
   \begin{align*}
-        (A_1 \to \dots \to A_n &\to   B)\\
-    \id_F(a_1,\ldots,a_n)      &\ :\  F(a_1,\ldots,a_n) \equiv t_{a_1 \ldots a_n},
+    F : A \times B &\to     C\\
+        (a,b)      &\mapsto t_{ab}
   \end{align*}
-  i.e.\ the definition $\fndef{F}$ produced by the functoriality algorithm is extensional.
+  is defined as $F := \elim(F')$ with
+  \begin{align*}
+    F' : A \to B &\to     C\\
+         (a,b)   &\mapsto t_{ab}.
+  \end{align*}
+\end{definition}
+
+\begin{remark}
+  This implies that projections from $[A \times B]$ to $A$ or $B$ are only available under the
+  assumption of (at least) affine logic, except if the other side is $\top.$ However, linear logic
+  gives us, for example,
+  \begin{align*}
+    \nm{comm}_{AB} : A \times B &\to     B \times A\\
+                     (a,b)      &\mapsto (b,a)
+  \end{align*}
+  and
+  \begin{align*}
+    \nm{assoc}_{ABC} : [A \times B] \times C &\to     A \times [B \times C]\\
+                       ((a,b),c)             &\mapsto (a,(b,c)).
+  \end{align*}
+\end{remark}
+
+\begin{definition}
+  $\U$ has \defn{coproducts} if for all $A,B : \U$ we have a \defn{coproduct type}
+  $[A \oplus B] : \U$ with the following functors.
+  \begin{itemize}
+    \item $\nm{lintro}_{AB} : A \to A \oplus B$
+    \item $\nm{rintro}_{AB} : B \to A \oplus B$
+    \item $\elim_{ABC} : [A \to C] \to [B \to C] \to [A \oplus B \to C]$ for each $C : \U$
+  \end{itemize}
+\end{definition}
+
+\subsection{Equivalences}
+\label{sec:layer1-equivalences}
+
+\begin{definition}
+  A layer 1 universe $\U$ with functors has \defn{equivalences} if for all $A,B : \U$ we have an
+  \defn{equivalence type} $[A \leftrightarrow B] : \U$ such that $(\leftrightarrow)$ is a reflexive
+  symmetric transitive prerelation and for $A,B : \U$ we have a functor
+  \begin{itemize}
+    \item $\elim_{AB} : [A \leftrightarrow B] \to [A \to B].$
+  \end{itemize}
+\end{definition}
+
+Due to the lack of an introduction functor, these axioms do not enable the construction of concrete
+equivalences between two different types. This is intentional because the correct notion of
+equivalence depends on the universe $\U,$ for example equivalences in $\Set$ are bijections, whereas
+equivalences in $\Cat$ are (adjoint) equivalences of categories.
+
+Therefore, we assert the existence of concrete equivalences axiomatically. In all of these cases,
+the corresponding functors in both directions can already be proven to exist regardless of the
+equivalence. In other words, the axioms do not add any logical strength, but they establish a
+concept of equivalence that can be referenced at higher layers.
+
+\begin{definition}
+  We say that $\U$ has \defn{standard equivalences} if it has (at least) linear logic and instances
+  of the following types exist, for all $A,B,C : \U.$
+  \begin{itemize}
+    \item $[A \to B \to C] \leftrightarrow [B \to A \to C]$
+    \item $[\top \to A] \leftrightarrow A$ if $\U$ has a unit type
+    \item $[A \to \bot] \leftrightarrow [A \leftrightarrow \bot]$ if $\U$ has a counit type
+    \item $[A \times B \to C] \leftrightarrow [A \to B \to C]$ if $\U$ has products
+    \item $A \times B \leftrightarrow B \times A$ if $\U$ has products
+    \item $[A \times B] \times C \leftrightarrow A \times [B \times C]$ if $\U$ has products
+    \item $[A \to B \times C] \leftrightarrow [A \to B] \times [A \to C]$ if $\U$ has products
+    and full logic
+    \item $\top \times A \leftrightarrow A$ if $\U$ has products and a unit type
+    \item $\bot \times A \leftrightarrow \bot$ if $\U$ has products and a counit type
+    \item $A \oplus B \leftrightarrow B \oplus A$ if $\U$ has coproducts
+    \item $[A \oplus B] \oplus C \leftrightarrow A \oplus [B \oplus C]$ if $\U$ has coproducts
+    \item $[A \oplus B \to C] \leftrightarrow [A \to C] \times [B \to C]$ if $\U$ has coproducts
+    and products
+    \item $\bot \oplus A \leftrightarrow A$ if $\U$ has coproducts and a counit type
+    \item $[A \leftrightarrow B] \leftrightarrow [B \leftrightarrow A]$
+    \item functors of the form $[A \leftrightarrow B] \to [\Phi(A) \leftrightarrow \Phi(B)],$ where
+    $\Phi : \U \to \U$ is a function that constructs types
+  \end{itemize}
+\end{definition}
+
+\subsection{Functor universe}
+\label{sec:layer1-functor-universe}
+
+In this section, we construct a universe $\U^A$ that can be understood as ``$\U$ within a context
+containing an instance of $A : \U.$'' If we regard the types of $\U$ as propositions (via the
+Curry-Howard correspondence \cite{curry-howard}), then in order to prove an implication
+$[A \to B] : \U,$ we can instead ``prove $B$ under the assumption $A$'' by constructing an instance
+of $B^A : \U^A.$
+
+We therefore want $\U^A$ to inherit all structure of $\U,$ and whether or not it does so is a good
+coherence test of the axioms, particularly at higher layers.
+
+\begin{definition}
+  Let $\U$ be a universe with full logic, and $A : \U$ be a type. We define the
+  \defn{functor universe} $\U^A$ as follows.
+  \begin{itemize}
+    \item The types of $\U^A,$ written as $B^A : \U^A$ for $B : \U,$ are in 1:1 correspondence with
+    the types of $\U.$ (In fact, we can technically define the set of types of $\U^A$ to be exactly
+    the set of types of $\U,$ but for clarity we will assume the types to be distinct in this
+    description.)
+    \item The set of instances of $B^A : \U^A$ is the set of instances of $[A \to B] : \U.$
+  \end{itemize}
+\end{definition}
+
+Then $\U^A$ has, among others, the following instances.
+\begin{itemize}
+  \item $\idFun_A : A^A$ (which acts as the ``instance of $A$ in the context''), and
+  \item for each $B : \U$ and $b : B,$ an ``embedded'' instance $b^A := \constFun_{AB}(b) : B^A.$
+\end{itemize}
+
+\begin{proposition}
+  For $B,C : \U,$ the type $[B \to C]^A : \U^A$ is a functor type from $B^A : \U^A$ to $C^A : \U^A.$
+  Under this definition of functors, $\U^A$ has full logic.
+\end{proposition}
+\vspace{-1ex}
+\begin{proof}
+  For $G : [B \to C]^A$ and $F : B^A$ we can define $G(F) := \substFun_{ABC}(F,G) : C^A.$
+
+  For a functor $H : B \to C,$ its embedded instance $H^A : [B \to C]^A$ is a functor from $B^A$ to
+  $C^A.$ Thus, we can define the five primitive combinators by embedding the corresponding
+  combinators of $\U$:
+  $\idFun_{B^A} := (\idFun_B)^A,$ $\revAppFun_{B^A C^A} := (\revAppFun_{BC})^A$, $\ldots$
+\end{proof}
+
+\begin{proposition}
+  For types $B,C : U,$ consider the functor description
+  \begin{align*}
+    G : B &\to     C\\
+        b &\mapsto t_b.
+  \end{align*}
+  If $t_b$ follows the constraints of proposition \ref{prp:layer1-functoriality}. we can lift the
+  family $(t_b)_{b : B}$ to a family $(T_F)_{F : B^A}$ of instances of $C^A$ such that the functor
+  description
+  \begin{align*}
+    {G^A}' : B^A &\to     C^A\\
+             F   &\mapsto T_F
+  \end{align*}
+  also follows these constraints.
+\end{proposition}
+
+\begin{proof}
+  We recursively define $T_F$ based on the three possibilities for $t_b.$
+  \begin{itemize}
+    \item If $t_b$ is a constant $c$ independent of $b,$ we set $T_F := c^A.$
+    \item If $t_b = b,$ we set $T_F := F.$
+    \item If $t_b$ is a functor application, we set $T_F$ to the application of
+    the lifted functor to the lifted term. \qedhere
+  \end{itemize}
+\end{proof}
+
+We can use this proposition to obtain an alternative proof of proposition
+\ref{prp:layer1-functoriality} as follows (assuming full logic).
+Given a family $(t_a)_{a : A}$ of terms $t_a : B$ that satisfy the constraints of proposition
+\ref{prp:layer1-functoriality}, we may lift $(t_a)$ to a family $(T_F)_{F : A^A}$ of terms
+$T_F : B^A.$ Then $T_{\idFun_A} : B^A$ is a functor from $A$ to $B.$
+
+\begin{proposition}
+  If $\U$ has a unit type $\top : \U,$ then $\top^A$ is a unit type of $\U^A.$
+\end{proposition}
+\vspace{-1ex}
+\begin{proof}
+  Obviously we have $\star^A : \top^A.$ For $B : \U$ we can take $\elim_{B^A} := (\elim_B)^A.$
+\end{proof}
+
+Counits, products, coproducts, and equivalences embed analogously.
+
+\section{Layer 2}
+
+\subsection{Universes}
+
+\begin{definition}
+  A \defn{layer 2 universe} $(\U,\V,(\equiv_A)_{A : \U})$ is triple of
+  \begin{itemize}
+    \item a layer 1 universe $\U,$
+    \item a layer 1 universe $\V$ with (at least) linear logic, and
+    \item for each type $A : \U,$ a reflexive symmetric transitive $\V$-valued prerelation
+    $(\equiv_A)$ on the set of instances of $A.$ We call $[a \equiv b] : \V$ the type of
+    \defn{instance equivalences} between $a : A$ and $b : A.$
+  \end{itemize}
+
+  We will often write ``$\U$'' instead of ``$(\U,\V,(\equiv_A)_{A : \U})$,'' leaving $\V$ and
+  $(\equiv_A)_{A : \U}$ implicit.
+\end{definition}
+
+In particular, we will consider the following layer 2 universes.
+\begin{itemize}
+  \item $(\Unit, \Unit, (\star,\star) \mapsto \ast)$
+  \item $(\Bool, \Unit, (\star,\star) \mapsto \ast)$
+  \item $(\Set, \Bool, (=))$
+  \item $(\Cat, \Set, \Iso),$ where $\Iso(a,b)$ is the set of isomorphisms from $a$ to $b.$
+  (This requires special consideration of size-related issues, which we will ignore here because
+  they are adequately addressed by the formalization in Lean.)
+\end{itemize}
+
+\subsection{Functors}
+
+\begin{definition}
+  A layer 2 universe $(\U,\V,(\equiv))$ has \defn{functors} if $\U$ has functors (as a layer 1
+  universe) and additionally for all types $A,B,C : \U$ and functors $F : A \to B$ and $G : A \to C$
+  we have a type $[F \equivto G] : \V$ that satisfies the following axioms.
+  \begin{itemize}
+    \item For $a,b : A$ there is a functor\\
+    $\elim_{FGab} : [F \equivto G] \to [F(a) \equiv F(b) \to G(a) \equiv G(b)].$
+    \item For $A,B : \U$ and $F,G : A \to B$ there is a functor\\
+    $\nm{eq}_{FG} : F \equiv G \to [F \equivto G].$
+    \item For $A,B,C,D : \U,$ $F : A \to B,$ $G : A \to C,$ and $H : A \to D$ there is a bifunctor\\
+    $\nm{trans}_{FGH} : [F \equivto G] \to [G \equivto H] \to [F \equivto H].$
+    \item If $\U$ has (at least) linear logic, then for $A,B,C : \U,$ $F : A \to B,$ and
+    $G : B \to C$ there is an instance\\
+    $\nm{rBr}_{FG} : [F \equivto G \circ F].$
+    \item If $\U$ has (at least) linear logic, then for $A,B,C,D : \U,$ $F : A \to B,$
+    $G : A \to C,$ and $H : B \to D$ there is a functor\\
+    $\nm{rBl}_{FGH} : [H \circ F \equivto G] \to [F \equivto G].$
+    \item If $\U$ has (at least) affine logic, then for $A,B,C : \U,$ $F : A \to B,$ and $c : C$
+    there is an instance\\
+    $\nm{rK}_{Fc} : F \equivto \constFun_{AC}(c).$
+    % TODO: Is it possible to reduce the next two to something with dupFun?
+    \item If $\U$ has full logic, then for $A,B,C,D : \U,$ $F : A \to B,$ $G : A \to C,$ and
+    $H : A \to C \to D$ there is a functor\\
+    $\nm{rSr}_{FGH} : [F \equivto G] \to [F \equivto H] \to [F \equivto \substFun(G,H)].$
+    \item If $\U$ has full logic, then for $A,B,C,D : \U,$ $F : A \to B,$ $G : A \to C,$ and
+    $H : A \to B \to D$ there is a functor\\
+    $\nm{rSl}_{FGH} : [\substFun(F,H) \equivto G] \to [H \equivto G] \to [F \equivto G].$
+  \end{itemize}
+\end{definition}
+
+In the concrete universes we consider, this type is implemented as follows.
+\begin{itemize}
+  \item In $\Unit$ and $\Bool,$ obviously $[F \equivto G] := \ast : \Unit$ for all functors $F$ and
+  $G.$
+  \item For $A,B,C : \Set,$ $F : A \to B,$ and $G : A \to C,$ we define
+  \[[F \equivto G] := \begin{cases}
+    \top & \text{if for all } a,b \in A, F(a) = F(b) \text{ implies } G(a) = G(b),\\
+    \bot & \text{otherwise.}
+  \end{cases}\]
+  \item For $A,B,C : \Cat,$ $F : A \to B,$ and $G : A \to C,$ we define $[F \equivto G]$ to be a
+  set of \defn{functorial maps}, which are collections of functions from $\Hom(F(a),F(b))$ to
+  $\Hom(G(a),G(b)),$ depending on two objects $a,b : A,$ that respect identity and composition of
+  morphisms.
+\end{itemize}
+
+\begin{definition}
+  In a layer 2 universe $\U$ with functors, when we say that a functor $F$ matches a given functor
+  description
+  \begin{align*}
+    F : A_1 \to \dots \to A_n &\to     B\\
+        (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n},
+  \end{align*}
+  we require that there is an instance equivalence
+  $\fndef{F}(a_1,\dots,a_n) : F(a_1,\dots,a_n) \equiv t_{a_1 \dots a_n}$ for $a_k : A_k.$
+\end{definition}
+
+For $\U$ to have linear, affine, or full logic, we will require each of the five primitive
+combinators to match their description as given in proposition \ref{prp:layer1-combinator-def}.
+
+\begin{remark}
+  By $\nm{rBr},$ this implies that that if $\U$ has (at least) linear logic, then
+  \begin{itemize}
+    \item for all $A,B : \U,$ $F : A \to B,$ and $a,b : A$ there is an instance\\
+    $\congrArg_{Fab} : a \equiv b \to F(a) \equiv F(b),$ and
+    \item for all $A,B : \U,$ $F,G : A \to B,$ and $a : A$ there is an instance\\
+    $\congrFun_{FGa} : F \equiv G \to F(a) \equiv G(a).$
+  \end{itemize}
 \end{remark}
 
 \begin{proposition}
-  \label{prp:extensionality-axioms}
-  Using this notation, we can understand the axioms introduced in section \ref{sec:funop}
-  as asserting the extensionality of certain equivalences that hold by definition.
-
-  For linear functor operations:
-  \begin{gather*}
-    \begin{aligned}
-                      ([A \to B] \to A &\to   B)\\
-      \nm{rightId}_{AB}(F,a)           &\ :\  F(\idFun_A(a)) \equiv F(a)
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                      ([A \to B] &\to   [A \to B])\\
-      \nm{rightId}_{AB}(F)       &\ :\  F \circ \idFun_A \equiv F
-      \quad\text{(derived)}
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                     ([A \to B] \to A &\to   B)\\
-      \nm{leftId}_{AB}(F,a)           &\ :\  \idFun_B(F(a)) \equiv F(a)
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                     ([A \to B] &\to   [A \to B])\\
-      \nm{leftId}_{AB}(F)       &\ :\  \idFun_B \circ F \equiv F
-      \quad\text{(derived)}
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                    ([A \to B] \to A &\to   B)\\
-      \nm{swapT}_{AB}(F,a)           &\ :\  \revAppFun_{AB}(a,F) \equiv F(a)
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                      ([A \to B] \to A \to [B \to C] &\to   C)\\
-      \nm{swapB'}_{ABC}(F,a,G)                       &\ :\  (G \circ F)(a) \equiv G(F(a))
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                     ([B \to C] \to A \to [A \to B] &\to   C)\\
-      \nm{swapB}_{ABC}(G,a,F)                       &\ :\  (G \circ F)(a) \equiv G(F(a))
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                      ([A \to B] \to [B \to C] \to [C \to D] \to A &\to   D)\\
-      \nm{assoc}_{ABCD}(F,G,H,a)                                   &\ :\  (H \circ G)(F(a)) \equiv H(G(F(a)))
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                      ([A \to B] \to [B \to C] \to [C \to D] &\to   [A \to D])\\
-      \nm{assoc}_{ABCD}(F,G,H)                               &\ :\  (H \circ G) \circ F \equiv H \circ (G \circ F)
-      \quad\text{(derived)}
-    \end{aligned}
-  \end{gather*}
-  For affine functor operations:
-  \begin{gather*}
-    \begin{aligned}
-                          (B \to [B \to C] \to A &\to   C)\\
-      \nm{rightConst}_{ABC}(b,G,a)               &\ :\  G(\constFun_{AB}(b,a)) \equiv G(b)
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                          (B \to [B \to C] &\to   [A \to C])\\
-      \nm{rightConst}_{ABC}(b,G)           &\ :\  G \circ \constFun_{AB}(b) \equiv \constFun_{AC}(G(b))
-      \quad\text{(derived)}
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                         ([A \to B] \to C \to A &\to   C)\\
-      \nm{leftConst}_{ABC}(F,c,a)               &\ :\  \constFun_{BC}(c,F(a)) \equiv c
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                         ([A \to B] \to C &\to   [A \to C])\\
-      \nm{leftConst}_{ABC}(F,c)           &\ :\  \constFun_{BC}(c) \circ F \equiv \constFun_{AC}(c)
-      \quad\text{(derived)}
-    \end{aligned}
-  \end{gather*}
-  For full functor operations:
-  \begin{gather*}
-    \begin{aligned}
-                   ([A \to A \to B] \to A &\to   B)\\
-      \nm{dupC}_{AB}(F,a)                 &\ :\  \swapFun(F,a,a) \equiv F(a,a)
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                   ([A \to B] \to A &\to   B)\\
-      \nm{dupK}_{AB}(F,a)           &\ :\  \constFun_{A[A{\to}B]}(F,a,a) \equiv F(a)
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                        ([A \to A \to B] \to [B \to C] \to A &\to   C)\\
-      \nm{rightDup}_{ABC}(F,G,a)                             &\ :\  G(\dupFun_{AB}(F,a)) \equiv G(F(a,a))
-    \end{aligned}\\[1ex]
-    \begin{aligned}
-                       ([A \to B] \to [A \to B \to B \to C] \to A &\to   C)\\
-      \nm{leftDup}_{ABC}(F,G,a)                                   &\ :\  \dupFun_{BC}(G(a),F(a)) \equiv G(a,F(a),F(a))
-    \end{aligned}
-  \end{gather*}
+  If the five primitive combinators match their functor descriptions as defined above, then the
+  algorithm to construct a functor for a given functor description, as described in the proof of
+  proposition \ref{prp:layer1-functoriality}, always produces functors that match the functor
+  description that is given as input to the algorithm.
 \end{proposition}
+\vspace{-1ex}
+\begin{proof}
+  The required equivalence can be constructed by composing, in each step of the algorithm, the
+  definition of the combinator used in that step with the definitions of its arguments, using
+  $\congrArg.$
+\end{proof}
 
-In the rest of this section, we will show that these axioms imply the extensionality of
-\emph{all} such equivalences.
+\subsection{Dependent functors}
+
+\begin{definition}
+  \label{def:layer2-dependent-functor-type}
+  For a layer 2 universe layer 2 universe $(\U,\V,(\equiv))$ with functors, we introduce a
+  \defn{dependent functor type} notation
+  \[\left[\prod_{a_k : A_k} p_{a_1 \dots a_n}\right] : \V\]
+  for some specific terms $p_{a_1 \dots a_n} : \V$ with $A_1,\dots,A_n : \U.$
+  (A more generic definition that only works for some universes is given later, starting in section
+  \ref{sec:layer2-universe-type}.)
+
+  The common requirement on this notation is that given a term
+  \[q : \prod_{a_k : A_k} p_{a_1 \dots a_n}\]
+  and concrete $a_k : A_k,$ we have a \defn{dependent functor application}
+  \[q(a_1,\dots,a_n) : p_{a_1 \dots a_n}.\]
+
+  \begin{itemize}
+    \item For the case that $q_{a_1 \dots a_n} : \V$ is an instance equivalence, we simply define
+    \[\left[\prod_{a_k : A_k} [s_{a_1 \dots a_n} \equiv t_{a_1 \dots a_n}]\right] := [F \equiv G]\]
+    with $B : \U$ such that $s_{a_1 \dots a_n},t_{a_1 \dots a_n} : B$ and
+    \begin{align*}
+      F : A_1 \to \dots \to A_n &\to     B\\
+          (a_1,\dots,a_n)       &\mapsto s_{a_1 \dots a_n},\\[1ex]
+      G : A_1 \to \dots \to A_n &\to     B\\
+          (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n}.
+    \end{align*}
+    To avoid nondeterminism within the specification of the dependent functor type, the functors $F$
+    and $G$ must be obtained from $(s_{a_1 \dots a_n})$ and $(t_{a_1 \dots a_n})$ by always taking
+    the topmost possible alternative within table \ref{tbl:layer1-functoriality}.
+
+    Note that the algorithm to construct $F$ and $G$ ensures that
+    \[\left[\prod_{a_1 : A_1, \dots, a_n : A_n} [s_{a_1 \dots a_n} \equiv t_{a_1 \dots a_n}]\right] \eqDef
+      \left[\prod_{a_1 : A_1, \dots, a_{n-1} : A_{n-1}} \left[\prod_{a_n : A_n} [s_{a_1 \dots a_n} \equiv t_{a_1 \dots a_n}]\right]\right]\]
+    if $n > 1.$
+    \item A specific case of implication is given by
+    \[\left[\prod_{a,b : A} [s_a \equiv s_b \to t_a \equiv t_b]\right] := [F \equivto G]\]
+    with $B,C : \U$ such that $s_a : B$ and $t_a : C$ and
+    \begin{align*}
+      F : A &\to     B\\
+          a &\mapsto s_a,\\[1ex]
+      G : A &\to     C\\
+          a &\mapsto t_a.
+    \end{align*}
+    \item Quantification over products can be defined by distribution:
+    \[\left[\prod_{a_k : A_k} [p_{a_1 \dots a_n} \times q_{a_1 \dots a_n}]\right] :=
+      \left[\left[\prod_{a_k : A_k} p_{a_1 \dots a_n}\right] \times
+            \left[\prod_{a_k : A_k} q_{a_1 \dots a_n}\right]\right]\]
+    \item Quantification over a unit type is defined to yield a unit type:
+    \[\left[\prod_{a_k : A_k} \top\right] := \top\]
+  \end{itemize}
+\end{definition}
+
+As for functors, we wish to define instances $q : \prod_{a_k : A_k} p_{a_1 \dots a_n}$ via
+\defn{dependent functor descriptions}
+\begin{align*}
+  q : A_1 \to \dots \to A_n &\to     p_{a_1 \dots a_n}\\
+      (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n},
+\end{align*}
+so we will list specific conditions that enable this.
+
+\begin{definition}
+  \label{def:layer2-dependent-combinators}
+  A layer 2 universe $(\U,\V,(\equiv))$ with functors has \defn{linear logic} if the layer 1
+  universe $\U$ has linear logic, the definitions of $\idFun,$ $\revAppFun,$ and $\compFun$ match
+  their descriptions as given in proposition \ref{prp:layer1-combinator-def}, and for all types
+  $A,B,C,D : \U$ there are instances
+  \begin{itemize}
+    \item $\begin{aligned}[t]
+      \rightId_{AB} &: \prod_{F : A \to B, a : A} [F(\idFun(a)) \equiv F(a)]\\
+                    &\ \ \eqDef \prod_{F : A \to B} [F \circ \idFun_A \equiv F]\\
+                    &\ \ \eqDef [\compFun_{AAB}(\idFun_A) \equiv \idFun_{A{\to}B}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \leftId_{AB} &: \prod_{F : A \to B, a : A} [\idFun(F(a)) \equiv F(a)]\\
+                   &\ \ \eqDef \prod_{F : A \to B} [\idFun_B \circ F \equiv F]\\
+                   &\ \ \eqDef [\revCompFun_{ABB}(\idFun_B) \equiv \idFun_{A{\to}B}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \swapRevApp_{AB} &: \prod_{F : A \to B, a : A} [\revAppFun(a,F) \equiv F(a)]\\
+                       &\ \ \eqDef \prod_{F : A \to B} [\swapFun(\revAppFun_{AB},F) \equiv F]\\
+                       &\ \ \eqDef [\swapFun(\revAppFun_{AB}) \equiv \idFun_{A{\to}B}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \swapCompFun_{ABC} &: \prod_{F : A \to B, a : A, G : B \to C} [(G \circ F)(a) \equiv G(F(a))]\\
+                         &\ \ \eqDef \prod_{F : A \to B} [\swapFun(\compFun_{ABC}(F)) \equiv \revAppFun_{BC} \circ F]\\
+                         &\ \ \eqDef [\swapFun_{[B{\to}C]AC} \circ \compFun_{ABC} \equiv \revCompFun_{AB[[B{\to}C]{\to}C]}(\revAppFun_{BC})],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \swapRevCompFun_{ABC} &: \prod_{G : B \to C, a : A, F : A \to B} [(G \circ F)(a) \equiv G(F(a))]\\
+                            &\ \ \eqDef \prod_{G : B \to C} [\swapFun(\revCompFun_{ABC}(G)) \equiv \revCompFun_{[A{\to}B]BC}(G) \circ \revAppFun_{AB}]\\
+                            &\ \ \eqDef [\swapFun_{[A{\to}B]AC} \circ \revCompFun_{ABC} \equiv \revCompFun_{A[[A{\to}B]{\to}B][[A{\to}B]{\to}C]}(\revAppFun_{AB}) \circ \revCompFun_{[A{\to}B]BC}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \compAssoc_{ABCD} &: \prod_{F : A \to B, G : B \to C, H : C \to D, a : A} [(H \circ G)(F(a)) \equiv H(G(F(a)))]\\
+                        &\ \ \eqDef \prod_{F : A \to B, G : B \to C, H : C \to D} [(H \circ G) \circ F \equiv H \circ (G \circ F)]\\
+                        &\ \ \eqDef [\compFun_{[B{\to}C][[C{\to}D]{\to}[B{\to}D]][[C{\to}D]{\to}[A{\to}D]]}(\compFun_{BCD}) \circ \revCompFun_{[C{\to}D][B{\to}D][A{\to}D]} \circ \compFun_{ABD} \equiv\\
+                        &\ \ \quad\ \ \,\revCompFun_{[B{\to}C][A{\to}C][[C{\to}D]{\to}[A{\to}D]]}(\compFun_{ACD}) \circ \compFun_{ABC}].
+    \end{aligned}$
+  \end{itemize}
+
+  $(\U,\V,(\equiv))$ has \defn{affine logic} it it has linear logic, the layer 1 universes $\U$ and
+  $\V$ have affine logic, the definition of $\constFun$ matches its description as given in
+  proposition \ref{prp:layer1-combinator-def}, and for all types $A,B,C : \U$ there are instances
+  \begin{itemize}
+    \item $\begin{aligned}[t]
+      \rightConst_{ABC} &: \prod_{b : B, G : B \to C, a : A} [G(\constFun(b,a)) \equiv G(b)]\\
+                        &\ \ \eqDef \prod_{b : B, G : B \to C} [G \circ \constFun_{AB}(b) \equiv \constFun_{AC}(G(b))]\\
+                        &\ \ \eqDef [\compFun_{ABC} \circ \constFun_{AB} \equiv \revCompFun_{[B{\to}C]C[A{\to}C]}(\constFun_{AC}) \circ \revAppFun_{BC}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \leftConst_{ABC} &: \prod_{F : A \to B, c : C, a : A} [\constFun(c,F(a)) \equiv c]\\
+                       &\ \ \eqDef \prod_{F : A \to B, c : C} [\constFun_{BC}(c) \circ F \equiv \constFun_{AC}(c)]\\
+                       &\ \ \eqDef [\compFun_{C[B{\to}C][A{\to}C]}(\constFun_{BC}) \circ \compFun_{ABC} \equiv \constFun_{[A{\to}B][C{\to}A{\to}C]}(\constFun_{AC})].
+    \end{aligned}$
+  \end{itemize}
+
+  $(\U,\V,(\equiv))$ has \defn{full logic} if it has affine logic, the layer 1 universes $\U$ and
+  $\V$ have full logic, the definition of $\dupFun$ matches its description as given in proposition
+  \ref{prp:layer1-combinator-def}, and for all types $A,B,C : \U$ there are instances
+  \begin{itemize}
+    \item $\begin{aligned}[t]
+      \dupSwap_{AB} &: \prod_{F : A \to A \to B, a : A} [\swapFun(F,a,a) \equiv F(a,a)]\\
+                    &\ \ \eqDef \prod_{F : A \to A \to B} [\dupFun(\swapFun(F)) \equiv \dupFun(F)]\\
+                    &\ \ \eqDef [\dupFun_{AB} \circ \swapFun_{AAB} \equiv \dupFun_{AB}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \dupConst_{AB} &: \prod_{F : A \to B, a : A} [\constFun(F,a,a) \equiv F(a)]\\
+                     &\ \ \eqDef \prod_{F : A \to B} [\dupFun(\constFun_{A[A{\to}B]}(F)) \equiv F]\\
+                     &\ \ \eqDef [\dupFun_{AB} \circ \constFun_{A[A{\to}B]} \equiv \idFun_{A{\to}B}].
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \rightDup_{ABC} &: \prod_{F : A \to A \to B, G : B \to C, a : A} [G(\dupFun(F,a)) \equiv G(F(a,a))]\\
+                      &\ \ \eqDef \prod_{F : A \to A \to B, G : B \to C} [G \circ \dupFun(F) \equiv \dupFun(\revCompFun_{ABC}(G) \circ F)]\\
+                      &\ \ \eqDef [\compFun_{ABC} \circ \dupFun_{AB} \equiv\\
+                      &\ \ \quad\ \ \,\revCompFun_{[B{\to}C][A{\to}A{\to}C][A{\to}C]}(\dupFun_{AC}) \circ \compFun_{[B{\to}C][[A{\to}B]{\to}[A{\to}C]][A{\to}A{\to}C]}(\revCompFun_{ABC})\,\circ\\
+                      &\hspace{30em}\compFun_{A[A{\to}B][A{\to}C]}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \substDup_{ABC} &: \prod_{F : A \to B, G : A \to B \to B \to C, a : A} [\dupFun(G(a),F(a)) \equiv G(a,F(a),F(a))]\\
+                      &\ \ \eqDef \prod_{F : A \to B, G : A \to B \to B \to C} [\substFun(F,\dupFun_{BC} \circ G) \equiv \substFun(F,\substFun(F,G))]\\
+                      &\ \ \eqDef [\compFun_{[A{\to}B{\to}B{\to}C][A{\to}B{\to}C][A{\to}C]}(\revCompFun_{A[B{\to}B{\to}C][B{\to}C]}(\dupFun_{BC})) \circ \substFun_{ABC} \equiv\\
+                      &\ \ \quad\ \ \,\substFun(\substFun_{ABC},\compFun_{[A{\to}B{\to}B{\to}C][A{\to}B{\to}C][A{\to}C]} \circ \substFun_{AB[B{\to}C]})].
+    \end{aligned}$
+  \end{itemize}
+\end{definition}
 
 \begin{proposition}
-  The following equivalences can be derived from the extensionality axioms.
-
+  \label{prp:layer2-derived-dependent-functors}
+  The following instances can be derived from the axioms above, for $A,B,C,D : \U,$ assuming linear
+  or full logic as appropriate.
   \begin{enumerate}
-    \item $\nm{swapSwap}(F) : \swapFun(\swapFun(F)) \equiv F$\\for $F : A \to B \to C$
-    \item $\nm{dupLeftC}(F,G) : \dupFun_{AC}(\swapFun(G) \circ F) \equiv \substFun_{ABC}(F,G)$\\
-    for $F : A \to B$ and $G : A \to B \to C$
-    \item $\nm{dupW}(F) : \dupFun_{A[A{\to}B]}(\dupFun_{AB} \circ F) \equiv \dupFun_{AB}(\dupFun_{A[A{\to}B]}(F))$\\
-    for $F : A \to A \to A \to B$
-    \item $\nm{assocS}(F,G,H) : \substFun_{ABD}(F,\substFun_{A[B{\to}C][B{\to}D]}(G,\revCompFun_{BCD} \circ H)) \equiv
-                                \substFun_{ACD}(\substFun_{ABC}(F,G),H)$\\
-    for $F : A \to B,$ $G : A \to B \to C,$ and $H : A \to C \to D$
+    \item $\begin{aligned}[t]
+      \swapSwap_{ABC} &: \prod_{F : A \to B \to C} [\swapFun(\swapFun(F)) \equiv F]
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \substAltDef_{ABC} &: \prod_{F : A \to B, G : A \to B \to C} [\dupFun(\swapFun(G) \circ F) \equiv \substFun(F,G)]
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \dupDup_{AB} &: \prod_{F : A \to A \to A \to B} [\dupFun(\dupFun_{AB} \circ F) \equiv \dupFun(\dupFun(F))]
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \substAssoc_{ABCD} &: \prod_{F : A \to B, G : A \to B \to C, H : A \to C \to D} [\substFun(F,\substFun(G,\revCompFun_{BCD} \circ H)) \equiv \substFun(\substFun(F,G),H)]
+    \end{aligned}$
   \end{enumerate}
 \end{proposition}
 
 \begin{proof}
   We will only list the axioms that play a central role in the proof.
   \begin{enumerate}
-    \item By $\nm{swapT}.$
-    \item By $\nm{dupC}$ and $\nm{swapSwap}.$
-    \item By $\nm{leftDup}.$
-    \item By $\nm{assoc}$ and $\nm{dupW}.$
+    \item By $\swapRevApp.$
+    \item By $\dupSwap$ and $\swapSwap.$
+    \item By $\substDup.$
+    \item By $\compAssoc$ and $\dupDup.$
   \end{enumerate}
-  Full proofs (and a lot of further equivalences) are contained in the Lean formalization.
+  Full proofs (and further equivalences) are contained in the Lean formalization.
 \end{proof}
 
 \vspace{1ex}
 \begin{lemma}
-  A family $(e_{a_1,a_2})_{a_k : A_k}$ of equivalences is extensional in $(a_1,a_2)$ if
-  it is extensional in $a_2$ for fixed $a_1$ and the resulting family of equivalences
-  is extensional in $a_2.$
+  \label{lem:layer2-functoriality-step-equiv}
+  When a single step in the functoriality algorithm is nondeterministic according to table
+  \ref{tbl:layer1-functoriality}, the resulting functors are equivalent.
 \end{lemma}
 \vspace{-1ex}
 \begin{proof}
-  This follows directly from the construction of the functoriality algorithm.
+  The specific cases of nondeterminism are listed in table \ref{tbl:layer2-functoriality-step-equiv}.
+  (Grayed-out alternatives are redundant because they can also be regarded as alternatives of
+  other alternatives.)
+
+  \begin{table}
+    \centering
+    \begin{tabular}{ll|l}
+      Case & & Alternatives\\
+      \hline\hline
+      \rule{0pt}{3em}
+      $\begin{aligned}
+        F : A &\to     C\\
+            a &\mapsto G(b)
+      \end{aligned}$ &
+      \parbox{3cm}{for $b : B$ \\ and $G : B \to C$} &
+      $\begin{array}{@{}l@{}}
+        \constFun_{AC}(G(b))\\
+        \compFun(\constFun_{AB}(b),G)\\
+        \swapFun(\constFun_{A[B{\to}C]}(G),b)\\
+        \redundant{\substFun(\constFun_{AB}(b),\constFun_{A[B{\to}C]}(G))}
+      \end{array}$\\
+      \hline
+      \rule{0pt}{3em}
+      $\begin{aligned}
+        F : A &\to     B\\
+            a &\mapsto G(a)
+      \end{aligned}$ &
+      for $G : A \to B$ &
+      $\begin{array}{@{}l@{}}
+        G\\
+        \compFun(\idFun_A,G)\\
+        \redundant{\dupFun(\constFun_{A[A{\to}B]}(G))}\\
+        \redundant{\substFun(\idFun_A,\constFun_{A[A{\to}B]}(G))}
+      \end{array}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     C\\
+            a &\mapsto G(b_a)
+      \end{aligned}$ &
+      \parbox{3cm}{for $G : B \to C$ \\ and $b_a : B$} &
+      $\begin{array}{@{}l@{}}
+        \compFun(H,G)\\
+        \substFun(H,\constFun_{B[B{\to}C]}(G))
+      \end{array}$
+      with
+      $\begin{aligned}
+        H : A &\to     B\\
+            a &\mapsto b_a
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{3em}
+      $\begin{aligned}
+        F : [B \to C] &\to     C\\
+            G         &\mapsto G(b)
+      \end{aligned}$ &
+      for $b : B$ &
+      $\begin{array}{@{}l@{}}
+        \revAppFun_{BC}(b)\\
+        \swapFun(\idFun_{B{\to}C},b)\\
+        \redundant{\revSelfAppFun(\constFun_{[B{\to}C]B}(b))}\\
+        \redundant{\substFun(\constFun_{[B{\to}C]B}(b),\idFun_{B{\to}C})}
+      \end{array}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     C\\
+            a &\mapsto G_a(b)
+      \end{aligned}$ &
+      \parbox{3cm}{for $b : B$ \\ and $G_a : B \to C$} &
+      $\begin{array}{@{}l@{}}
+        \swapFun(G,b)\\
+        \substFun(\constFun_{AB}(b),G)
+      \end{array}$
+      with
+      $\begin{aligned}
+        G : A &\to     [B \to C]\\
+            a &\mapsto G_a
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : A &\to     B\\
+            a &\mapsto G_a(a)
+      \end{aligned}$ &
+      for $G_a : A \to B$ &
+      $\begin{array}{@{}l@{}}
+        \dupFun(G)\\
+        \substFun(\idFun_A,G)
+      \end{array}$
+      with
+      $\begin{aligned}
+        G : A &\to     [A \to B]\\
+            a &\mapsto G_a
+      \end{aligned}$\\
+      \hline
+      \rule{0pt}{2em}
+      $\begin{aligned}
+        F : [B \to C] &\to     C\\
+            G         &\mapsto G(b_G)
+      \end{aligned}$ &
+      for $b_G : B$ &
+      $\begin{array}{@{}l@{}}
+        \revSelfAppFun(H)\\
+        \substFun(H,\idFun_{B{\to}C})
+      \end{array}$
+      with
+      $\begin{aligned}
+        H : [B \to C] &\to     B\\
+            G         &\mapsto b_G
+      \end{aligned}$\\
+    \end{tabular}
+    \caption{Nondeterminism in the algorithm to construct functors}
+    \label{tbl:layer2-functoriality-step-equiv}
+  \end{table}
+
+  Equivalences between the alternatives given on the right are easily derived from the axioms and
+  proposition \ref{prp:layer2-derived-dependent-functors}.
 \end{proof}
 
-Therefore, in the following lemmas, we will restrict ourselves to a single parameter
-$a : A.$
-
-\vspace{1ex}
 \begin{lemma}
-  \label{lem:functoriality-step-equiv}
-  When a single step in the functoriality algorithm is nondeterministic, the resulting
-  functors are equivalent.
-\end{lemma}
-\vspace{-1ex}
-\begin{proof}
-  The following alternatives exist.
-  (Brackets indicate that an alternative is redundant because it can also be regarded as an
-  alternative of one or more other alternatives.)
+  \label{lem:layer2-combinator-def-equiv}
+  For each primitive combinator $F$ with functor description
+  \begin{align*}
+    F : A_1 \to \dots \to A_n &\to     B\\
+        (a_1,\dots,a_n)       &\mapsto t_{a_1 \dots a_n},
+  \end{align*}
+  there is an instance of
+  \[\prod_{x : X}\:[F({a_1}_x,\dots,{a_n}_x) \equiv t_{{a_1}_x \dots {a_n}_x}]\]
+  if the families $({a_1}_x)_{x : X},\dots,({a_n}_x)_{x : X}$ satisfy the conditions of proposition
+  \ref{prp:layer1-functoriality}.
 
-  \begin{tabular}{ll|l}
-    Case & & Alternatives\\
-    \hline\hline
-    \rule{0pt}{3em}
-    $\begin{aligned}
-      F : A &\to     C\\
-          a &\mapsto G(b)
-    \end{aligned}$ &
-    \parbox{3cm}{for $b : B$ \\ and $G : B \to C$} &
-    $\begin{array}{@{}l@{}}
-      \constFun_{AC}(G(b))\\
-      \compFun_{ABC}(\constFun_{AB}(b),G)\\
-      \swapFun_{ABC}(\constFun_{A[B{\to}C]}(G),b)\\
-      \left[\substFun_{ABC}(\constFun_{AB}(b),\constFun_{A[B{\to}C]}(G))\right]
-    \end{array}$\\
-    \hline
-    \rule{0pt}{3em}
-    $\begin{aligned}
-      F : A &\to     B\\
-          a &\mapsto G(a)
-    \end{aligned}$ &
-    for $G : A \to B$ &
-    $\begin{array}{@{}l@{}}
-      G\\
-      \compFun_{AAB}(\idFun_A,G)\\
-      \dupFun_{AB}(\constFun_{A[A{\to}B]}(G))\\
-      \left[\substFun_{AAB}(\idFun_A,\constFun_{A[A{\to}B]}(G))\right]
-    \end{array}$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     C\\
-          a &\mapsto G(b_a)
-    \end{aligned}$ &
-    \parbox{3cm}{for $G : B \to C$ \\ and $b_a : B$} &
-    $\begin{array}{@{}l@{}}
-      \compFun_{ABC}(H,G)\\
-      \substFun_{ABC}(H,\constFun_{B[B{\to}C]}(G))
-    \end{array}$
-    with
-    $\begin{aligned}
-      H : A &\to     B\\
-          a &\mapsto b_a
-    \end{aligned}$\\
-    \hline
-    \rule{0pt}{2.5em}
-    $\begin{aligned}
-      F : [B \to C] &\to     C\\
-          G         &\mapsto G(b)
-    \end{aligned}$ &
-    for $b : B$ &
-    $\begin{array}{@{}l@{}}
-      \revAppFun_{BC}(b)\\
-      \swapFun_{[B{\to}C]BC}(\idFun_{B{\to}C},b)\\
-      \left[\substFun_{[B{\to}C]BC}(\constFun_{[B{\to}C]B}(b),\idFun_{B{\to}C})\right]
-    \end{array}$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     C\\
-          a &\mapsto G_a(b)
-    \end{aligned}$ &
-    \parbox{3cm}{for $b : B$ \\ and $G_a : B \to C$} &
-    $\begin{array}{@{}l@{}}
-      \swapFun_{ABC}(G,b)\\
-      \substFun_{ABC}(\constFun_{AB}(b),G)
-    \end{array}$
-    with
-    $\begin{aligned}
-      G : A &\to     [B \to C]\\
-          a &\mapsto G_a
-    \end{aligned}$\\
-    \hline
-    \rule{0pt}{2em}
-    $\begin{aligned}
-      F : A &\to     B\\
-          a &\mapsto G_a(a)
-    \end{aligned}$ &
-    for $G_a : A \to B$ &
-    $\begin{array}{@{}l@{}}
-      \dupFun_{AB}(G)\\
-      \substFun_{AAB}(\idFun_A,G)
-    \end{array}$
-    with
-    $\begin{aligned}
-      G : A &\to     [A \to B]\\
-          a &\mapsto G_a
-    \end{aligned}$
-  \end{tabular}
-
-  Equivalences between the alternatives given on the right are easily derived from
-  the extensionality axioms.
-\end{proof}
-
-\begin{lemma}
-  \label{lem:combinator-def-equiv}
-  For each combinator $F$ that is defined axiomatically in section \ref{sec:funop},
-  the applied definition
-  \[\fndef{F}(t_a,t'_a,\ldots)\]
-  is extensional in $a : A$ if the families $(t_a)_{a : A},(t'_a)_{a : A},\ldots$
-  satisfy the conditions of proposition \ref{prp:functoriality}. Specifically, we
-  have the following equivalences for suitable families $(b_a),(c_a),(G_a),(H_a)$.
+  Specifically, we have the following dependent functors for types $X,A,B,C : \U$ and suitable
+  families $(a_x),(b_x),(F_x),(G_x)$.
   \begin{enumerate}
-    \item \ $\begin{aligned}[t]
-                (A   &\to   B)\\
-      \nm{extI}_{AB}(a) &\ :\  \idFun_B(b_a) \equiv b_a
-    \end{aligned}$
-    \item \ $\begin{aligned}[t]
-                   (A   &\to   C)\\
-      \nm{extT}_{ABC}(a) &\ :\  \revAppFun_{BC}(b_a,G_a) \equiv G_a(b_a)
-    \end{aligned}$
-    \item \ $\begin{aligned}[t]
-                     (A   &\to   D)\\
-      \nm{extB'}_{ABCD}(a) &\ :\  \compFun_{BCD}(G_a,H_a,b_a) \equiv H_a(G_a(b_a))
-    \end{aligned}$
-    \item \ $\begin{aligned}[t]
-                   (A   &\to   C)\\
-      \nm{extK}_{ABC}(a) &\ :\  \constFun_{BC}(c_a,b_a) \equiv c_a
-    \end{aligned}$
-    \item \ $\begin{aligned}[t]
-                   (A   &\to   C)\\
-      \nm{extW}_{ABC}(a) &\ :\  \dupFun_{BC}(G_a,b_a) \equiv G_a(b_a,b_a)
-    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \idFunExt_{XA}((a_x)_{x : X}) &: \prod_{x : X}\:[\idFun(a_x) \equiv a_x]
+    \end{aligned}$\\
+    with $a_x : A,$
+    \item $\begin{aligned}[t]
+      \revAppFunExt_{XAB}((a_x)_{x : X},(F_x)_{x : X}) &: \prod_{x : X}\:[\revAppFun(a_x,F_x) \equiv F_x(a_x)]
+    \end{aligned}$\\
+    with $a_x : A$ and $F_x : A \to B,$
+    \item $\begin{aligned}[t]
+      \compFunExt_{XABC}((F_x)_{x : X},(G_x)_{x : X},(a_x)_{x : X}) &: \prod_{x : X}\:[\compFun(F_x,G_x,a_x) \equiv G_x(F_x(a_x))]
+    \end{aligned}$\\
+    with $F_x : A \to B,$ $G_x : B \to C,$ and $a_x :A,$
+    \item $\begin{aligned}[t]
+      \constFunExt_{XAB}((b_x)_{x : X},(a_x)_{x : X}) &: \prod_{x : X}\:[\constFun(b_x,a_x) \equiv b_x]
+    \end{aligned}$\\
+    with $b_x : B$ and $a_x : A,$
+    \item $\begin{aligned}[t]
+      \dupFunExt_{XAB}((F_x)_{x : X},(a_x)_{x : X}) &: \prod_{x : X}\:[\dupFun(F_x,a_x) \equiv F_x(a_x,a_x)]
+    \end{aligned}$\\
+    with $F_x : A \to A \to B$ and $a_x : A.$
   \end{enumerate}
 \end{lemma}
 
 \begin{proof}
-  According to definition \ref{def:extensional-equivalence}, for each of the
-  five combinators we need to execute the functoriality algorithm on both sides of
-  the equivalence given above, taking the first alternative if the algorithm is
-  nondeterministic, and construct an equivalence between the resulting functors.
-  Thus, the required constructions are different depending on whether each argument
-  is constant, exactly $a,$ or dependent on $a.$
+  According to definition \ref{def:layer2-dependent-functor-type}, for each of the five combinators
+  we need to execute the algorithm to construct a functor on both sides of each equivalence, taking
+  the first alternative whenever the algorithm is nondeterministic, and construct an equivalence
+  between the resulting functors. Thus, the required constructions are different depending on
+  whether each argument is constant, exactly $x,$ or dependent on $x.$
 
-  Fortunately, the previous lemma allows us to combine many of these
-  cases,\footnote{A practical implementation of the algorithm may still want to
-  handle each case individually to produce shorter terms.}
-  except that in a universe with only linear or affine functor operations, we need to
-  provide an individual construction for each case where exactly one of the
-  arguments depends on $a.$
+  Fortunately, lemma \ref{lem:layer2-functoriality-step-equiv} allows us to combine these three
+  cases whenever the requirement on linear vs.\ affine vs.\ full logic is the same.\footnote{A
+  practical implementation of the algorithm may still want to handle each case individually to
+  produce shorter terms.}
+  In order to handle linear and affine logic, we need to provide an individual construction for each
+  case where exactly one of the arguments depends on $x,$ but we do not need to consider the case
+  where an argument is exactly $x.$ In situations where full logic is required, we can limit
+  ourselves to the case that \emph{all} arguments depend on $x.$
 
-  This leaves us with the following list.
-  In each case, for a family $(t_a)_{a : A}$ of terms $t_a : B$, let $F_t : A \to B$
-  denote the functor constructed for $(t_a)_{a : A}$ under the assumption that $t_a$
-  depends on $a$ but is not exactly $a.$
+  This leaves us with the following list, where dependent arguments are written as ``$(t_x)$'' and
+  constant arguments are written as ``$(t).$''\\
+  In each case, for a family $(t_x)_{x : X}$ of terms $t_x : T$, let $\phi(t_x) : X \to T$ denote
+  the functor constructed for $(t_x)_{x : X}$ under the assumption that $t_x$ depends on $x.$
 
   \begin{enumerate}
-    \item $\nm{extI}_{AB} := \nm{leftId}_{AB}(F_b).$
-    \item If $b_a$ is a constant $b : B,$ then both sides of $\nm{extT}_{ABC}$ are
-    $\swapFun(F_G,b).$\\
-    If $G_a$ is a constant $G : B \to C,$ we construct an equivalence
-    $\nm{extT}_{ABC} : \swapFun(\revAppFun_{BC} \circ F_b,G) \equiv G \circ F_b$
-    from $\nm{swapT}.$\\
-    If both $b_a$ and $G_a$ depend on $a,$ we construct an equivalence
-    $\nm{extT}_{ABC} : \substFun(F_G,\revAppFun_{BC} \circ F_b) \equiv \substFun(F_b,F_G)$
-    from $\nm{dupLeftC}.$
-    \item If $G_a$ and $H_a$ are constants $G : B \to C$ and $H : C \to D,$ the required
-    equivalence is $\nm{extB'}_{ABCD} := \nm{assoc}_{ABCD}(F_b,G,H).$\\
-    If $G_a$ and $b_a$ are constants $G : B \to C$ and $b : B,$ we construct an equivalence
-    $\nm{extB'}_{ABCD} : \swapFun(\compFun_{BCD}(G) \circ F_H,b) \equiv \swapFun(F_H,G(b))$
-    from $\nm{swapB'}.$\\
-    If $H_a$ and $b_a$ are constants $H : C \to D$ and $b : B,$ we construct an equivalence
-    $\nm{extB'}_{ABCD} : \swapFun(\revCompFun_{BCD}(H) \circ F_G,b) \equiv H \circ \swapFun(F_G,b)$
-    from $\nm{swapB}.$\\
-    If more than one term depends on $a,$ the required equivalence is
-    $\nm{extB'}_{ABCD} := \nm{assocS}(F_b,F_G,F_H).$
-    \item If $c_a$ is a constant $c : C,$ the required equivalence is
-    $\nm{extK}_{ABC} := \nm{leftConst}_{ABC}(F_b,c).$\\
-    If $b_a$ is a constant $b : B,$ we construct an equivalence
-    $\nm{extK}_{ABC} : \swapFun_{ABC}(\constFun_{BC} \circ F_c,b) \equiv F_c$ from
-    $\nm{rightConst}.$\\
-    If both $b_a$ and $c_a$ depend on $a,$ we construct an equivalence
-    $\nm{extK}_{ABC} : \substFun_{ABC}(F_b,\constFun_{BC} \circ F_c) \equiv F_c$ from
-    $\nm{rightConst},$ $\nm{leftConst},$ $\nm{dupK},$ and $\nm{dupC}.$
-    \item The construction of $\nm{extW}_{ABC}$ is only valid in a universe with full
-    functor operations. Therefore we can assume that both $G_a$ and $b_a$ depend on $a$
-    and set $\nm{extW}_{ABC} := \nm{leftDup}_{ABC}(F_b,F_G).$
+    \item $\idFunExt_{XA}((a_x)) := \leftId(\phi(a_x)).$
+    \item $\revAppFunExt_{XAB}((a),(F_x)) := \id_{\swapFun(\phi(F_x),a)}.$\\
+    $\revAppFunExt_{XAB}((a_x),(F)) : \swapFun(\revAppFun_{AB} \circ \phi(a_x),F) \equiv F \circ \phi(a_x)$
+    is constructed from $\swapRevApp.$\\
+    $\revAppFunExt_{XAB}((a_x),(F_x)) : \substFun(\phi(F_x),\revAppFun_{AB} \circ \phi(a_x)) \equiv \substFun(\phi(a_x),\phi(F_x))$
+    is constructed from $\substAltDef.$
+    \item $\compFunExt_{XABC}((F),(G),(a_x)) := \compAssoc(\phi(a_x),F,G).$\\
+    $\compFunExt_{XABC}((F),(G_x),(a)) : \swapFun(\compFun_{ABC}(F) \circ \phi(G_x),a) \equiv \swapFun(\phi(G_x),F(a))$
+    is constructed from $\swapCompFun.$\\
+    $\compFunExt_{XABC}((F_x),(G),(a)) : \swapFun(\revCompFun_{ABC}(G) \circ \phi(F_x),a) \equiv G \circ \swapFun(\phi(F_x),a)$
+    is constructed from $\swapRevCompFun.$\\
+    $\compFunExt_{XABC}((F_x),(G_x),(a_x)) := \substAssoc(\phi(a_x),\phi(F_x),\phi(G_x)).$
+    \item $\constFunExt_{XAB}((b),(a_x)) := \leftConst(\phi(a_x),b).$\\
+    $\constFunExt_{XAB}((b_x),(a)) : \swapFun(\constFun_{AB} \circ \phi(b_x),a) \equiv \phi(b_x)$
+    is constructed from $\rightConst.$\\
+    $\constFunExt_{XAB}((b_x),(a_x)) : \substFun(\phi(a_x),\constFun_{AB} \circ \phi(b_x)) \equiv \phi(b_x)$
+    is constructed from $\rightConst,$ $\leftConst,$ $\dupConst,$ and $\dupSwap.$
+    \item $\dupFunExt$ requires full logic; therefore everything can be handled by\\
+    $\dupFunExt_{XAB}((F_x),(a_x)) := \substDup(\phi(a_x),\phi(F_x)).$
     \qedhere
   \end{enumerate}
 \end{proof}
 
 \begin{theorem}
-  \label{thm:extensionality}
-  All equivalences that can be constructed from the axioms defined in section \ref{sec:funop}
-  are extensional in all variables (in the sense of definition \ref{def:extensional-equivalence}).
-
-  Specifically, let $\U$ be a universe, $A_1,\ldots,A_n,B$ be types in $\U,$ and
-  $(s_{a_1 \ldots a_n})_{a_k : A_k}$ and $(t_{a_1 \ldots a_n})_{a_k : A_k}$ be families
-  of instances $s_{a_1 \ldots a_n},t_{a_1 \ldots a_n} \in B,$ and
-  $(e_{a_1 \ldots a_n})_{a_k : A_k}$ be a family of instance equivalences
-  $e_{a_1 \ldots a_n} : s_{a_1 \ldots a_n} \equiv t_{a_1 \ldots a_n}$ that are one of the
+  \label{thm:layer2-extensionality}
+  Let $\U$ be a layer 2 universe with functors, $A_1,\dots,A_n,B$ be types in $\U,$
+  $(s_{a_1 \dots a_n})_{a_k : A_k}$ and $(t_{a_1 \dots a_n})_{a_k : A_k}$ be families
+  of instances $s_{a_1 \dots a_n},t_{a_1 \dots a_n} \in B,$ and
+  $(e_{a_1 \dots a_n})_{a_k : A_k}$ be a family of instance equivalences
+  $e_{a_1 \dots a_n} : s_{a_1 \dots a_n} \equiv t_{a_1 \dots a_n}$ that are one of the
   following:
   \begin{itemize}
-    \item a constant independent of all $a_k$ (implying that $s_{a_1 \ldots a_n}$ and
-    $t_{a_1 \ldots a_n}$ are also constant),
-    \item $\id_{s_{a_1 \ldots a_n}}$ (implying $s_{a_1 \ldots a_n} = t_{a_1 \ldots a_n}$),
-    \item $f_{a_1 \ldots a_n}^{-1}$ for an equivalence $f_{a_1 \ldots a_n}$ that recursively
+    \item a constant independent of all $a_k$ (implying that $s_{a_1 \dots a_n}$ and
+    $t_{a_1 \dots a_n}$ are also constant),
+    \item $\id_{s_{a_1 \dots a_n}}$ (implying $s_{a_1 \dots a_n} = t_{a_1 \dots a_n}$),
+    \item $f_{a_1 \dots a_n}^{-1}$ for an equivalence $f_{a_1 \dots a_n}$ that recursively
     follows the same rules,
-    \item $g_{a_1 \ldots a_n} \circ f_{a_1 \ldots a_n}$ for equivalences $f_{a_1 \ldots a_n}$
-    and $g_{a_1 \ldots a_n}$ that recursively follow the same rules,
-    \item $G_{a_1 \ldots a_n}(f_{a_1 \ldots a_n})$ for a functor $G_{a_1 \ldots a_n}$ that
-    satisfies the constraint of proposition \ref{prp:functoriality} and an equivalence
-    $f_{a_1 \ldots a_n}$ that recursively satisfies the constraints of this theorem,
+    \item $g_{a_1 \dots a_n} \circ f_{a_1 \dots a_n}$ for equivalences $f_{a_1 \dots a_n}$
+    and $g_{a_1 \dots a_n}$ that recursively follow the same rules,
+    % TODO: Change to a more general \equivto instance.
+    \item $\congrArg_{G_{a_1 \dots a_n}}(f_{a_1 \dots a_n})$ for a functor $G_{a_1 \dots a_n}$ that
+    satisfies the constraint of proposition \ref{prp:layer1-functoriality} and an equivalence
+    $f_{a_1 \dots a_n}$ that recursively satisfies the constraints of this theorem,
     \item an application of a functor definition
-    $\fndef{G}(x_{a_1 \ldots a_n},x'_{a_1 \ldots a_n},\ldots),$ where $G$ is one of the
-    combinators that were defined axiomatically in section \ref{sec:funop}, such that
-    $x_{a_1 \ldots a_n},x'_{a_1 \ldots a_n},\ldots$ satisfy the constraint of proposition
-    \ref{prp:functoriality}.
+    $\fndef{G}(x_{a_1 \dots a_n},x'_{a_1 \dots a_n},\dots),$ where $G$ is a primitive combinator,
+    such that $x_{a_1 \dots a_n},x'_{a_1 \dots a_n},\dots$ satisfy the constraint of proposition
+    \ref{prp:layer1-functoriality}.
   \end{itemize}
 
-  Then we can construct an equivalence $e : F_s \equiv F_t$ between the two functors $F_s$
-  and $F_t$ that are obtained by applying the functoriality algorithm to
-  $(s_{a_1 \ldots a_n})_{a_k : A_k}$ and $(t_{a_1 \ldots a_n})_{a_k : A_k},$ respectively.
-  I.e.\ using the notation introduced in definition \ref{def:extensional-equivalence}, we
-  have an equivalence
+  Then we can construct an equivalence $e : F_s \equiv F_t$ between functors $F_s$ and $F_t,$
+  corresponding to the dependent functor description
   \begin{align*}
-    (A_1 \to \dots \to A_n &\to   B)\\
-    e(a_1,\ldots,a_n)      &\ :\  s_{a_1 \ldots a_n} \equiv t_{a_1 \ldots a_n}.
+    e : A_1 \to \dots \to A_n &\to     e_{a_1 \dots a_n}\\
+        (a_1,\dots,a_n)       &\mapsto s_{a_1 \dots a_n} \equiv t_{a_1 \dots a_n}.
   \end{align*}
 \end{theorem}
 
 \begin{proof}
-  As in the proof of proposition \ref{prp:functoriality}, we can restrict ourselves to the
-  case that $n = 1,$ i.e.\ we replace $a_1,\ldots,a_n$ with a single $a : A.$
+  As in the proof of proposition \ref{prp:layer1-functoriality}, we can restrict ourselves to the
+  case that $n = 1,$ i.e.\ we replace $a_1,\dots,a_n$ with a single $a : A.$
   We recursively construct $e$ based on the different cases.
   \begin{itemize}
     \item If $s_a$ and $t_a$ are constants $s,t : B,$ then $F_s = \constFun_{AB}(s)$ and
     $F_t = \constFun_{AB}(t).$ Therefore, if $e_a$ is also a constant $f,$ we can set
-    $e := \constFun_{AB}(f).$
-    \item If $e_a = id_{s_a}$ implying $s_a = t_a$ for all $a,$ then $F_s = F_t,$ and we
+    $e := \congrArg_{\constFun_{AB}}(f).$
+    \item If $e_a = \id_{s_a}$ implying $s_a = t_a$ for all $a,$ then $F_s = F_t,$ and we
     can set $e := \id_{A{\to}B}.$
     \item If $e_a = f_a^{-1},$ set $e := f^{-1},$ where $f$ is the equivalence obtained
     recursively for $f_a.$
     \item Likewise for $e_a = g_a \circ f_a.$
-    \item If $e_a = G_a(f_a) : G_a(u_a) \equiv G_a(v_a)$ for an appropriate functor
+    \item If $e_a = \congrArg_{G_a,u_a,v_a}(f_a)$ for an appropriate functor
     $G_a : C \to B$ and equivalence $f_a : u_a \equiv v_a$ with $u_a,v_a : C,$ then the
     definitions of $F_s$ and $F_t$ depend on whether $G_a,$ $u_a,$ and $v_a$ are constant,
     exactly $a,$ or dependent on $a.$ If $u_a$ and $v_a$ differ in this respect, first
     obtain equivalent alternatives for $F_s$ and $F_t$ according to lemma
-    \ref{lem:functoriality-step-equiv}, so that $F_s$ and $F_t$ are both applications of
+    \ref{lem:layer2-functoriality-step-equiv}, so that $F_s$ and $F_t$ are both applications of
     the same combinator $H.$ Then $e$ is obtained by applying $H$ to $f$ in the
     appropriate way, where $f$ is the equivalence obtained recursively for $f_a.$
-    \item If $e_a = \fndef{G}(x_a,x'_a,\ldots)$ for a combinator $G,$ set $e$ according
-    to lemma \ref{lem:combinator-def-equiv}.
+    \item If $e_a = \fndef{G}(x_a,x'_a,\dots)$ for a combinator $G,$ set $e$ according
+    to lemma \ref{lem:layer2-combinator-def-equiv}.
     \qedhere
   \end{itemize}
 \end{proof}
 
 \begin{corollary}
-  \label{cor:extensionality}
+  \label{cor:layer2-extensionality}
   If $F,G : A_1 \to \dots \to A_n \to B$ are functors and
-  $(e_{a_1 \ldots a_n})_{a_k : A_k}$ is a family of instance equivalences
-  $e_{a_1 \ldots a_n} : F(a_1,\ldots,a_n) \equiv G(a_1,\ldots,a_n)$ that satisfy the
-  constraints of theorem \ref{thm:extensionality}, then we have an equivalence
+  $(e_{a_1 \dots a_n})_{a_k : A_k}$ is a family of instance equivalences
+  $e_{a_1 \dots a_n} : F(a_1,\dots,a_n) \equiv G(a_1,\dots,a_n)$ that satisfy the
+  constraints of theorem \ref{thm:layer2-extensionality}, then we have an equivalence
   $e : F \equiv G.$
 \end{corollary}
 
 \begin{corollary}
-  Whenever the functoriality algorithm is nondeterministic, there are equivalences
+  Whenever the algorithm to construct a functor is nondeterministic, there are equivalences
   between the resulting functors.\\
-  (This strengthens lemma \ref{lem:functoriality-step-equiv}, as an equivalence in
+  (This strengthens lemma \ref{lem:layer2-functoriality-step-equiv}, as an equivalence in
   each step does not necessarily translate to an equivalence in the final result.)
 \end{corollary}
 
@@ -1536,314 +1450,266 @@ $a : A.$
 
   As with the functoriality algorithm, the usefulness of the theorem increases with
   additional structure that we define on universes. When such structure is equipped
-  with appropriate functors and equivalences, theorem \ref{thm:extensionality}
+  with appropriate functors and equivalences, theorem \ref{thm:layer2-extensionality}
   applies to that additional structure as well.
 
   The result can also be interpreted as an extensionality theorem in lambda calculus,
   or more specifically in combinatory logic. A proof that extensionality in $\nm{SKI}$
   combinator calculus follows from five axioms is given in \cite{hindley-seldin},
-  theorem 8.14. Our result is similar, the key differences being that we also
-  incorporate linear and affine logic, and that our theorem is restricted to
+  theorem 8.14. Our result is similar, the key differences being that on the one hand we also
+  incorporate linear and affine logic, while on the other hand our theorem is restricted to
   simply-typed lambda calculus.
 \end{remarks}
 
+% TODO: other cases of dependent functors
+
+\subsection{Rewriting}
+
+% TODO: If $p_a : \V$ is a type depending on $a : A$ in a suitable way, then for $a,b : A$ we have
+% a functor $f_{ab} : a \equiv b \to [p_a \to p_b].$
+
+\subsection{Singletons}
+
+\subsection{Products and coproducts}
+
+\subsection{Equivalences}
+
 \subsection{Functor universe}
-\label{sec:functor-universe}
 
-The functoriality and extensionality algorithms have a metamathematical character. In
-this section, we present a purely mathematical approach that offers alternative proofs of
-proposition \ref{prp:functoriality} and theorem \ref{thm:extensionality}.
+% TODO: adapt
 
-Specifically, we introduce a \defn{functor universe} with the following two properties.
-\begin{itemize}
-  \item The existence of internal functors in the functor universe corresponds to the
-  existence of the $\revSubstFun$ combinator in the base universe, and implies
-  proposition \ref{prp:functoriality}.
-  \item Functor operations (including the existence of $\revSubstFun$) in the functor
-  universe correspond to extensionality in the base universe, and imply theorem
-  \ref{thm:extensionality}.
-\end{itemize}
+%\begin{proposition}
+%  \label{prp:fun-univ-full}
+%  In this case, $\U^A$ also has internal functors, defined by $[B^A \to C^A] := [B \to C]^A$
+%  for $B,C \in \U.$
+%\end{proposition}
+%\vspace{-1ex}
+%\begin{proof}
+%  For a functor $G : B^A \to C^A,$ which is also an instance of the type $[A \to B \to C],$
+%  and an instance $F : B^A,$ which is also an instance of $[A \to B],$ we define their functor
+%  application in $\U^A$ by $G(F) := \revSubstFun_{ABC}(G,F).$ This definition
+%  respects instance equivalences because it is an application of the functor
+%  $\revSubstFun_{ABC}(G).$
+%\end{proof}
+%
+%\begin{proposition}
+%  \label{prp:fun-univ-embed-map}
+%  $\U$ embeds into $\U^A$: For each type $B \in \U$ and instance $b : B,$ we have
+%  a corresponding instance $b^A := \constFun_{AB}(b) : B^A.$ This embedding
+%  respects instance equivalences and functor application, up to instance equivalence.
+%\end{proposition}
+%\vspace{-1ex}
+%\begin{proof}
+%  As a functor, $\constFun_{AB}$ respects instance equivalences.
+%  Moreover, for $G : B \to C$ and $b : B$ with $B,C \in \U$ we have an equivalence
+%  \[\nm{embedMap}(G,b) : G^A(b^A) \eqDef \revSubstFun_{ABC}(\constFun_{A[B{\to}C]}(G),\constFun_{AB}(b)) \equiv
+%    \constFun_{AC}(G(b)) \eqDef (G(b))^A\]
+%  by lemma \ref{lem:functoriality-step-equiv}.
+%\end{proof}
+%
+%\begin{proposition}
+%  \label{prp:fun-univ-full-funop}
+%  $\U^A$ has full functor operations, defined by $\idFun_{B^A} := (\idFun_B)^A,$
+%  $\revAppFun_{(B^A)(C^A)} := (\revAppFun_{BC})^A, \dots$ for $B,C \in \U.$
+%\end{proposition}
+%\vspace{-1ex}
+%\begin{proof}
+%  Clearly these instances are functors of the correct type, and by $\nm{embedMap}$
+%  they map embedded instances of types in $\U$ to the correct values. However, we
+%  need to verify that they also map all other instances of $\U^A$ to the values
+%  specified by their definition, up to equivalence. E.g.\ for $\idFun_{B^A}$ we
+%  need to provide an equivalence
+%  \[\fndef{\idFun_{B^A}}(F) : \idFun_{B^A}(F) \eqDef \revSubstFun_{ABC}(\constFun_{AB}(\idFun_B),F) \equiv F\]
+%  for $F : B^A,$ and likewise for the other four combinators.
+%
+%  These equivalences can be obtained either via the algorithm given in theorem
+%  \ref{thm:extensionality}, or directly from the lemmas leading up to that theorem.
+%
+%  Instance equivalences $\nm{rightId}, \nm{leftId}, \dots$ in $\U^A$ are trivially
+%  obtained from the corresponding equivalences in $\U$ by repeated application of
+%  $\nm{embedMap}.$
+%\end{proof}
+%
+%\begin{proposition}
+%  \label{prp:fun-univ-lift-fun}
+%  If $G : B \to C$ ($B,C \in \U$) is a functor with definition
+%  \begin{align*}
+%    G : B &\to     C\\
+%        b &\mapsto t_b
+%  \end{align*}
+%  where $t_b$ follows the constraints in proposition \ref{prp:functoriality},
+%  then we can lift the family $(t_b)_{b : B}$ to a family $(T_F)_{F : B^A}$ of
+%  instances of $C^A,$ which gives a definition
+%  \begin{align*}
+%    G^A : B^A &\to     C^A\\
+%          F   &\mapsto T_F
+%  \end{align*}
+%  for the embedded functor $G^A.$
+%\end{proposition}
+%
+%\begin{proof}
+%  We recursively define $T_F$ based on the three possibilities for $t_b.$
+%  \begin{itemize}
+%    \item If $t_b$ is a constant $c$ independent of $b,$ we set $T_F := c^A.$
+%    \item If $t_b = b,$ we set $T_F := F.$
+%    \item If $t_b$ is a functor application, we set $T_F$ to the application of
+%    the lifted functor to the lifted term.
+%  \end{itemize}
+%  Then, executing the functoriality algorithm for $(t_b)_{b : B}$ and
+%  $(T_F)_{F : B^A}$ gives results $G' : B \to C$ and $G'' : B^A \to C^A$ that
+%  only consist of functor applications of constant terms, such that each term
+%  $x$ in $G'$ corresponds exactly to $x^A$ in $G''.$ Thus by repeated application
+%  of $\nm{embedMap}$ we obtain an equivalence between $G'^A$ and $G''.$ Composing
+%  this equivalence with the definitions of $G,$ $G',$ and $G''$ yields the
+%  required equivalence $\fndef{G^A}(F) : G^A(F) \equiv T_F$ for $F : B^A.$
+%\end{proof}
+%
+%We can use this proposition to obtain an alternative proof of proposition
+%\ref{prp:functoriality} as follows. Given a family $(t_a)_{a : A}$ of terms
+%$t_a : B$ that satisfy the constraints of proposition \ref{prp:functoriality},
+%instead of executing the functoriality algorithm we may lift $(t_a)$ to a
+%family $(T_G)_{G : A^A}$ of terms $T_G : B^A,$ and set the result to
+%$T_{\idFun_A}.$
+%
+%This functor is equivalent to the functor $F$ constructed in the proof of
+%proposition \ref{prp:functoriality} because according to proposition
+%\ref{prp:fun-univ-lift-fun}, $F^A(G)$ is equivalent to $T_G$ for each $G : A^A,$
+%and due to the following
+%\begin{proposition}
+%  For every $B \in \U$ and $F : A \to B$ we have an equivalence
+%  \[\nm{embedId}(F) : F^A(\idFun_A) \equiv F.\]
+%\end{proposition}
+%\vspace{-2ex}
+%\begin{proof}
+%  By $\nm{rightId}.$
+%\end{proof}
+%
+%\begin{remark}
+%  This shows that the functor universe $\U^A$ can be regarded as $\U$ with an
+%  adjoined element $\idFun_A : A^A,$ which behaves similarly to the symbol $X$
+%  in a polynomial ring $R[X].$
+%\end{remark}
+%
+%\begin{proposition}
+%  \label{prp:fun-univ-lift-equiv}
+%  Let $B,C \in \U,$ $(s_b)_{b : B}$ and $(t_b)_{b : B}$ be families of instances
+%  $s_b,t_b : C,$ and $(e_b)_{b : B}$ be a family of instance equivalences
+%  $e_b : s_b \equiv t_b$ that satisfy the constraints of theorem
+%  \ref{thm:extensionality}.
+%
+%  Then $(e_b)_{b : B}$ lifts to a family $(E_F)_{F : B^A}$ of equivalences
+%  $E_F : S_F \equiv T_F,$ where $(S_F)$ and $(T_F)$ are lifted from $(s_b)$
+%  and $(t_b)$ according to proposition \ref{prp:fun-univ-lift-fun}.
+%\end{proposition}
+%
+%\begin{proof}
+%  We recursively define $E_F$ based on the six possibilities for $e_b.$
+%  \begin{itemize}
+%    \item If $e_b$ is a constant $e : c \equiv c',$ set
+%    $E_F := \constFun_{AC}(e) : c^A \equiv c'^A.$
+%    \item If $e_b = \id_{t_b},$ set $E_F := \id_{T_F}.$
+%    \item If $e_b$ is $f_b^{-1}$ obtain $E_F$ by recursion.
+%    \item Likewise for $e_b = g_b \circ f_b.$
+%    \item If $e_b = G_b(f_b),$ set $E_F := I_F(H_F),$ where $H_F$ is obtained recursively
+%    from $f_b,$ and $I_F$ is lifted from $G_b.$
+%    \item If $e_b = \fndef{G}(x_b,x'_b,\dots)$ for a combinator $G,$ set
+%    $E_F := \fndef{G^A}(X_F,X'_F,\dots),$ where $X_F$ is lifted from $x_b,$ etc.
+%    \qedhere
+%  \end{itemize}
+%\end{proof}
+%
+%This gives rise to an alternative proof of theorem \ref{thm:extensionality} as follows.
+%Given a family $(e_a)_{a : A}$ of equivalences $e_a : s_a \equiv t_a$ as in theorem
+%\ref{thm:extensionality}, lift $(e_a)$ to a family $(E_H)_{H : A^A}$ of equivalences
+%$E_H : S_H \equiv T_H$ in the functor universe $\U^A.$ Since $S_{\idFun_A}$ and
+%$T_{\idFun_A}$ are equivalent to the functors that the functoriality algorithm
+%produces for $(s_a)$ and $(t_a),$ respectively, the result can be obtained from
+%$E_{\idFun_A}.$
 
-First, a word of warning:
-In the concrete universes we covered so far, the relationship between a type and the set of
-its instances was always very straightforward (although they are truly equal only in $\Set_\C$).
-However, in the functor universe we will need to be more careful about the distinction:
-Recall that a type is just a member of an index set, and its instances are actually defined
-by a family of sets that are indexed by types.
 
-\begin{definition}
-  Let $\U$ and $\V = (I, (S_B)_{B \in I})$ and $\W = (J, (T_C)_{C \in J})$ be universes
-  such that we have functors from $\U$ to $\V$ in $\W,$ and let $A \in \U.$
-  We define the \defn{functor universe} $\V^A$ to be the pair
-  \[\V^A := (I, (T_{A \to B})_{B \in I}).\]
-  That is,
-  \begin{itemize}
-    \item the types (or type indices, to be explicit) of $\V^A$ are the same as those of
-    $\V,$ but
-    \item the instances in $\V^A$ of a type $B \in \V$ are actually functors from $A$ to $B.$
-  \end{itemize}
-  We let $\V^A$ inherit instance equivalences from $\W.$
-\end{definition}
 
-If types $B,C,\ldots \in \V$ are also types of $\V^A$ and vice versa, then the symbols
-``$:$'' and ``$\to$'' become ambiguous. To avoid having to annotate each symbol with a
-universe, we adopt the purely notational convention that for each type $B \in \V$ we
-define $B^A := B$ except that $B^A$ should be understood as a type in $\V^A.$
-(Note that we do \emph{not} extend this convention to instances of types; instead we will
-use the same notation for an embedding operation.)
 
-So ``$b : B$'' is always an abbreviation for ``$b :_\V B,$'' whereas ``$F : B^A$'' is an
-abbreviation for ``$F :_{\V^A} B,$'' so that $F$ is a functor from $A$ to $B,$ not an
-instance of $B.$
 
-\subsubsection*{Full functor operations}
 
-We will first concentrate on the case where we have a single universe $\U$ with internal
-functors and full functor operations, and a type $A \in \U.$
 
-\begin{proposition}
-  \label{prp:fun-univ-full}
-  In this case, $\U^A$ also has internal functors, defined by $[B^A \to C^A] := [B \to C]^A$
-  for $B,C \in \U.$
-\end{proposition}
-\vspace{-1ex}
-\begin{proof}
-  For a functor $G : B^A \to C^A,$ which is also an instance of the type $[A \to B \to C],$
-  and an instance $F : B^A,$ which is also an instance of $[A \to B],$ we define their functor
-  application in $\U^A$ by $G(F) := \revSubstFun_{ABC}(G,F).$ This definition
-  respects instance equivalences because it is an application of the functor
-  $\revSubstFun_{ABC}(G).$
-\end{proof}
+\subsection{Universe type}
+\label{sec:layer2-universe-type}
 
-\begin{proposition}
-  \label{prp:fun-univ-embed-map}
-  $\U$ embeds into $\U^A$: For each type $B \in \U$ and instance $b : B,$ we have
-  a corresponding instance $b^A := \constFun_{AB}(b) : B^A.$ This embedding
-  respects instance equivalences and functor application, up to instance equivalence.
-\end{proposition}
-\vspace{-1ex}
-\begin{proof}
-  As a functor, $\constFun_{AB}$ respects instance equivalences.
-  Moreover, for $G : B \to C$ and $b : B$ with $B,C \in \U$ we have an equivalence
-  \[\nm{embedMap}(G,b) : G^A(b^A) \eqDef \revSubstFun_{ABC}(\constFun_{A[B{\to}C]}(G),\constFun_{AB}(b)) \equiv
-    \constFun_{AC}(G(b)) \eqDef (G(b))^A\]
-  by lemma \ref{lem:functoriality-step-equiv}.
-\end{proof}
+%TODO: Define $\V$ as type in $\U.$
+%
+%\begin{definition}
+%  If $\U$ has functors, a \defn{property} $\phi$ on a type $A : \U$ is defined a functor
+%  $\phi : A \to \V.$ A \defn{relation} $\psi$ on $A : \U$ is a functor $\psi : A \to A \to \V$
+%  (or equivalently $\psi : A \times A \to \V$ if $\U$ has products).
+%  % TODO: Apparently, for categories we need to replace one A with A^op. Or is that already the
+%  % case for the definition of the product type? Or maybe morphisms are just a prerelation, and
+%  % isomorphisms are a relation?
+%\end{definition}
+%
+%Properties and relations in $\Unit$ and $\Prop$ are trivial. A property on $A : \Set$ is equivalent
+%to a subset of $A.$ A relation on $A : \Set$ is equivalent to a set-theoretic relation. In $\Cat,$
+%morphisms and isomorphisms form relations.
+%
+%\subsection{Dependent functors}
+%
+%\begin{definition}
+%  We say that a layer 2 universe $(\U,\V)$ has \defn{dependent functors} if it has functors and for
+%  every type $A : \U$ and property $\phi$ on $A$ there is a \defn{dependent functor type}
+%  $[\Pi\,a : A,\:\phi(a)] : \V$ along with a dependent function $\apply_{\phi}$ that maps pairs of
+%  instances $p : \Pi\,a : A,\:\phi(a)$ and $a : A$ to a value $\apply_{\phi}(p,a) : \phi(a).$
+%\end{definition}
+%
+%Note that the notation is chosen such that ``$\phi(a)$'' in ``$[\Pi\,a : A,\:\phi(a)]$'' can be
+%replaced by an expression that denotes a functor description.
+%
+%$\Unit$ and $\Bool$ trivially (and uninterestingly) have dependent functors. For $A : \Set,$ we take
+%\[[\Pi\,a : A,\:\phi(a)] := \begin{cases}
+%  \top & \text{if } \phi(a) = \top \text{ for all } a \in A,\\
+%  \bot & \text{otherwise}
+%\end{cases}\]
+%and let $\apply$ map everything to the single instance $\star : \top.$
+%
+%In the universe $\Cat,$ we can \emph{not} define dependent functors as types of $\V = \Set$ because
+%$A$ can be $\Set$ as well, with the consequence that the collection of instances of
+%$[\Pi\,a : A,\:\phi(a)]$ would be too large to be a set. Therefore, in section \ref{sec:layer2-} we
+%will describe algorithms to convert proofs that use dependent functors to proofs that use weaker
+%structure.
+%
+%TODO: We need functorial type constructors here, including $\Pi.$ But without instance equivalences,
+%we can't specify what they map to. Should layer 2- come before layer 2 after all?
+%
+%\begin{definition}
+%  A layer 2 universe $(\U,\V)$ with dependent functors has \defn{dependent logic} if we have
+%  the following three instances of dependent functors for $A,B : \U.$
+%  \begin{itemize}
+%    \item $\constPi_{A} : \Pi\,p : \V,\:[p \to [\Pi\,a : A,\:p]]$
+%    \item $\appPi_{A} : \Pi\,\phi : A \to \V,\:\Pi\,\psi : A \to \V,\:[[\Pi\,a : A,\:[\phi(a) \to \psi(a)]] \to [\Pi\,a : A,\:\phi(a)] \to [\Pi\,a : A,\:\psi(a)]]$
+%    \item $\compFunPi_{AB} : \Pi\,F : A \to B,\:\Pi\,\phi : B \to \V,\:[[\Pi\,b : B,\:\phi(b)] \to [\Pi\,a : A,\:\phi(F(a))]]$
+%  \end{itemize}
+%\end{definition}
+%
+%TODO: Dependent functor description
+%
+%\begin{proposition}
+%  \label{prp:layer2-dependent-functoriality}
+%  Let $(\U,\V)$ be a universe with dependent logic, $A : U,$ $\phi$ be a property on $A,$
+%  and $(t_a)_{a : A}$ be a family of instances $t_a : \phi(a)$ that are one of the following:
+%  \begin{itemize}
+%    \item a constant independent of $a$ (which implies that $\phi$ is constant),
+%    \item a functor application $p_a(q_a)$ with $p_a : \psi(a) \to \phi(a)$ and $q_a : \psi(a)$ for
+%    a property $\psi$ on $A,$ such that $p_a$ and $q_a$ recursively follow the same rules, or
+%    \item a dependent functor application $p_a(b_a)$ with $p_a : \Pi\,b : B,\:\psi(b)$ and $b_a : B$
+%    for a type $B : \U$ and property $\psi$ on $B,$ such that $p_a$ recursively follows the same
+%    rules and $b_a$ matches the restrictions of proposition \ref{prp:layer1-functoriality}.
+%  \end{itemize}
+%  Then we can construct a dependent functor
+%  \begin{align*}
+%    p : A &\to     \phi(a)\\
+%        a &\mapsto t_a.
+%  \end{align*}
+%\end{proposition}
 
-\begin{proposition}
-  \label{prp:fun-univ-full-funop}
-  $\U^A$ has full functor operations, defined by $\idFun_{B^A} := (\idFun_B)^A,$
-  $\revAppFun_{(B^A)(C^A)} := (\revAppFun_{BC})^A, \ldots$ for $B,C \in \U.$
-\end{proposition}
-\vspace{-1ex}
-\begin{proof}
-  Clearly these instances are functors of the correct type, and by $\nm{embedMap}$
-  they map embedded instances of types in $\U$ to the correct values. However, we
-  need to verify that they also map all other instances of $\U^A$ to the values
-  specified by their definition, up to equivalence. E.g.\ for $\idFun_{B^A}$ we
-  need to provide an equivalence
-  \[\fndef{\idFun_{B^A}}(F) : \idFun_{B^A}(F) \eqDef \revSubstFun_{ABC}(\constFun_{AB}(\idFun_B),F) \equiv F\]
-  for $F : B^A,$ and likewise for the other four combinators.
-
-  These equivalences can be obtained either via the algorithm given in theorem
-  \ref{thm:extensionality}, or directly from the lemmas leading up to that theorem.
-
-  Instance equivalences $\nm{rightId}, \nm{leftId}, \ldots$ in $\U^A$ are trivially
-  obtained from the corresponding equivalences in $\U$ by repeated application of
-  $\nm{embedMap}.$
-\end{proof}
-
-\begin{proposition}
-  \label{prp:fun-univ-lift-fun}
-  If $G : B \to C$ ($B,C \in \U$) is a functor with definition
-  \begin{align*}
-    G : B &\to     C\\
-        b &\mapsto t_b
-  \end{align*}
-  where $t_b$ follows the constraints in proposition \ref{prp:functoriality},
-  then we can lift the family $(t_b)_{b : B}$ to a family $(T_F)_{F : B^A}$ of
-  instances of $C^A,$ which gives a definition
-  \begin{align*}
-    G^A : B^A &\to     C^A\\
-          F   &\mapsto T_F
-  \end{align*}
-  for the embedded functor $G^A.$
-\end{proposition}
-
-\begin{proof}
-  We recursively define $T_F$ based on the three possibilities for $t_b.$
-  \begin{itemize}
-    \item If $t_b$ is a constant $c$ independent of $b,$ we set $T_F := c^A.$
-    \item If $t_b = b,$ we set $T_F := F.$
-    \item If $t_b$ is a functor application, we set $T_F$ to the application of
-    the lifted functor to the lifted term.
-  \end{itemize}
-  Then, executing the functoriality algorithm for $(t_b)_{b : B}$ and
-  $(T_F)_{F : B^A}$ gives results $G' : B \to C$ and $G'' : B^A \to C^A$ that
-  only consist of functor applications of constant terms, such that each term
-  $x$ in $G'$ corresponds exactly to $x^A$ in $G''.$ Thus by repeated application
-  of $\nm{embedMap}$ we obtain an equivalence between $G'^A$ and $G''.$ Composing
-  this equivalence with the definitions of $G,$ $G',$ and $G''$ yields the
-  required equivalence $\fndef{G^A}(F) : G^A(F) \equiv T_F$ for $F : B^A.$
-\end{proof}
-
-We can use this proposition to obtain an alternative proof of proposition
-\ref{prp:functoriality} as follows. Given a family $(t_a)_{a : A}$ of terms
-$t_a : B$ that satisfy the constraints of proposition \ref{prp:functoriality},
-instead of executing the functoriality algorithm we may lift $(t_a)$ to a
-family $(T_G)_{G : A^A}$ of terms $T_G : B^A,$ and set the result to
-$T_{\idFun_A}.$
-
-This functor is equivalent to the functor $F$ constructed in the proof of
-proposition \ref{prp:functoriality} because according to proposition
-\ref{prp:fun-univ-lift-fun}, $F^A(G)$ is equivalent to $T_G$ for each $G : A^A,$
-and due to the following
-\begin{proposition}
-  For every $B \in \U$ and $F : A \to B$ we have an equivalence
-  \[\nm{embedId}(F) : F^A(\idFun_A) \equiv F.\]
-\end{proposition}
-\vspace{-2ex}
-\begin{proof}
-  By $\nm{rightId}.$
-\end{proof}
-
-\begin{remark}
-  This shows that the functor universe $\U^A$ can be regarded as $\U$ with an
-  adjoined element $\idFun_A : A^A,$ which behaves similarly to the symbol $X$
-  in a polynomial ring $R[X].$
-\end{remark}
-
-\begin{proposition}
-  \label{prp:fun-univ-lift-equiv}
-  Let $B,C \in \U,$ $(s_b)_{b : B}$ and $(t_b)_{b : B}$ be families of instances
-  $s_b,t_b : C,$ and $(e_b)_{b : B}$ be a family of instance equivalences
-  $e_b : s_b \equiv t_b$ that satisfy the constraints of theorem
-  \ref{thm:extensionality}.
-
-  Then $(e_b)_{b : B}$ lifts to a family $(E_F)_{F : B^A}$ of equivalences
-  $E_F : S_F \equiv T_F,$ where $(S_F)$ and $(T_F)$ are lifted from $(s_b)$
-  and $(t_b)$ according to proposition \ref{prp:fun-univ-lift-fun}.
-\end{proposition}
-
-\begin{proof}
-  We recursively define $E_F$ based on the six possibilities for $e_b.$
-  \begin{itemize}
-    \item If $e_b$ is a constant $e : c \equiv c',$ set
-    $E_F := \constFun_{AC}(e) : c^A \equiv c'^A.$
-    \item If $e_b = \id_{t_b},$ set $E_F := \id_{T_F}.$
-    \item If $e_b$ is $f_b^{-1}$ obtain $E_F$ by recursion.
-    \item Likewise for $e_b = g_b \circ f_b.$
-    \item If $e_b = G_b(f_b),$ set $E_F := I_F(H_F),$ where $H_F$ is obtained recursively
-    from $f_b,$ and $I_F$ is lifted from $G_b.$
-    \item If $e_b = \fndef{G}(x_b,x'_b,\ldots)$ for a combinator $G,$ set
-    $E_F := \fndef{G^A}(X_F,X'_F,\ldots),$ where $X_F$ is lifted from $x_b,$ etc.
-    \qedhere
-  \end{itemize}
-\end{proof}
-
-This gives rise to an alternative proof of theorem \ref{thm:extensionality} as follows.
-Given a family $(e_a)_{a : A}$ of equivalences $e_a : s_a \equiv t_a$ as in theorem
-\ref{thm:extensionality}, lift $(e_a)$ to a family $(E_H)_{H : A^A}$ of equivalences
-$E_H : S_H \equiv T_H$ in the functor universe $\U^A.$ Since $S_{\idFun_A}$ and
-$T_{\idFun_A}$ are equivalent to the functors that the functoriality algorithm
-produces for $(s_a)$ and $(t_a),$ respectively, the result can be obtained from
-$E_{\idFun_A}.$
-
-\subsubsection*{Linear and affine functor operations}
-
-Now let $\U$ be any universe with at least linear functor operations. If $\U$ does
-not have full functor operations, then $\U^A$ does not have internal functors, but
-we can either apply a constant functor (i.e.\ in $\U$) to a variable argument
-(i.e.\ in $\U^A$) or vice versa.
-
-\begin{proposition}
-  \label{prp:fun-univ-linear}
-  We have functors from $\U^A$ to $\U^A$ in $\U,$ defined by $[B^A \to C^A] := [B \to C]$
-  for $B,C \in \U.$ Moreover, we have functors from $\U$ to $\U^A$ in $\U^A,$
-  defined by $[B \to C^A] := [B \to C]^A.$
-\end{proposition}
-\vspace{-1ex}
-\begin{proof}
-  For a functor $G : B^A \to C^A,$ which by definition is just an instance of
-  $[B \to C],$ and an instance $F : B^A,$ we define their functor application by
-  $G(F) := G \circ F.$ For a functor $G : B \to C^A,$ which is an instance of
-  $[A \to B \to C],$ and an instance $b : B,$ we define
-  $G(b) := \swapFun_{ABC}(G,b).$
-\end{proof}
-
-We can unify these functors within a sum universe that additionally includes an
-empty type.
-
-\begin{definition}
-  For a universes $\U,\V,\W$ such that we have functors from $\U$ to $\V$ in $\W,$
-  and a type $A : \U,$ we define the \defn{optional functor universe} $\V^{A?}$ to
-  be
-  \[\V^{A?} := \V \uplus \V^A \uplus \Set_{\{0\}}.\]
-  That is, each type in $\V^{A?}$ is either
-  \begin{itemize}
-    \item a type $B \in \V,$
-    \item a functor type $B^A \in \V^A,$ or
-    \item the empty type $0.$
-  \end{itemize}
-\end{definition}
-
-\begin{proposition}
-  For a universe $\U$ with internal functors and at least linear functor operations,
-  $\U^{A?}$ has internal functors as follows. For $B,C \in \U,$ we set
-  \begin{itemize}
-    \item $[B \to C]$ in $\U^{A?}$ to be the same as $[B \to C]$ in $\U,$
-    \item $[B \to C^A] := [B \to C]^A,$
-    \item $[B^A \to C^A] := \begin{cases}
-      [B \to C]^A & \text{if $\U$ has full functor operations}\\
-      [B \to C]   & \text{otherwise,}
-    \end{cases}$
-    \item $[X \to Y] := 0$ for all $X,Y \in \V^{A?}$ not covered above.
-  \end{itemize}
-  Functor application is defined as in propositions \ref{prp:fun-univ-full} and
-  \ref{prp:fun-univ-linear}.
-\end{proposition}
-
-\begin{definition}
-  For $B,C \in \U$ and $G : B \to C,$ we define $G^{A?} : B^A \to C^A$ by
-  \[G^{A?} := \begin{cases}
-    G^A & \text{if $\U$ has full functor operations}\\
-    G   & \text{otherwise.}
-  \end{cases}\]
-\end{definition}
-
-\begin{proposition}
-  $\nm{embedMap}$ in $\U^A$ generalizes to
-  \[\nm{embedMap}^?(G,b) : G^{A?}(b^A) \equiv (G(b))^A.\]
-\end{proposition}
-
-\begin{conjecture}
-  \label{conj:fun-univ-linear}
-  If $\U$ has linear/affine/full functor operations, then so does $\U^{A?}.$
-\end{conjecture}
-
-\begin{proposition}
-  For every $B \in \U$ and $F : A \to B$ we have an equivalence
-  \[\nm{embedId}^?(F) : F^{A?}(\idFun_A) \equiv F.\]
-\end{proposition}
-
-\subsection{Functorial meta-relations}
-
-\section{Singletons}
-\label{sec:singletons}
-
-\section{Products}
-\label{sec:products}
-
-\section{Equivalences}
-\label{sec:equivalences}
-
-\section{Properties and relations}
-\label{sec:properties}
-\label{sec:relations}
-
-\section{Dependent functors}
-
-\section{Dependent products}
+\section{Layer 3}
 
 \bibliographystyle{plain}
 \bibliography{UniverseAbstractions}
