@@ -18,7 +18,7 @@ structure Universe extends Layer1.Universe.{u, uu} where
 (V : Layer1.Universe.{v, vv})
 [hasFun : Layer1.HasFunctors V]
 [hasLin : Layer1.HasLinearLogic V]
-[hasEq (A : toUniverse) : Layer1.HasEquivalenceRelation A V]
+[hasEq (A : I) : Layer1.HasEquivalenceRelation A V]
 
 namespace Universe
 
@@ -43,11 +43,14 @@ namespace Universe
 
   instance (A : U) : Layer1.HasEquivalenceRelation A U.V := U.hasEq A
 
-  @[reducible] def InstEq {A : U} (a b : A) : U.V := (U.hasEq A).R a b
+  @[reducible] def InstEq (A : U) : Layer1.Prerelation A U.V := (U.hasEq A).R
 
   namespace InstEq
 
-    infix:25 " ≃ " => Universe.InstEq
+    instance (A : U.toUniverse) : IsEquivalence (α := ⌈A⌉) (InstEq A) := (U.hasEq A).h
+
+    notation:25 a:26 " ≃⟨" A:0 "⟩ " b:26 => (Universe.InstEq A) a b
+    infix:25 " ≃ " => Universe.InstEq _
 
     variable {A : U}
 

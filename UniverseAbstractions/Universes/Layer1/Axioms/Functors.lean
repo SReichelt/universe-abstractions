@@ -134,6 +134,8 @@ namespace HasFunctors
 
       def isFunApp {f : A → B} (F : A ⟶{f} B) {a : A} : IsFunApp A (f a) := ⟨F.F, a⟩
 
+      def cast {f g : A → B} (F : A ⟶{f} B) : A ⟶{g} B := ⟨F.F⟩
+
       def defAppFun (F : A ⟶ B) : A ⟶{apply F} B := ⟨F⟩
 
     end DefFun
@@ -154,6 +156,9 @@ namespace HasFunctors
       def isFunApp₂ {f : A → B → C} (F : A ⟶ B ⟶{f} C) {a : A} {b : B} :
         IsFunApp₂ A B (f a b) :=
       ⟨F.F, a, b⟩
+
+      def cast {f g : A → B → C} (F : A ⟶ B ⟶{f} C) : A ⟶ B ⟶{g} C :=
+      ⟨λ a => DefFun.cast (F.app a), DefFun.cast F.toDefFun⟩
 
       def defAppFun (F : A ⟶ B ⟶ C) : A ⟶ B ⟶{apply₂ F} C :=
       ⟨λ a => DefFun.defAppFun (F a), DefFun.defAppFun F⟩
@@ -178,6 +183,9 @@ namespace HasFunctors
         IsFunApp₃ A B C (f a b c) :=
       ⟨F.F, a, b, c⟩
 
+      def cast {f g : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) : A ⟶ B ⟶ C ⟶{g} D :=
+      ⟨λ a => DefFun₂.cast (F.app a), DefFun.cast F.toDefFun⟩
+
       def defAppFun (F : A ⟶ B ⟶ C ⟶ D) : A ⟶ B ⟶ C ⟶{apply₃ F} D :=
       ⟨λ a => DefFun₂.defAppFun (F a), DefFun.defAppFun F⟩
 
@@ -199,6 +207,9 @@ namespace HasFunctors
       def isFunApp₄ {f : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) {a : A} {b : B} {c : C} {d : D} :
         IsFunApp₄ A B C D (f a b c d) :=
       ⟨F.F, a, b, c, d⟩
+
+      def cast {f g : A → B → C → D → E} (F : A ⟶ B ⟶ C ⟶ D ⟶{f} E) : A ⟶ B ⟶ C ⟶ D ⟶{g} E :=
+      ⟨λ a => DefFun₃.cast (F.app a), DefFun.cast F.toDefFun⟩
 
       def defAppFun (F : A ⟶ B ⟶ C ⟶ D ⟶ E) : A ⟶ B ⟶ C ⟶ D ⟶{apply₄ F} E :=
       ⟨λ a => DefFun₃.defAppFun (F a), DefFun.defAppFun F⟩
