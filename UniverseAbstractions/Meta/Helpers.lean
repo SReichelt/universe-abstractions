@@ -83,7 +83,7 @@ namespace DependentTerm
     let b' ← TypedExpr.unfold_reduce b
     unless b'.containsFVar fvarId do
       return b'
-    none
+    pure none
 
   def isMVar : Bool := match t.b with
   | Expr.app f _ _ => f.isMVar

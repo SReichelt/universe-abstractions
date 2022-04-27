@@ -11,7 +11,7 @@ set_option autoBoundImplicitLocal false
 --set_option pp.universes true
 --set_option pp.all true
 
-open HasFunctors
+open HasFunctors HasLinearLogic
 
 universe u v w iu iuv
 

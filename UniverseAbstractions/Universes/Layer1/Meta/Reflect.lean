@@ -495,7 +495,7 @@ namespace mkHasFunctors
         let b'' : B := mkHasFunctors'.mkDefFun.mkF h.h A' B' f_b b'
         return ← synthesizeFunApps'' b''
       pure []
-    | result => result
+    | result => pure result
 
 end mkHasFunctors
 

@@ -17,3 +17,5 @@ import UniverseAbstractions.Universes.Layer1.Instances.FunctorUniverse
 
 import UniverseAbstractions.Universes.Layer2.Axioms.Universes
 import UniverseAbstractions.Universes.Layer2.Axioms.Functors
+
+import UniverseAbstractions.Universes.Layer2.Lemmas.DerivedFunctors

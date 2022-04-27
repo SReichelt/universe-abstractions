@@ -131,7 +131,7 @@ mutual
     match ← f.term.asConstant? with
     | some (b : φ.B) => do
       let hSubLin : mkHasSubLinearLogic φ.U ← InstanceExpr.synthesize
-      mkHasSubLinearLogic.mkConstFun φ.A b
+      pure (mkHasSubLinearLogic.mkConstFun φ.A b)
     | none => do
       if ← f.term.isId then
         let hLin : mkHasLinearLogic φ.U ← InstanceExpr.synthesize
@@ -145,9 +145,9 @@ mutual
         for funApp in funApps do
           match ← constructLambdaAppFunctor f funApp forcePrimitive true with
           | some F => return F
-          | none   => ()
+          | none   => pure ()
         match ← constructLambdaAppFunctor f mainFunApp forcePrimitive false with
-        | some F => F
+        | some F => pure F
         | none   => panic "mandatory result missing"
 
   partial def constructLambdaFunctor' (φ : FunData) {a : φ.A}
@@ -173,7 +173,7 @@ mutual
         return some G'
       let hLin : mkHasLinearLogic φ.U ← InstanceExpr.synthesize
       let F_c ← constructLambdaFunctor' ⟨φ.A, C⟩ c forcePrimitive
-      some (mkHasLinearLogic.mkCompFun F_c G')
+      pure (some (mkHasLinearLogic.mkCompFun F_c G'))
     | none => do
       if requireConstG then
         return none
@@ -183,7 +183,7 @@ mutual
         if ← G.isId then
           return some (mkHasLinearLogic.mkRevAppFun c' φ.B)
         let F_G ← constructLambdaFunctor' ⟨φ.A, C _⟶ φ.B⟩ G forcePrimitive
-        some (mkHasLinearLogic.mkSwapFun F_G c')
+        pure (some (mkHasLinearLogic.mkSwapFun F_G c'))
       | none => do
         let hNonLin : mkHasNonLinearLogic φ.U ← InstanceExpr.synthesize
         if ← c.isId then
@@ -196,7 +196,7 @@ mutual
           let F_c' : (C _⟶ φ.B) _⟶ C := F_c
           return some (mkHasNonLinearLogic.mkRevSelfAppFun F_c')
         let F_G ← constructLambdaFunctor' ⟨φ.A, C _⟶ φ.B⟩ G forcePrimitive
-        some (mkHasNonLinearLogic.mkSubstFun F_c F_G)
+        pure (some (mkHasNonLinearLogic.mkSubstFun F_c F_G))
 
 end
 
@@ -234,8 +234,8 @@ partial def replaceMakeFunctor : Syntax → MacroM Syntax
   | f => match f with
           | Syntax.node info kind args => do
             let args ← args.sequenceMap replaceMakeFunctor
-            Syntax.node info kind args
-          | f => f
+            pure (Syntax.node info kind args)
+          | f => pure f
 
 macro "Λ" xs:explicitBinders " => " b:term : term => do
   let f ← expandExplicitBinders `__makeFunctor xs b
@@ -267,34 +267,34 @@ mutual
           let ctorFn := mkConst ctorVal.name us
           let ctorHeader := mkAppN ctorFn type.getAppArgs
           return ← addFunctorialityArgs ctorVal.numFields ctorHeader
-      none
-    | _ => none
+      pure none
+    | _ => pure none
 
   partial def dependentFunctoriality? (type : Expr) : MetaM (Option Expr) := do
     match type with
     | Expr.forallE n d b c =>
       withLocalDecl n c.binderInfo d (fun a => do
         match ← dependentFunctoriality? (b.instantiate1 a) with
-        | some F => mkLambda n c.binderInfo d (F.abstract #[a])
-        | none   => none)
+        | some F => pure (mkLambda n c.binderInfo d (F.abstract #[a]))
+        | none   => pure none)
     | type => functoriality? type
 
   partial def addFunctorialityArgs : Nat → Expr → MetaM (Option Expr)
-    | 0,   e => some e
+    | 0,   e => pure (some e)
     | n+1, e => do
       match ← inferType e with
       | Expr.forallE _ argType _ _ =>
         match ← dependentFunctoriality? argType with
         | some F => addFunctorialityArgs n (mkApp e F)
-        | none   => none
-      | _ => none
+        | none   => pure none
+      | _ => pure none
 
 end
 
 def functoriality (mvarId : MVarId) : TacticM Expr := do
   let type ← getMVarType mvarId
   match ← functoriality? type with
-  | some F => F
+  | some F => pure F
   | none   => throwTacticEx `functoriality mvarId
                             m!"type '{type}' is not an application of 'HasFunctors.DefFun'"
 

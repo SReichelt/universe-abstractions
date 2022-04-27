@@ -46,8 +46,8 @@ namespace TypedExpr
   withReducibleAndInstances do
     let a ← whnfCore a
     match ← unfoldDefinition? a with
-    | some a' => a'
-    | none    => a
+    | some a' => pure a'
+    | none    => pure a
 
 end TypedExpr
 
@@ -86,7 +86,7 @@ structure ClassExpr where
 class InstanceExpr (C : ClassExpr) where
 (h : TypedExpr C.α)
 
-instance (C : ClassExpr) : Inhabited (InstanceExpr C) := ⟨⟨arbitrary⟩⟩
+instance (C : ClassExpr) : Inhabited (InstanceExpr C) := ⟨⟨Inhabited.default⟩⟩
 
 instance : CoeSort ClassExpr Type := ⟨InstanceExpr⟩
 instance (C : ClassExpr) : Coe C (TypedExpr C.α) := ⟨λ h => h.h⟩
@@ -104,8 +104,8 @@ namespace InstanceExpr
 
   def synthesize? {C : ClassExpr} : MetaM (Option C) := do
     match ← TypedExpr.trySynthesize with
-    | LOption.some h => some ⟨h⟩
-    | LOption.none   => none
-    | LOption.undef  => none
+    | LOption.some h => pure (some ⟨h⟩)
+    | LOption.none   => pure none
+    | LOption.undef  => pure none
 
 end InstanceExpr
