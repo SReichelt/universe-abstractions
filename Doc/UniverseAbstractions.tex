@@ -9,7 +9,7 @@
 
 \usepackage{amsmath,amssymb,amsfonts,amsthm}
 
-\title{Higher Combinators}
+\title{Dependent Combinators}
 \author{Sebastian Reichelt}
 
 \titleformat{\paragraph}{\bfseries}{\theparagraph}{}{}
@@ -88,6 +88,8 @@
 
 \newcommand{\rightId}{\nm{rightId}}
 \newcommand{\leftId}{\nm{leftId}}
+\newcommand{\assoc}{\nm{assoc}}
+
 \newcommand{\swapRevApp}{\nm{swapT}}
 \newcommand{\swapSwap}{\nm{swapSwap}}
 \newcommand{\swapCompFun}{\nm{swapB'}}
@@ -198,20 +200,20 @@ of layer $n$ as defining constraints governing each span of $n$ successive unive
     $[F \overset{\equiv}{\rightsquigarrow} G] : \V$ with axioms that let us interpret it as
     \[\prod_{a,b : A}\:[F(a) \equiv F(b) \to G(a) \equiv G(b)].\]
     Similarly to the combinators we use to build concrete functors, we define
-    \defn{higher combinators} to convert lambda terms into instances of this type. The combinators
-    also imply
+    \defn{dependent combinators} to convert lambda terms into instances of this type. The
+    combinators also imply
     \[\congrArg_F : \prod_{a,b : A}\:[a \equiv b \to F(a) \equiv F(b)].\]
-    \item Additional higher combinators guarantee \defn{extensionality} of functors with respect to
-    equivalence. This allows us to extend the $\Pi$ notation by simply defining
+    \item Additional dependent combinators guarantee \defn{extensionality} of functors with respect
+    to equivalence. This allows us to extend the $\Pi$ notation by simply defining
     \[\prod_{a : A}\:[F(a) \equiv G(a)]\]
     as notation for $[F \equiv G],$ as we can automatically translate any lambda term implementing
     this $\Pi$ type to a proof of $F \equiv G.$ (In particular, this automates some tedious category
     theory proofs.)
     \item Similarly to $\Pi$ types in $\V,$ we introduce $\Sigma$ types in $\U,$ i.e.\ subtypes.
     \item All types are required to respect instance equivalences in specific ways, so that the
-    translation of lambda terms into higher combinators also works for terms involving those types.
-    In particular, the two functors of an equivalence are required to be inverse to each other up
-    to instance equivalence.
+    translation of lambda terms into dependent combinators also works for terms involving those
+    types. In particular, the two functors of an equivalence are required to be inverse to each
+    other up to instance equivalence.
     \item We can axiomatically embed $\V$ in $\U,$ obtaining a notion of \defn{truncation}.
     \item If $\V$ appears as a type in $\U,$ so that we have types of the form $[A \to \V]$ and
     $[A \to A \to \V],$ we can define a more generic notion of dependent types that implies the
@@ -1463,6 +1465,38 @@ so we will list specific conditions that enable this.
 % TODO: other cases of dependent functors
 
 \subsection{Categorical prerelations}
+
+Note that the axioms $\rightId,$ $\leftId,$ and $\compAssoc$ give every universe with (at least)
+linear logic the shape of a weak category, which we can define as follows.
+
+\begin{definition}
+  For a layer 2 universe $\U$ with functors, a $\U$-valued reflexive and transitive prerelation
+  $(\prec)$ on a set $S$ is defined to be \defn{categorical} if we have the following three
+  instances for $a,b,c,d \in S.$
+  \begin{itemize}
+    \item $\begin{aligned}[t]
+      \rightId_{ab} &: \prod_{f : a \prec b} [f \circ \id_a \equiv f]\\
+                    &\ \ \eqDef [- \circ \id_a \equiv \idFun_{a{\prec}b}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \leftId_{ab} &: \prod_{f : a \prec b} [\id_b \circ f \equiv f]\\
+                   &\ \ \eqDef [\id_b \circ - \equiv \idFun_{a{\prec}b}],
+    \end{aligned}$
+    \item $\begin{aligned}[t]
+      \assoc_{abcd} &: \prod_{f : a \prec b, g : b \prec c, h : c \prec d} [(h \circ g) \circ f \equiv h \circ (g \circ f)]\\
+                    &\ \ \eqDef [\compFun_{[b{\prec}c][[c{\prec}d]{\to}[b{\prec}d]][[c{\prec}d]{\to}[a{\prec}d]]}(- \circ -) \circ \revCompFun_{[c{\prec}d][b{\prec}d][a{\prec}d]} \circ (- \circ -) \equiv\\
+                    &\ \ \quad\ \ \,\revCompFun_{[b{\prec}c][a{\prec}c][[c{\prec}d]{\to}[a{\prec}d]]}(- \circ -) \circ (- \circ -)].
+    \end{aligned}$
+  \end{itemize}
+\end{definition}
+
+In $U = \Set,$ these axioms obviously reduce to the axioms of a 1-category. However, since the
+expanded versions have roughly the shape of triangle and pentagon identities, we conjecture that
+$\Cat$-valued prerelations are precisely the same as bicategories.
+
+If this conjecture holds, then theorem \ref{thm:layer2-extensionality} lets us mechanically
+translate proofs written in the language of 1-categories (with equality replaced with instance
+equivalence) to proofs about bicategories (or higher).
 
 \subsection{Rewriting}
 
