@@ -26,7 +26,7 @@ namespace Prerelation
 
   section
 
-    variable {α : Sort u} {V : Universe} [HasFunctors V] [HasLinearLogic V]
+    variable {α : Sort u} {V : Universe} [HasFunctors V]
 
     class HasRefl (R : Prerelation α V) where
     (refl (a : α) : R a a)
@@ -53,7 +53,7 @@ namespace Prerelation
 
     section
 
-      variable (R : Prerelation α V)
+      variable [HasLinearLogic V] (R : Prerelation α V)
 
       -- (Intentionally non-`@[reducible]`, as it would cause instance loops.)
       def opposite : Prerelation α V := λ a b => R b a
@@ -91,7 +91,7 @@ namespace Prerelation
 
       open HasProducts
 
-      variable [HasProducts V] (R S : Prerelation α V)
+      variable [HasLinearLogic V] [HasProducts V] (R S : Prerelation α V)
 
       def product : Prerelation α V := λ a b => R a b ⊓ S a b
 
@@ -115,7 +115,7 @@ namespace Prerelation
 
       open HasCoproducts
 
-      variable [HasCoproducts V] (R S : Prerelation α V)
+      variable [HasLinearLogic V] [HasCoproducts V] (R S : Prerelation α V)
 
       def coproduct : Prerelation α V := λ a b => R a b ⊔ S a b
 

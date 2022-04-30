@@ -1,16 +1,21 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
+import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
 import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Axioms.Products
 import UniverseAbstractions.Universes.Layer1.Axioms.Coproducts
 import UniverseAbstractions.Universes.Layer1.Axioms.Equivalences
-import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
 
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedSingletonFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedProductFunctors
 
-import UniverseAbstractions.Universes.Layer1.Meta.Reflect
+import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
+import UniverseAbstractions.Universes.Layer1.Meta.OptionalExprUniverse
+import UniverseAbstractions.Universes.Layer1.Meta.Sort
+import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Universes
+import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Functors
+import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Prerelations
 import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 
 import UniverseAbstractions.Universes.Layer1.Instances.FunctorUniverse
@@ -19,3 +24,5 @@ import UniverseAbstractions.Universes.Layer2.Axioms.Universes
 import UniverseAbstractions.Universes.Layer2.Axioms.Functors
 
 import UniverseAbstractions.Universes.Layer2.Lemmas.DerivedFunctors
+
+import UniverseAbstractions.Universes.Layer2.Meta.ExprUniverse

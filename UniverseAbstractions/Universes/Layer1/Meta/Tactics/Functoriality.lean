@@ -1,6 +1,6 @@
+import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Functors
 import UniverseAbstractions.Meta.TypedExpr
 import UniverseAbstractions.Meta.Helpers
-import UniverseAbstractions.Universes.Layer1.Meta.Reflect
 
 
 
@@ -46,29 +46,29 @@ open Lean Lean.Meta Lean.Elab Lean.Elab.Tactic
 structure FunData where
 {U    : _Universe}
 [hFun : mkHasFunctors U]
-(A B  : _⌈U⌉_)
+(A B  : _(U))
 
 namespace FunData
 
   def mkFreshMVar : MetaM FunData := do
     let U ← _Universe.mkFreshMVar
     let hFun : mkHasFunctors U ← InstanceExpr.mkFreshMVar
-    let A : _⌈U⌉_ ← _Universe.mkFreshTypeMVar
-    let B : _⌈U⌉_ ← _Universe.mkFreshTypeMVar
+    let A : _(U) ← _Universe.mkFreshTypeMVar
+    let B : _(U) ← _Universe.mkFreshTypeMVar
     pure ⟨A, B⟩
 
   def instantiate (φ : FunData) : MetaM FunData := do
     let U ← φ.U.instantiate
     let hFun : mkHasFunctors U ← φ.hFun.instantiate
-    let A : _⌈U⌉_ ← _Universe.instantiateTypeMVars φ.A
-    let B : _⌈U⌉_ ← _Universe.instantiateTypeMVars φ.B
+    let A : _(U) ← _Universe.instantiateTypeMVars φ.A
+    let B : _(U) ← _Universe.instantiateTypeMVars φ.B
     pure ⟨A, B⟩
 
   variable (φ : FunData)
 
   instance : mkHasFunctors φ.U := φ.hFun
 
-  def mkFun      := φ.A _⟶ φ.B
+  def mkFun      := φ.A ⟶ φ.B
   def mkFunArrow := ⌜$(_⌈φ.A⌉) → $(_⌈φ.B⌉)⌝
 
 end FunData
@@ -102,18 +102,18 @@ def synthesizeFunApps {φ : FunData} (f : FunctorLambdaAbstraction φ) (forcePri
   -- `forcePrimitive` is used in the extensionality tactic.
   -- It causes `IsFunApp` declarations of `swapFun` and `substFun` to be ignored.
   if forcePrimitive then
-    let compFun_A : _⌈φ.U⌉_ ← _Universe.mkFreshTypeMVar
-    let compFun_B : _⌈φ.U⌉_ ← _Universe.mkFreshTypeMVar
-    let compFun_C : _⌈φ.U⌉_ ← _Universe.mkFreshTypeMVar
-    let compFun_F : compFun_A _⟶ compFun_B ← _Universe.mkFreshInstMVar
-    let compFun_G : compFun_B _⟶ compFun_C ← _Universe.mkFreshInstMVar
+    let compFun_A : _(φ.U) ← _Universe.mkFreshTypeMVar
+    let compFun_B : _(φ.U) ← _Universe.mkFreshTypeMVar
+    let compFun_C : _(φ.U) ← _Universe.mkFreshTypeMVar
+    let compFun_F : compFun_A ⟶ compFun_B ← _Universe.mkFreshInstMVar
+    let compFun_G : compFun_B ⟶ compFun_C ← _Universe.mkFreshInstMVar
     let hLin : mkHasLinearLogic φ.U ← InstanceExpr.mkFreshMVar
     let compFun := mkHasLinearLogic.mkCompFun compFun_F compFun_G
     if ← isDefEq f.b compFun then
       return ← mkHasFunctors.synthesizeFunApps'' (B := φ.B) compFun
-    let dupFun_A : _⌈φ.U⌉_ ← _Universe.mkFreshTypeMVar
-    let dupFun_B : _⌈φ.U⌉_ ← _Universe.mkFreshTypeMVar
-    let dupFun_F : dupFun_A _⟶ dupFun_A _⟶ dupFun_B ← _Universe.mkFreshInstMVar
+    let dupFun_A : _(φ.U) ← _Universe.mkFreshTypeMVar
+    let dupFun_B : _(φ.U) ← _Universe.mkFreshTypeMVar
+    let dupFun_F : dupFun_A ⟶ dupFun_A ⟶ dupFun_B ← _Universe.mkFreshInstMVar
     let hNonLin : mkHasNonLinearLogic φ.U ← InstanceExpr.mkFreshMVar
     let dupFun := mkHasNonLinearLogic.mkDupFun dupFun_F
     if ← isDefEq f.b dupFun then
@@ -165,10 +165,10 @@ mutual
                                         (forcePrimitive : Bool) (requireConstG : Bool) :
               MetaM (Option φ.mkFun) := do
     let C := funApp.A
-    let G : f.Term _⌈C _⟶ φ.B⌉ := ⟨f.n, funApp.hFunApp.F⟩
-    let c : f.Term _⌈C⌉        := ⟨f.n, funApp.hFunApp.a⟩
+    let G : f.Term _⌈C ⟶ φ.B⌉ := ⟨f.n, funApp.hFunApp.F⟩
+    let c : f.Term _⌈C⌉       := ⟨f.n, funApp.hFunApp.a⟩
     match ← G.asConstant? with
-    | some (G' : C _⟶ φ.B) => do
+    | some (G' : C ⟶ φ.B) => do
       if ← c.isId then
         return some G'
       let hLin : mkHasLinearLogic φ.U ← InstanceExpr.synthesize
@@ -182,20 +182,20 @@ mutual
         let hLin : mkHasLinearLogic φ.U ← InstanceExpr.synthesize
         if ← G.isId then
           return some (mkHasLinearLogic.mkRevAppFun c' φ.B)
-        let F_G ← constructLambdaFunctor' ⟨φ.A, C _⟶ φ.B⟩ G forcePrimitive
+        let F_G ← constructLambdaFunctor' ⟨φ.A, C ⟶ φ.B⟩ G forcePrimitive
         pure (some (mkHasLinearLogic.mkSwapFun F_G c'))
       | none => do
         let hNonLin : mkHasNonLinearLogic φ.U ← InstanceExpr.synthesize
         if ← c.isId then
-          let G' : f.Term _⌈φ.A _⟶ φ.B⌉ := ⟨G.n, G.b⟩
-          let F_G ← constructLambdaFunctor' ⟨φ.A, φ.A _⟶ φ.B⟩ G' forcePrimitive
+          let G' : f.Term _⌈φ.A ⟶ φ.B⌉ := ⟨G.n, G.b⟩
+          let F_G ← constructLambdaFunctor' ⟨φ.A, φ.A ⟶ φ.B⟩ G' forcePrimitive
           return some (mkHasNonLinearLogic.mkDupFun F_G)
         let hLin : mkHasLinearLogic φ.U ← InstanceExpr.synthesize
         let F_c ← constructLambdaFunctor' ⟨φ.A, C⟩ c forcePrimitive
         if ← G.isId then
-          let F_c' : (C _⟶ φ.B) _⟶ C := F_c
+          let F_c' : (C ⟶ φ.B) ⟶ C := F_c
           return some (mkHasNonLinearLogic.mkRevSelfAppFun F_c')
-        let F_G ← constructLambdaFunctor' ⟨φ.A, C _⟶ φ.B⟩ G forcePrimitive
+        let F_G ← constructLambdaFunctor' ⟨φ.A, C ⟶ φ.B⟩ G forcePrimitive
         pure (some (mkHasNonLinearLogic.mkSubstFun F_c F_G))
 
 end
