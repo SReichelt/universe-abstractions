@@ -910,18 +910,17 @@ In particular, we will consider the following layer 2 universes.
     $G : B \to C$ there is an instance\\
     $\nm{rBr}_{FG} : [F \equivto G \circ F].$
     \item If $\U$ has (at least) linear logic, then for $A,B,C,D : \U,$ $F : A \to B,$
-    $G : A \to C,$ and $H : B \to D$ there is a functor\\
-    $\nm{rBl}_{FGH} : [H \circ F \equivto G] \to [F \equivto G].$
+    $G : B \to C,$ and $H : A \to D$ there is a functor\\
+    $\nm{rBl}_{FGH} : [G \circ F \equivto H] \to [F \equivto H].$
     \item If $\U$ has (at least) affine logic, then for $A,B,C : \U,$ $F : A \to B,$ and $c : C$
     there is an instance\\
     $\nm{rK}_{Fc} : F \equivto \constFun_{AC}(c).$
-    % TODO: Is it possible to reduce the next two to something with dupFun?
-    \item If $\U$ has full logic, then for $A,B,C,D : \U,$ $F : A \to B,$ $G : A \to C,$ and
-    $H : A \to C \to D$ there is a functor\\
-    $\nm{rSr}_{FGH} : [F \equivto G] \to [F \equivto H] \to [F \equivto \substFun(G,H)].$
-    \item If $\U$ has full logic, then for $A,B,C,D : \U,$ $F : A \to B,$ $G : A \to C,$ and
-    $H : A \to B \to D$ there is a functor\\
-    $\nm{rSl}_{FGH} : [\substFun(F,H) \equivto G] \to [H \equivto G] \to [F \equivto G].$
+    \item If $\U$ has full logic, then for $A,B,C,D : \U,$ $F : A \to B,$ and $G : A \to B \to C$
+    there is a functor\\
+    $\nm{rSr}_{FG} : [F \equivto G] \to [F \equivto \substFun(F,G)].$
+    \item If $\U$ has full logic, then for $A,B,C,D : \U,$ $F : A \to B,$ $G : A \to B \to C,$ and
+    $H : A \to D$ there is a functor\\
+    $\nm{rSl}_{FGH} : [\substFun(F,G) \equivto H] \to [G \equivto H] \to [F \equivto H].$
   \end{itemize}
 \end{definition}
 

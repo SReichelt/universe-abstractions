@@ -1,7 +1,7 @@
+import UniverseAbstractions.Meta.Helpers
+
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
-import UniverseAbstractions.Meta.TypedExpr
-import UniverseAbstractions.Meta.Helpers
 
 
 

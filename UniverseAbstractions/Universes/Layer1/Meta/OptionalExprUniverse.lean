@@ -1,7 +1,6 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
 import UniverseAbstractions.Universes.Layer1.Instances.Utils.DerivedUniverses
 import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
-import UniverseAbstractions.Meta.TypedExpr
 
 
 

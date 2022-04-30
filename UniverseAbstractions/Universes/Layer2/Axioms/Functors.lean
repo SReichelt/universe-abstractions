@@ -17,6 +17,7 @@ open Universe Layer1.HasFunctors Layer1.HasLinearLogic Layer1.HasSubLinearLogic
 
 -- We deviate slightly from the writeup by starting with `congrArg` and `congrFun` and using them
 -- to include proofs in functor descriptions.
+-- The axioms that are declared in the writeup are defined in `FunctorialImplications.lean`.
 class HasFunctors (U : Universe) extends Layer1.HasFunctors U where
 (congrArgFun {A B : U} (F : A ⟶ B) (a b : A) : a ≃ b ⟶ F a ≃ F b)
 (congrFunFun {A B : U} (F G : A ⟶ B) (a : A) : F ≃ G ⟶ F a ≃ G a)
