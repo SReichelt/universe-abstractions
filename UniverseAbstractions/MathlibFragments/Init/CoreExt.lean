@@ -26,8 +26,8 @@ theorem PProd.ext' {α : Sort u} {β : Sort v} {p q : PProd α β} :
 
 
 
-theorem Iff.isEquivalence              : Equivalence Iff     := ⟨Iff.refl, Iff.symm, Iff.trans⟩
-theorem Eq.isEquivalence  (α : Sort u) : Equivalence (@Eq α) := ⟨Eq.refl,  Eq.symm,  Eq.trans⟩
+theorem Iff.equivalence              : Equivalence Iff     := ⟨Iff.refl, Iff.symm, Iff.trans⟩
+theorem Eq.equivalence  (α : Sort u) : Equivalence (@Eq α) := ⟨Eq.refl,  Eq.symm,  Eq.trans⟩
 
 
 

@@ -42,40 +42,28 @@ open HasEquivalences
 
 class HasEquivOp (U : Universe) [HasFunctors U] [HasLinearLogic U] extends
   HasEquivalences U where
-(defRefl  (A     : U)                         : A ⟷{idFun A, idFun A} A)
-(defSymm  {A B   : U} (E : A ⟷ B)             : B ⟷{invFun E, toFun E} A)
-(defTrans {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷{toFun F ⊙ toFun E, invFun E ⊙ invFun F} C)
+(defRefl      (A     : U)                         : A ⟷{idFun A, idFun A} A)
+(defSymm      {A B   : U} (E : A ⟷ B)             : B ⟷{invFun E, toFun E} A)
+(defSymmFun   (A B   : U)                         : (A ⟷ B) ⟶{λ E => (defSymm E).E} (B ⟷ A))
+(defTrans     {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷{toFun F ⊙ toFun E, invFun E ⊙ invFun F} C)
+(defTransFun₂ (A B C : U)                         : (A ⟷ B) ⟶ (B ⟷ C) ⟶{λ E F => (defTrans E F).E} (A ⟷ C))
 
 namespace HasEquivOp
 
   variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [HasEquivOp U]
 
   @[reducible] def refl (A : U) : A ⟷ A := (defRefl A).E
+
   @[reducible] def symm {A B : U} (E : A ⟷ B) : B ⟷ A := (defSymm E).E
-  @[reducible] def trans {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷ C := (defTrans E F).E
-
-end HasEquivOp
-
-
-class HasEquivOpFun (U : Universe) [HasFunctors U] [HasLinearLogic U] extends
-  HasEquivOp U where
-(defSymmFun   (A B   : U) : (A ⟷ B) ⟶{HasEquivOp.symm} (B ⟷ A))
-(defTransFun₂ (A B C : U) : (A ⟷ B) ⟶ (B ⟷ C) ⟶{HasEquivOp.trans} (A ⟷ C))
-
-namespace HasEquivOpFun
-
-  variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [HasEquivOpFun U]
-
   @[reducible] def symmFun (A B : U) : (A ⟷ B) ⟶ (B ⟷ A) := (defSymmFun A B).F
 
   instance symm.isFunApp {A B : U} {E : A ⟷ B} : IsFunApp (A ⟷ B) (HasEquivOp.symm E) :=
   ⟨symmFun A B, E⟩
 
+  @[reducible] def trans {A B C : U} (E : A ⟷ B) (F : B ⟷ C) : A ⟷ C := (defTrans E F).E
   @[reducible] def transFun {A B : U} (E : A ⟷ B) (C : U) : (B ⟷ C) ⟶ (A ⟷ C) :=
   ((defTransFun₂ A B C).app E).F
-
-  @[reducible] def transFun₂ (A B C : U) : (A ⟷ B) ⟶ (B ⟷ C) ⟶ (A ⟷ C) :=
-  (defTransFun₂ A B C).F
+  @[reducible] def transFun₂ (A B C : U) : (A ⟷ B) ⟶ (B ⟷ C) ⟶ (A ⟷ C) := (defTransFun₂ A B C).F
 
   instance trans.isFunApp {A B C : U} {E : A ⟷ B} {F : B ⟷ C} :
     IsFunApp (B ⟷ C) (HasEquivOp.trans E F) :=
@@ -84,7 +72,7 @@ namespace HasEquivOpFun
   instance transFun.isFunApp {A B C : U} {E : A ⟷ B} : IsFunApp (A ⟷ B) (transFun E C) :=
   ⟨transFun₂ A B C, E⟩
 
-end HasEquivOpFun
+end HasEquivOp
 
 
 -- TODO: Standard equivalences

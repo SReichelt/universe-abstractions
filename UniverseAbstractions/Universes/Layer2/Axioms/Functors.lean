@@ -71,6 +71,47 @@ namespace HasFunctors
   congr (congrArg₃ F ea eb ec) ed
 
 
+  -- An equivalence of two functors that are known to map all values equivalently.
+  -- This is the type underlying the `Π` notation where the body is an equivalence.
+  structure FunEquiv {A B : U} (F G : A ⟶ B) (hFG : ∀ a, F a ≃ G a) where
+  (e : F ≃ G)
+
+  notation:25 F:26 " ≃{" hFG:0 "} " G:26 => HasFunctors.FunEquiv F G hFG
+
+  structure FunEquiv₂ {A B C : U} (F G : A ⟶ B ⟶ C) (hFG : ∀ a b, F a b ≃ G a b) where
+  (app (a : A) : F a ≃{hFG a} G a)
+  (toFunEquiv  : F ≃{λ a => (app a).e} G)
+
+  notation:25 F:26 " ≃≃{" hFG:0 "} " G:26 => HasFunctors.FunEquiv₂ F G hFG
+
+  def FunEquiv₂.e {A B C : U} {F G : A ⟶ B ⟶ C} {hFG : ∀ a b, F a b ≃ G a b} (e : F ≃≃{hFG} G) :
+    F ≃ G :=
+  e.toFunEquiv.e
+
+  structure FunEquiv₃ {A B C D : U} (F G : A ⟶ B ⟶ C ⟶ D) (hFG : ∀ a b c, F a b c ≃ G a b c) where
+  (app (a : A) : F a ≃≃{hFG a} G a)
+  (toFunEquiv  : F ≃{λ a => (app a).e} G)
+
+  notation:25 F:26 " ≃≃≃{" hFG:0 "} " G:26 => HasFunctors.FunEquiv₃ F G hFG
+
+  def FunEquiv₃.e {A B C D : U} {F G : A ⟶ B ⟶ C ⟶ D} {hFG : ∀ a b c, F a b c ≃ G a b c}
+                  (e : F ≃≃≃{hFG} G) :
+    F ≃ G :=
+  e.toFunEquiv.e
+
+  structure FunEquiv₄ {A B C D E : U} (F G : A ⟶ B ⟶ C ⟶ D ⟶ E)
+                      (hFG : ∀ a b c d, F a b c d ≃ G a b c d) where
+  (app (a : A) : F a ≃≃≃{hFG a} G a)
+  (toFunEquiv  : F ≃{λ a => (app a).e} G)
+
+  notation:25 F:26 " ≃≃≃≃{" hFG:0 "} " G:26 => HasFunctors.FunEquiv₄ F G hFG
+
+  def FunEquiv₄.e {A B C D E : U} {F G : A ⟶ B ⟶ C ⟶ D ⟶ E} {hFG : ∀ a b c d, F a b c d ≃ G a b c d}
+                  (e : F ≃≃≃≃{hFG} G) :
+    F ≃ G :=
+  e.toFunEquiv.e
+
+
   namespace DefFun
 
     section
@@ -207,12 +248,8 @@ namespace HasFunctors
       ⟨DefFun.cast F.toDefFun, DefFun.DefEq.cast hfg F.defEq⟩
       infix:60 " ► " => HasFunctors.DefFunEx.cast
 
-      -- An equivalence of two functors that are known to map all values equivalently.
-      -- This is the type underlying the `Π` notation where the body is an equivalence.
-      structure FunEquiv (F G : A ⟶{f, hf} B) where
-      (e : F.F ≃ G.F)
-
-      infix:25 " {≃} " => HasFunctors.DefFunEx.FunEquiv
+      def DefFunEquiv (F G : A ⟶{f, hf} B) := F.F ≃{λ a => DefFun.byDef⁻¹ • DefFun.byDef} G.F
+      infix:25 " {≃} " => HasFunctors.DefFunEx.DefFunEquiv
 
     end
 
@@ -242,6 +279,17 @@ namespace HasFunctors
 
       variable {A B C : U} {f : A → B → C} {hf : CongrProof₂ f}
 
+      def construct (app : ∀ a, B ⟶{f a, hf.app a} C)
+                    (defAppCongrArg : ∀ {a₁ a₂ : A} (ea : a₁ ≃ a₂),
+                       (λ b => ((hf.app₂ b).congr a₁ a₂) ea) ► app a₁ {≃} app a₂)
+                    (defAppCongrArgFun : ∀ a₁ a₂ : A,
+                       a₁ ≃ a₂ ⟶{λ ea => (defAppCongrArg ea).e} (app a₁).F ≃ (app a₂).F)
+                    (toDefFun :
+                       A ⟶{λ a => (app a).F, ⟨λ a₁ a₂ => (defAppCongrArgFun a₁ a₂).F⟩} (B ⟶ C)) :
+        A ⟶ B ⟶{f, hf} C :=
+      { toDefFun₂ := ⟨λ a => (app a).toDefFun, toDefFun.toDefFun⟩,
+        defEq     := ⟨λ a => (app a).defEq, toDefFun.defEq⟩ }
+
       instance (F : A ⟶ B ⟶{f, hf} C) : DefFun₂.DefEq F.toDefFun₂ := F.defEq
 
       def cast {g : A → B → C} {hg : CongrProof₂ g} (hfg : ∀ a b, f a b ≃ g a b)
@@ -256,14 +304,17 @@ namespace HasFunctors
         A ⟶{λ a => (F.appEx a).F, ⟨λ a₁ a₂ => Λ e => DefFun₂.app.congr F.toDefFun₂ e⟩} (B ⟶ C) :=
       ⟨F.toDefFun, F.defEq.toDefFun⟩
 
-      structure FunEquiv (F G : A ⟶ B ⟶{f, hf} C) where
-      (app (a : A) : F.appEx a {≃} G.appEx a)
-      (toFunEquiv : (λ a => (app a).e) ► F.toDefFunEx {≃} G.toDefFunEx)
+      def DefFunEquiv (F G : A ⟶ B ⟶{f, hf} C) :=
+      F.F ≃≃{λ a b => DefFun₂.byDef⁻¹ • DefFun₂.byDef} G.F 
+      infix:25 " {≃≃} " => HasFunctors.DefFunEx₂.DefFunEquiv
 
-      infix:25 " {{≃}} " => HasFunctors.DefFunEx₂.FunEquiv
+      def DefFunEquiv.defApp {F G : A ⟶ B ⟶{f, hf} C} (e : F {≃≃} G) (a : A) :
+        F.appEx a {≃} G.appEx a :=
+      ⟨DefFun.byDef • (e.app a).e • DefFun.byDef⁻¹⟩
 
-      @[reducible] def FunEquiv.e {F G : A ⟶ B ⟶{f, hf} C} (e : F {{≃}} G) : F.F ≃ G.F :=
-      e.toFunEquiv.e
+      def DefFunEquiv.toDefFunEquiv {F G : A ⟶ B ⟶{f, hf} C} (e : F {≃≃} G) :
+        (λ a => (e.defApp a).e) ► F.toDefFunEx {≃} G.toDefFunEx :=
+      ⟨e.e⟩
 
     end
 
@@ -293,6 +344,17 @@ namespace HasFunctors
 
       variable {A B C D : U} {f : A → B → C → D} {hf : CongrProof₃ f}
 
+      def construct (app : ∀ a, B ⟶ C ⟶{f a, hf.app a} D)
+                    (defAppCongrArg : ∀ {a₁ a₂ : A} (ea : a₁ ≃ a₂),
+                       (λ b c => ((hf.app₃ b c).congr a₁ a₂) ea) ►► app a₁ {≃≃} app a₂)
+                    (defAppCongrArgFun : ∀ a₁ a₂ : A,
+                       a₁ ≃ a₂ ⟶{λ ea => (defAppCongrArg ea).e} (app a₁).F ≃ (app a₂).F)
+                    (toDefFun :
+                       A ⟶{λ a => (app a).F, ⟨λ a₁ a₂ => (defAppCongrArgFun a₁ a₂).F⟩} (B ⟶ C ⟶ D)) :
+        A ⟶ B ⟶ C ⟶{f, hf} D :=
+      { toDefFun₃ := ⟨λ a => (app a).toDefFun₂, toDefFun.toDefFun⟩,
+        defEq     := ⟨λ a => (app a).defEq, toDefFun.defEq⟩ }
+
       instance (F :  A ⟶ B ⟶ C ⟶{f, hf} D) : DefFun₃.DefEq F.toDefFun₃ := F.defEq
 
       def cast {g : A → B → C → D} {hg : CongrProof₃ g} (hfg : ∀ a b c, f a b c ≃ g a b c)
@@ -308,14 +370,18 @@ namespace HasFunctors
         A ⟶{λ a => (F.appEx a).F, ⟨λ a₁ a₂ => Λ e => DefFun₃.app.congr F.toDefFun₃ e⟩} (B ⟶ C ⟶ D) :=
       ⟨F.toDefFun, F.defEq.toDefFun⟩
 
-      structure FunEquiv (F G : A ⟶ B ⟶ C ⟶{f, hf} D) where
-      (app (a : A) : F.appEx a {{≃}} G.appEx a)
-      (toFunEquiv : (λ a => (app a).e) ► F.toDefFunEx {≃} G.toDefFunEx)
+      def DefFunEquiv (F G : A ⟶ B ⟶ C ⟶{f, hf} D) :=
+      F.F ≃≃≃{λ a b c => DefFun₃.byDef⁻¹ • DefFun₃.byDef} G.F 
+      infix:25 " {≃≃≃} " => HasFunctors.DefFunEx₃.DefFunEquiv
 
-      infix:25 " {{{≃}}} " => HasFunctors.DefFunEx₃.FunEquiv
+      def DefFunEquiv.defApp {F G : A ⟶ B ⟶ C ⟶{f, hf} D} (e : F {≃≃≃} G) (a : A) :
+        F.appEx a {≃≃} G.appEx a :=
+      ⟨λ b => ⟨congrFun DefFun.byDef b • ((e.app a).app b).e • (congrFun DefFun.byDef b)⁻¹⟩,
+       ⟨DefFun.byDef • (e.app a).e • DefFun.byDef⁻¹⟩⟩
 
-      @[reducible] def FunEquiv.e {F G : A ⟶ B ⟶ C ⟶{f, hf} D} (e : F {{{≃}}} G) : F.F ≃ G.F :=
-      e.toFunEquiv.e
+      def DefFunEquiv.toDefFunEquiv {F G : A ⟶ B ⟶ C ⟶{f, hf} D} (e : F {≃≃≃} G) :
+        (λ a => (e.defApp a).e) ► F.toDefFunEx {≃} G.toDefFunEx :=
+      ⟨e.e⟩
 
     end
 

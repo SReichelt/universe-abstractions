@@ -18,11 +18,19 @@ import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Functors
 import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Prerelations
 import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 
+import UniverseAbstractions.Universes.Layer1.Instances.Unit
+import UniverseAbstractions.Universes.Layer1.Instances.Prop
+import UniverseAbstractions.Universes.Layer1.Instances.Bool
 import UniverseAbstractions.Universes.Layer1.Instances.FunctorUniverse
 
 import UniverseAbstractions.Universes.Layer2.Axioms.Universes
 import UniverseAbstractions.Universes.Layer2.Axioms.Functors
+import UniverseAbstractions.Universes.Layer2.Axioms.FunctorialImplications
 
 import UniverseAbstractions.Universes.Layer2.Lemmas.DerivedFunctors
 
 import UniverseAbstractions.Universes.Layer2.Meta.ExprUniverse
+
+import UniverseAbstractions.Universes.Layer2.Instances.UnitEq
+import UniverseAbstractions.Universes.Layer2.Instances.Type
+import UniverseAbstractions.Universes.Layer2.Instances.Setoid

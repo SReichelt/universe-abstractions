@@ -173,22 +173,24 @@ namespace HasFunctors
   def funRel : Prerelation U U := hFun.Fun
 
   instance funRel.isPreorder [HasLinearLogic U] : IsPreorder (funRel U) :=
-  { refl      := λ A     => idFun A,
-    transFun₂ := λ A B C => compFun₃ A B C }
+  { refl      := idFun,
+    transFun₂ := compFun₃ }
 
 end HasFunctors
 
 
 namespace HasEquivalences
 
+  open HasEquivOp
+
   variable (U : Universe) [HasFunctors U]
 
   def equivRel [hEquiv : HasEquivalences U] : Prerelation U U := hEquiv.Equiv
 
-  instance equivRel.isPreorder [HasLinearLogic U] [HasEquivOpFun U] : IsEquivalence (equivRel U) :=
-  { refl      := λ A     => HasEquivOp.refl         A,
-    symmFun   := λ A B   => HasEquivOpFun.symmFun   A B,
-    transFun₂ := λ A B C => HasEquivOpFun.transFun₂ A B C }
+  instance equivRel.isPreorder [HasLinearLogic U] [HasEquivOp U] : IsEquivalence (equivRel U) :=
+  { refl      := refl,
+    symmFun   := symmFun,
+    transFun₂ := transFun₂ }
 
 end HasEquivalences
 
