@@ -95,8 +95,7 @@ namespace HasNonLinearLogic
 
   open HasLinearLogic
 
-  variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [Layer1.HasNonLinearLogic U.V]
-           [HasNonLinearLogic U]
+  variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [HasNonLinearLogic U]
 
   def dupFun.byDef {A B : U} {F : A ⟶ A ⟶ B} {a : A} : (dupFun F) a ≃ F a a :=
   DefFun.byDef

@@ -29,8 +29,7 @@ end layer1Setoid
 def setoid : Universe.{u + 1, u + 2, 0, 1} :=
 { toUniverse := layer1Setoid,
   V          := Layer1.prop,
-  hasFun     := inferInstance,
-  hasLin     := inferInstance,
+  hV         := inferInstance,
   hasEq      := layer1Setoid.hasEq }
 
 namespace setoid

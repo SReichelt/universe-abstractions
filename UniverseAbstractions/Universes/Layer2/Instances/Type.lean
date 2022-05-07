@@ -18,8 +18,7 @@ universe u
 def type : Universe.{u + 1, u + 2, 0, 1} :=
 { toUniverse := ⟨Type u⟩,
   V          := Layer1.prop,
-  hasFun     := inferInstance,
-  hasLin     := inferInstance,
+  hV         := inferInstance,
   hasEq      := λ α => ⟨@Eq α⟩ }
 
 namespace type

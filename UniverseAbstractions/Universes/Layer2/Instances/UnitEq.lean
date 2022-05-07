@@ -20,8 +20,7 @@ universe u uu
 def unitEqUniverse (U : Layer1.Universe.{u, uu}) : Universe.{u, uu, 0, 0} :=
 { toUniverse := U,
   V          := Layer1.unit,
-  hasFun     := inferInstance,
-  hasLin     := inferInstance,
+  hV         := inferInstance,
   hasEq      := λ A => ⟨Layer1.Prerelation.topRelation A Layer1.unit⟩ }
 
 namespace unitEqUniverse

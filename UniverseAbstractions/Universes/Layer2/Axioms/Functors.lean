@@ -437,7 +437,7 @@ namespace HasLinearLogic
 end HasLinearLogic
 
 
-class HasSubLinearLogic (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic U.V] where
+class HasSubLinearLogic (U : Universe) [HasFunctors U] where
 (defConstFun₂ (A B : U) :
    B ⟶ A ⟶{λ b a => b,
            ⟨λ b => ⟨λ a₁ a₂ => constFun (a₁ ≃ a₂) (InstEq.refl b)⟩,
@@ -445,14 +445,15 @@ class HasSubLinearLogic (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic
 
 namespace HasSubLinearLogic
 
-  instance layer1 (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic U.V]
+  instance layer1 (U : Universe) [HasFunctors U]
                   [HasSubLinearLogic U] :
     Layer1.HasSubLinearLogic U :=
   { defConstFun₂ := λ A B => (defConstFun₂ A B).toDefFun₂ }
 
-  variable {U : Universe} [HasFunctors U] [Layer1.HasSubLinearLogic U.V] [HasSubLinearLogic U]
+  variable {U : Universe} [HasFunctors U] [HasSubLinearLogic U]
 
-  instance (A B : U) : DefFun₂.DefEq (Layer1.HasSubLinearLogic.defConstFun₂ A B) := (defConstFun₂ A B).defEq
+  instance (A B : U) : DefFun₂.DefEq (Layer1.HasSubLinearLogic.defConstFun₂ A B) :=
+  (defConstFun₂ A B).defEq
 
   @[reducible] def constFun.congrArg (A : U) {B : U} {b₁ b₂ : B} (e : b₁ ≃ b₂) :
     constFun A b₁ ≃ constFun A b₂ :=
@@ -460,16 +461,15 @@ namespace HasSubLinearLogic
 
 end HasSubLinearLogic
 
-class HasAffineLogic (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic U.V] extends
+class HasAffineLogic (U : Universe) [HasFunctors U] extends
   HasLinearLogic U, HasSubLinearLogic U
 
-instance HasAffineLogic.layer1 (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic U.V]
-                               [HasAffineLogic U] :
+instance HasAffineLogic.layer1 (U : Universe) [HasFunctors U] [HasAffineLogic U] :
   Layer1.HasAffineLogic U :=
 ⟨⟩
 
 
-class HasNonLinearLogic (U : Universe) [HasFunctors U] [Layer1.HasNonLinearLogic U.V] where
+class HasNonLinearLogic (U : Universe) [HasFunctors U] where
 (defDupFun₂ (A B : U) :
    (A ⟶ A ⟶ B) ⟶ A ⟶{λ F a => F a a,
                      ⟨λ F => ⟨λ a₁ a₂ => Λ e => congrArg₂ F e e⟩,
@@ -477,14 +477,14 @@ class HasNonLinearLogic (U : Universe) [HasFunctors U] [Layer1.HasNonLinearLogic
 
 namespace HasNonLinearLogic
 
-  instance layer1 (U : Universe) [HasFunctors U] [Layer1.HasNonLinearLogic U.V]
-                  [HasNonLinearLogic U] :
+  instance layer1 (U : Universe) [HasFunctors U] [HasNonLinearLogic U] :
     Layer1.HasNonLinearLogic U :=
   { defDupFun₂ := λ A B => (defDupFun₂ A B).toDefFun₂ }
 
-  variable {U : Universe} [HasFunctors U] [Layer1.HasNonLinearLogic U.V] [HasNonLinearLogic U]
+  variable {U : Universe} [HasFunctors U] [HasNonLinearLogic U]
 
-  instance (A B : U) : DefFun₂.DefEq (Layer1.HasNonLinearLogic.defDupFun₂ A B) := (defDupFun₂ A B).defEq
+  instance (A B : U) : DefFun₂.DefEq (Layer1.HasNonLinearLogic.defDupFun₂ A B) :=
+  (defDupFun₂ A B).defEq
 
   @[reducible] def dupFun.congrArg {A B : U} {F₁ F₂ : A ⟶ A ⟶ B} (e : F₁ ≃ F₂) :
     dupFun F₁ ≃ dupFun F₂ :=
@@ -492,11 +492,9 @@ namespace HasNonLinearLogic
 
 end HasNonLinearLogic
 
-class HasFullLogic (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic U.V]
-                   [Layer1.HasNonLinearLogic U.V] extends
+class HasFullLogic (U : Universe) [HasFunctors U] extends
   HasAffineLogic U, HasNonLinearLogic U
 
-instance HasFullLogic.layer1 (U : Universe) [HasFunctors U] [Layer1.HasSubLinearLogic U.V]
-                             [Layer1.HasNonLinearLogic U.V] [HasFullLogic U] :
+instance HasFullLogic.layer1 (U : Universe) [HasFunctors U] [HasFullLogic U] :
   Layer1.HasFullLogic U :=
 ⟨⟩

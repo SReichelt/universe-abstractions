@@ -65,4 +65,6 @@ namespace unit
   instance hasPropEquivalences : HasPropEquivalences unit := inferInstance
   instance hasClassicalEquivalences : HasClassicalEquivalences unit := inferInstance
 
+  instance isStandardUniverse : IsStandardUniverse unit := ⟨⟩
+
 end unit

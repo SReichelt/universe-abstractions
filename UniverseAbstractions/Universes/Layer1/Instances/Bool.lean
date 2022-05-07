@@ -121,4 +121,6 @@ namespace bool
   instance hasPropEquivalences : HasPropEquivalences bool := inferInstance
   instance hasClassicalEquivalences : HasClassicalEquivalences bool := inferInstance
 
+  instance isStandardUniverse : IsStandardUniverse bool := ⟨⟩
+
 end bool

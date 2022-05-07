@@ -1,5 +1,5 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
-import UniverseAbstractions.Universes.Layer1.Axioms.Functors
+import UniverseAbstractions.Universes.Layer1.Axioms.StandardEquivalences
 import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
 
 
@@ -16,8 +16,7 @@ universe u uu v vv
 
 structure Universe extends Layer1.Universe.{u, uu} where
 (V : Layer1.Universe.{v, vv})
-[hasFun : Layer1.HasFunctors V]
-[hasLin : Layer1.HasLinearLogic V]
+[hV : Layer1.IsStandardUniverse V]
 [hasEq (A : I) : Layer1.HasEquivalenceRelation A V]
 
 namespace Universe
@@ -34,8 +33,7 @@ namespace Universe
     instance instInst : Layer1.HasInstances.{u, uu} U.I := Layer1.Universe.instInst U
     instance : Layer1.HasInstances U := instInst U
 
-    instance : Layer1.HasFunctors    U.V := U.hasFun
-    instance : Layer1.HasLinearLogic U.V := U.hasLin
+    instance : Layer1.IsStandardUniverse U.V := U.hV
 
   end
 

@@ -121,14 +121,14 @@ end HasLinearFunImp
 
 
 class HasSubLinearFunImp (U : Universe) [HasFunctors U] [HasFunctorialImplication U]
-                         [Layer1.HasSubLinearLogic U.V] [HasSubLinearLogic U] where
+                         [HasSubLinearLogic U] where
 (defConstFunImp {A B C : U} (F : A ⟶ B) (c : C) :
    F −≃→{λ a b => constFun (F a ≃ F b) (DefFun.byDef⁻¹ • DefFun.byDef)} constFun A c)
 
 namespace HasSubLinearFunImp
 
   variable {U : Universe} [HasFunctors U] [HasFunctorialImplication U]
-           [Layer1.HasSubLinearLogic U.V] [HasSubLinearLogic U] [HasSubLinearFunImp U]
+           [HasSubLinearLogic U] [HasSubLinearFunImp U]
 
   @[reducible] def constFunImp {A B C : U} (F : A ⟶ B) (c : C) : F −≃→ constFun A c :=
   (defConstFunImp F c).i
@@ -136,13 +136,12 @@ namespace HasSubLinearFunImp
 end HasSubLinearFunImp
 
 class HasAffineFunImp (U : Universe) [HasFunctors U] [HasFunctorialImplication U]
-                      [Layer1.HasSubLinearLogic U.V] [HasAffineLogic U] extends
+                      [HasAffineLogic U] extends
   HasLinearFunImp U, HasSubLinearFunImp U
 
 
 class HasNonLinearFunImp (U : Universe) [HasFunctors U] [HasFunctorialImplication U]
-                         [Layer1.HasNonLinearLogic U.V] [HasLinearLogic U] [HasNonLinearLogic U]
-                         where
+                         [HasLinearLogic U] [HasNonLinearLogic U] where
 (defRightSubstFunImp {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} (i : F −≃→ G) :
    F −≃→{λ a b => Λ e => DefFun.byDef⁻¹ • congr (elim i e) e • DefFun.byDef} substFun F G)
 (defRightSubstFunImpFun {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) :
@@ -155,9 +154,8 @@ class HasNonLinearFunImp (U : Universe) [HasFunctors U] [HasFunctorialImplicatio
 
 namespace HasNonLinearFunImp
 
-  variable {U : Universe} [HasFunctors U] [HasFunctorialImplication U]
-           [Layer1.HasNonLinearLogic U.V] [HasLinearLogic U] [HasNonLinearLogic U]
-           [HasNonLinearFunImp U]
+  variable {U : Universe} [HasFunctors U] [HasFunctorialImplication U] [HasLinearLogic U]
+           [HasNonLinearLogic U] [HasNonLinearFunImp U]
 
   @[reducible] def rightSubstFunImp {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} (i : F −≃→ G) :
     F −≃→ substFun F G :=
@@ -193,7 +191,6 @@ namespace HasNonLinearFunImp
 
 end HasNonLinearFunImp
 
-class HasFullFunImp (U : Universe) [HasFunctors U] [HasFunctorialImplication U]
-                    [Layer1.HasSubLinearLogic U.V] [Layer1.HasNonLinearLogic U.V] [HasFullLogic U]
+class HasFullFunImp (U : Universe) [HasFunctors U] [HasFunctorialImplication U] [HasFullLogic U]
                     extends
   HasAffineFunImp U, HasNonLinearFunImp U

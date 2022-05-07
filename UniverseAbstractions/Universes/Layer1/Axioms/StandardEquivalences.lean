@@ -4,12 +4,10 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Axioms.Products
 import UniverseAbstractions.Universes.Layer1.Axioms.Coproducts
 import UniverseAbstractions.Universes.Layer1.Axioms.Equivalences
-
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedSingletonFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedProductFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedCoproductFunctors
-
 import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 
 
@@ -250,6 +248,10 @@ class HasLinearEquivalences (U : Universe) [HasFunctors U] [HasLinearLogic U] [H
 class HasFullEquivalences (U : Universe) [HasFunctors U] [HasFullLogic U] [HasTop U] [HasBot U]
                           [HasProducts U] [HasCoproducts U] [HasEquivOp U] extends
   HasLinearEquivalences U, HasProductDistrEquivalences U, HasCoproductDistrEquivalences U
+
+class IsStandardUniverse (U : Universe) extends
+  HasFunctors U, HasFullLogic U, HasTop U, HasBot U, HasProducts U, HasCoproducts U, HasEquivOp U,
+  HasFullEquivalences U
 
 
 -- This is only implemented by universes of propositions, where all inhabited types are equivalent.

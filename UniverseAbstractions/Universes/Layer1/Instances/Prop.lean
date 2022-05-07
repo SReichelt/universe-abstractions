@@ -70,6 +70,8 @@ namespace prop
   instance hasPropEquivalences : HasPropEquivalences prop := inferInstance
   instance hasClassicalEquivalences : HasClassicalEquivalences prop := inferInstance
 
+  instance isStandardUniverse : IsStandardUniverse prop := ⟨⟩
+
 end prop
 
 
