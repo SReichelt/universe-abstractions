@@ -136,19 +136,17 @@ namespace Prerelation
 
   section
 
-    open HasTop
-
     def unitRelation (α : Sort u) {V : Universe.{v}} (B : V) : Prerelation α V := λ _ _ => B
 
     def topRelation (α : Sort u) (V : Universe.{v}) [HasFunctors V] [HasTop V] : Prerelation α V :=
-    unitRelation α (Top V)
+    unitRelation α ⊤_V
 
     instance topRelation.isEquivalence (α : Sort u) {V : Universe.{v}}
-                                      [HasFunctors V] [HasLinearLogic V] [HasTop V] :
+                                       [HasFunctors V] [HasLinearLogic V] [HasTop V] :
       IsEquivalence (topRelation α V) :=
-    { refl      := λ _     => top V,
-      symmFun   := λ _ _   => HasTop.elimFun (top V),
-      transFun₂ := λ _ _ _ => HasTop.elimFun (idFun (Top V)) }
+    { refl      := λ _     => ∗_V,
+      symmFun   := λ _ _   => HasTop.elimFun ∗_V,
+      transFun₂ := λ _ _ _ => HasTop.elimFun (idFun ⊤_V) }
 
     def emptyRelation (V : Universe.{v}) : Prerelation PEmpty.{u} V := λ e _ => PEmpty.elim e
 

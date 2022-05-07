@@ -44,6 +44,8 @@ namespace prop
 
   instance hasClassicalLogic : HasClassicalLogic prop := ⟨@Classical.byContradiction⟩
 
+  instance isLogicallyConsistent : IsLogicallyConsistent prop := ⟨id⟩
+
   instance hasProducts : HasProducts prop :=
   { Prod      := And,
     introFun₂ := @And.intro,
@@ -64,6 +66,9 @@ namespace prop
   ⟨λ to inv => ⟨⟨to, inv⟩⟩⟩
 
   instance hasEquivOp : HasEquivOp prop := inferInstance
+  instance hasFullEquivalences : HasFullEquivalences prop := inferInstance
+  instance hasPropEquivalences : HasPropEquivalences prop := inferInstance
+  instance hasClassicalEquivalences : HasClassicalEquivalences prop := inferInstance
 
 end prop
 

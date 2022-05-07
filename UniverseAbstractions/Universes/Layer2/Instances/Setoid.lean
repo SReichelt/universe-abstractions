@@ -63,15 +63,15 @@ namespace setoid
 
   instance hasFullLogic : HasFullLogic setoid.{u} := inferInstance
 
-  instance hasFunctorialImplication : HasFunctorialImplication setoid.{u} :=
-  { FunImp   := λ {A B C} f g => let _ : Setoid B := inferInstance;
-                                 let _ : Setoid C := inferInstance;
-                                 ∀ a b, f a ≈ f b → g a ≈ g b,
-    elimFun₂ := λ f g a b i => i a b }
-
-  instance hasTrivialFunctorialImplication : HasTrivialFunctorialImplication setoid.{u} :=
-  ⟨λ f g i => ⟨i⟩⟩
-
-  instance hasFullFunImp : HasFullFunImp setoid.{u} := inferInstance
+--  instance hasFunctorialImplication : HasFunctorialImplication setoid.{u} :=
+--  { FunImp   := λ {A B C} f g => let _ : Setoid B := inferInstance;
+--                                 let _ : Setoid C := inferInstance;
+--                                 ∀ a b, f a ≈ f b → g a ≈ g b,
+--    elimFun₂ := λ f g a b i => i a b }
+--
+--  instance hasTrivialFunctorialImplication : HasTrivialFunctorialImplication setoid.{u} :=
+--  ⟨λ f g i => ⟨i⟩⟩
+--
+--  instance hasFullFunImp : HasFullFunImp setoid.{u} := inferInstance
 
 end setoid

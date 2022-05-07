@@ -13,14 +13,19 @@ open Universe Layer1 Layer1.HasFunctors Layer1.HasLinearLogic Layer1.HasSubLinea
 
 
 class HasFunctorialImplication (U : Universe) [HasFunctors U] where
-(FunImp {A B C : U} : (A ⟶ B) → (A ⟶ C) → U.V)
-(elimFun₂ {A B C : U} (F : A ⟶ B) (G : A ⟶ C) (a b : A) : FunImp F G ⟶ (F a ≃ F b ⟶ G a ≃ G b))
+(defFunImpPi {A B C : U} (F : A ⟶ B) (G : A ⟶ C) : DefPi₂ (λ a b => F a ≃ F b ⟶ G a ≃ G b))
 
 namespace HasFunctorialImplication
 
+  variable {U : Universe} [HasFunctors U] [h : HasFunctorialImplication U]
+
+  @[reducible] def FunImp {A B C : U} (F : A ⟶ B) (G : A ⟶ C) : U.V := (h.defFunImpPi F G).toDefPi.p
+
   infixr:20 " −≃→ " => HasFunctorialImplication.FunImp
 
-  variable {U : Universe} [HasFunctors U] [h : HasFunctorialImplication U]
+  @[reducible] def elimFun₂ {A B C : U} (F : A ⟶ B) (G : A ⟶ C) (a b : A) :
+    (F −≃→ G) ⟶ (F a ≃ F b ⟶ G a ≃ G b) :=
+  DefPi₂.appFun (h.defFunImpPi F G) a b
 
   @[reducible] def elimFun {A B C : U} {F : A ⟶ B} {G : A ⟶ C} (i : F −≃→ G) (a b : A) :
     F a ≃ F b ⟶ G a ≃ G b :=
@@ -30,9 +35,8 @@ namespace HasFunctorialImplication
     G a ≃ G b :=
   (elimFun i a b) e
 
-  structure DefFunImp {A B C : U} (F : A ⟶ B) (G : A ⟶ C) (congr : ∀ a b, F a ≃ F b ⟶ G a ≃ G b)
-                      where
-  (i : F −≃→ G)
+  @[reducible] def DefFunImp {A B C : U} (F : A ⟶ B) (G : A ⟶ C) :=
+  DefPi₂.DefLambda (h.defFunImpPi F G)
 
   notation:20 F:21 " −≃→{" congr:0 "} " G:21 => HasFunctorialImplication.DefFunImp F G congr
 

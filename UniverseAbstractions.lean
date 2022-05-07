@@ -5,10 +5,12 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Axioms.Products
 import UniverseAbstractions.Universes.Layer1.Axioms.Coproducts
 import UniverseAbstractions.Universes.Layer1.Axioms.Equivalences
+import UniverseAbstractions.Universes.Layer1.Axioms.StandardEquivalences
 
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedSingletonFunctors
 import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedProductFunctors
+import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedCoproductFunctors
 
 import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
 import UniverseAbstractions.Universes.Layer1.Meta.OptionalExprUniverse

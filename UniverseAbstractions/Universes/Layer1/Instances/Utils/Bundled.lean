@@ -72,6 +72,9 @@ namespace Bundled
   { B       := type Φ h.botInst,
     elimFun := λ A => mkFun Φ (h.elimIsFun A) }
 
+  instance isLogicallyConsistent [h : HasBotInstance Φ] : IsLogicallyConsistent (univ Φ) :=
+  ⟨PEmpty.elim⟩
+
   class HasProductInstances where
   (prodInst (A B : univ Φ) : Φ (PProd A B))
   (introIsFun {A : univ Φ} (a : A) (B : univ Φ) :

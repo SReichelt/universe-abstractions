@@ -61,5 +61,8 @@ namespace unit
   instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition unit := ⟨λ _ _ => ⟨inst⟩⟩
 
   instance hasEquivOp : HasEquivOp unit := inferInstance
+  instance hasFullEquivalences : HasFullEquivalences unit := inferInstance
+  instance hasPropEquivalences : HasPropEquivalences unit := inferInstance
+  instance hasClassicalEquivalences : HasClassicalEquivalences unit := inferInstance
 
 end unit

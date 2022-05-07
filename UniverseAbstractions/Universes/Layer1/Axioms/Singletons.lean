@@ -24,14 +24,17 @@ namespace HasTop
 
     variable (U : Universe) [HasFunctors U] [h : HasTop U] 
 
-    @[reducible] def Top : U     := h.T
-    @[reducible] def top : Top U := h.t
+    @[reducible] def Top : U := h.T
+    prefix:max "⊤_" => HasTop.Top
+
+    @[reducible] def top : ⊤_U := h.t
+    prefix:max "∗_" => HasTop.top
 
   end
 
   variable {U : Universe} [HasFunctors U] [HasTop U] 
 
-  @[reducible] def elimFun {A : U} (a : A) : T ⟶ A := (defElimFun a).F
+  @[reducible] def elimFun {A : U} (a : A) : ⊤_U ⟶ A := (defElimFun a).F
 
 end HasTop
 
@@ -48,15 +51,29 @@ namespace HasBot
 
     @[reducible] def Bot : U := h.B
 
+    prefix:max "⊥_" => HasBot.Bot
+
   end
 
   variable {U : Universe} [HasFunctors U] [HasBot U]
 
-  @[reducible] def elim (b : Bot U) (A : U) : A := (elimFun A) b
+  @[reducible] def elim (b : ⊥_U) (A : U) : A := (elimFun A) b
 
-  def Not (A : U) : U := A ⟶ Bot U
+  def Not (A : U) : U := A ⟶ ⊥_U
+  prefix:max "~" => HasBot.Not
 
 end HasBot
 
 class HasClassicalLogic (U : Universe) [HasFunctors U] [HasBot U] where
-(byContradictionFun (A : U) : HasBot.Not (HasBot.Not A) ⟶ A)
+(byContradictionFun (A : U) : ~~A ⟶ A)
+
+namespace HasClassicalLogic
+
+  variable {U : Universe} [HasFunctors U] [HasBot U] [HasClassicalLogic U]
+
+  @[reducible] def byContradiction {A : U} (F : ~~A) : A := (byContradictionFun A) F
+
+end HasClassicalLogic
+
+class IsLogicallyConsistent (U : Universe) [HasFunctors U] [HasBot U] where
+(botEmpty : ⊥_U → False)

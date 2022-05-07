@@ -61,6 +61,8 @@ namespace bool
           | true  => inst
           | false => inst⟩
 
+  instance isLogicallyConsistent : IsLogicallyConsistent bool := ⟨id⟩
+
   instance hasProducts : HasProducts bool :=
   { Prod      := and,
     introFun₂ := λ b c => match b, c with
@@ -115,5 +117,8 @@ namespace bool
                       | false, false => inst⟩⟩
 
   instance hasEquivOp : HasEquivOp bool := inferInstance
+  instance hasFullEquivalences : HasFullEquivalences bool := inferInstance
+  instance hasPropEquivalences : HasPropEquivalences bool := inferInstance
+  instance hasClassicalEquivalences : HasClassicalEquivalences bool := inferInstance
 
 end bool

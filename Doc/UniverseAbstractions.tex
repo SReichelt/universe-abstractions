@@ -770,8 +770,8 @@ concept of equivalence that can be referenced at higher layers.
     \item $\bot \times A \leftrightarrow \bot$ if $\U$ has products and a counit type
     \item $A \oplus B \leftrightarrow B \oplus A$ if $\U$ has coproducts
     \item $[A \oplus B] \oplus C \leftrightarrow A \oplus [B \oplus C]$ if $\U$ has coproducts
-    \item $[A \oplus B \to C] \leftrightarrow [A \to C] \times [B \to C]$ if $\U$ has coproducts
-    and products
+    \item $[A \oplus B \to C] \leftrightarrow [A \to C] \times [B \to C]$ if $\U$ has coproducts,
+    products, and full logic
     \item $\bot \oplus A \leftrightarrow A$ if $\U$ has coproducts and a counit type
     \item $[A \leftrightarrow B] \leftrightarrow [B \leftrightarrow A]$
     \item functors of the form $[A \leftrightarrow B] \to [\Phi(A) \leftrightarrow \Phi(B)],$ where
@@ -892,6 +892,8 @@ In particular, we will consider the following layer 2 universes.
   (This requires special consideration of size-related issues, which we will ignore here because
   they are adequately addressed by the formalization in Lean.)
 \end{itemize}
+
+% TODO: Refactor writeup for V : U
 
 \subsection{Functors}
 

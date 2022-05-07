@@ -63,16 +63,16 @@ namespace unitEqUniverse
   instance hasFullLogic [h : Layer1.HasFullLogic U] : HasFullLogic (unitEqUniverse U) :=
   { defDupFun₂ := λ A B => ⟨h.defDupFun₂ A B, defFunEq₂ U⟩ }
 
-  instance hasFunctorialImplication : HasFunctorialImplication (unitEqUniverse U) :=
-  { FunImp   := λ f g => Layer1.unit.Inst,
-    elimFun₂ := λ f g a b => Layer1.unit.inst }
-
-  instance hasTrivialFunctorialImplication : HasTrivialFunctorialImplication (unitEqUniverse U) :=
-  ⟨λ f g i => ⟨Layer1.unit.inst⟩⟩
-
-  instance hasLinearFunImp [Layer1.HasLinearLogic U] : HasLinearFunImp (unitEqUniverse U) := inferInstance
-  instance hasAffineFunImp [Layer1.HasAffineLogic U] : HasAffineFunImp (unitEqUniverse U) := inferInstance
-  instance hasFullFunImp   [Layer1.HasFullLogic   U] : HasFullFunImp   (unitEqUniverse U) := inferInstance
+--  instance hasFunctorialImplication : HasFunctorialImplication (unitEqUniverse U) :=
+--  { FunImp   := λ f g => Layer1.unit.Inst,
+--    elimFun₂ := λ f g a b => Layer1.unit.inst }
+--
+--  instance hasTrivialFunctorialImplication : HasTrivialFunctorialImplication (unitEqUniverse U) :=
+--  ⟨λ f g i => ⟨Layer1.unit.inst⟩⟩
+--
+--  instance hasLinearFunImp [Layer1.HasLinearLogic U] : HasLinearFunImp (unitEqUniverse U) := inferInstance
+--  instance hasAffineFunImp [Layer1.HasAffineLogic U] : HasAffineFunImp (unitEqUniverse U) := inferInstance
+--  instance hasFullFunImp   [Layer1.HasFullLogic   U] : HasFullFunImp   (unitEqUniverse U) := inferInstance
 
 end unitEqUniverse
 

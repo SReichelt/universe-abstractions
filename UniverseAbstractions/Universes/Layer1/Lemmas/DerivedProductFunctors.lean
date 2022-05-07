@@ -70,7 +70,6 @@ namespace HasProducts
 
   def elim₃LFun {A B C D : U} (F : A ⟶ B ⟶ C ⟶ D) : (A ⊓ B) ⊓ C ⟶ D := elimFun (elimFun F)
   def elim₃LFun₂ (A B C D : U) : (A ⟶ B ⟶ C ⟶ D) ⟶ ((A ⊓ B) ⊓ C ⟶ D) := Λ F => elim₃LFun F
-
   def elim₃RFun {A B C D : U} (F : A ⟶ B ⟶ C ⟶ D) : A ⊓ (B ⊓ C) ⟶ D := elimFun (Λ a => elimFun (F a))
   def elim₃RFun₂ (A B C D : U) : (A ⟶ B ⟶ C ⟶ D) ⟶ (A ⊓ (B ⊓ C) ⟶ D) := Λ F => elim₃RFun F
 
@@ -122,12 +121,19 @@ namespace HasProducts
 
   section
 
-
     variable [HasTop U]
 
-    def prodTopIntroFun (A : U) : A ⟶ HasTop.Top U ⊓ A := Λ a => intro (HasTop.top U) a
+    def prodTopIntroFun (A : U) : A ⟶ ⊤_U ⊓ A := Λ a => intro ∗_U a
+    def prodTopElimFun (A : U) : ⊤_U ⊓ A ⟶ A := elimFun (HasTop.elimFun (idFun A))
 
-    def prodTopElimFun (A : U) : HasTop.Top U ⊓ A ⟶ A := elimFun (HasTop.elimFun (idFun A))
+  end
+
+  section
+
+    variable [HasBot U]
+
+    def prodBotIntroFun (A : U) : ⊥_U ⟶ ⊥_U ⊓ A := HasBot.elimFun (⊥_U ⊓ A)
+    def prodBotElimFun (A : U) : ⊥_U ⊓ A ⟶ ⊥_U := elimFun (HasBot.elimFun (A ⟶ ⊥_U))
 
   end
 

@@ -40,13 +40,13 @@ namespace type
 
   instance hasFullLogic : HasFullLogic type.{u} := inferInstance
 
-  instance hasFunctorialImplication : HasFunctorialImplication type.{u} :=
-  { FunImp   := λ f g => ∀ a b, f a = f b → g a = g b,
-    elimFun₂ := λ f g a b i => i a b }
-
-  instance hasTrivialFunctorialImplication : HasTrivialFunctorialImplication type.{u} :=
-  ⟨λ f g i => ⟨i⟩⟩
-
-  instance hasFullFunImp : HasFullFunImp type.{u} := inferInstance
+--  instance hasFunctorialImplication : HasFunctorialImplication type.{u} :=
+--  { FunImp   := λ f g => ∀ a b, f a = f b → g a = g b,
+--    elimFun₂ := λ f g a b i => i a b }
+--
+--  instance hasTrivialFunctorialImplication : HasTrivialFunctorialImplication type.{u} :=
+--  ⟨λ f g i => ⟨i⟩⟩
+--
+--  instance hasFullFunImp : HasFullFunImp type.{u} := inferInstance
 
 end type
