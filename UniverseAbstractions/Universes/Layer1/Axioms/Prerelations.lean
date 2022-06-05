@@ -1,10 +1,6 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
-import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
-import UniverseAbstractions.Universes.Layer1.Axioms.Products
-import UniverseAbstractions.Universes.Layer1.Axioms.Coproducts
-import UniverseAbstractions.Universes.Layer1.Axioms.Equivalences
-import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
+import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 
 import UniverseAbstractions.MathlibFragments.Init.CoreExt
 
@@ -14,9 +10,9 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
 
-open HasFunctors HasLinearLogic
+open HasFunctors HasIdFun HasConstFun HasSwapFun HasDupFun HasSubstFun
 
-universe u v w vv
+universe u u' u'' v w vv
 
 
 
@@ -26,43 +22,91 @@ namespace Prerelation
 
   section
 
-    variable {α : Sort u} {V : Universe} [HasFunctors V]
+    variable {α : Sort u} {V : Universe}
+
+    class IsFull (R : Prerelation α V) where
+      inst (a b : α) : R a b
 
     class HasRefl (R : Prerelation α V) where
-    (refl (a : α) : R a a)
+      refl (a : α) : R a a
+
+    variable [HasLinearLogic V]
 
     class HasSymm (R : Prerelation α V) where
-    (symmFun (a b : α) : R a b ⟶ R b a)
+      symmFun (a b : α) : R a b ⥤ R b a
 
-    def HasSymm.symm {R : Prerelation α V} [h : HasSymm R] {a b : α} (e : R a b) : R b a :=
-    (h.symmFun a b) e
+    @[reducible] def HasSymm.symm {R : Prerelation α V} [h : HasSymm R] {a b : α} (e : R a b) :
+        R b a :=
+      (h.symmFun a b) e
 
     postfix:max "⁻¹" => Prerelation.HasSymm.symm
 
     class HasTrans (R : Prerelation α V) where
-    (transFun₂ (a b c : α) : R a b ⟶ R b c ⟶ R a c)
+      revTransFun₂ (a b c : α) : R b c ⥤ R a b ⥤ R a c
 
-    def HasTrans.trans {R : Prerelation α V} [h : HasTrans R] {a b c : α} (f : R a b) (g : R b c) :
-      R a c :=
-    (h.transFun₂ a b c) f g
+    namespace HasTrans
 
-    notation:90 g:91 " • " f:90 => Prerelation.HasTrans.trans f g
+      @[reducible] def revTrans {R : Prerelation α V} [h : HasTrans R] {a b c : α}
+                                (g : R b c) (f : R a b) :
+          R a c :=
+        (h.revTransFun₂ a b c) g f
+
+      @[reducible] def revTransFun {R : Prerelation α V} [h : HasTrans R] (a : α) {b c : α}
+                                   (g : R b c) :
+          R a b ⥤ R a c :=
+        (h.revTransFun₂ a b c) g
+
+      @[reducible] def trans {R : Prerelation α V} [h : HasTrans R] {a b c : α}
+                             (f : R a b) (g : R b c) :
+          R a c :=
+        revTrans g f
+
+      def transFun {R : Prerelation α V} [h : HasTrans R] {a b : α} (f : R a b) (c : α) :
+          R b c ⥤ R a c :=
+        swapFun (h.revTransFun₂ a b c) f
+
+      def transFun₂ {R : Prerelation α V} [h : HasTrans R] (a b c : α) : R a b ⥤ R b c ⥤ R a c :=
+        swapFun₂ (h.revTransFun₂ a b c)
+
+      infixr:90 " • " => Prerelation.HasTrans.revTrans
+
+      instance revTrans.isFunApp {R : Prerelation α V} [h : HasTrans R] {a b c : α}
+                                 {g : R b c} {f : R a b} :
+          IsFunApp (R a b) (g • f) :=
+        ⟨revTransFun a g, f⟩
+
+      instance revTransFun.isFunApp {R : Prerelation α V} [h : HasTrans R] {a b c : α} {g : R b c} :
+          IsFunApp (R b c) (revTransFun a g) :=
+        ⟨revTransFun₂ a b c, g⟩
+
+      instance revTrans.isFunApp₂' {R : Prerelation α V} [h : HasTrans R] {a b c : α}
+                                   {g : R b c} {f : R a b} :
+          IsFunApp₂' (R b c) (R a b) (g • f) :=
+        ⟨⟨transFun f c, g⟩⟩
+
+      instance transFun.isFunApp {R : Prerelation α V} [h : HasTrans R] {a b c : α} {f : R a b} :
+          IsFunApp (R a b) (transFun f c) :=
+        ⟨transFun₂ a b c, f⟩
+
+    end HasTrans
 
     class IsPreorder (R : Prerelation α V) extends HasRefl R, HasTrans R
     class IsEquivalence (R : Prerelation α V) extends IsPreorder R, HasSymm R
 
     section
 
-      variable [HasLinearLogic V] (R : Prerelation α V)
+      variable (R : Prerelation α V)
 
       -- (Intentionally non-`@[reducible]`, as it would cause instance loops.)
       def opposite : Prerelation α V := λ a b => R b a
 
       namespace opposite
 
+        instance isFull [h : IsFull R] : IsFull (opposite R) := ⟨λ a b => h.inst b a⟩
+
         instance hasRefl  [h : HasRefl  R] : HasRefl  (opposite R) := ⟨h.refl⟩
         instance hasSymm  [h : HasSymm  R] : HasSymm  (opposite R) := ⟨λ a b => h.symmFun b a⟩
-        instance hasTrans [h : HasTrans R] : HasTrans (opposite R) := ⟨λ a b c => Λ f g => (h.transFun₂ c b a) g f⟩
+        instance hasTrans [h : HasTrans R] : HasTrans (opposite R) := ⟨λ a b c => h.transFun₂ c b a⟩
 
         instance isPreorder    [IsPreorder    R] : IsPreorder    (opposite R) := ⟨⟩
         instance isEquivalence [IsEquivalence R] : IsEquivalence (opposite R) := ⟨⟩
@@ -76,59 +120,16 @@ namespace Prerelation
 
         variable {ω : Sort w} (l : ω → α)
 
-        instance hasRefl  [h : HasRefl  R] : HasRefl  (lift R l) := ⟨λ a     => h.refl      (l a)⟩
-        instance hasSymm  [h : HasSymm  R] : HasSymm  (lift R l) := ⟨λ a b   => h.symmFun   (l a) (l b)⟩
-        instance hasTrans [h : HasTrans R] : HasTrans (lift R l) := ⟨λ a b c => h.transFun₂ (l a) (l b) (l c)⟩
+        instance isFull [h : IsFull R] : IsFull (lift R l) := ⟨λ a b => h.inst (l a) (l b)⟩
+
+        instance hasRefl  [h : HasRefl  R] : HasRefl  (lift R l) := ⟨λ a     => h.refl         (l a)⟩
+        instance hasSymm  [h : HasSymm  R] : HasSymm  (lift R l) := ⟨λ a b   => h.symmFun      (l a) (l b)⟩
+        instance hasTrans [h : HasTrans R] : HasTrans (lift R l) := ⟨λ a b c => h.revTransFun₂ (l a) (l b) (l c)⟩
 
         instance isPreorder    [IsPreorder    R] : IsPreorder    (lift R l) := ⟨⟩
         instance isEquivalence [IsEquivalence R] : IsEquivalence (lift R l) := ⟨⟩
 
       end lift
-
-    end
-
-    section
-
-      open HasProducts
-
-      variable [HasLinearLogic V] [HasProducts V] (R S : Prerelation α V)
-
-      def product : Prerelation α V := λ a b => R a b ⊓ S a b
-
-      namespace product
-
-        instance hasRefl  [hR : HasRefl  R] [hS : HasRefl  S] : HasRefl  (product R S) :=
-        ⟨λ a => intro (hR.refl a) (hS.refl a)⟩
-        instance hasSymm  [hR : HasSymm  R] [hS : HasSymm  S] : HasSymm  (product R S) :=
-        ⟨λ a b => elimFun (Λ el er => intro el⁻¹ er⁻¹)⟩
-        instance hasTrans [hR : HasTrans R] [hS : HasTrans S] : HasTrans (product R S) :=
-        ⟨λ a b c => elimFun (Λ fl fr => elimFun (Λ gl gr => intro (gl • fl) (gr • fr)))⟩
-
-        instance isPreorder    [IsPreorder    R] [IsPreorder    S] : IsPreorder    (product R S) := ⟨⟩
-        instance isEquivalence [IsEquivalence R] [IsEquivalence S] : IsEquivalence (product R S) := ⟨⟩
-
-      end product
-
-    end
-
-    section
-
-      open HasCoproducts
-
-      variable [HasLinearLogic V] [HasCoproducts V] (R S : Prerelation α V)
-
-      def coproduct : Prerelation α V := λ a b => R a b ⊔ S a b
-
-      namespace coproduct
-
-        instance hasLeftRefl [hR : HasRefl R] : HasRefl (coproduct R S) :=
-        ⟨λ a => leftIntro (hR.refl a) (S a a)⟩
-        instance hasRightRefl [hS : HasRefl S] : HasRefl (coproduct R S) :=
-        ⟨λ a => rightIntro (R a a) (hS.refl a)⟩
-        instance hasSymm [hR : HasSymm R] [hS : HasSymm S] : HasSymm (coproduct R S) :=
-        ⟨λ a b => elimFun (Λ el => leftIntro el⁻¹ (S b a)) (Λ er => rightIntro (R b a) er⁻¹)⟩
-
-      end coproduct
 
     end
 
@@ -138,23 +139,79 @@ namespace Prerelation
 
     def unitRelation (α : Sort u) {V : Universe.{v}} (B : V) : Prerelation α V := λ _ _ => B
 
-    def topRelation (α : Sort u) (V : Universe.{v}) [HasFunctors V] [HasTop V] : Prerelation α V :=
-    unitRelation α ⊤_V
-
-    instance topRelation.isEquivalence (α : Sort u) {V : Universe.{v}}
-                                       [HasFunctors V] [HasLinearLogic V] [HasTop V] :
-      IsEquivalence (topRelation α V) :=
-    { refl      := λ _     => ∗_V,
-      symmFun   := λ _ _   => HasTop.elimFun ∗_V,
-      transFun₂ := λ _ _ _ => HasTop.elimFun (idFun ⊤_V) }
-
     def emptyRelation (V : Universe.{v}) : Prerelation PEmpty.{u} V := λ e _ => PEmpty.elim e
 
-    instance emptyRelation.isEquivalence (V : Universe.{v}) [HasFunctors V] :
-      IsEquivalence (emptyRelation V) :=
-    { refl      := λ e     => PEmpty.elim e,
-      symmFun   := λ e _   => PEmpty.elim e,
-      transFun₂ := λ e _ _ => PEmpty.elim e }
+    instance emptyRelation.isFull (V : Universe.{v}) : IsFull (emptyRelation V) where
+      inst e _ := PEmpty.elim e
+
+    instance emptyRelation.isEquivalence (V : Universe.{v}) [HasLinearLogic V] :
+        IsEquivalence (emptyRelation V) where
+      refl         e     := PEmpty.elim e
+      symmFun      e _   := PEmpty.elim e
+      revTransFun₂ e _ _ := PEmpty.elim e
+
+  end
+
+  section
+
+    variable {α : Sort u} {V : Universe} [HasLinearLogic V]
+
+    @[reducible] def implication (R S : Prerelation α V) : Prerelation α V :=
+      λ a b => R a b ⥤ S a b
+
+    def Implication (R S : Prerelation α V) := IsFull (implication R S)
+
+    namespace Implication
+
+      instance coeFun (R S : Prerelation α V) :
+          CoeFun (Implication R S) (λ _ => ∀ {a b}, R a b → S a b) :=
+        ⟨λ F {a b} => apply (F.inst a b)⟩
+
+      def opposite {R S : Prerelation α V} (F : Implication R S) :
+          Implication (opposite R) (opposite S) where
+        inst a b := F.inst b a
+
+      def lift {R S : Prerelation α V} (F : Implication R S) {ω : Sort w} (l : ω → α) :
+          Implication (lift R l) (lift S l) where
+        inst a b := F.inst (l a) (l b)
+
+      def idImpl (R : Prerelation α V) : Implication R R where
+        inst a b := idFun (R a b)
+
+      def constImpl [HasSubLinearLogic V] (R : Prerelation α V) {C : V} (c : C) :
+          Implication R (unitRelation α C) where
+        inst a b := constFun (R a b) c
+
+      def compImpl {R S T : Prerelation α V} (F : Implication R S) (G : Implication S T) :
+          Implication R T where
+        inst a b := G.inst a b ⊙ F.inst a b
+
+      def symmImpl (R : Prerelation α V) [HasSymm R] :
+          Implication R (Prerelation.opposite R) where
+        inst := HasSymm.symmFun
+
+    end Implication
+
+    @[reducible] def implication₂ (R S T : Prerelation α V) : Prerelation α V :=
+      implication R (implication S T)
+
+    @[reducible] def Implication₂ (R S T : Prerelation α V) := Implication R (implication S T)
+
+    namespace Implication₂
+
+      def swapImpl {R S T : Prerelation α V} (F : Implication₂ R S T) : Implication₂ S R T where
+        inst a b := swapFun₂ (F.inst a b)
+
+      def dupImpl [HasNonLinearLogic V] {R T : Prerelation α V} (F : Implication₂ R R T) :
+          Implication R T where
+        inst a b := dupFun (F.inst a b)
+
+      def substImpl [HasNonLinearLogic V] {R S T : Prerelation α V} (F : Implication R S)
+                    (G : Implication₂ R S T) :
+          Implication R T where
+        inst a b := revSubstFun (G.inst a b) (F.inst a b)
+
+    end Implication₂
 
   end
 
@@ -164,96 +221,52 @@ open Prerelation
 
 
 
-namespace HasFunctors
-
-  variable (U : Universe) [hFun : HasFunctors U]
-
-  def funRel : Prerelation U U := hFun.Fun
-
-  instance funRel.isPreorder [HasLinearLogic U] : IsPreorder (funRel U) :=
-  { refl      := idFun,
-    transFun₂ := compFun₃ }
-
-end HasFunctors
-
-
-namespace HasEquivalences
-
-  open HasEquivOp
-
-  variable (U : Universe) [HasFunctors U]
-
-  def equivRel [hEquiv : HasEquivalences U] : Prerelation U U := hEquiv.Equiv
-
-  instance equivRel.isPreorder [HasLinearLogic U] [HasEquivOp U] : IsEquivalence (equivRel U) :=
-  { refl      := refl,
-    symmFun   := symmFun,
-    transFun₂ := transFun₂ }
-
-end HasEquivalences
-
-
-
-class HasEquivalenceRelation (α : Sort u) (V : outParam Universe.{v, vv})
-                             [outParam (HasFunctors V)] :
-  Sort (max 1 u v vv) where
-(R : Prerelation α V)
-[h : Prerelation.IsEquivalence R]
-
-namespace HasEquivalenceRelation
-
-  variable {α : Sort u} {V : Universe} [HasFunctors V] [h : HasEquivalenceRelation α V]
-
-  instance isEquivalence : IsEquivalence h.R := h.h
-
-end HasEquivalenceRelation
-
-
-
 def DependentPrerelation {U : Universe.{u}} {V : Universe.{v}} (R : Prerelation U V)
                          (W : Universe.{w}) :=
-∀ {A B}, R A B → (A → B → W)
+  ∀ {A B}, R A B → (A → B → W)
 
 namespace DependentPrerelation
 
-  variable {U V W : Universe} [HasFunctors V] [HasFunctors W] {R : Prerelation U V}
+  variable {U V W : Universe} {R : Prerelation U V}
 
   class HasDependentRefl (S : DependentPrerelation R W) [h : HasRefl R] where
-  (refl {A : U} (a : A) : S (h.refl A) a a)
+    refl {A : U} (a : A) : S (h.refl A) a a
 
   def ReflRel (S : DependentPrerelation R W) [h : HasRefl R] (A : U) : Prerelation A W :=
-  S (h.refl A)
+    S (h.refl A)
 
   instance (S : DependentPrerelation R W) [HasRefl R] [h : HasDependentRefl S] (A : U) :
-    HasRefl (ReflRel S A) :=
-  ⟨h.refl⟩
+      HasRefl (ReflRel S A) :=
+    ⟨h.refl⟩
+
+  variable [HasLinearLogic V] [HasLinearLogic W]
 
   class HasDependentSymm (S : DependentPrerelation R W) [h : HasSymm R] where
-  (symmFun {A B : U} (F : R A B) (a : A) (b : B) : S F a b ⟶ S F⁻¹ b a)
+    symmFun {A B : U} (F : R A B) (a : A) (b : B) : S F a b ⥤ S F⁻¹ b a
 
   def HasDependentSymm.symm {S : DependentPrerelation R W} [HasSymm R] [h : HasDependentSymm S]
                             {A B : U} {F : R A B} {a : A} {b : B} (e : S F a b) :
-    S F⁻¹ b a :=
-  (h.symmFun F a b) e
+      S F⁻¹ b a :=
+    (h.symmFun F a b) e
 
   postfix:max "[⁻¹]" => DependentPrerelation.HasDependentSymm.symm
 
   class HasDependentTrans (S : DependentPrerelation R W) [h : HasTrans R] where
-  (transFun₂ {A B C : U} (F : R A B) (G : R B C) (a : A) (b : B) (c : C) :
-     S F a b ⟶ S G b c ⟶ S (G • F) a c)
+    transFun₂ {A B C : U} (F : R A B) (G : R B C) (a : A) (b : B) (c : C) :
+      S F a b ⥤ S G b c ⥤ S (G • F) a c
 
   def HasDependentTrans.trans {S : DependentPrerelation R W} [HasTrans R] [h : HasDependentTrans S]
                               {A B C : U} {F : R A B} {G : R B C} {a : A} {b : B} {c : C}
                               (f : S F a b) (g : S G b c) :
-    S (G • F) a c :=
-  (h.transFun₂ F G a b c) f g
+      S (G • F) a c :=
+    (h.transFun₂ F G a b c) f g
 
   notation:90 g:91 " [•] " f:90 => DependentPrerelation.HasDependentTrans.trans f g
 
   class IsDependentPreorder (S : DependentPrerelation R W) [h : IsPreorder R] extends
-  HasDependentRefl S, HasDependentTrans S
+    HasDependentRefl S, HasDependentTrans S
 
   class IsDependentEquivalence (S : DependentPrerelation R W) [h : IsEquivalence R] extends
-  IsDependentPreorder S, HasDependentSymm S
+    IsDependentPreorder S, HasDependentSymm S
 
 end DependentPrerelation

@@ -2,7 +2,7 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
 
-universe u uu w
+universe u uu u'
 
 
 
@@ -16,7 +16,7 @@ universe u uu w
 -- `HasInstances` is essentially `CoeSort` without the (somewhat strange) output parameter.
 
 class HasInstances (I : Sort uu) : Sort (max (u + 1) uu) where
-(Inst : I → Sort u)
+  Inst : I → Sort u
 
 namespace HasInstances
 
@@ -41,16 +41,37 @@ end HasInstances
 -- type classes on `Universe`. See e.g. `Functors.lean`.
 
 structure Universe : Type (max u uu) where
-(I : Sort uu)
-[h : HasInstances.{u, uu} I]
+  I : Sort uu
+  [h : HasInstances.{u, uu} I]
 
 namespace Universe
 
   instance hasInstances : HasInstances.{uu, (max u uu) + 1} Universe.{u, uu} := ⟨Universe.I⟩
 
-  variable (U : Universe.{u, uu})
+  instance instInst (U : Universe.{u, uu}) : HasInstances.{u, uu} U.I := U.h
+  instance (U : Universe) : HasInstances U := instInst U
 
-  instance instInst : HasInstances.{u, uu} U.I := U.h
-  instance : HasInstances U := instInst U
+  structure DefType (U : Universe.{u, uu}) (α : Sort u') where
+    A : U
+    elim : A → α
+
+  namespace DefType
+    
+    instance (U : Universe.{u, uu}) (α : Sort u') : Coe (DefType U α) U := ⟨DefType.A⟩
+
+    variable {U : Universe.{u, uu}} {α : Sort u'}
+
+    structure DefInst (A : DefType U α) (a : α) where
+      inst : A.A
+
+    namespace DefInst
+
+      instance coeType (A : DefType U α) (a : α) : Coe (DefInst A a) A := ⟨DefInst.inst⟩
+
+      def cast {A : DefType U α} {a b : α} (i : DefInst A a) : DefInst A b := ⟨i.inst⟩
+
+    end DefInst
+
+  end DefType
 
 end Universe

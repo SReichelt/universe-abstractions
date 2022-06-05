@@ -7,7 +7,10 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
 
-open HasFunctors
+universe u
+
+open HasFunctors HasRevAppFun HasSwapFun HasSwapFun₃ HasCompFun HasRevCompFun₂ HasRevCompFun₃
+     HasDupFun HasDupFun₂ HasRevSelfAppFun HasSubstFun HasRevSubstFun₂ HasRevSubstFun₃
 
 
 
@@ -16,201 +19,290 @@ open HasFunctors
 
 
 
-namespace HasLinearLogic
-
-  variable {U : Universe} [HasFunctors U] [HasLinearLogic U]
+namespace HasRevAppFun
 
   -- The "swap" functor swaps the arguments of a nested functor.
   -- Its plain version `swapFun` actually just fixes the second argument.
-  -- The presence of `swapFun₂` establishes that when something is functorial in two arguments
-  -- given in a specific order, it is also functorial in the two arguments given in the reverse
-  -- order.
+  -- The presence of `swapFun₂` establishes that when something is functorial in two arguments given
+  -- in a specific order, it is also functorial in the two arguments given in the reverse order.
+  --
+  -- Due to the dependencies between swapping and composition, we need to define them in the order
+  -- `swapFun` -> `compFun₂` -> `swapFun₂` -> `compFun₃` -> `swapFun₃`.
+  -- This only happens if we start with `revCompFun₃` instead of `compFun₃`, but `revCompFun₃` is
+  -- arguably the more fundamental variant (and we may want to rename all `rev` functors at some
+  -- point).
 
-  def defSwapFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ B ⟶ A ⟶{λ F b a => F a b} C :=
-  ⟨λ F => ⟨λ b => ⟨revAppFun b C ⊙ F⟩,
-           ⟨compFun₂ F C ⊙ revAppFun₂ B C⟩⟩,
-   ⟨compFun₂ (revAppFun₂ B C) (A ⟶ C) ⊙ compFun₃ A (B ⟶ C) C⟩⟩
+  section
 
-  @[reducible] def swapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := (((defSwapFun₃ A B C).app F).app b).F
-  @[reducible] def swapFun₂ {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := ((defSwapFun₃ A B C).app F).F
-  abbrev swapFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := (defSwapFun₃ A B C).F
+    variable {α β : Sort u} {U : Universe.{u}} [HasFunctors α U] [HasFunctors β U]
+             [HasUnivFunctors U U] [HasRevAppFun β U] {C : U} [HasCompFun α (β ⥤ C) U]
 
-  instance swapFun.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} {b : B} : IsFunApp B (swapFun F b) :=
-  ⟨swapFun₂ F, b⟩
+    def defSwapFun (F : α ⥤ β ⥤ C) (b : β) : α ⥤{λ a => F a b} C := ⟨revAppFun b C ⊙ F⟩
 
-  instance swapFun₂.isFunApp {A B C : U} {F : A ⟶ B ⟶ C} : IsFunApp (A ⟶ B ⟶ C) (swapFun₂ F) :=
-  ⟨swapFun₃ A B C, F⟩
+    @[reducible] def swapFun (F : α ⥤ β ⥤ C) (b : β) : α ⥤ C := (defSwapFun F b).inst
+    @[reducible] def revSwapFun (b : β) (F : α ⥤ β ⥤ C) : α ⥤ C := swapFun F b
 
-  instance swapFun₃.isFunApp {A B C : U} :
-    IsFunApp ((((B ⟶ C) ⟶ C) ⟶ (A ⟶ C)) ⟶ (B ⟶ A ⟶ C)) (swapFun₃ A B C) :=
-  compFun.isFunApp
+  end
 
-  def defSwapDefFun₂ {A B C : U} {f : A → B → C} (F : A ⟶ B ⟶{f} C) :
-    B ⟶ A ⟶{λ b a => f a b} C :=
-  ⟨λ b => ⟨swapFun F.F b⟩,
-   ⟨swapFun₂ F.F⟩⟩
+  section
 
-  instance defSwapDefFun₂.isFunApp {A B C : U} {f : A → B → C} (F : A ⟶ B ⟶{f} C) :
-    IsFunApp (A ⟶ B ⟶ C) (defSwapDefFun₂ F).F :=
-  swapFun₂.isFunApp
+    variable (α : Sort u) {β : Sort u} {U : Universe.{u}} [HasFunctors α U] [HasFunctors β U]
+             [HasUnivFunctors U U] [HasRevCompFun₂ α U U] [HasRevAppFun β U]
 
-  def defSwapDefFun₃ {A B C D : U} {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) :
-    B ⟶ A ⟶ C ⟶{λ b a c => f a b c} D :=
-  ⟨λ b => ⟨λ a => (F.app a).app b,
-           ⟨swapFun F.F b⟩⟩,
-   ⟨swapFun₂ F.F⟩⟩
+    def defRevSwapFun₂ (b : β) (C : U) : (α ⥤ β ⥤ C) ⥤{revSwapFun b} (α ⥤ C) :=
+      ⟨revCompFun₂ α (revAppFun b C)⟩
 
-  instance defSwapDefFun₃.isFunApp {A B C D : U} {f : A → B → C → D} (F : A ⟶ B ⟶ C ⟶{f} D) :
-    IsFunApp (A ⟶ B ⟶ C ⟶ D) (defSwapDefFun₃ F).F :=
-  swapFun₂.isFunApp
+    @[reducible] def revSwapFun₂ (b : β) (C : U) : (α ⥤ β ⥤ C) ⥤ (α ⥤ C) :=
+      (defRevSwapFun₂ α b C).inst
 
-  -- These could be low-priority instances, but currently the `functoriality` tactic doesn't need or
-  -- want them.
-  def IsFunApp₂.isFunApp₂' {A B C : U} {c : C} [hApp : IsFunApp₂ A B c] :
-    IsFunApp₂' A B c :=
-  let _ : IsFunApp B c := IsFunApp₂.isFunApp;
-  ⟨⟨swapFun hApp.F hApp.b, hApp.a⟩⟩
+  end
 
-  def IsFunApp₃.isFunApp₃' {A B C D : U} {d : D} [hApp : IsFunApp₃ A B C d] :
-    IsFunApp₃' A B C d :=
-  let _ : IsFunApp₂ B C d := IsFunApp₃.isFunApp₂;
-  let _ : IsFunApp₂' B C d := IsFunApp₂.isFunApp₂';
-  ⟨⟨swapFun (swapFun hApp.F hApp.b) hApp.c, hApp.a⟩⟩
+  section
 
-  def IsFunApp₄.isFunApp₄' {A B C D E : U} (e : E) [hApp : IsFunApp₄ A B C D e] :
-    IsFunApp₄' A B C D e :=
-  let _ : IsFunApp₃ B C D e := IsFunApp₄.isFunApp₃;
-  let _ : IsFunApp₃' B C D e := IsFunApp₃.isFunApp₃';
-  ⟨⟨swapFun (swapFun (swapFun hApp.F hApp.b) hApp.c) hApp.d, hApp.a⟩⟩
+    variable (α β : Sort u) {U : Universe.{u}} [HasFunctors α U] [HasFunctors β U]
+             [HasUnivFunctors U U] [HasRevCompFun₃ α U U] [HasRevCompFun₂ β U U] [HasRevAppFun β U]
+             (C : U)
 
-  -- Apply the "swap" functor to itself.
+    @[reducible] def defRevSwapFun₃ : β ⥤{λ b => revSwapFun₂ α b C} ((α ⥤ β ⥤ C) ⥤ (α ⥤ C)) :=
+      ⟨revCompFun₃ α (β ⥤ C) C ⊙ revAppFun₂ β C⟩
 
-  @[reducible] def defRevSwapFun₃ (A B C : U) : B ⟶ (A ⟶ B ⟶ C) ⟶ A ⟶{λ b F a => F a b} C :=
-  defSwapDefFun₃ (defSwapFun₃ A B C)
+    @[reducible] def revSwapFun₃ : β ⥤ (α ⥤ β ⥤ C) ⥤ (α ⥤ C) := (defRevSwapFun₃ α β C).inst
 
-  @[reducible] def revSwapFun {A B C : U} (b : B) (F : A ⟶ B ⟶ C) : A ⟶ C :=
-  (((defRevSwapFun₃ A B C).app b).app F).F
+    instance revSwapFun₂.isFunApp {b : β} : IsFunApp β (revSwapFun₂ α b C) :=
+      ⟨revSwapFun₃ α β C, b⟩
 
-  @[reducible] def revSwapFun₂ (A : U) {B : U} (b : B) (C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ C) :=
-  ((defRevSwapFun₃ A B C).app b).F
+    instance revSwapFun₃.isFunApp :
+        IsFunApp (β ⥤ (β ⥤ C) ⥤ C) (revSwapFun₃ α β C) :=
+      revCompFun.isFunApp β
 
-  @[reducible] def revSwapFun₃ (A B C : U) : B ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) :=
-  (defRevSwapFun₃ A B C).F
+  end
 
-  instance swapFun.isFunApp₂' {A B C : U} {F : A ⟶ B ⟶ C} {b : B} :
-    IsFunApp₂' (A ⟶ B ⟶ C) B (swapFun F b) :=
-  ⟨⟨revSwapFun₂ A b C, F⟩⟩
+end HasRevAppFun
 
-  instance revSwapFun₂.isFunApp {A B C : U} {b : B} : IsFunApp B (revSwapFun₂ A b C) :=
-  ⟨revSwapFun₃ A B C, b⟩
 
-  -- Use the "swap" functor to obtain composition in reverse order.
+namespace HasFunctors
 
-  @[reducible] def defRevCompFun₃ (A B C : U) : (B ⟶ C) ⟶ (A ⟶ B) ⟶ A ⟶{λ G F a => G (F a)} C :=
-  defSwapDefFun₃ (defCompFun₃ A B C)
+  section Helpers
 
-  @[reducible] def revCompFun {A B C : U} (G : B ⟶ C) (F : A ⟶ B) : A ⟶ C :=
-  (((defRevCompFun₃ A B C).app G).app F).F
+    variable {U : Universe.{u}} [HasUnivFunctors U U] {Y : U}
 
-  @[reducible] def revCompFun₂ (A : U) {B C : U} (G : B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
-  ((defRevCompFun₃ A B C).app G).F
+    -- These could be low-priority instances, but currently the `functoriality` tactic doesn't need
+    -- or want them.
 
-  @[reducible] def revCompFun₃ (A B C : U) : (B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) :=
-  (defRevCompFun₃ A B C).F
+    def IsFunApp₂.isFunApp₂' {α β : Sort u} [HasFunctors α U] [HasFunctors β U]
+                             [HasCompFun α (β ⥤ Y) U] [HasRevAppFun β U] {y : Y}
+                             [hApp : IsFunApp₂ α β y] :
+        IsFunApp₂' α β y :=
+      let _ : IsFunApp β y := IsFunApp₂.isFunApp
+      ⟨⟨swapFun hApp.F hApp.b, hApp.a⟩⟩
 
-  instance compFun.isFunApp₂' {A B C : U} {F : A ⟶ B} {G : B ⟶ C} :
-    IsFunApp₂' (A ⟶ B) (B ⟶ C) (compFun F G) :=
-  ⟨⟨revCompFun₂ A G, F⟩⟩
+    def IsFunApp₃.isFunApp₃' {α β γ : Sort u} [HasFunctors α U] [HasFunctors β U] [HasFunctors γ U]
+                             [HasRevCompFun₂ α U U] [HasCompFun β (γ ⥤ Y) U] [HasRevAppFun β U]
+                             [HasRevAppFun γ U] {y : Y} [hApp : IsFunApp₃ α β γ y] :
+        IsFunApp₃' α β γ y :=
+      let _ : IsFunApp₂ β γ y := IsFunApp₃.isFunApp₂
+      let _ : IsFunApp₂' β γ y := IsFunApp₂.isFunApp₂'
+      ⟨⟨swapFun (swapFun hApp.F hApp.b) hApp.c, hApp.a⟩⟩
 
-  instance revCompFun₂.isFunApp {A B C : U} {G : B ⟶ C} : IsFunApp (B ⟶ C) (revCompFun₂ A G) :=
-  ⟨revCompFun₃ A B C, G⟩
+    def IsFunApp₄.isFunApp₄' {α β γ δ : Sort u} [HasFunctors α U] [HasFunctors β U]
+                             [HasFunctors γ U] [HasFunctors δ U] [HasRevCompFun₂ α U U]
+                             [HasRevCompFun₂ β U U] [HasCompFun γ (δ ⥤ Y) U] [HasRevAppFun β U]
+                             [HasRevAppFun γ U] [HasRevAppFun δ U] {y : Y}
+                             [hApp : IsFunApp₄ α β γ δ y] :
+        IsFunApp₄' α β γ δ y :=
+      let _ : IsFunApp₃ β γ δ y := IsFunApp₄.isFunApp₃
+      let _ : IsFunApp₃' β γ δ y := IsFunApp₃.isFunApp₃'
+      ⟨⟨swapFun (swapFun (swapFun hApp.F hApp.b) hApp.c) hApp.d, hApp.a⟩⟩
 
-end HasLinearLogic
+  end Helpers
 
+end HasFunctors
+
+
+namespace HasRevCompFun₃
+
+  section
+
+    variable {α : Sort u} {U : Universe.{u}} [HasFunctors α U] [HasLinearLogic U]
+             [HasRevCompFun₃ α U U] {B : U}
+
+    def defCompFun₂ (F : α ⥤ B) (C : U) : (B ⥤ C) ⥤{compFun F} (α ⥤ C) :=
+      ⟨swapFun (revCompFun₃ α B C) F⟩
+
+    @[reducible] def compFun₂ (F : α ⥤ B) (C : U) : (B ⥤ C) ⥤ (α ⥤ C) := (defCompFun₂ F C).inst
+
+  end
+
+  section
+
+    variable {α β : Sort u} {U : Universe.{u}} [HasFunctors α U] [HasFunctors β U]
+             [HasLinearLogic U] [HasRevCompFun₃ α U U] [HasRevCompFun₂ β U U] [HasRevAppFun β U]
+
+    def defSwapFun₂ {C : U} (F : α ⥤ β ⥤ C) : β ⥤{swapFun F} (α ⥤ C) :=
+      ⟨compFun₂ F C ⊙ revAppFun₂ β C⟩
+
+    instance hasSwapFun : HasSwapFun α β U := ⟨λ F => ⟨defSwapFun F, defSwapFun₂ F⟩⟩
+
+    instance swapFun.isFunApp₂' {C : U} {F : α ⥤ β ⥤ C} {b : β} :
+        IsFunApp₂' (α ⥤ β ⥤ C) β (HasSwapFun.swapFun F b) :=
+      ⟨⟨revSwapFun₂ α b C, F⟩⟩
+
+  end
+
+  section
+
+    variable (α : Sort u) {U : Universe.{u}} [HasFunctors α U] [HasLinearLogic U]
+             [HasRevCompFun₃ α U U]
+
+    def defCompFun₃ (B C : U) : (α ⥤ B) ⥤{λ F => compFun₂ F C} ((B ⥤ C) ⥤ (α ⥤ C)) :=
+      ⟨swapFun₂ (revCompFun₃ α B C)⟩
+
+    @[reducible] def compFun₃ (B C : U) : (α ⥤ B) ⥤ (B ⥤ C) ⥤ (α ⥤ C) := (defCompFun₃ α B C).inst
+
+    instance compFun₂.isFunApp {B C : U} {F : α ⥤ B} : IsFunApp (α ⥤ B) (compFun₂ F C) :=
+      ⟨compFun₃ α B C, F⟩
+
+    instance compFun.isFunApp₂' {B C : U} {F : α ⥤ B} {G : B ⥤ C} :
+        IsFunApp₂' (B ⥤ C) (α ⥤ B) (HasCompFun.compFun F G) :=
+      ⟨⟨compFun₂ F C, G⟩⟩
+
+  end
+
+  section
+
+    variable (α β : Sort u) {U : Universe.{u}} [HasFunctors α U] [HasFunctors β U]
+             [HasLinearLogic U] [HasRevCompFun₃ α U U] [HasRevCompFun₃ β U U] [HasRevAppFun β U]
+
+    def defSwapFun₃ (C : U) : (α ⥤ β ⥤ C) ⥤{swapFun₂} (β ⥤ α ⥤ C) :=
+      ⟨compFun₂ (revAppFun₂ β C) (α ⥤ C) ⊙ compFun₃ α (β ⥤ C) C⟩
+
+    instance hasSwapFun₃ : HasSwapFun₃ α β U := ⟨defSwapFun₃ α β⟩
+
+    instance swapFun₃.isFunApp (C : U) :
+        IsFunApp ((α ⥤ β ⥤ C) ⥤ ((β ⥤ C) ⥤ C) ⥤ (α ⥤ C)) (swapFun₃ α β C) :=
+      revCompFun.isFunApp (α ⥤ β ⥤ C)
+
+  end
+
+  section
+
+    variable (α : Sort u) {U : Universe.{u}} [HasFunctors α U] [HasLinearLogic U]
+             [HasRevCompFun₃ α U U]
+
+    instance compFun₃.isFunApp {B C : U} :
+        IsFunApp ((B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C)) (compFun₃ α B C) :=
+      swapFun₂.isFunApp (B ⥤ C) (α ⥤ B) (α ⥤ C)
+
+  end
+
+end HasRevCompFun₃
+
+
+namespace HasDupFun
+
+  section
+
+    variable {α : Sort u} {U : Universe.{u}} [HasFunctors α U] [HasLinearLogic U]
+             [HasRevCompFun₃ α U U] [HasDupFun α U] {B : U}
+
+    -- The S combinator (see https://en.wikipedia.org/wiki/SKI_combinator_calculus).
+    -- We give two versions of the functor that differ in their argument order, analogously to
+    -- composition.
+
+    def defSubstFun {C : U} (F : α ⥤ B) (G : α ⥤ B ⥤ C) : α ⥤{λ a => G a (F a)} C :=
+      ⟨dupFun (HasRevCompFun₃.compFun₂ F C ⊙ G)⟩
+
+    instance hasSubstFun : HasSubstFun α B U := ⟨defSubstFun⟩
+
+  end
+
+end HasDupFun
+
+
+namespace HasDupFun₂
+
+  section
+
+    variable {α : Sort u} {U : Universe.{u}} [HasFunctors α U] [HasLinearLogic U]
+             [HasRevCompFun₃ α U U] [HasDupFun₂ α U]
+
+    def defRevSubstFun₂ {B C : U} (G : α ⥤ B ⥤ C) : (α ⥤ B) ⥤{revSubstFun G} (α ⥤ C) :=
+      ⟨dupFun₂ α C ⊙ HasRevCompFun₃.compFun₂ G (α ⥤ C) ⊙ compFun₃ α B C⟩
+
+    instance hasRevSubstFun₂ : HasRevSubstFun₂ α U U :=
+      ⟨λ G => ⟨λ F => HasDupFun.defSubstFun F G, defRevSubstFun₂ G⟩⟩
+
+    instance {B C : U} (F : α ⥤ B) (G : α ⥤ B ⥤ C) : IsFunApp (α ⥤ B) (substFun F G) :=
+      HasRevSubstFun₂.substFun.isFunApp
+
+    def defSubstFun₂ {B : U} (F : α ⥤ B) (C : U) : (α ⥤ B ⥤ C) ⥤{substFun F} (α ⥤ C) :=
+      ⟨dupFun₂ α C ⊙ revCompFun₂ α (HasRevCompFun₃.compFun₂ F C)⟩
+
+    @[reducible] def substFun₂ {B : U} (F : α ⥤ B) (C : U) : (α ⥤ B ⥤ C) ⥤ (α ⥤ C) :=
+      (defSubstFun₂ F C).inst
+
+  end
+
+  section
+
+    variable (α : Sort u) {U : Universe.{u}} [HasFunctors α U] [HasLinearLogic U]
+             [HasRevCompFun₃ α U U] [HasDupFun₂ α U]
+
+    def defRevSubstFun₃ (B C : U) : (α ⥤ B ⥤ C) ⥤{revSubstFun₂} ((α ⥤ B) ⥤ (α ⥤ C)) :=
+      ⟨revCompFun₂ (α ⥤ B) (dupFun₂ α C) ⊙
+       HasRevCompFun₃.compFun₂ (compFun₃ α B C) (α ⥤ α ⥤ C) ⊙
+       compFun₃ α (B ⥤ C) (α ⥤ C)⟩
+
+    instance hasRevSubstFun₃ : HasRevSubstFun₃ α U U := ⟨defRevSubstFun₃ α⟩
+
+    instance revSubstFun₃.isFunApp {B C : U} :
+        IsFunApp ((α ⥤ B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ α ⥤ C)) (revSubstFun₃ α B C) :=
+      revCompFun.isFunApp (α ⥤ B ⥤ C)
+
+    def defSubstFun₃ (B C : U) : (α ⥤ B) ⥤{λ F => substFun₂ F C} ((α ⥤ B ⥤ C) ⥤ (α ⥤ C)) :=
+      ⟨revCompFun₂ (α ⥤ B ⥤ C) (dupFun₂ α C) ⊙ revCompFun₃ α (B ⥤ C) (α ⥤ C) ⊙ compFun₃ α B C⟩
+
+    @[reducible] def substFun₃ (B C : U) : (α ⥤ B) ⥤ (α ⥤ B ⥤ C) ⥤ (α ⥤ C) :=
+      (defSubstFun₃ α B C).inst
+
+    instance substFun₂.isFunApp {B C : U} {F : α ⥤ B} : IsFunApp (α ⥤ B) (substFun₂ F C) :=
+      ⟨substFun₃ α B C, F⟩
+
+    instance substFun.isFunApp₂' {B C : U} {F : α ⥤ B} {G : α ⥤ B ⥤ C} :
+        IsFunApp₂' (α ⥤ B ⥤ C) (α ⥤ B) (HasSubstFun.substFun F G) :=
+      ⟨⟨substFun₂ F C, G⟩⟩
+
+    instance substFun₃.isFunApp {B C : U} :
+        IsFunApp ((α ⥤ B) ⥤ (α ⥤ B ⥤ C) ⥤ (α ⥤ α ⥤ C)) (substFun₃ α B C) :=
+      revCompFun.isFunApp (α ⥤ B)
+
+  end
+
+end HasDupFun₂
 
 
 namespace HasNonLinearLogic
 
-  open HasLinearLogic
+  variable {U : Universe.{u}} [HasLinearLogic U] [HasNonLinearLogic U]
 
-  variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [HasNonLinearLogic U]
-
-  -- A specialized version of `substFun` below that can sometimes provide a shortcut for the
+  -- A specialized version of `substFun` that can sometimes provide a shortcut for the
   -- functoriality algorithm. (Note that the "unreversed" variant is less useful because using a
   -- constant twice is not special.)
 
-  def defRevSelfAppFun₂ (A B : U) : ((A ⟶ B) ⟶ A) ⟶ (A ⟶ B) ⟶{λ F G => G (F G)} B :=
-  ⟨λ F => ⟨dupFun (compFun₂ F B)⟩,
-   ⟨dupFun₂ (A ⟶ B) B ⊙ compFun₃ (A ⟶ B) A B⟩⟩
+  def defRevSelfAppFun {A B : U} (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤{λ G => G (F G)} B :=
+    ⟨dupFun (HasRevCompFun₃.compFun₂ F B)⟩
 
-  @[reducible] def revSelfAppFun {A B : U} (F : (A ⟶ B) ⟶ A) : (A ⟶ B) ⟶ B :=
-  ((defRevSelfAppFun₂ A B).app F).F
+  @[reducible] def revSelfAppFun {A B : U} (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B :=
+    (defRevSelfAppFun F).inst
 
-  @[reducible] def revSelfAppFun₂ (A B : U) : ((A ⟶ B) ⟶ A) ⟶ (A ⟶ B) ⟶ B :=
-  (defRevSelfAppFun₂ A B).F
+  def defRevSelfAppFun₂ (A B : U) : ((A ⥤ B) ⥤ A) ⥤{revSelfAppFun} ((A ⥤ B) ⥤ B) :=
+    ⟨dupFun₂ (A ⥤ B) B ⊙ compFun₃ (A ⥤ B) A B⟩
 
-  instance revSelfAppFun.isFunApp {A B : U} {F : (A ⟶ B) ⟶ A} :
-    IsFunApp ((A ⟶ B) ⟶ A) (revSelfAppFun F) :=
-  ⟨revSelfAppFun₂ A B, F⟩
+  instance hasRevSelfAppFun : HasRevSelfAppFun U U :=
+    ⟨λ A B => ⟨defRevSelfAppFun, defRevSelfAppFun₂ A B⟩⟩
 
   instance revSelfAppFun₂.isFunApp {A B : U} :
-    IsFunApp (((A ⟶ B) ⟶ (A ⟶ B) ⟶ B) ⟶ ((A ⟶ B) ⟶ B)) (revSelfAppFun₂ A B) :=
-  compFun.isFunApp
-
-  -- The S combinator (see https://en.wikipedia.org/wiki/SKI_combinator_calculus).
-  -- We give two versions of the functor that differ in their argument order, analogously to
-  -- composition.
-
-  def defSubstFun₃ (A B C : U) : (A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ A ⟶{λ F G a => G a (F a)} C :=
-  ⟨λ F => ⟨λ G => ⟨dupFun (compFun₂ F C ⊙ G)⟩,
-           ⟨dupFun₂ A C ⊙ revCompFun₂ A (compFun₂ F C)⟩⟩,
-   ⟨revCompFun₂ (A ⟶ B ⟶ C) (dupFun₂ A C) ⊙ revCompFun₃ A (B ⟶ C) (A ⟶ C) ⊙ compFun₃ A B C⟩⟩
-
-  @[reducible] def substFun {A B C : U} (F : A ⟶ B) (G : A ⟶ B ⟶ C) : A ⟶ C :=
-  (((defSubstFun₃ A B C).app F).app G).F
-
-  @[reducible] def substFun₂ {A B : U} (F : A ⟶ B) (C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ C) :=
-  ((defSubstFun₃ A B C).app F).F
-
-  @[reducible] def substFun₃ (A B C : U) : (A ⟶ B) ⟶ (A ⟶ B ⟶ C) ⟶ (A ⟶ C) :=
-  (defSubstFun₃ A B C).F
-
-  instance substFun.isFunApp {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
-    IsFunApp (A ⟶ B ⟶ C) (substFun F G) :=
-  ⟨substFun₂ F C, G⟩
-
-  instance substFun.isFunApp₂ {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
-    IsFunApp₂ (A ⟶ B) (A ⟶ B ⟶ C) (substFun F G) :=
-  ⟨substFun₃ A B C, F, G⟩
-
-  instance substFun₂.isFunApp {A B C : U} {F : A ⟶ B} :
-    IsFunApp (A ⟶ B) (substFun₂ F C) :=
-  ⟨substFun₃ A B C, F⟩
-
-  instance substFun₃.isFunApp {A B C : U} :
-    IsFunApp (((A ⟶ B ⟶ C) ⟶ (A ⟶ A ⟶ C)) ⟶ ((A ⟶ B ⟶ C) ⟶ (A ⟶ C))) (substFun₃ A B C) :=
-  compFun.isFunApp
-
-  -- Substitution with reverse argument order.
-
-  @[reducible] def defRevSubstFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ B) ⟶ A ⟶{λ G F a => G a (F a)} C :=
-  defSwapDefFun₃ (defSubstFun₃ A B C)
-
-  @[reducible] def revSubstFun {A B C : U} (G : A ⟶ B ⟶ C) (F : A ⟶ B) : A ⟶ C :=
-  (((defRevSubstFun₃ A B C).app G).app F).F
-
-  @[reducible] def revSubstFun₂ {A B C : U} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
-  ((defRevSubstFun₃ A B C).app G).F
-
-  @[reducible] def revSubstFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) :=
-  (defRevSubstFun₃ A B C).F
-
-  instance substFun.isFunApp₂' {A B C : U} {F : A ⟶ B} {G : A ⟶ B ⟶ C} :
-    IsFunApp₂' (A ⟶ B) (A ⟶ B ⟶ C) (substFun F G) :=
-  ⟨⟨revSubstFun₂ G, F⟩⟩
-
-  instance revSubstFun₂.isFunApp {A B C : U} {G : A ⟶ B ⟶ C} :
-    IsFunApp (A ⟶ B ⟶ C) (revSubstFun₂ G) :=
-  ⟨revSubstFun₃ A B C, G⟩
+      IsFunApp (((A ⥤ B) ⥤ A) ⥤ ((A ⥤ B) ⥤ (A ⥤ B) ⥤ B)) (revSelfAppFun₂ A B) :=
+    revCompFun.isFunApp ((A ⥤ B) ⥤ A)
 
 end HasNonLinearLogic

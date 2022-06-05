@@ -5,11 +5,11 @@ import Qq.Macro
 
 
 
-namespace Lean
+namespace UniverseAbstractions.Meta
 
 set_option autoBoundImplicitLocal false
 
-open Meta Elab Tactic Qq
+open Lean Lean.Meta Elab Tactic Qq
 
 
 
@@ -39,15 +39,15 @@ namespace TypedExpr
   def unfold_reduce {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := reduce
 
   def unfold_whnfHeadPred {α : Expr} (a : TypedExpr α) (pred : TypedExpr α → MetaM Bool) :
-    MetaM (TypedExpr α) :=
-  whnfHeadPred α pred
+      MetaM (TypedExpr α) :=
+    whnfHeadPred α pred
 
   def unfold_once {α : Expr} (a : TypedExpr α) : MetaM (TypedExpr α) :=
-  withReducibleAndInstances do
-    let a ← whnfCore a
-    match ← unfoldDefinition? a with
-    | some a' => pure a'
-    | none    => pure a
+    withReducibleAndInstances do
+      let a ← whnfCore a
+      match ← unfoldDefinition? a with
+      | some a' => pure a'
+      | none    => pure a
 
 end TypedExpr
 
@@ -78,13 +78,13 @@ scoped macro "⌜" t:incQuotDepth(term) "⌝" : term => `(q($t))
 -- purpose of `ClassExpr` a structure is actually to be able to add a universe level field, but
 -- currently we get a metavariable error from the quotation mechanism if we try this.
 structure ClassExpr where
-(α : Expr)
+  α : Expr
 
 -- A generic meta-level type class to reflect an object-level type class instance.
 -- (Unfortunately, this ignores `outParam` specifiers, so for type classes with `outParam`s we
 -- extend `InstanceExpr`.)
 class InstanceExpr (C : ClassExpr) where
-(h : TypedExpr C.α)
+  h : TypedExpr C.α
 
 instance (C : ClassExpr) : Inhabited (InstanceExpr C) := ⟨⟨Inhabited.default⟩⟩
 

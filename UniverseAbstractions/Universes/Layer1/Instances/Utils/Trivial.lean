@@ -1,5 +1,6 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
+import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
 import UniverseAbstractions.Universes.Layer1.Axioms.Equivalences
 import UniverseAbstractions.Universes.Layer1.Axioms.StandardEquivalences
 
@@ -9,131 +10,264 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
 
+universe u u' u''
+
+open Prerelation HasEquivalences
 
 
-class HasTrivialFunctoriality (U : Universe) [HasFunctors U] where
-(mkDefFun {A B : U} (f : A → B) : A ⟶{f} B)
+
+class HasTrivialFunctoriality (U V : Universe) [HasFunctors U V] where
+  mkDefFun {A : U} {B : V} (f : A → B) : A ⟶{f} B
 
 namespace HasTrivialFunctoriality
 
   section
 
-    variable {U : Universe} [HasFunctors U] [h : HasTrivialFunctoriality U]
+    variable {U V : Universe} [HasFunctors U V] [h : HasTrivialFunctoriality U V]
 
-    def defFun {A B : U} {f : A → B} : A ⟶{f} B := h.mkDefFun f
-    def defFun₂ {A B C : U} {f : A → B → C} : A ⟶ B ⟶{f} C := ⟨λ _ => defFun, defFun⟩
-    def defFun₃ {A B C D : U} {f : A → B → C → D} : A ⟶ B ⟶ C ⟶{f} D := ⟨λ _ => defFun₂, defFun⟩
+    def defFun {A : U} {B : V} {f : A → B} : A ⟶{f} B := h.mkDefFun f
+    def defFun₂ {A B : U} {C : V} {f : A → B → C} : A ⟶ B ⟶{f} C := ⟨λ _ => defFun, defFun⟩
+    def defFun₃ {A B C : U} {D : V} {f : A → B → C → D} : A ⟶ B ⟶ C ⟶{f} D := ⟨λ _ => defFun₂, defFun⟩
 
   end
 
-  variable (U : Universe) [HasFunctors U] [HasTrivialFunctoriality U]
+  instance hasIdFun (U : Universe) [HasFunctors U U] [HasTrivialFunctoriality U U] : HasIdFun U :=
+    ⟨λ _ => defFun⟩
 
-  instance hasFullLogic : HasFullLogic U :=
-  { defIdFun      := λ _     => defFun,
-    defRevAppFun₂ := λ _ _   => defFun₂,
-    defCompFun₃   := λ _ _ _ => defFun₃,
-    defConstFun₂  := λ _ _   => defFun₂,
-    defDupFun₂    := λ _ _   => defFun₂ }
+  instance hasRevAppFun (U V : Universe) [HasFunctors U V] [HasFunctors V V]
+                        [HasTrivialFunctoriality V V] :
+      HasRevAppFun U V :=
+    ⟨λ _ _ => defFun⟩
+
+  instance hasConstFun (U V : Universe) [HasFunctors U V] [HasTrivialFunctoriality U V] :
+      HasConstFun U V :=
+    ⟨λ _ {_} _ => defFun⟩
+
+  instance hasSwapFun (U V W : Universe) [HasFunctors V W] [HasFunctors U W]
+                      [HasTrivialFunctoriality U W] :
+      HasSwapFun U V W :=
+    ⟨λ _ _ => defFun⟩
+
+  instance hasSwapFun₂ (U V W : Universe) [HasFunctors V W] [HasFunctors U W]
+                       [HasTrivialFunctoriality U W] [HasTrivialFunctoriality V W] :
+      HasSwapFun₂ U V W :=
+    ⟨λ _ => defFun⟩
+
+  instance hasCompFun (U V W : Universe) [HasFunctors U V] [HasFunctors V W] [HasFunctors U W]
+                      [HasTrivialFunctoriality U W] :
+      HasCompFun U V W :=
+    ⟨λ _ _ => defFun⟩
+
+  instance hasRevCompFun₂ (U V W : Universe) [HasFunctors U V] [HasFunctors V W] [HasFunctors U W]
+                          [HasTrivialFunctoriality U W] [HasTrivialFunctoriality V W] :
+      HasRevCompFun₂ U V W :=
+    ⟨λ _ {_ _} _ => defFun⟩
+
+  instance hasDupFun (U V : Universe) [HasFunctors U V] [HasTrivialFunctoriality U V] :
+      HasDupFun U V :=
+    ⟨λ _ => defFun⟩
+
+  instance hasRevSelfAppFun (U V : Universe) [HasFunctors U V] [HasFunctors V U] [HasFunctors V V]
+                            [HasTrivialFunctoriality V V] :
+      HasRevSelfAppFun U V :=
+    ⟨λ _ => defFun⟩
+
+  instance hasSubstFun (U V W : Universe) [HasFunctors U V] [HasFunctors V W] [HasFunctors U W]
+                       [HasTrivialFunctoriality U W] :
+      HasSubstFun U V W :=
+    ⟨λ _ _ => defFun⟩
+
+  instance hasRevSubstFun₂ (U V W : Universe) [HasFunctors U V] [HasFunctors V W] [HasFunctors U W]
+                           [HasTrivialFunctoriality U W] [HasTrivialFunctoriality V W] :
+      HasRevSubstFun₂ U V W :=
+    ⟨λ _ {_ _} _ => defFun⟩
+
+  instance hasFullLogic (U V : Universe) [HasFunctors U V] [HasInnerFunctors V]
+                        [HasTrivialFunctoriality U V] [HasTrivialFunctoriality V V] :
+      HasFullLogic U V where
+    defRevAppFun₂  _ _   := defFun
+    defRevCompFun₃ _ _ _ := defFun₂
+    defConstFun₂   _ _   := defFun
+    defDupFun₂     _ _   := defFun
+
+  instance hasFullInnerLogic (U : Universe) [HasInnerFunctors U] [HasTrivialFunctoriality U U] :
+      HasFullInnerLogic U := ⟨⟩
 
 end HasTrivialFunctoriality
 
 
 
-class HasTrivialEquivalenceCondition (U : Universe) [HasFunctors U] [HasEquivalences U] where
-(mkDefEquiv {A B : U} (toFun : A ⟶ B) (invFun : B ⟶ A) : A ⟷{toFun, invFun} B)
+class HasTrivialIsomorphismCondition (V : Universe) [HasInnerFunctors V] where
+  mkDefIso {α : Sort u} {Hom Iso : Prerelation α V} {a b : α} (toHom : Hom a b) (invHom : Hom b a) :
+    DefIsoInst Hom Iso toHom invHom
 
-namespace HasTrivialEquivalenceCondition
+namespace HasTrivialIsomorphismCondition
 
   section
 
-    variable {U : Universe} [HasFunctors U] [HasEquivalences U]
-             [h : HasTrivialEquivalenceCondition U]
+    variable {V : Universe} [HasInnerFunctors V] [h : HasTrivialIsomorphismCondition V]
 
-    def defEquiv {A B : U} {toFun : A ⟶ B} {invFun : B ⟶ A} : A ⟷{toFun, invFun} B :=
-    h.mkDefEquiv toFun invFun
+    def defIso {α : Sort u} {Hom Iso : Prerelation α V} {a b : α} {toHom : Hom a b}
+               {invHom : Hom b a} :
+        DefIsoInst Hom Iso toHom invHom :=
+      h.mkDefIso toHom invHom
 
   end
 
-  variable (U : Universe) [HasFunctors U] [HasEquivalences U] [HasTrivialFunctoriality U]
-           [HasTrivialEquivalenceCondition U]
+  section
 
-  instance hasEquivOp : HasEquivOp U :=
-  { defRefl      := λ _     => defEquiv,
-    defSymm      := λ _     => defEquiv,
-    defSymmFun   := λ _ _   => HasTrivialFunctoriality.defFun,
-    defTrans     := λ _ _   => defEquiv,
-    defTransFun₂ := λ _ _ _ => HasTrivialFunctoriality.defFun₂ }
+    variable {α : Sort u} {V : Universe} [HasInnerFunctors V] [HasTrivialFunctoriality V V]
+             [HasTrivialIsomorphismCondition V]
 
-  def defTypeFun {φ : U → U} {hφ : HasEquivOp.TypeFunProof φ} : HasEquivOp.DefTypeFun φ hφ :=
-  { defEquiv    := λ _   => defEquiv,
-    defEquivFun := λ _ _ => HasTrivialFunctoriality.defFun }
+    instance isIsoRel {Hom Iso : Prerelation α V} [IsPreorder Hom] [hBase : IsIsoRelBase Hom Iso] :
+        IsIsoRel Hom Iso where
+      defRefl         _     := defIso
+      defSymm         _     := defIso
+      defSymmFun      _ _   := HasTrivialFunctoriality.defFun
+      defTrans        _ _   := defIso
+      defRevTransFun₂ _ _ _ := HasTrivialFunctoriality.defFun₂
 
-  def defTypeFun₂ {φ : U → U → U} {hφ : HasEquivOp.TypeFunProof₂ φ} : HasEquivOp.DefTypeFun₂ φ hφ :=
-  { app  := λ _ => defTypeFun U,
-    app₂ := λ _ => defTypeFun U }
+  end
 
-  instance hasFunctorEquivalences : HasFunctorEquivalences U :=
-  { defFunTypeFun₂  := defTypeFun₂ U,
-    defSwapFunEquiv := λ _ _ _ => defEquiv }
+  section
 
-  instance hasTopEquivalences [HasTop U] : HasTopEquivalences U :=
-  { defTopElimEquiv := λ _ => defEquiv }
+    variable {α : Sort u} {β : Sort u'} {V W : Universe} [HasInnerFunctors V] [HasInnerFunctors W]
+             [HasFunctors V W] [HasTrivialFunctoriality V W] [HasTrivialIsomorphismCondition W]
+             {R : Prerelation α V} {S : Prerelation β W} [IsEquivalence R] [IsPreorder S]
+             {SIso : Prerelation β W} [hS : IsIsoRel S SIso] {φ : α → β}
 
-  instance hasBotEquivalences [HasBot U] : HasBotEquivalences U :=
-  { defBotIntroEquiv    := λ _ => defEquiv,
-    defBotIntroEquivFun := λ _ => HasTrivialFunctoriality.defFun,
-    defBotIntroEquiv₂   := λ _ => defEquiv }
+    instance isIsoFunctor {F : Prerelation.Functor R S φ} : IsIsoRel.IsIsoFunctor SIso F where
+      defIsoCongrArg    _   := defIso
+      defIsoCongrArgFun _ _ := HasTrivialFunctoriality.defFun
 
-  instance hasProductEquivalences [HasProducts U] : HasProductEquivalences U :=
-  { defProdTypeFun₂   := defTypeFun₂ U,
-    defProdElimEquiv  := λ _ _ _ => defEquiv,
-    defProdCommEquiv  := λ _ _   => defEquiv,
-    defProdAssocEquiv := λ _ _ _ => defEquiv }
+  end
 
-  instance hasProductDistrEquivalences [HasProducts U] : HasProductDistrEquivalences U :=
-  { defProdDistrEquiv := λ _ _ _ => defEquiv }
+  section
 
-  instance hasProductTopEquivalences [HasTop U] [HasProducts U] : HasProductTopEquivalences U :=
-  { defProdTopEquiv := λ _ => defEquiv }
+    variable {α : Sort u} {β : Sort u'} {γ : Sort u''} {V W X : Universe} [HasInnerFunctors V]
+             [HasInnerFunctors W] [HasInnerFunctors X] [HasFunctors W X] [HasFunctors V X]
+             [HasTrivialFunctoriality W X] [HasTrivialFunctoriality V X]
+             [HasTrivialIsomorphismCondition X] {R : Prerelation α V} {S : Prerelation β W}
+             {T : Prerelation γ X} [IsEquivalence R] [IsEquivalence S] [IsPreorder T]
+             {TIso : Prerelation γ X} [hT : IsIsoRel T TIso] {φ : α → β → γ}
 
-  instance hasProductBotEquivalences [HasBot U] [HasProducts U] : HasProductBotEquivalences U :=
-  { defProdBotEquiv := λ _ => defEquiv }
+    instance isIsoFunctor₂ {F : Functor₂ R S T φ} : IsIsoRel.IsIsoFunctor₂ TIso F where
+      app  _ := isIsoFunctor
+      app₂ _ := isIsoFunctor
 
-  instance hasCoproductEquivalences [HasCoproducts U] : HasCoproductEquivalences U :=
-  { defCoprodTypeFun₂   := defTypeFun₂ U,
-    defCoprodCommEquiv  := λ _ _   => defEquiv,
-    defCoprodAssocEquiv := λ _ _ _ => defEquiv }
+  end
 
-  instance hasCoproductDistrEquivalences [HasProducts U] [HasCoproducts U] :
-    HasCoproductDistrEquivalences U :=
-  { defCoprodDistrEquiv := λ _ _ _ => defEquiv }
+  section
 
-  instance hasCoproductBotEquivalences [HasBot U] [HasCoproducts U] :
-    HasCoproductBotEquivalences U :=
-  { defCoprodBotEquiv := λ _ => defEquiv }
+    variable {U V : Universe} [HasFunctors U V] [HasInnerFunctors U] [HasLinearInnerLogic U]
+             [HasEquivalences U] [HasInnerFunctors V] [HasLinearInnerLogic V] [HasEquivalences V]
+             [HasTrivialFunctoriality U V] [HasTrivialIsomorphismCondition V]
 
-  instance hasEquivalenceEquivalences : HasEquivalenceEquivalences U :=
-  { defEquivTypeFun₂  := defTypeFun₂ U,
-    defEquivSymmEquiv := λ _ _ => defEquiv }
+    instance isTypeCtor {φ : U → V} {Φ : TypeCtorFun φ} : IsTypeCtor Φ := ⟨⟩
 
-  instance hasLinearEquivalences [HasTop U] [HasBot U] [HasProducts U] [HasCoproducts U] :
-    HasLinearEquivalences U :=
-  ⟨⟩
+  end
 
-  instance hasFullEquivalences [HasTop U] [HasBot U] [HasProducts U] [HasCoproducts U] :
-    HasFullEquivalences U :=
-  ⟨⟩
+  section
 
-  instance hasPropEquivalences [HasTop U] [HasProducts U] [HasCoproducts U] :
-    HasPropEquivalences U :=
-  { defDupFunEquiv    := λ _ _ => defEquiv,
-    defDupProdEquiv   := λ _   => defEquiv,
-    defDupCoprodEquiv := λ _   => defEquiv,
-    defTopEquiv       := λ _   => defEquiv,
-    defTopEquivFun    := λ _   => HasTrivialFunctoriality.defFun,
-    defTopEquivEquiv  := λ _   => defEquiv }
+    variable {U V W : Universe} [HasFunctors V W] [HasFunctors U W] [HasInnerFunctors U]
+             [HasLinearInnerLogic U] [HasEquivalences U] [HasInnerFunctors V]
+             [HasLinearInnerLogic V] [HasEquivalences V] [HasInnerFunctors W]
+             [HasLinearInnerLogic W] [HasEquivalences W] [HasTrivialFunctoriality V W]
+             [HasTrivialFunctoriality U W] [HasTrivialIsomorphismCondition W]
 
-  instance hasClassicalEquivalences [HasBot U] [HasClassicalLogic U] : HasClassicalEquivalences U :=
-  { defNotNotEquiv := λ _ => defEquiv }
+    instance isTypeCtor₂ {φ : U → V → W} {Φ : TypeCtorFun₂ φ} : IsTypeCtor₂ Φ where
+      app  _ := isTypeCtor
+      app₂ _ := isTypeCtor
 
-end HasTrivialEquivalenceCondition
+  end
+
+  section
+
+    variable (U : Universe) [HasInnerFunctors U] [HasTrivialFunctoriality U U] [HasEquivalences U]
+             [HasTrivialIsomorphismCondition U]
+
+    instance hasFunctorEquivalences : HasFunctorEquivalences U where
+      hFunCtor₂             := isTypeCtor₂
+      defSwapFunEquiv _ _ _ := defIso
+
+    instance hasEquivRelEquivalences {α : Sort u} (R : Prerelation α U) [IsEquivalence R] :
+        HasEquivRelEquivalences U R where
+      hEquivRelCtor₂           := isIsoFunctor₂
+      defEquivRelSymmEquiv _ _ := defIso
+
+    instance hasEquivalenceEquivalences : HasEquivalenceEquivalences U := ⟨⟩
+
+    instance hasTopEquivalences [HasTop U] : HasTopEquivalences U where
+      defTopElimEquiv _ := defIso
+
+    instance hasBotEquivalences [HasBot U] : HasBotEquivalences U where
+      defBotIntroEquiv    _ := defIso
+      defBotIntroEquivFun _ := HasTrivialFunctoriality.defFun
+      defBotIntroEquiv₂   _ := defIso
+
+    instance hasProductEquivalences [HasInnerProducts U] : HasProductEquivalences U where
+      hProdCtor₂              := isTypeCtor₂
+      defProdElimEquiv  _ _ _ := defIso
+      defProdCommEquiv  _ _   := defIso
+      defProdAssocEquiv _ _ _ := defIso
+
+    instance hasProductDistrEquivalences [HasInnerProducts U] : HasProductDistrEquivalences U where
+      defProdDistrEquiv _ _ _ := defIso
+
+    instance hasProductTopEquivalences [HasTop U] [HasInnerProducts U] :
+        HasProductTopEquivalences U where
+      defProdTopEquiv _ := defIso
+
+    instance hasProductBotEquivalences [HasBot U] [HasInnerProducts U] :
+        HasProductBotEquivalences U where
+      defProdBotEquiv _ := defIso
+
+    instance hasCoproductEquivalences [HasInnerCoproducts U] : HasCoproductEquivalences U where
+      hCoprodCtor₂              := isTypeCtor₂
+      defCoprodCommEquiv  _ _   := defIso
+      defCoprodAssocEquiv _ _ _ := defIso
+
+    instance hasCoproductDistrEquivalences [HasInnerProducts U] [HasInnerCoproducts U] :
+        HasCoproductDistrEquivalences U where
+      defCoprodDistrEquiv _ _ _ := defIso
+
+    instance hasCoproductBotEquivalences [HasBot U] [HasInnerCoproducts U] :
+        HasCoproductBotEquivalences U where
+      defCoprodBotEquiv _ := defIso
+
+    instance hasLinearPositiveEquivalences [HasTop U] [HasInnerProducts U] :
+        HasLinearPositiveEquivalences U := ⟨⟩
+
+    instance hasLinearNegativeEquivalences [HasTop U] [HasBot U] [HasInnerProducts U]
+                                           [HasInnerCoproducts U] :
+        HasLinearNegativeEquivalences U := ⟨⟩
+
+    instance hasLinearEquivalences [HasTop U] [HasBot U] [HasInnerProducts U] [HasInnerCoproducts U] :
+        HasLinearEquivalences U := ⟨⟩
+
+    instance hasFullPositiveEquivalences [HasTop U] [HasInnerProducts U] :
+        HasFullPositiveEquivalences U := ⟨⟩
+
+    instance hasFullNegativeEquivalences [HasTop U] [HasBot U] [HasInnerProducts U]
+                                         [HasInnerCoproducts U] :
+        HasFullNegativeEquivalences U := ⟨⟩
+
+    instance hasFullEquivalences [HasTop U] [HasBot U] [HasInnerProducts U] [HasInnerCoproducts U] :
+        HasFullEquivalences U := ⟨⟩
+
+    instance hasPropEquivalences [HasTop U] [HasInnerProducts U] [HasInnerCoproducts U] :
+        HasPropEquivalences U where
+      defDupFunEquiv    _ _ := defIso
+      defDupProdEquiv   _   := defIso
+      defDupCoprodEquiv _   := defIso
+      defTopEquiv       _   := defIso
+      defTopEquivFun    _   := HasTrivialFunctoriality.defFun
+      defTopEquivEquiv  _   := defIso
+
+    instance hasClassicalEquivalences [HasBot U] [HasClassicalLogic U] :
+        HasClassicalEquivalences U where
+      defNotNotEquiv _ := defIso
+
+  end
+
+end HasTrivialIsomorphismCondition

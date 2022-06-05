@@ -3,6 +3,9 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Functors
 import UniverseAbstractions.Universes.Layer1.Axioms.Singletons
 import UniverseAbstractions.Universes.Layer1.Axioms.Products
 import UniverseAbstractions.Universes.Layer1.Axioms.Coproducts
+import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
+import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations.Cartesian
+import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 
 
@@ -10,14 +13,18 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
+set_option synthInstance.maxHeartbeats 1000
 
-open HasFunctors HasLinearLogic HasSubLinearLogic HasNonLinearLogic
+universe u
+
+open HasFunctors HasLinearLogic HasSubLinearLogic HasNonLinearLogic HasCoproducts
+     HasPreorderRelation
 
 
 
-namespace HasCoproducts
+namespace HasInnerCoproducts
 
-  variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [HasCoproducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasInnerCoproducts U]
 
   def leftCoIntro {A B C : U} (F : A ⊔ B ⟶ C) (a : A) : C := F (leftIntro a B)
   def leftCoIntroFun {A B C : U} (F : A ⊔ B ⟶ C) : A ⟶ C := Λ a => leftCoIntro F a
@@ -28,22 +35,45 @@ namespace HasCoproducts
   def rightCoIntroFun₂ (A B C : U) : (A ⊔ B ⟶ C) ⟶ (B ⟶ C) := Λ F => rightCoIntroFun F
 
   instance leftCoIntro.isFunApp {A B C : U} {F : A ⊔ B ⟶ C} {a : A} :
-    IsFunApp A (leftCoIntro F a) :=
-  ⟨leftCoIntroFun F, a⟩
+      IsFunApp A (leftCoIntro F a) :=
+    ⟨leftCoIntroFun F, a⟩
 
   instance leftCoIntroFun.isFunApp {A B C : U} {F : A ⊔ B ⟶ C} :
-    IsFunApp (A ⊔ B ⟶ C) (leftCoIntroFun F) :=
-  ⟨leftCoIntroFun₂ A B C, F⟩
+      IsFunApp (A ⊔ B ⟶ C) (leftCoIntroFun F) :=
+    ⟨leftCoIntroFun₂ A B C, F⟩
 
   instance rightCoIntro.isFunApp {A B C : U} {F : A ⊔ B ⟶ C} {b : B} :
-    IsFunApp B (rightCoIntro F b) :=
-  ⟨rightCoIntroFun F, b⟩
+      IsFunApp B (rightCoIntro F b) :=
+    ⟨rightCoIntroFun F, b⟩
 
   instance rightCoIntroFun.isFunApp {A B C : U} {F : A ⊔ B ⟶ C} :
-    IsFunApp (A ⊔ B ⟶ C) (rightCoIntroFun F) :=
-  ⟨rightCoIntroFun₂ A B C, F⟩
+      IsFunApp (A ⊔ B ⟶ C) (rightCoIntroFun F) :=
+    ⟨rightCoIntroFun₂ A B C, F⟩
 
   def dupIntroFun (A : U) : A ⟶ A ⊔ A := Λ a => leftIntro a A
+
+  def replaceFstFun {A B : U} (F : A ⟶ B) (C : U) : A ⊔ C ⟶ B ⊔ C :=
+    elimFun (Λ a => leftIntro (F a) C) (rightIntroFun B C)
+  def replaceFstFun₂ (A B C : U) : (A ⟶ B) ⟶ (A ⊔ C ⟶ B ⊔ C) := Λ F => replaceFstFun F C
+
+  instance replaceFstFun.isFunApp {A B C : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (replaceFstFun F C) :=
+    ⟨replaceFstFun₂ A B C, F⟩
+
+  def replaceSndFun (A : U) {B C : U} (G : B ⟶ C) : A ⊔ B ⟶ A ⊔ C :=
+    elimFun (leftIntroFun A C) (Λ b => rightIntro A (G b))
+  def replaceSndFun₂ (A B C : U) : (B ⟶ C) ⟶ (A ⊔ B ⟶ A ⊔ C) := Λ G => replaceSndFun A G
+
+  instance replaceSndFun.isFunApp {A B C : U} {F : B ⟶ C} : IsFunApp (B ⟶ C) (replaceSndFun A F) :=
+    ⟨replaceSndFun₂ A B C, F⟩
+
+  def replaceBothFun {A B C D : U} (F : A ⟶ B) (G : C ⟶ D) : A ⊔ C ⟶ B ⊔ D :=
+    elimFun (Λ a => leftIntro (F a) D) (Λ c => rightIntro B (G c))
+  def replaceBothFun₃ (A B C D : U) : (A ⟶ B) ⟶ (C ⟶ D) ⟶ (A ⊔ C ⟶ B ⊔ D) :=
+    Λ F G => replaceBothFun F G
+
+  instance replaceBothFun.isFunApp₂ {A B C D : U} {F : A ⟶ B} {G : C ⟶ D} :
+      IsFunApp₂ (A ⟶ B) (C ⟶ D) (replaceBothFun F G) :=
+    ⟨replaceBothFun₃ A B C D, F, G⟩
 
   def commFun (A B : U) : A ⊔ B ⟶ B ⊔ A := elimFun (rightIntroFun B A) (leftIntroFun B A)
 
@@ -55,36 +85,36 @@ namespace HasCoproducts
   def rightIntro₃RFun (A B C : U) : C ⟶ A ⊔ (B ⊔ C) := Λ c => rightIntro A (rightIntro B c)
 
   def elim₃LFun {A B C D : U} (F : A ⟶ D) (G : B ⟶ D) (H : C ⟶ D) : (A ⊔ B) ⊔ C ⟶ D :=
-  elimFun (elimFun F G) H
+    elimFun (elimFun F G) H
   def elim₃LFun₄ (A B C D : U) : (A ⟶ D) ⟶ (B ⟶ D) ⟶ (C ⟶ D) ⟶ ((A ⊔ B) ⊔ C ⟶ D) :=
-  Λ F G H => elim₃LFun F G H
+    Λ F G H => elim₃LFun F G H
   def elim₃RFun {A B C D : U} (F : A ⟶ D) (G : B ⟶ D) (H : C ⟶ D) : A ⊔ (B ⊔ C) ⟶ D :=
-  elimFun F (elimFun G H)
+    elimFun F (elimFun G H)
   def elim₃RFun₄ (A B C D : U) : (A ⟶ D) ⟶ (B ⟶ D) ⟶ (C ⟶ D) ⟶ (A ⊔ (B ⊔ C) ⟶ D) :=
-  Λ F G H => elim₃RFun F G H
+    Λ F G H => elim₃RFun F G H
 
   instance elim₃LFun.isFunApp₃ {A B C D : U} {F : A ⟶ D} {G : B ⟶ D} {H : C ⟶ D} :
-    IsFunApp₃ (A ⟶ D) (B ⟶ D) (C ⟶ D) (elim₃LFun F G H) :=
-  ⟨elim₃LFun₄ A B C D, F, G, H⟩
+      IsFunApp₃ (A ⟶ D) (B ⟶ D) (C ⟶ D) (elim₃LFun F G H) :=
+    ⟨elim₃LFun₄ A B C D, F, G, H⟩
 
   instance elim₃RFun.isFunApp₃ {A B C D : U} {F : A ⟶ D} {G : B ⟶ D} {H : C ⟶ D} :
-    IsFunApp₃ (A ⟶ D) (B ⟶ D) (C ⟶ D) (elim₃RFun F G H) :=
-  ⟨elim₃RFun₄ A B C D, F, G, H⟩
+      IsFunApp₃ (A ⟶ D) (B ⟶ D) (C ⟶ D) (elim₃RFun F G H) :=
+    ⟨elim₃RFun₄ A B C D, F, G, H⟩
 
   def assocLRFun (A B C : U) : (A ⊔ B) ⊔ C ⟶ A ⊔ (B ⊔ C) :=
-  elim₃LFun (leftIntro₃RFun A B C) (middleIntro₃RFun A B C) (rightIntro₃RFun A B C)
+    elim₃LFun (leftIntro₃RFun A B C) (middleIntro₃RFun A B C) (rightIntro₃RFun A B C)
   def assocRLFun (A B C : U) : A ⊔ (B ⊔ C) ⟶ (A ⊔ B) ⊔ C :=
-  elim₃RFun (leftIntro₃LFun A B C) (middleIntro₃LFun A B C) (rightIntro₃LFun A B C)
+    elim₃RFun (leftIntro₃LFun A B C) (middleIntro₃LFun A B C) (rightIntro₃LFun A B C)
 
   section
 
-    variable [HasProducts U]
+    variable [HasInnerProducts U]
 
     def distrFun [HasNonLinearLogic U] (A B C : U) : (A ⊔ B ⟶ C) ⟶ (A ⟶ C) ⊓ (B ⟶ C) :=
-    Λ F => HasProducts.intro (leftCoIntroFun F) (rightCoIntroFun F)
+      Λ F => HasInnerProducts.intro (leftCoIntroFun F) (rightCoIntroFun F)
 
     def invDistrFun₂ (A B C : U) : (A ⟶ C) ⊓ (B ⟶ C) ⟶ (A ⊔ B ⟶ C) :=
-    HasProducts.elimFun (elimFun₃ A B C)
+      HasProducts.elimFun (elimFun₃ A B C)
 
   end
 
@@ -97,18 +127,62 @@ namespace HasCoproducts
 
   end
 
-end HasCoproducts
+end HasInnerCoproducts
 
-open HasCoproducts
+open HasInnerCoproducts
 
 
 
 namespace HasClassicalLogic
 
-  variable {U : Universe} [HasFunctors U] [HasLinearLogic U] [HasNonLinearLogic U] [HasBot U]
-           [HasClassicalLogic U] [HasCoproducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasNonLinearLogic U]
+           [HasBot U] [HasClassicalLogic U] [HasInnerCoproducts U]
 
   def excludedMiddle  (A : U) : A ⊔ ~A := byContradiction (Λ F => rightCoIntro F (leftCoIntroFun F))
   def excludedMiddle' (A : U) : ~A ⊔ A := byContradiction (Λ F => leftCoIntro F (rightCoIntroFun F))
 
 end HasClassicalLogic
+
+
+
+namespace Prerelation
+
+  @[reducible] def coproduct {α : Sort u} {V : Universe} [HasLinearLogic V] [HasInnerCoproducts V]
+                             (R S : Prerelation α V) :
+      Prerelation α V :=
+    λ a b => R a b ⊔ S a b
+
+  namespace coproduct
+
+    variable {α : Sort u} {V : Universe} [HasLinearLogic V] [HasInnerCoproducts V]
+             (R S : Prerelation α V)
+
+    instance isFull_left [hR : IsFull R] : IsFull (coproduct R S) :=
+      ⟨λ a b => leftIntro (hR.inst a b) (S a b)⟩
+    instance isFull_right [hS : IsFull S] : IsFull (coproduct R S) :=
+      ⟨λ a b => rightIntro (R a b) (hS.inst a b)⟩
+
+    instance hasRefl_left [hR : HasRefl R] : HasRefl (coproduct R S) :=
+      ⟨λ a => leftIntro (hR.refl a) (S a a)⟩
+    instance hasRefl_right [hS : HasRefl S] : HasRefl (coproduct R S) :=
+      ⟨λ a => rightIntro (R a a) (hS.refl a)⟩
+    instance hasSymm [hR : HasSymm R] [hS : HasSymm S] : HasSymm (coproduct R S) :=
+      ⟨λ a b => elimFun (Λ el => leftIntro el⁻¹ (S b a)) (Λ er => rightIntro (R b a) er⁻¹)⟩
+
+  end coproduct
+
+end Prerelation
+
+
+
+namespace HasInnerCoproducts
+
+  variable (U : Universe) [HasLinearLogic U] [HasInnerCoproducts U]
+
+  instance hasCoproductObjects : HasCoproductObjects U where
+    prod                      := Coprod
+    fstHom                    := leftIntroFun
+    sndHom                    := rightIntroFun
+    prodIntroFun₂ (A B C : U) := elimFun₃ B C A
+
+end HasInnerCoproducts

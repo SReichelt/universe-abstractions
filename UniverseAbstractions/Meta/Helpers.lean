@@ -2,11 +2,16 @@ import UniverseAbstractions.Meta.TypedExpr
 
 
 
-namespace Lean
+namespace UniverseAbstractions.Meta
 
 set_option autoBoundImplicitLocal false
 
-open Meta Elab Tactic Qq
+open Lean Lean.Meta Elab Tactic Qq
+
+
+
+def mkFun {u v : Level} (α : ⌜Sort u⌝) (β : ⌜Sort v⌝) : ⌜Sort (imax u v)⌝ := ⌜$α → $β⌝
+def mkFunApp {u v : Level} {α : ⌜Sort u⌝} {β : ⌜Sort v⌝} (f : mkFun α β) (a : α) : β := ⌜$f $a⌝
 
 
 

@@ -13,64 +13,78 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoBoundImplicitLocal false
 
-universe u v w
+universe u uu v vv w
 
 
 
-def NativeTypeClass := Sort (max 1 u w) → Sort v
+def NativeTypeClass := Sort (max 1 u v w) → Sort vv
 
-structure Bundled (Φ : NativeTypeClass.{u, v, w}) : Sort (max ((max 1 u w) + 1) v) where
-(α : Sort (max 1 u w))
-[h : Φ α]
+structure Bundled (Φ : NativeTypeClass.{u, v, vv, w}) : Sort (max ((max 1 u v w) + 1) vv) where
+  α : Sort (max 1 u v w)
+  [h : Φ α]
 
 namespace Bundled
 
-  variable (Φ : NativeTypeClass.{u, v, w})
+  instance hasInstances (Φ : NativeTypeClass.{u, v, vv, w}) : HasInstances (Bundled Φ) :=
+    ⟨Bundled.α⟩
 
-  instance hasInstances : HasInstances (Bundled Φ) := ⟨Bundled.α⟩
+  def univ (Φ : NativeTypeClass.{u, v, vv, w}) :
+      Universe.{max 1 u v w, max ((max 1 u v w) + 1) vv} :=
+    ⟨Bundled Φ⟩
 
-  def univ : Universe.{max 1 u w, max ((max 1 u w) + 1) v} := ⟨Bundled Φ⟩
+  def type {Φ : NativeTypeClass.{u, v, vv, w}} {α : Sort (max 1 u v w)} (h : Φ α) : univ Φ where
+    α := α
+    h := h
 
-  def type {α : Sort (max 1 u w)} (h : Φ α) : univ Φ :=
-  { α := α,
-    h := h }
+  section HasFunctors
 
-  structure Functor (A B : univ Φ) (IsFun : (A → B) → Sort w) : Sort (max 1 u w) where
-  (f     : A → B)
-  [isFun : IsFun f]
+    structure Functor {U : Universe.{u, uu}} {Φ : NativeTypeClass.{u, v, vv, w}} (A : U)
+                      (B : univ Φ) (IsFun : (A → B) → Sort w) :
+        Sort (max 1 u v w) where
+      f : A → B
+      [isFun : IsFun f]
 
-  class HasFunctorInstances where
-  (IsFun   {A B : univ Φ} : (A → B) → Sort w)
-  (funInst (A B : univ Φ) : Φ (Functor Φ A B IsFun))
+    class HasFunctorInstances (U : Universe.{u, uu}) (Φ : NativeTypeClass.{u, v, vv, w}) where
+      IsFun   {A : U} {B : univ Φ} : (A → B) → Sort w
+      funInst (A : U) (B : univ Φ) : Φ (Functor A B IsFun)
 
-  variable [hFunInst : HasFunctorInstances Φ]
+    instance hasFunctors (U : Universe.{u, uu}) (Φ : NativeTypeClass.{u, v, vv, w})
+                         [hFunInst : HasFunctorInstances U Φ] :
+        HasFunctors U (univ Φ) where
+      Fun A B := type (hFunInst.funInst A B)
+      apply   := Functor.f
 
-  instance hasFunctors : HasFunctors (univ Φ) :=
-  { Fun   := λ A B => type Φ (hFunInst.funInst A B),
-    apply := Functor.f }
+    def mkFun {U : Universe.{u, uu}} {Φ : NativeTypeClass.{u, v, vv, w}}
+              [hFunInst : HasFunctorInstances U Φ] {A : U} {B : univ Φ} {f : A → B}
+              (isFun : hFunInst.IsFun f) :
+        A ⟶ B where
+      f     := f
+      isFun := isFun
 
-  def mkFun {A B : univ Φ} {f : A → B} (isFun : hFunInst.IsFun f) : A ⟶ B :=
-  { f     := f,
-    isFun := isFun }
+    def mkDefFun {U : Universe.{u, uu}} {Φ : NativeTypeClass.{u, v, vv, w}}
+                 [hFunInst : HasFunctorInstances U Φ] {A : U} {B : univ Φ} {f : A → B}
+                 (isFun : hFunInst.IsFun f) :
+      A ⟶{f} B :=
+    ⟨mkFun isFun⟩
 
-  def mkDefFun {A B : univ Φ} {f : A → B} (isFun : hFunInst.IsFun f) : A ⟶{f} B := ⟨mkFun Φ isFun⟩
+  end HasFunctors
 
   class HasTopInstance where
   (topInst : Φ PUnit)
   (elimIsFun {A : univ Φ} (a : A) : hFunInst.IsFun (λ _ : type Φ topInst => a))
 
   instance hasTop [h : HasTopInstance Φ] : HasTop (univ Φ) :=
-  { T          := type Φ h.topInst,
-    t          := PUnit.unit,
-    defElimFun := λ a => mkDefFun Φ (h.elimIsFun a) }
+  { T            := type h.topInst,
+    t            := PUnit.unit,
+    defElimFun a := mkDefFun (h.elimIsFun a) }
 
   class HasBotInstance where
   (botInst : Φ PEmpty)
   (elimIsFun (A : univ Φ) : hFunInst.IsFun (λ b : type Φ botInst => @PEmpty.elim A b))
 
   instance hasBot [h : HasBotInstance Φ] : HasBot (univ Φ) :=
-  { B       := type Φ h.botInst,
-    elimFun := λ A => mkFun Φ (h.elimIsFun A) }
+  { B         := type h.botInst,
+    elimFun A := mkFun (h.elimIsFun A) }
 
   instance isLogicallyConsistent [h : HasBotInstance Φ] : IsLogicallyConsistent (univ Φ) :=
   ⟨PEmpty.elim⟩
@@ -110,7 +124,7 @@ namespace Bundled
     elimFun₃      := λ A B C => mkFun Φ (h.elimIsFun₃ A B C) }
 
   structure Equivalence (A B : univ Φ) (IsEquiv : (A ⟶ B) → (B ⟶ A) → Sort w) :
-    Sort (max 1 u w) where
+    Sort (max 1 v w) where
   (toFun   : A ⟶ B)
   (invFun  : B ⟶ A)
   [isEquiv : IsEquiv toFun invFun]

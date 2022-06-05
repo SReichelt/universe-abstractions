@@ -8,7 +8,7 @@ namespace UniverseAbstractions.Layer1.Meta
 
 set_option autoBoundImplicitLocal false
 
-open Lean
+open Lean Lean.Meta UniverseAbstractions.Meta
 
 
 
@@ -24,9 +24,27 @@ open Lean
 -- this code is error-free.
 
 structure _Sort where
-{u : Level}
-(α : ⌜Sort u⌝)
+  {u : Level}
+  α : ⌜Sort u⌝
 
-def exprUniverse {β : Type} (inst : β → _Sort) : Universe.{1, 1} :=
-{ I := β,
-  h := ⟨λ A => (inst A).α⟩ }
+namespace _Sort
+
+  def mkFreshMVar : MetaM _Sort := do
+    let u ← mkFreshLevelMVar
+    let α : ⌜Sort u⌝ ← TypedExpr.mkFreshMVar
+    pure ⟨α⟩
+
+  def instantiate (α : _Sort) : MetaM _Sort := do
+    let u ← instantiateLevelMVars α.u
+    let α : ⌜Sort u⌝ ← TypedExpr.instantiate α.α
+    pure ⟨α⟩
+
+  instance coeExpr : Coe _Sort Expr := ⟨_Sort.α⟩
+  instance coeSort : CoeSort _Sort Type := ⟨λ α => α.α⟩
+
+end _Sort
+
+
+def exprUniverse {β : Type} (inst : β → _Sort) : Universe.{1, 1} where
+  I := β
+  h := ⟨λ A => (inst A).α⟩
