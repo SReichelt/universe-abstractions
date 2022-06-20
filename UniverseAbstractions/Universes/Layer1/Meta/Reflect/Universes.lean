@@ -2,81 +2,127 @@ import UniverseAbstractions.Meta.Helpers
 
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
+import UniverseAbstractions.Universes.Layer1.Meta.Sort
 
 
 
 namespace UniverseAbstractions.Layer1.Meta
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open Lean Lean.Meta Qq UniverseAbstractions.Meta
 
 
 
-def mkHasInstances' (u : Level) {v : Level} (I : ⌜Sort v⌝) : ClassExpr :=
-  ⟨⌜HasInstances.{u, v} $I⌝⟩
+@[reducible] def _Universe.typedExpr (u uu : Level) : ⌜Type (max u uu)⌝ := ⌜Universe.{u, uu}⌝
+def _Universe.sort (u uu : Level) : _sort := ⟨typedExpr u uu⟩
 
-class mkHasInstances (u : outParam Level) {v : Level} (I : ⌜Sort v⌝) extends
-  mkHasInstances' u I
+
+
+def mkHasInstances'' (u : Level) {v : Level} (I : Q(Sort v)) := ⌜HasInstances.{u, v} $I⌝
+
+namespace mkHasInstances''
+
+  def mkInst {u v : Level} {I : Q(Sort v)} (h : mkHasInstances'' u I) (A : Q($I)) : Q(Sort u) := ⌜$A⌝
+
+  def mkInstFun {u v : Level} {I : Q(Sort v)} (h : mkHasInstances'' u I) : Q($I → Sort u) :=
+    ⌜λ A => A⌝
+
+  instance univInst (u uu : Level) : mkHasInstances'' uu ⌜Universe.{u, uu}⌝ :=
+    ⌜Universe.hasInstances⌝
+
+  def univInstInst {u uu : Level} (U : Q(Universe.{u, uu})) : mkHasInstances'' u ⌜$U⌝ :=
+    ⌜Universe.instInst $U⌝
+
+end mkHasInstances''
+
+def mkHasInstances' (u : Level) (I : _sort) : ClassExpr := ⟨mkHasInstances'' u I.α⟩
+
+class mkHasInstances (u : outParam Level) (I : _sort) extends mkHasInstances' u I
 
 namespace mkHasInstances
 
-  def mkInst {u v : Level} {I : ⌜Sort v⌝} [h : mkHasInstances u I] (A : I) : ⌜Sort u⌝ :=
-    let _ := h.h
-    ⌜$A⌝
+  def mkInst' {u : Level} {I : _sort} [h : mkHasInstances u I] (A : I) : _sort.mkSortType u :=
+    mkHasInstances''.mkInst h.h A
+  @[reducible] def mkInst {u : Level} {I : _sort} [mkHasInstances u I] (A : I) : _sort :=
+    mkInst' A
 
-  instance reflect {u v : Level} (I : ⌜Sort v⌝) [h : mkHasInstances u I] : HasInstances I :=
+  def defInstFun {u : Level} (I : _sort) [h : mkHasInstances u I] :
+      I ⥤{mkInst'} _sort.mkSortType u :=
+    ⟨mkHasInstances''.mkInstFun h.h⟩
+
+  @[reducible] def instFun {u : Level} (I : _sort) [mkHasInstances u I] : I ⥤ _sort.mkSortType u :=
+    defInstFun I
+
+  instance reflect {u : Level} (I : _sort) [mkHasInstances u I] : HasInstances I :=
     ⟨λ A => mkInst A⟩
+
+  instance univInst (u uu : Level) : mkHasInstances uu (_Universe.sort u uu) :=
+    { h := mkHasInstances''.univInst u uu }
+
+  instance univInstInst {u uu : Level} (U : _Universe.sort u uu) : mkHasInstances u (mkInst U) :=
+    { h := mkHasInstances''.univInstInst (u := u) (uu := uu) U }
 
 end mkHasInstances
 
 
 
-structure _Universe where
-  {u  : Level}
+structure _Universe (u : Level) where
   {uu : Level}
-  U   : ⌜Universe.{u, uu}⌝
+  U   : _Universe.typedExpr u uu
 
 namespace _Universe
 
-  instance : Coe _Universe Expr := ⟨_Universe.U⟩
+  instance (u : Level) : Coe (_Universe u) Expr := ⟨_Universe.U⟩
 
-  def mkFreshMVar : MetaM _Universe := do
-    let u ← mkFreshLevelMVar
+  def mkFreshMVar (u : Level) : MetaM (_Universe u) := do
     let uu ← mkFreshLevelMVar
-    let U : ⌜Universe.{u, uu}⌝ ← TypedExpr.mkFreshMVar
+    let U : typedExpr u uu ← TypedExpr.mkFreshMVar
     pure ⟨U⟩
 
-  def instantiate (U : _Universe) : MetaM _Universe := do
-    let u ← instantiateLevelMVars U.u
+  variable {u : Level}
+
+  def instantiate (U : _Universe u) (u' : Level) : MetaM (_Universe u') := do
     let uu ← instantiateLevelMVars U.uu
-    let U : ⌜Universe.{u, uu}⌝ ← TypedExpr.instantiate U.U
+    let U : typedExpr u' uu ← U.U.instantiate
     pure ⟨U⟩
 
-  def mkInst (U : _Universe) : ⌜Sort $U.uu⌝ := ⌜$U.U⌝
+  def mkInst' (U : _Universe u) : _sort.mkSortType U.uu :=
+    mkHasInstances.mkInst' (I := sort u U.uu) U.U
+  @[reducible] def mkInst (U : _Universe u) : _sort := mkInst' U
+  notation "_[" U:0 "]" => _Universe.mkInst U
 
-  instance hasInstInst (U : _Universe) : mkHasInstances U.u (mkInst U) where
-    h := ⌜Universe.instInst _⌝
+  instance hasInstInst (U : _Universe u) : mkHasInstances u _[U] := mkHasInstances.univInstInst U.U
 
-  def instInst {U : _Universe} (A : mkInst U) : _Sort := ⟨mkHasInstances.mkInst A⟩
+  @[reducible] def mkInstInst' {U : _Universe u} (A : _[U]) : _sort := mkHasInstances.mkInst A
 
-  def reflect (U : _Universe) := exprUniverse (instInst (U := U))
-  notation "_(" U:0 ")" => _Universe.reflect U
+  def reflect (U : _Universe u) := exprUniverse (mkInstInst' (U := U))
+  instance : Coe (_Universe u) Universe := ⟨_Universe.reflect⟩
+  instance : CoeSort (_Universe u) Type := ⟨λ U => U⟩
 
-  variable {U : _Universe}
+  variable {U : _Universe u}
 
-  def mkInstInst (A : _(U)) : _Sort := ⟨mkHasInstances.mkInst (h := hasInstInst U) A⟩
+  @[reducible] def reflectInst (A : _[U]) : U := A
+  notation "_|" A:0 "|" => _Universe.reflectInst A
+
+  @[reducible] def unreflectInst (A : U) : _[U] := A
+  notation "_(" A:0 ")" => _Universe.unreflectInst A
+
+  @[reducible] def mkInstInst (A : U) : _sort := mkInstInst' _(A)
   notation "_⌈" A:0 "⌉" => _Universe.mkInstInst A
 
-  def mkFreshTypeMVar : MetaM _(U) := TypedExpr.mkFreshMVar (α := mkInst U)
-  def mkFreshInstMVar {A : _(U)} : MetaM A := TypedExpr.mkFreshMVar (α := _⌈A⌉)
+  def defInstInstFun (U : _Universe u) : _[U] ⥤{λ A : U => _⌈A⌉.α} _sort.mkSortType u :=
+    mkHasInstances.defInstFun _[U]
 
-  def instantiateTypeMVars : _(U) → MetaM _(U) :=
-    TypedExpr.instantiate (α := mkInst U) (α' := mkInst U)
-  def instantiateInstMVars' {A A' : _(U)} : A → MetaM A' :=
-    TypedExpr.instantiate (α := _⌈A⌉) (α' := _⌈A'⌉)
-  def instantiateInstMVars {A : _(U)} : A → MetaM A := U.instantiateInstMVars'
+  @[reducible] def instInstFun (U : _Universe u) : _[U] ⥤ _sort.mkSortType u := defInstInstFun U
 
-  @[reducible] def FVar (A : _(U)) := Meta.FVar _⌈A⌉.α
+  def mkFreshTypeMVar : MetaM U := TypedExpr.mkFreshMVar (α := _[U].α)
+  def mkFreshInstMVar {A : U} : MetaM A := TypedExpr.mkFreshMVar (α := _⌈A⌉.α)
+
+  def instantiateTypeMVars : U → MetaM U :=
+    TypedExpr.instantiate (α := _[U].α) (α' := _[U].α)
+  def instantiateInstMVars' {A A' : U} : A → MetaM A' :=
+    TypedExpr.instantiate (α := _⌈A⌉.α) (α' := _⌈A'⌉.α)
+  def instantiateInstMVars {A : U} : A → MetaM A := U.instantiateInstMVars'
 
 end _Universe

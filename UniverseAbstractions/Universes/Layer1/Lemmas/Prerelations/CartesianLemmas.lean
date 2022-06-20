@@ -4,7 +4,7 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations.Cartesian
 
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u
 

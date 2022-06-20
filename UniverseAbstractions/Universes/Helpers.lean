@@ -1,6 +1,6 @@
 namespace UniverseAbstractions.Helpers
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u v w w' w'' w''' w''''
 

@@ -6,9 +6,9 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 
 namespace UniverseAbstractions.Layer1.Meta
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
-open Lean Lean.Meta UniverseAbstractions.Meta
+open Lean Lean.Meta Elab Tactic UniverseAbstractions.Meta
 
 
 
@@ -41,6 +41,12 @@ namespace _Sort
 
   instance coeExpr : Coe _Sort Expr := ⟨_Sort.α⟩
   instance coeSort : CoeSort _Sort Type := ⟨λ α => α.α⟩
+
+  def mkFreshInstMVar {α : _Sort} : MetaM α := TypedExpr.mkFreshMVar
+  def instantiateInstMVars {α α' : _Sort} (a : α) : MetaM α' := a.instantiate
+
+  def elaborate' {α : _Sort} (a : Syntax) : TermElabM α := TypedExpr.elaborate' a
+  def elaborate  {α : _Sort} (a : Syntax) : TacticM α := TypedExpr.elaborate a
 
 end _Sort
 

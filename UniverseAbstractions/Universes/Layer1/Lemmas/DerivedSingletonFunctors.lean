@@ -9,7 +9,7 @@ import UniverseAbstractions.Universes.Layer1.Lemmas.DerivedFunctors
 
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u
 

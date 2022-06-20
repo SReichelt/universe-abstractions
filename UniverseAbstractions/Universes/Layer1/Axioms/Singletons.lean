@@ -7,7 +7,7 @@ import UniverseAbstractions.MathlibFragments.Init.CoreExt
 
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open Universe HasFunctors
 

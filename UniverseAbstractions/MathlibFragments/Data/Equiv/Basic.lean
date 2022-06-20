@@ -8,7 +8,7 @@ Authors: Leonardo de Moura, Mario Carneiro
 
 
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u₁ u₂ u₃ u₄ v
 

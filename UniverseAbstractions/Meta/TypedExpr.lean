@@ -7,9 +7,18 @@ import Qq.Macro
 
 namespace UniverseAbstractions.Meta
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open Lean Lean.Meta Elab Tactic Qq
+
+
+
+def unfoldOnce (a : Expr) : MetaM Expr :=
+  withReducibleAndInstances do
+    let a ← whnfCore a
+    match ← unfoldDefinition? a with
+    | some a' => pure a'
+    | none    => pure a
 
 
 
@@ -32,22 +41,22 @@ namespace TypedExpr
   def synthesize    {α : Expr} : MetaM (TypedExpr α) := synthInstance α
   def trySynthesize {α : Expr} : MetaM (LOption (TypedExpr α)) := trySynthInstance α
 
+  def synthesize? {α : Expr} : MetaM (Option (TypedExpr α)) := do
+    match ← trySynthesize with
+    | LOption.some h => pure (some h)
+    | LOption.none   => pure none
+    | LOption.undef  => pure none
+
   def unfold_whnf   {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnf
   def unfold_whnfR  {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnfR
   def unfold_whnfD  {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnfD
   def unfold_whnfI  {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnfI
   def unfold_reduce {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := reduce
+  def unfold_once   {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := unfoldOnce
 
   def unfold_whnfHeadPred {α : Expr} (a : TypedExpr α) (pred : TypedExpr α → MetaM Bool) :
       MetaM (TypedExpr α) :=
-    whnfHeadPred α pred
-
-  def unfold_once {α : Expr} (a : TypedExpr α) : MetaM (TypedExpr α) :=
-    withReducibleAndInstances do
-      let a ← whnfCore a
-      match ← unfoldDefinition? a with
-      | some a' => pure a'
-      | none    => pure a
+    whnfHeadPred a pred
 
 end TypedExpr
 
@@ -68,7 +77,7 @@ QQ (@QQ.qq type_u (mkSort u))
 scoped instance (u : Level) (type_u : Expr) : CoeSort (TypeExpr u type_u) Type := ⟨TypedExpr⟩
 
 -- As we only need a single quotation macro, we use symbols instead.
-scoped macro "⌜" t:incQuotDepth(term) "⌝" : term => `(q($t))
+scoped macro "⌜" t:term "⌝" : term => `(q($t))
 
 
 
@@ -103,9 +112,8 @@ namespace InstanceExpr
     pure ⟨← TypedExpr.synthesize⟩
 
   def synthesize? {C : ClassExpr} : MetaM (Option C) := do
-    match ← TypedExpr.trySynthesize with
-    | LOption.some h => pure (some ⟨h⟩)
-    | LOption.none   => pure none
-    | LOption.undef  => pure none
+    match ← TypedExpr.synthesize? with
+    | Option.some h => pure (some ⟨h⟩)
+    | Option.none   => pure none
 
 end InstanceExpr

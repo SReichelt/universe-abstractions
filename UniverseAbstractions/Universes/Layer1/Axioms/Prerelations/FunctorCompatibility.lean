@@ -6,7 +6,7 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open HasFunctors HasSwapFun
 

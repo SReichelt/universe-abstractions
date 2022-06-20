@@ -1,6 +1,6 @@
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u uu u'
 

@@ -6,7 +6,7 @@ import UniverseAbstractions.Universes.Layer1.Meta.Reflect.Functors
 
 namespace UniverseAbstractions.Layer1.Meta
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open Lean Lean.Meta Qq Prerelation
 

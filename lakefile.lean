@@ -2,10 +2,9 @@ import Lake
 
 open Lake DSL
 
-package UniverseAbstractions {
-  defaultFacet := PackageFacet.oleans,
-  dependencies := #[{
-    name := `Qq
-    src := Source.git "https://github.com/SReichelt/quote4.git" "7bc102c32a5e44b37e918474aabb58c19484d6eb"
-  }]
-}
+package UniverseAbstractions
+
+require Qq from git
+  "https://github.com/SReichelt/quote4.git"@"eac8452e694ce3172aff1ff906c7c722aa181348"
+
+@[defaultTarget] lean_lib UniverseAbstractions

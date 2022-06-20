@@ -10,7 +10,7 @@ import UniverseAbstractions.Universes.Layer1.Instances.Utils.Trivial
 
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 
 

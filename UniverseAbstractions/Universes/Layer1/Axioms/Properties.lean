@@ -8,11 +8,12 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Equivalences
 
 namespace UniverseAbstractions.Layer1
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u uu v
 
-open Universe HasFunctors HasSwapFun HasRevCompFun₂ HasPreorderRelation HasEquivalenceRelation HasIsomorphisms
+open Universe HasFunctors HasSwapFun HasRevCompFun₂ HasPreorderRelation HasIsomorphisms
+     HasEquivalenceRelationBase
 
 
 
@@ -42,8 +43,8 @@ namespace PropertyUniverse
     elim := id
 
   class HasTypeCtors (U : PropertyUniverse.{u, uu, v}) where
-    [hFun : HasFunctors U.propositionType U.toUniverse]
-    ctorFunctor (φ : U.propositionType ⥤ U.propositionType) : EquivalenceFunctor (λ A => φ (inV A))
+    [hCtorFun : HasFunctors U.propositionType U.toUniverse]
+    [hCtorCongrArg : HasCongrArg U.propositionType U.propositionType]
     [hIdCtor : HasIdFun U.propositionType]
     [hSwapCtor : HasSwapFun U.propositionType U.propositionType U.toUniverse]
     [hCompCtor : HasCompFun U.propositionType U.propositionType U.toUniverse]
@@ -54,7 +55,7 @@ namespace PropertyUniverse
 
       variable (U : PropertyUniverse) [h : HasTypeCtors U]
 
-      instance : HasFunctors U.propositionType U.toUniverse := h.hFun
+      instance : HasFunctors U.propositionType U.toUniverse := h.hCtorFun
 
       instance : HasIdFun U.propositionType := h.hIdCtor
       instance : HasSwapFun U.propositionType U.propositionType U.toUniverse := h.hSwapCtor
