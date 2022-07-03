@@ -30,6 +30,8 @@ def unfoldOnce (a : Expr) : MetaM Expr :=
 
 namespace TypedExpr
 
+  instance inhabited (α : Expr) : Inhabited (TypedExpr α) := inferInstance
+
   -- Typed wrappers around some Lean functions we need.
   -- The type is an implicit parameter so that e.g. a typed parameter can be filled with
   -- just `← mkFreshMVar`.

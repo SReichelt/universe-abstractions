@@ -6,7 +6,7 @@ import UniverseAbstractions.Universes.Layer1.Meta.FVar
 namespace UniverseAbstractions.Layer1.Meta.Tactics.Functoriality
 
 set_option autoImplicit false
-set_option maxHeartbeats 1000000
+set_option maxHeartbeats 100000
 set_option linter.unusedVariables false
 
 open Lean Lean.Meta Lean.Elab Lean.Elab.Tactic UniverseAbstractions.Meta
@@ -73,79 +73,192 @@ def PiLambdaAbstraction {v : Level} {V : _Universe v} (φ : PiData V) :=
 --      return ← PiApp.synthesizePiApps' (Y := φ.Y) dupFun
 --  PiApp.synthesizePiApps f.y
 
-mutual
+def ConstructLambdaFunctor := {v : Level} → {V : _Universe v} → {φ : PiData V} →
+                              (f : PiLambdaAbstraction φ) → MetaM φ.mkPi
 
-  -- The main entry point, which handles `constFun` and `idFun` directly, and calls
-  -- `tryConstructLambdaAppFunctor` to deal with a Π application.
+-- This function handles the different cases of functor application in the lambda body,
+-- depending on which parts are either equal to the lambda variable or constant with respect
+-- to it. (We do not optimize the case where both parts are constant, since that should have
+-- been handled already.)
 
-  partial def constructLambdaFunctor {v : Level} {V : _Universe v} {φ : PiData V}
-                                     (f : PiLambdaAbstraction φ) (forcePrimitive : Bool) :
-      MetaM φ.mkPi := do
-    let Y : DependentExpr f.a := ⟨φ.p f.a.a⟩
-    match ← Y.classify with
-    | LambdaBodyCategory.const (Y' : V) => do
-      match ← f.t.classifyExt with
-      | LambdaBodyCategoryExt.const (y : Y') => do
-        let hαY : mkHasPiType (HasConstPi.defConstFun φ.α _(Y')) := { h := φ.h.h }
-        let hConstPi : mkHasConstPi φ.α Y' ← InstanceExpr.synthesize
-        pure (mkHasConstPi.mkConstPi φ.α y)
-      | LambdaBodyCategoryExt.id => do
-        let hYY : mkHasFunctors _⌈Y'⌉ Y' ← InstanceExpr.synthesize
-        let hIdFun : mkHasIdFun Y' ← InstanceExpr.synthesize
-        pure (mkHasIdFun.mkIdFun Y')
-      | LambdaBodyCategoryExt.dep => tryConstructLambdaAppFunctor f forcePrimitive
-    | LambdaBodyCategory.dep => tryConstructLambdaAppFunctor f forcePrimitive
+-- Handles the most generic case where everything may depend on `f.a`.
+def constructLambdaAppFunctor_dep {v : Level} {V : _Universe v} {φ : PiData V}
+                                  (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
+                                  (requireConstF : Bool)
+                                  (constructLambdaFunctor : ConstructLambdaFunctor) :
+    MetaM (Option φ.mkPi) := do
+  if requireConstF then
+    return none
+  let x ← mkFreshLevelMVar
+  let X ← _Universe.mkFreshMVar x
+  let A : X ← _Universe.mkFreshTypeMVar
+  if ← isDefEq piApp.α.α _⌈A⌉.α then
+    let x ← instantiateLevelMVars x
+    let X ← X.instantiate x
+    let A : X ← _Universe.instantiateTypeMVars A
+    let piApp_A := f.mkDependentExpr A
+    let P : φ.α ⥤ _[X] := piApp_A.toPi
+    let P' := DefFun.defAppFun P
+    let ⟨p, P', hP⟩ ← mkHasPiType.synthesize P'
+    let piApp_P := f.mkDependentExpr piApp.P.inst
+    let Q : Pi (λ a => (_⌈(mkHasPiType.reflectProp P') a⌉ ⥤ _[V])) := piApp_P.toPi
+    let Q' := DefPi.defAppPi Q
+    let hQa : mkHasQuantDepPiType Q' ← InstanceExpr.synthesize
+    let hPiQa : mkHasPiType (mkHasQuantDepPiType.piProp Q') := { h := ← TypedExpr.synthesize, hFun := none } -- TODO
+    let hQaFa : mkHasQuantPiType (mkHasSubstPi.prop Q') ← InstanceExpr.synthesize
+    let hSubst : mkHasSubstPi Q' ← InstanceExpr.synthesize
+    let piApp_a := f.mkDependentExpr piApp.a
+    let piApp_a' : DependentTypedExpr f.a ⟨_⌈p f.a.a⌉.α⟩ := ⟨piApp_a.y⟩
+    let φ_a : PiData X := ⟨P'⟩
+    let f_a : PiLambdaAbstraction φ_a := ⟨piApp_a'⟩
+    let F_a ← constructLambdaFunctor f_a
+    let piApp_F := f.mkDependentExpr piApp.F
+    let piApp_F' : DependentTypedExpr f.a ⟨_⌈Pi (mkHasQuantDepPiType.reflectAppProp Q' f.a.a)⌉.α⟩ :=
+        ⟨piApp_F.y⟩
+    let φ_F : PiData V := ⟨mkHasQuantDepPiType.piProp Q'⟩
+    let f_F : PiLambdaAbstraction φ_F := ⟨piApp_F'⟩
+    let F_F ← constructLambdaFunctor f_F
+    return some (mkHasSubstPi.mkRevSubstPi (Q := Q') F_F F_a)
+  pure none
 
-  -- Determines all ways in which the body is a Π application, and calls `constructLambdaAppFunctor`
-  -- on each to determine a good match.
-
-  partial def tryConstructLambdaAppFunctor {v : Level} {V : _Universe v} {φ : PiData V}
-                                           (f : PiLambdaAbstraction φ) (forcePrimitive : Bool) :
-      MetaM φ.mkPi := do
-    let piApps ← PiApp.synthesizePiApps f.y
-    match piApps with
-    | List.nil =>
-      let y : Expr := f.y
-      throwError "unsupported lambda body '{y}': failed to synthesize IsPiApp instance"
-    | List.cons mainPiApp _ =>
-      for piApp in piApps do
-        match ← constructLambdaAppFunctor f piApp forcePrimitive true with
-        | some F => return F
-        | none   => pure ()
-      match ← constructLambdaAppFunctor f mainPiApp forcePrimitive false with
-      | some F => pure F
-      | none   =>
-        -- Since we set `requireConstF` to `false`, this shouldn't happen.
-        let y : Expr := f.y
-        let F : Expr := mainPiApp.F
-        let a : Expr := mainPiApp.a
-        throwError "internal error for lambda body '{y}': unable to handle application of '{F}' with argument '{a}'"
-
-  -- This function handles the different cases of functor application in the lambda body,
-  -- depending on which parts are either equal to the lambda variable or constant with respect
-  -- to it. (We do not optimize the case where both parts are constant, since that should have
-  -- been handled already.)
-
-  partial def constructLambdaAppFunctor {v : Level} {V : _Universe v} {φ : PiData V}
+-- Handles the case where `piApp.α` is independent of `f.a`, but `piApp.P` may not necessarily be.
+-- Abstracting `piApp.P` then yields a bi-property.
+def constructLambdaAppFunctor_indep_dep {v : Level} {V : _Universe v} {φ : PiData V}
                                         (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
-                                        (forcePrimitive : Bool) (requireConstF : Bool) :
-      MetaM (Option φ.mkPi) := do
-    let piApp_α := f.mkDependentExpr piApp.α.α
-    match ← piApp_α.classify with
-    | LambdaBodyCategory.const (piApp_α' : _sort.mkSortType piApp.α.u) => do
-      let piApp_P' : piApp_α' ⥤{piApp.p} _[V] := ⟨piApp.P.inst⟩
-      let piApp_hP' : mkHasPiType piApp_P' := { h := piApp.h.h }
-      let piApp' : PiApp f.y := ⟨⟨piApp_P'⟩, piApp.F, piApp.a⟩
-      constructLambdaAppFunctor_indep f piApp' forcePrimitive requireConstF
-    | LambdaBodyCategory.dep => constructLambdaAppFunctor_dep f piApp forcePrimitive requireConstF
+                                        (requireConstF : Bool)
+                                        (constructLambdaFunctor : ConstructLambdaFunctor) :
+    MetaM (Option φ.mkPi) := do
+  if requireConstF then
+    return none
+  let piApp_F := f.mkDependentExpr piApp.F
+  let piApp_a := f.mkDependentExpr piApp.a
+  match ← piApp_a.classifyExt with
+  | LambdaBodyCategoryExt.const (piApp_a' : piApp.α) => do
+    let piApp_P := f.mkDependentExpr piApp.P.inst
+    let Q : φ.α ⥤ piApp.α ⥤ _[V] := piApp_P.toPi
+    let Q' := DefFun₂.defAppFun Q
+    let hQa : mkHasQuantPiType Q' ← InstanceExpr.synthesize
+    let hPiQa : mkHasPiType (mkHasQuantPiType.piProp Q') :=
+        { h := ← TypedExpr.synthesize, hFun := none } -- TODO
+    let hQab : mkHasQuantPiType (mkHasSwapPi.prop Q') ← InstanceExpr.synthesize
+    let hSwapPi : mkHasSwapPi Q' ← InstanceExpr.synthesize
+    let piApp_F' : DependentTypedExpr f.a ⟨_⌈Pi (mkHasQuantPiType.reflectAppProp Q' f.a.a)⌉.α⟩ :=
+        ⟨piApp_F.y⟩
+    let φ_F : PiData V := ⟨mkHasQuantPiType.piProp Q'⟩
+    let f_F : PiLambdaAbstraction φ_F := ⟨piApp_F'⟩
+    let F_F ← constructLambdaFunctor f_F
+    pure (some (mkHasSwapPi.mkSwapPi (P := Q') F_F piApp_a'))
+  | LambdaBodyCategoryExt.id => do
+    let piApp_P := f.mkDependentExpr piApp.P.inst
+    let Q : φ.α ⥤ φ.α ⥤ _[V] := piApp_P.toPi
+    let Q' := DefFun₂.defAppFun Q
+    let hQa : mkHasQuantPiType Q' ← InstanceExpr.synthesize
+    let hPiQa : mkHasPiType (mkHasQuantPiType.piProp Q') :=
+        { h := ← TypedExpr.synthesize, hFun := none } -- TODO
+    let hQaa : mkHasPiType (mkHasDupPi.prop Q') :=
+        { h := ← TypedExpr.synthesize, hFun := none } -- TODO
+    let hDupFun : mkHasDupPi Q' ← InstanceExpr.synthesize
+    let piApp_F' : DependentTypedExpr f.a ⟨_⌈Pi (mkHasQuantPiType.reflectAppProp Q' f.a.a)⌉.α⟩ :=
+        ⟨piApp_F.y⟩
+    let φ_F : PiData V := ⟨mkHasQuantPiType.piProp Q'⟩
+    let f_F : PiLambdaAbstraction φ_F := ⟨piApp_F'⟩
+    let F_F ← constructLambdaFunctor f_F
+    pure (some (mkHasDupPi.mkDupPi (P := Q') F_F))
+  | LambdaBodyCategoryExt.dep =>
+    constructLambdaAppFunctor_dep f piApp requireConstF constructLambdaFunctor
 
-  -- Handles the case where `piApp.α` is independent of `f.a`. (This is nearly always the case. If
-  -- `piApp.α` depends on `f.a`, then everything else also does, so `substPi` is then the only
-  -- possibility.)
-  partial def constructLambdaAppFunctor_indep {v : Level} {V : _Universe v} {φ : PiData V}
-                                              (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
-                                              (forcePrimitive : Bool) (requireConstF : Bool) :
-      MetaM (Option φ.mkPi) := do
+-- Handles the case where both `piApp.α` and `piApp.P` are independent of `f.a`. This must always be
+-- the case if `piApp.F` is independent of `f.a`, and also if `piApp.F` is exactly `f.a`.
+def constructLambdaAppFunctor_indep_indep {v : Level} {V : _Universe v} {φ : PiData V}
+                                          (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
+                                          (requireConstF : Bool)
+                                          (constructLambdaFunctor : ConstructLambdaFunctor) :
+    MetaM (Option φ.mkPi) := do
+  let piApp_F := f.mkDependentExpr piApp.F
+  let piApp_a := f.mkDependentExpr piApp.a
+  match ← piApp_F.classifyExt with
+  | LambdaBodyCategoryExt.const (piApp_F' : Pi (mkHasPiType.reflectProp piApp.P)) => do
+    if ← piApp_a.isId then
+      return some piApp_F'
+    let X ← _Universe.mkFreshMVar φ.α.u
+    let piApp_A : X ← _Universe.mkFreshTypeMVar
+    if ← isDefEq piApp.α.α _⌈piApp_A⌉.α then
+      let X ← X.instantiate φ.α.u
+      let piApp_A : X ← _Universe.instantiateTypeMVars piApp_A
+      let hαA : mkHasFunctors φ.α piApp_A ← InstanceExpr.synthesize
+      let piApp_P : _⌈piApp_A⌉ ⥤{piApp.p} _[V] := ⟨piApp.P.inst⟩
+      let piApp_hP : mkHasPiType piApp_P := { h := piApp.h.h, hFun := piApp.h.hFun }
+      let hPFa : mkHasQuantPiType (mkHasCompFunPi.prop φ.α piApp_P) ← InstanceExpr.synthesize
+      let hCompFunPi : mkHasCompFunPi φ.α piApp_P ← InstanceExpr.synthesize
+      let piApp_F'' : Pi (mkHasPiType.reflectProp piApp_P) := piApp_F'
+      let piApp_a' : DependentTypedExpr f.a ⟨_⌈piApp_A⌉.α⟩ := ⟨piApp_a.y⟩
+      let φ_a : PiData X := ⟨HasConstPi.defConstFun φ.α _(piApp_A)⟩
+      let f_a : PiLambdaAbstraction φ_a := ⟨piApp_a'⟩
+      let F_a' ← constructLambdaFunctor f_a
+      let F_a : φ.α ⥤ piApp_A := F_a'
+      let revCompFunPi := mkHasCompFunPi.mkRevCompFunPi piApp_F'' F_a
+      return some revCompFunPi
+    constructLambdaAppFunctor_indep_dep f piApp requireConstF constructLambdaFunctor
+  | LambdaBodyCategoryExt.id => do
+    if requireConstF then
+      return none
+    match ← piApp_a.classify with
+    | LambdaBodyCategory.const (piApp_a' : piApp.α) => do
+      let hVV : mkHasUnivFunctors V V ← InstanceExpr.synthesize
+      let hPiAppFun : mkHasPiAppFun piApp.P ← InstanceExpr.synthesize
+      let piAppFun := mkHasPiAppFun.mkPiAppFun piApp.P piApp_a'
+      pure (some piAppFun)
+    | LambdaBodyCategory.dep => do
+      let X ← _Universe.mkFreshMVar v
+      let A : X ← _Universe.mkFreshTypeMVar
+      let Q : _⌈A⌉ ⥤ _[V] ← _sort.mkFreshInstMVar
+      let Q' := DefFun.defAppFun Q
+      let hQ : mkHasPiType Q' ← mkHasPiType.mkFreshMVar
+      if ← isDefEq φ.α.α _⌈Pi (mkHasPiType.reflectProp Q')⌉.α then
+        let X ← X.instantiate v
+        let X' ← X.instantiate φ.α.u
+        let A : X ← _Universe.instantiateTypeMVars A
+        let A' : X' := A
+        let Q : _⌈A⌉ ⥤ _[V] ← _sort.instantiateInstMVars Q
+        let Q' := DefFun.defAppFun Q
+        let hQ : mkHasPiType Q' := { h := ← hQ.h.instantiate, hFun := none } -- TODO
+        let hVX : mkHasUnivFunctors V X ← InstanceExpr.synthesize
+        let hQF : mkHasQuantPiType (mkHasPiSelfAppPi.prop Q') ← InstanceExpr.synthesize
+        let hRevSelfApp : mkHasPiSelfAppPi Q' ← InstanceExpr.synthesize
+        let hPiQA : mkHasFunctors _⌈Pi (mkHasPiType.reflectProp Q')⌉ A := inferInstance
+        let hαA : mkHasFunctors φ.α A' := { h := hPiQA.h }
+        let piApp_a' : DependentTypedExpr f.a ⟨_⌈A'⌉.α⟩ := ⟨piApp_a.y⟩
+        let φ_a : PiData X' := ⟨HasConstPi.defConstFun φ.α _(A')⟩
+        let f_a : PiLambdaAbstraction φ_a := ⟨piApp_a'⟩
+        let F_a' ← constructLambdaFunctor f_a
+        let F_a : Pi (mkHasPiType.reflectProp Q') := F_a'
+        let piSelfAppPi := mkHasPiSelfAppPi.mkPiSelfAppPi (Q := Q') F_a
+        return some piSelfAppPi
+      constructLambdaAppFunctor_indep_dep f piApp requireConstF constructLambdaFunctor
+  | LambdaBodyCategoryExt.dep =>
+    constructLambdaAppFunctor_indep_dep f piApp requireConstF constructLambdaFunctor
+
+-- Handles both cases where `piApp.α` is independent of `f.a`. (This is nearly always the case. If
+-- `piApp.α` depends on `f.a`, then everything else also does, so `substPi` is then the only
+-- possibility.)
+def constructLambdaAppFunctor_indep {v : Level} {V : _Universe v} {φ : PiData V}
+                                    (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
+                                    (requireConstF : Bool)
+                                    (constructLambdaFunctor : ConstructLambdaFunctor) :
+    MetaM (Option φ.mkPi) := do
+  match piApp.h.hFun with
+  | some piApp_hFun => do
+    let piApp_hFun := f.mkDependentExpr piApp_hFun
+    match ← piApp_hFun.classify with
+    | LambdaBodyCategory.const piApp_hFun'' => do
+      let α : _sort.mkSortType v := piApp.α.α
+      let Y : V := φ.p f.a.a
+      let hFun : mkHasFunctors α Y := { h := piApp_hFun'' }
+      let piApp' : PiApp f.y := ⟨⟨HasConstPi.defConstFun α _(Y)⟩, piApp.F, piApp.a⟩
+      constructLambdaAppFunctor_indep_indep f piApp' requireConstF constructLambdaFunctor
+    | LambdaBodyCategory.dep => do
+      constructLambdaAppFunctor_indep_dep f piApp requireConstF constructLambdaFunctor
+  | none => do
     let piApp_P := f.mkDependentExpr piApp.P.inst
     match ← piApp_P.classify with
     | LambdaBodyCategory.const (piApp_P' : piApp.α ⥤ _[V]) => do
@@ -153,157 +266,74 @@ mutual
       let piApp_hP_h := f.mkDependentExpr piApp.h.h
       match ← piApp_hP_h.classify with
       | LambdaBodyCategory.const piApp_hP_h' => do
-        let hpiApp_P'' : mkHasPiType piApp_P'' := { h := piApp_hP_h' }
+        let hPiApp_P'' : mkHasPiType piApp_P'' := { h := piApp_hP_h', hFun := none }
         let piApp' : PiApp f.y := ⟨⟨piApp_P''⟩, piApp.F, piApp.a⟩
-        constructLambdaAppFunctor_indep_indep f piApp' forcePrimitive requireConstF
-      | LambdaBodyCategory.dep => constructLambdaAppFunctor_indep_dep f piApp forcePrimitive requireConstF
-    | LambdaBodyCategory.dep => constructLambdaAppFunctor_indep_dep f piApp forcePrimitive requireConstF
+        constructLambdaAppFunctor_indep_indep f piApp' requireConstF constructLambdaFunctor
+      | LambdaBodyCategory.dep =>
+        constructLambdaAppFunctor_indep_dep f piApp requireConstF constructLambdaFunctor
+    | LambdaBodyCategory.dep =>
+      constructLambdaAppFunctor_indep_dep f piApp requireConstF constructLambdaFunctor
 
-  -- Handles the case where `piApp.P` is also independent of `f.a`. This must always be the case if
-  -- `piApp.F` is independent of `f.a`, and also if `piApp.F` is exactly `f.a`.
-  partial def constructLambdaAppFunctor_indep_indep {v : Level} {V : _Universe v} {φ : PiData V}
-                                                    (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
-                                                    (forcePrimitive : Bool) (requireConstF : Bool) :
-      MetaM (Option φ.mkPi) := do
-    let piApp_F := f.mkDependentExpr piApp.F
-    let piApp_a := f.mkDependentExpr piApp.a
-    match ← piApp_F.classifyExt with
-    | LambdaBodyCategoryExt.const (piApp_F' : Pi (mkHasPiType.reflectProp piApp.P)) => do
-      if ← piApp_a.isId then
-        return some piApp_F'
-      let X ← _Universe.mkFreshMVar φ.α.u
-      let piApp_A : X ← _Universe.mkFreshTypeMVar
-      if ← isDefEq piApp.α.α _⌈piApp_A⌉.α then
-        let X ← X.instantiate φ.α.u
-        let piApp_A : X ← _Universe.instantiateTypeMVars piApp_A
-        let hαA : mkHasFunctors φ.α piApp_A ← InstanceExpr.synthesize
-        let piApp_P : _⌈piApp_A⌉ ⥤{piApp.p} _[V] := ⟨piApp.P.inst⟩
-        let piApp_hP : mkHasPiType piApp_P := { h := piApp.h.h }
-        let hPFa : mkHasQuantPiType (mkHasCompFunPi.prop φ.α piApp_P) ← InstanceExpr.synthesize
-        let hCompFunPi : mkHasCompFunPi φ.α piApp_P ← InstanceExpr.synthesize
-        let piApp_F'' : Pi (mkHasPiType.reflectProp piApp_P) := piApp_F'
-        let piApp_a' : DependentTypedExpr f.a ⟨_⌈piApp_A⌉.α⟩ := ⟨piApp_a.y⟩
-        let φ_a : PiData X := ⟨HasConstPi.defConstFun φ.α _(piApp_A)⟩
-        let f_a : PiLambdaAbstraction φ_a := ⟨piApp_a'⟩
-        let F_a : φ.α ⥤ piApp_A ← constructLambdaFunctor f_a forcePrimitive
-        return some (mkHasCompFunPi.mkRevCompFunPi piApp_F'' F_a)
-      constructLambdaAppFunctor_indep_dep f piApp forcePrimitive requireConstF
+-- Handles all cases.
+def constructLambdaAppFunctor {v : Level} {V : _Universe v} {φ : PiData V}
+                              (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
+                              (requireConstF : Bool)
+                              (constructLambdaFunctor : ConstructLambdaFunctor) :
+    MetaM (Option φ.mkPi) := do
+  let piApp_α := f.mkDependentExpr piApp.α.α
+  match ← piApp_α.classify with
+  | LambdaBodyCategory.const (piApp_α' : _sort.mkSortType piApp.α.u) => do
+    let piApp_P' : piApp_α' ⥤{piApp.p} _[V] := ⟨piApp.P.inst⟩
+    let piApp_hP' : mkHasPiType piApp_P' := { h := piApp.h.h, hFun := piApp.h.hFun }
+    let piApp' : PiApp f.y := ⟨⟨piApp_P'⟩, piApp.F, piApp.a⟩
+    constructLambdaAppFunctor_indep f piApp' requireConstF constructLambdaFunctor
+  | LambdaBodyCategory.dep =>
+    constructLambdaAppFunctor_dep f piApp requireConstF constructLambdaFunctor
+
+-- Determines all ways in which the body is a Π application, and calls `constructLambdaAppFunctor`
+-- on each to determine a good match.
+def tryConstructLambdaAppFunctor {v : Level} {V : _Universe v} {φ : PiData V}
+                                 (f : PiLambdaAbstraction φ)
+                                 (constructLambdaFunctor : ConstructLambdaFunctor) :
+    MetaM φ.mkPi := do
+  let piApps ← PiApp.synthesizePiApps f.y
+  match piApps with
+  | List.nil =>
+    let y : Expr := f.y
+    throwError "unsupported lambda body '{y}': failed to synthesize IsPiApp instance"
+  | List.cons mainPiApp _ =>
+    for piApp in piApps do
+      match ← constructLambdaAppFunctor f piApp true constructLambdaFunctor with
+      | some F => return F
+      | none   => pure ()
+    match ← constructLambdaAppFunctor f mainPiApp false constructLambdaFunctor with
+    | some F => pure F
+    | none   =>
+      -- Since we set `requireConstF` to `false`, this shouldn't happen.
+      let y : Expr := f.y
+      let F : Expr := mainPiApp.F
+      let a : Expr := mainPiApp.a
+      throwError "internal error for lambda body '{y}': unable to handle application of '{F}' with argument '{a}'"
+
+-- The main entry point, which handles `constFun` and `idFun` directly, and calls
+-- `tryConstructLambdaAppFunctor` to deal with a Π application.
+partial def constructLambdaFunctor {v : Level} {V : _Universe v} {φ : PiData V}
+                                   (f : PiLambdaAbstraction φ) :
+    MetaM φ.mkPi := do
+  let Y : DependentExpr f.a := ⟨φ.p f.a.a⟩
+  match ← Y.classify with
+  | LambdaBodyCategory.const (Y' : V) => do
+    match ← f.t.classifyExt with
+    | LambdaBodyCategoryExt.const (y : Y') => do
+      let hαY : mkHasPiType (HasConstPi.defConstFun φ.α _(Y')) := { h := φ.h.h, hFun := φ.h.hFun }
+      let hConstPi : mkHasConstPi φ.α Y' ← InstanceExpr.synthesize
+      pure (mkHasConstPi.mkConstPi φ.α y)
     | LambdaBodyCategoryExt.id => do
-      if requireConstF then
-        return none
-      match ← piApp_a.classify with
-      | LambdaBodyCategory.const (piApp_a' : piApp.α) => do
-        let hVV : mkHasUnivFunctors V V ← InstanceExpr.synthesize
-        let hPiAppFun : mkHasPiAppFun piApp.P ← InstanceExpr.synthesize
-        pure (some (mkHasPiAppFun.mkPiAppFun piApp.P piApp_a'))
-      | LambdaBodyCategory.dep => do
-        let X ← _Universe.mkFreshMVar v
-        let A : X ← _Universe.mkFreshTypeMVar
-        let Q : _⌈A⌉ ⥤ _[V] ← _sort.mkFreshInstMVar
-        let Q' := DefFun.defAppFun Q
-        let hQ : mkHasPiType Q' ← InstanceExpr.mkFreshMVar
-        if ← isDefEq φ.α.α _⌈Pi (mkHasPiType.reflectProp Q')⌉.α then
-          let X ← X.instantiate v
-          let X' ← X.instantiate φ.α.u
-          let A : X ← _Universe.instantiateTypeMVars A
-          let A' : X' := A
-          let Q : _⌈A⌉ ⥤ _[V] ← _sort.instantiateInstMVars Q
-          let Q' := DefFun.defAppFun Q
-          let hQ : mkHasPiType Q' ← hQ.instantiate
-          let hVX : mkHasUnivFunctors V X ← InstanceExpr.synthesize
-          let hQF : mkHasQuantPiType (mkHasPiSelfAppPi.prop Q') ← InstanceExpr.synthesize
-          let hRevSelfApp : mkHasPiSelfAppPi Q' ← InstanceExpr.synthesize
-          let hPiQA : mkHasFunctors _⌈Pi (mkHasPiType.reflectProp Q')⌉ A := inferInstance
-          let hαA : mkHasFunctors φ.α A' := { h := hPiQA.h }
-          let piApp_a' : DependentTypedExpr f.a ⟨_⌈A'⌉.α⟩ := ⟨piApp_a.y⟩
-          let φ_a : PiData X' := ⟨HasConstPi.defConstFun φ.α _(A')⟩
-          let f_a : PiLambdaAbstraction φ_a := ⟨piApp_a'⟩
-          let F_a : Pi (mkHasPiType.reflectProp Q') ⥤ A ← constructLambdaFunctor f_a forcePrimitive
-          return some (mkHasPiSelfAppPi.mkPiSelfAppPi F_a)
-        constructLambdaAppFunctor_indep_dep f piApp forcePrimitive requireConstF
-    | LambdaBodyCategoryExt.dep => constructLambdaAppFunctor_indep_dep f piApp forcePrimitive requireConstF
-
-  -- Handles the case where `piApp.α` is independent of `f.a`, but `piApp.P` may not necessarily be.
-  -- Abstracting `piApp.P` then yields a bi-property.
-  partial def constructLambdaAppFunctor_indep_dep {v : Level} {V : _Universe v} {φ : PiData V}
-                                                  (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
-                                                  (forcePrimitive : Bool) (requireConstF : Bool) :
-      MetaM (Option φ.mkPi) := do
-    if requireConstF then
-      return none
-    let piApp_F := f.mkDependentExpr piApp.F
-    let piApp_a := f.mkDependentExpr piApp.a
-    match ← piApp_a.classifyExt with
-    | LambdaBodyCategoryExt.const (piApp_a' : piApp.α) => do
-      let piApp_P := f.mkDependentExpr piApp.P.inst
-      let Q : φ.α ⥤ piApp.α ⥤ _[V] := piApp_P.toPi
-      let Q' := DefFun₂.defAppFun Q
-      let hQa : mkHasQuantPiType Q' ← InstanceExpr.synthesize
-      let hPiQa : mkHasPiType (mkHasQuantPiType.piProp Q') ← InstanceExpr.synthesize
-      let hQab : mkHasQuantPiType (mkHasSwapPi.prop Q') ← InstanceExpr.synthesize
-      let hSwapPi : mkHasSwapPi Q' ← InstanceExpr.synthesize
-      let piApp_F' : DependentTypedExpr f.a ⟨_⌈Pi (mkHasQuantPiType.reflectAppProp Q' f.a.a)⌉.α⟩ :=
-          ⟨piApp_F.y⟩
-      let φ_F : PiData V := ⟨mkHasQuantPiType.piProp Q'⟩
-      let f_F : PiLambdaAbstraction φ_F := ⟨piApp_F'⟩
-      let F_F ← constructLambdaFunctor f_F forcePrimitive
-      pure (some (mkHasSwapPi.mkSwapPi (P := Q') F_F piApp_a'))
-    | LambdaBodyCategoryExt.id => do
-      let piApp_P := f.mkDependentExpr piApp.P.inst
-      let Q : φ.α ⥤ φ.α ⥤ _[V] := piApp_P.toPi
-      let Q' := DefFun₂.defAppFun Q
-      let hQa : mkHasQuantPiType Q' ← InstanceExpr.synthesize
-      let hPiQa : mkHasPiType (mkHasQuantPiType.piProp Q') ← InstanceExpr.synthesize
-      let hQaa : mkHasPiType (mkHasDupPi.prop Q') ← InstanceExpr.synthesize
-      let hDupFun : mkHasDupPi Q' ← InstanceExpr.synthesize
-      let piApp_F' : DependentTypedExpr f.a ⟨_⌈Pi (mkHasQuantPiType.reflectAppProp Q' f.a.a)⌉.α⟩ :=
-          ⟨piApp_F.y⟩
-      let φ_F : PiData V := ⟨mkHasQuantPiType.piProp Q'⟩
-      let f_F : PiLambdaAbstraction φ_F := ⟨piApp_F'⟩
-      let F_F ← constructLambdaFunctor f_F forcePrimitive
-      pure (some (mkHasDupPi.mkDupPi (P := Q') F_F))
-    | LambdaBodyCategoryExt.dep => constructLambdaAppFunctor_dep f piApp forcePrimitive requireConstF
-
-  -- Handles the most generic case where everything may depend on `f.a`.
-  partial def constructLambdaAppFunctor_dep {v : Level} {V : _Universe v} {φ : PiData V}
-                                            (f : PiLambdaAbstraction φ) (piApp : PiApp f.y)
-                                            (forcePrimitive : Bool) (requireConstF : Bool) :
-      MetaM (Option φ.mkPi) := do
-    if requireConstF then
-      return none
-    let x ← mkFreshLevelMVar
-    let X ← _Universe.mkFreshMVar x
-    let A : X ← _Universe.mkFreshTypeMVar
-    if ← isDefEq piApp.α.α _⌈A⌉.α then
-      let x ← instantiateLevelMVars x
-      let X ← X.instantiate x
-      let A : X ← _Universe.instantiateTypeMVars A
-      let piApp_A := f.mkDependentExpr A
-      let P : φ.α ⥤ _[X] := piApp_A.toPi
-      let P' := DefFun.defAppFun P
-      let hP : mkHasPiType P' ← InstanceExpr.synthesize
-      let piApp_P := f.mkDependentExpr piApp.P.inst
-      let Q : Pi (λ a => (_⌈(mkHasPiType.reflectProp P') a⌉ ⥤ _[V])) := piApp_P.toPi
-      let Q' := DefPi.defAppPi Q
-      let hQa : mkHasQuantDepPiType Q' ← InstanceExpr.synthesize
-      let hPiQa : mkHasPiType (mkHasQuantDepPiType.piProp Q') ← InstanceExpr.synthesize
-      let hQaFa : mkHasQuantPiType (mkHasSubstPi.prop Q') ← InstanceExpr.synthesize
-      let hSubst : mkHasSubstPi Q' ← InstanceExpr.synthesize
-      let piApp_a := f.mkDependentExpr piApp.a
-      let piApp_a' : DependentTypedExpr f.a ⟨_⌈P f.a.a⌉.α⟩ := ⟨piApp_a.y⟩
-      let φ_a : PiData X := ⟨P'⟩
-      let f_a : PiLambdaAbstraction φ_a := ⟨piApp_a'⟩
-      let F_a : Pi (mkHasPiType.reflectProp P') ← constructLambdaFunctor f_a forcePrimitive
-      let piApp_F := f.mkDependentExpr piApp.F
-      let piApp_F' : DependentTypedExpr f.a ⟨_⌈Pi (mkHasQuantDepPiType.reflectAppProp Q' f.a.a)⌉.α⟩ :=
-          ⟨piApp_F.y⟩
-      let φ_F : PiData V := ⟨mkHasQuantDepPiType.piProp Q'⟩
-      let f_F : PiLambdaAbstraction φ_F := ⟨piApp_F'⟩
-      let F_F ← constructLambdaFunctor f_F forcePrimitive
-      return some (mkHasSubstPi.mkRevSubstPi F_F F_a)
-    pure none
-
-end
+      let hYY : mkHasFunctors _⌈Y'⌉ Y' ← InstanceExpr.synthesize
+      let hIdFun : mkHasIdFun Y' ← InstanceExpr.synthesize
+      pure (mkHasIdFun.mkIdFun Y')
+    | LambdaBodyCategoryExt.dep => tryConstructLambdaAppFunctor f constructLambdaFunctor
+  | LambdaBodyCategory.dep => tryConstructLambdaAppFunctor f constructLambdaFunctor
 
 
 def constructFunctor {v : Level} {V : _Universe v} {φ : PiData V} (f : φ.mkSortPi) : MetaM φ.mkPi :=
@@ -312,13 +342,12 @@ def constructFunctor {v : Level} {V : _Universe v} {φ : PiData V} (f : φ.mkSor
     | some mvarId =>
       -- TODO: Is there a way to show the standard placeholder message at the right place?
       throwError "unfilled placeholder in functor declaration\n{MessageData.ofGoal mvarId}"
-    | none => constructLambdaFunctor f' false)
+    | none => constructLambdaFunctor f')
 
 
 -- The `makeFunctor` elaborator, which calls `byFunctoriality` based on the target type and
 -- given term. Note that the target type determines how to elaborate the term, which enables us
 -- to omit the variable type in `Λ` expressions.
-
 elab "makeFunctor " hf:term:1023 : term <= type => do
   let v ← mkFreshLevelMVar
   let V ← _Universe.mkFreshMVar v
@@ -343,7 +372,6 @@ elab "makeFunctor " hf:term:1023 : term <= type => do
 -- However, `expandExplicitBinders` only accepts a name and `makeFunctor` isn't one, so as a
 -- hack, we currently pass it a dummy name `__makeFunctor` and then recursively replace the
 -- corresponding syntax nodes in the result.
-
 partial def replaceMakeFunctor : Syntax → MacroM Syntax
   | `(__makeFunctor $f) => do
     let f ← replaceMakeFunctor f

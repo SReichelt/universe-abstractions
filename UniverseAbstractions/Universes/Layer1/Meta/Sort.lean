@@ -23,6 +23,8 @@ namespace _sort
 
   def mk {u : Level} (α : ⌜Sort u⌝) : _sort := ⟨α⟩
 
+  instance inhabited (α : _sort) : Inhabited α := _Sort.inhabited α
+
   def mkFreshMVar : MetaM _sort := _Sort.mkFreshMVar
   def instantiate (α : _sort) : MetaM _sort := _Sort.instantiate α
   def mkFreshInstMVar {α : _sort} : MetaM α := _Sort.mkFreshInstMVar (α := α)

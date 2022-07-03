@@ -798,7 +798,7 @@ namespace HasPiAppFun
 
   section
 
-    variable {α : Sort u} (a : α) {V : Universe} [HasUnivFunctors V V] (B : V) [HasFunctors α B]
+    variable {α : Sort u} (a : α) {U : Universe.{u}} [HasUnivFunctors U U] (B : U) [HasFunctors α B]
              [HasPiAppFun (Function.const α B)]
 
     @[reducible] def revAppFun : (α ⥤ B) ⥤ B := piAppFun (Function.const α B) a

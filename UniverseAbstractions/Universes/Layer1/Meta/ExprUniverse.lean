@@ -42,6 +42,8 @@ namespace _Sort
   instance coeExpr : Coe _Sort Expr := ⟨_Sort.α⟩
   instance coeSort : CoeSort _Sort Type := ⟨λ α => α.α⟩
 
+  instance inhabited (α : _Sort) : Inhabited α := TypedExpr.inhabited α
+
   def mkFreshInstMVar {α : _Sort} : MetaM α := TypedExpr.mkFreshMVar
   def instantiateInstMVars {α α' : _Sort} (a : α) : MetaM α' := a.instantiate
 
