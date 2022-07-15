@@ -224,7 +224,9 @@ namespace HasPiType
 
   section DefPi
 
-    @[reducible] def DefPi {α : Sort u} (P : α → V) [h : HasPiType P] (f : ∀ a, P a) :=
+    -- Note: Do dot make this `@[reducible]`. The functoriality tactic needs to be able to determine
+    -- whether a given type is an application of `DefPi`.
+    def DefPi {α : Sort u} (P : α → V) [h : HasPiType P] (f : ∀ a, P a) :=
       DefType.DefInst h.defPiType f
 
     namespace DefPi
@@ -1210,6 +1212,18 @@ namespace HasConstPi
 
   end
 
+  section
+
+    variable (α β : Sort u) {U : Universe.{u}} {C : U} [HasFunctors β C] [HasFunctors α (β ⥤ C)]
+             [h₁ : HasConstPi β C] [h₂ : HasConstPi α (β ⥤ C)]
+
+    @[reducible] def defConstFun₂ (c : C) : α ⥤ β ⥤{Function.const α (Function.const β c)} C :=
+      ⟨λ _ => h₁.defConstPi c, h₂.defConstPi (constFun β c)⟩
+
+    @[reducible] def constFun₂ (c : C) : α ⥤ β ⥤ C := defConstFun₂ α β c
+
+  end
+
 end HasConstPi
 
 class HasConstPiFun (α : Sort u) {V : Universe} [HasUnivFunctors V V] (B : V)
@@ -1264,14 +1278,13 @@ namespace HasDupPi
 
   section
 
-    variable {α : Sort u} {V : Universe} {B : V} [HasFunctors α B] [HasFunctors α (α ⥤ B)]
+    variable {α : Sort u} {U : Universe.{u}} {B : U} [HasFunctors α B] [HasFunctors α (α ⥤ B)]
              [HasDupPi (Function.const α (Function.const α B))]
 
     @[reducible] def dupFun (F : α ⥤ α ⥤ B) : α ⥤ B :=
       dupPi (P := Function.const α (Function.const α B)) F
 
-    def defDupDefFun {f : α → α → B} (F : α ⥤ α ⥤{f} B) : α ⥤{λ a => f a a} B :=
-      ⟨dupFun F⟩
+    def defDupDefFun {f : α → α → B} (F : α ⥤ α ⥤{f} B) : α ⥤{λ a => f a a} B := ⟨dupFun F⟩
 
   end
 
@@ -1331,8 +1344,8 @@ namespace HasPiSelfAppPi
 
   section
 
-    variable {U V : Universe.{u}} [HasUnivFunctors V U] [HasUnivFunctors V V] {A : U} {B : V}
-             [HasFunctors A B] [h : HasPiSelfAppPi (Function.const A B)]
+    variable {U V : Universe.{u}} [HasUnivFunctors V U] {A : U} {B : V} [HasFunctors A B]
+             [HasFunctors (A ⥤ B) B] [h : HasPiSelfAppPi (Function.const A B)]
 
     @[reducible] def revSelfAppFun (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B := piSelfAppPi F
 
@@ -1664,6 +1677,16 @@ class HasLinearLogic (U : Universe) extends HasUnivFunctors U U where
 
 namespace HasLinearLogic
 
+  def construct (U : Universe) [HasUnivFunctors U U] [hId : ∀ A : U, HasIdFun A]
+                [hRevApp : ∀ A B : U, HasPiAppFunPi (Function.const A B)]
+                [hRevComp : ∀ A B C : U, HasRevCompFunPiFun A (Function.const B C)] :
+      HasLinearLogic U where
+    defIdFun       A     := (hId A).defIdFun
+    defRevAppFun₂  A B   := ⟨(hRevApp A B).defPiAppFun, (hRevApp A B).defPiAppFunPi⟩
+    defRevCompFun₃ A B C := ⟨λ G => ⟨λ F => (hRevComp A B C).defCompFunPi F G,
+                                     (hRevComp A B C).defRevCompFunPi₂ G⟩,
+                             (hRevComp A B C).defRevCompFunPiFun⟩
+
   variable {U : Universe} [h : HasLinearLogic U]
 
   instance hasIdFun (A : U) : HasIdFun A := ⟨h.defIdFun A⟩
@@ -1695,6 +1718,10 @@ class HasSubLinearLogic (U : Universe) [HasUnivFunctors U U] where
 
 namespace HasSubLinearLogic
 
+  def construct (U : Universe) [HasUnivFunctors U U] [hConst : ∀ A B : U, HasConstPiFun A B] :
+      HasSubLinearLogic U where
+    defConstFun₂ A B := ⟨(hConst A B).defConstPi, (hConst A B).defConstPiFun⟩
+
   variable {U : Universe} [HasUnivFunctors U U] [h : HasSubLinearLogic U]
 
   instance hasConstPi (A B : U) : HasConstPi A B := ⟨(h.defConstFun₂ A B).app⟩
@@ -1709,6 +1736,11 @@ class HasNonLinearLogic (U : Universe) [HasUnivFunctors U U] where
   defDupFun₂ (A B : U) : (A ⥤ A ⥤ B) ⥤ A ⥤{λ F a => F a a} B
 
 namespace HasNonLinearLogic
+
+  def construct (U : Universe) [HasUnivFunctors U U]
+                [hDup : ∀ A B : U, HasDupPiFun (Function.const A (Function.const A B))] :
+      HasNonLinearLogic U where
+    defDupFun₂ A B := ⟨(hDup A B).defDupPi, (hDup A B).defDupPiFun⟩
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasNonLinearLogic U]
 

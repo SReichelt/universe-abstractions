@@ -7,7 +7,7 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1.Meta.Tactics.Functoriality.Test
 
 set_option autoImplicit false
---set_option synthInstance.maxHeartbeats 1000
+set_option trace.Meta.Tactic true
 set_option linter.unusedVariables false
 
 universe u uu
@@ -145,6 +145,11 @@ def testTestCompCompFunct (F : A ⥤ B) (H : C ⥤ D) :
     (B ⥤ C) ⥤{λ G => testCompComp A B C D F G H} (A ⥤ D) :=
   by functoriality
 #print testTestCompCompFunct
+
+def testTestCompCompFunct₂ (F : A ⥤ B) :
+    (B ⥤ C) ⥤ (C ⥤ D) ⥤{λ G H => testCompComp A B C D F G H} (A ⥤ D) :=
+  by functoriality
+#print testTestCompCompFunct₂
 
 def testTestCompCompFunct₃ :
     (A ⥤ B) ⥤ (B ⥤ C) ⥤ (C ⥤ D) ⥤{λ F G H => testCompComp A B C D F G H} (A ⥤ D) :=

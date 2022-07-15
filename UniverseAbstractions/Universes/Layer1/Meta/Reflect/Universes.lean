@@ -9,8 +9,14 @@ import UniverseAbstractions.Universes.Layer1.Meta.Sort
 namespace UniverseAbstractions.Layer1.Meta
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
 open Lean Lean.Meta Qq UniverseAbstractions.Meta
+
+
+
+-- In this file, we reflect object-level universes as meta-level universes, which in turn enables us
+-- to reflect universe-based structures such as functors.
 
 
 
