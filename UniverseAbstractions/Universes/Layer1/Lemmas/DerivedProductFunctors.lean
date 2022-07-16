@@ -12,11 +12,11 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
 universe u u'
 
-open HasFunctors HasLinearLogic HasSubLinearLogic HasNonLinearLogic HasProducts HasInnerProducts
-     HasPreorderRelation
+open HasFunctors HasLinearLogic HasSubLinearLogic HasNonLinearLogic HasProducts HasPreorderRelation
 
 
 
@@ -31,8 +31,8 @@ namespace HasInnerProducts
     @[reducible] def fstFun (A B : U) : A ⊓ B ⟶ A := elimFun (Λ a b => a)
     @[reducible] def sndFun (A B : U) : A ⊓ B ⟶ B := elimFun (Λ a b => b)
 
-    instance fst.isFunApp {A B : U} {P : A ⊓ B} : IsFunApp (A ⊓ B) (fst P) := ⟨fstFun A B, P⟩
-    instance snd.isFunApp {A B : U} {P : A ⊓ B} : IsFunApp (A ⊓ B) (snd P) := ⟨sndFun A B, P⟩
+    instance fst.isFunApp {A B : U} {P : A ⊓ B} : IsFunApp (fst P) := ⟨fstFun A B, P⟩
+    instance snd.isFunApp {A B : U} {P : A ⊓ B} : IsFunApp (snd P) := ⟨sndFun A B, P⟩
 
   end
 
@@ -44,31 +44,31 @@ namespace HasInnerProducts
 
   end
 
-  @[reducible] def evalFun (A B : U) : (A ⟶ B) ⊓ A ⟶ B := elimFun (appFun₂ A B)
+  @[reducible] def evalFun (A B : U) : (A ⟶ B) ⊓ A ⟶ B := elimFun (HasIdFun.appFun₂ A B)
 
   def invElimFun₂ {A B C : U} (F : A ⊓ B ⟶ C) : A ⟶ B ⟶ C := Λ a b => F (intro a b)
   def invElimFun₃ (A B C : U) : (A ⊓ B ⟶ C) ⟶ (A ⟶ B ⟶ C) := Λ F => invElimFun₂ F
 
-  instance invElimFun₂.isFunApp {A B C : U} {F : A ⊓ B ⟶ C} : IsFunApp (A ⊓ B ⟶ C) (invElimFun₂ F) :=
+  instance invElimFun₂.isFunApp {A B C : U} {F : A ⊓ B ⟶ C} : IsFunApp (invElimFun₂ F) :=
     ⟨invElimFun₃ A B C, F⟩
 
   def replaceFstFun {A B : U} (F : A ⟶ B) (C : U) : A ⊓ C ⟶ B ⊓ C := elimFun (Λ a b => intro (F a) b)
   def replaceFstFun₂ (A B C : U) : (A ⟶ B) ⟶ (A ⊓ C ⟶ B ⊓ C) := Λ F => replaceFstFun F C
 
-  instance replaceFstFun.isFunApp {A B C : U} {F : A ⟶ B} : IsFunApp (A ⟶ B) (replaceFstFun F C) :=
+  instance replaceFstFun.isFunApp {A B C : U} {F : A ⟶ B} : IsFunApp (replaceFstFun F C) :=
     ⟨replaceFstFun₂ A B C, F⟩
 
   def replaceSndFun (A : U) {B C : U} (G : B ⟶ C) : A ⊓ B ⟶ A ⊓ C := elimFun (Λ a b => intro a (G b))
   def replaceSndFun₂ (A B C : U) : (B ⟶ C) ⟶ (A ⊓ B ⟶ A ⊓ C) := Λ G => replaceSndFun A G
 
-  instance replaceSndFun.isFunApp {A B C : U} {F : B ⟶ C} : IsFunApp (B ⟶ C) (replaceSndFun A F) :=
+  instance replaceSndFun.isFunApp {A B C : U} {F : B ⟶ C} : IsFunApp (replaceSndFun A F) :=
     ⟨replaceSndFun₂ A B C, F⟩
 
   def replaceBothFun {A B C D : U} (F : A ⟶ B) (G : C ⟶ D) : A ⊓ C ⟶ B ⊓ D := elimFun (Λ a b => intro (F a) (G b))
   def replaceBothFun₃ (A B C D : U) : (A ⟶ B) ⟶ (C ⟶ D) ⟶ (A ⊓ C ⟶ B ⊓ D) := Λ F G => replaceBothFun F G
 
   instance replaceBothFun.isFunApp₂ {A B C D : U} {F : A ⟶ B} {G : C ⟶ D} :
-      IsFunApp₂ (A ⟶ B) (C ⟶ D) (replaceBothFun F G) :=
+      IsFunApp₂ (replaceBothFun F G) :=
     ⟨replaceBothFun₃ A B C D, F, G⟩
 
   def commFun (A B : U) : A ⊓ B ⟶ B ⊓ A := elimFun (Λ a b => intro b a)
@@ -81,12 +81,10 @@ namespace HasInnerProducts
   def elim₃RFun {A B C D : U} (F : A ⟶ B ⟶ C ⟶ D) : A ⊓ (B ⊓ C) ⟶ D := elimFun (Λ a => elimFun (F a))
   def elim₃RFun₂ (A B C D : U) : (A ⟶ B ⟶ C ⟶ D) ⟶ (A ⊓ (B ⊓ C) ⟶ D) := Λ F => elim₃RFun F
 
-  instance elim₃LFun.isFunApp {A B C D : U} {F : A ⟶ B ⟶ C ⟶ D} :
-      IsFunApp (A ⟶ B ⟶ C ⟶ D) (elim₃LFun F) :=
+  instance elim₃LFun.isFunApp {A B C D : U} {F : A ⟶ B ⟶ C ⟶ D} : IsFunApp (elim₃LFun F) :=
     ⟨elim₃LFun₂ A B C D, F⟩
 
-  instance elim₃RFun.isFunApp {A B C D : U} {F : A ⟶ B ⟶ C ⟶ D} :
-      IsFunApp (A ⟶ B ⟶ C ⟶ D) (elim₃RFun F) :=
+  instance elim₃RFun.isFunApp {A B C D : U} {F : A ⟶ B ⟶ C ⟶ D} : IsFunApp (elim₃RFun F) :=
     ⟨elim₃RFun₂ A B C D, F⟩
 
   def assocLRFun (A B C : U) : (A ⊓ B) ⊓ C ⟶ A ⊓ (B ⊓ C) := elim₃LFun (intro₃RFun₃ A B C)
@@ -99,8 +97,7 @@ namespace HasInnerProducts
     def mergeFun {A B C : U} (F : A ⟶ B) (G : A ⟶ C) : A ⟶ B ⊓ C := Λ a => intro (F a) (G a)
     def mergeFun₃ (A B C : U) : (A ⟶ B) ⟶ (A ⟶ C) ⟶ (A ⟶ B ⊓ C) := Λ F G => mergeFun F G
 
-    instance mergeFun.isFunApp₂ {A B C : U} {F : A ⟶ B} {G : A ⟶ C} :
-        IsFunApp₂ (A ⟶ B) (A ⟶ C) (mergeFun F G) :=
+    instance mergeFun.isFunApp₂ {A B C : U} {F : A ⟶ B} {G : A ⟶ C} : IsFunApp₂ (mergeFun F G) :=
       ⟨mergeFun₃ A B C, F, G⟩
 
   end
@@ -178,10 +175,13 @@ end Prerelation
 
 namespace HasInnerProducts
 
+  def prodRel (U : Universe) [HasLinearLogic U] [HasInnerProducts U] : Prerelation U U :=
+    λ A B => A ⊓ B
+
   variable (U : Universe) [HasFullLogic U] [HasInnerProducts U]
 
   instance hasProductObjects : HasProductObjects U where
-    prod          := Prod
+    prod          := prodRel U
     fstHom        := fstFun
     sndHom        := sndFun
     prodIntroFun₂ := mergeFun₃

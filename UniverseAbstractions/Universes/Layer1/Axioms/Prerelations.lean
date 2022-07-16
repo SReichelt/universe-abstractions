@@ -9,10 +9,11 @@ import UniverseAbstractions.MathlibFragments.Init.CoreExt
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
-open HasFunctors HasIdFun HasConstFun HasSwapFun HasDupFun HasSubstFun
+open HasFunctors HasIdFun HasConstPi HasSwapPi HasSwapPi₂ HasDupPi HasSubstPi
 
-universe u u' u'' v w vv
+universe u v w vv
 
 
 
@@ -72,20 +73,20 @@ namespace Prerelation
 
       instance revTrans.isFunApp {R : Prerelation α V} [h : HasTrans R] {a b c : α}
                                  {g : R b c} {f : R a b} :
-          IsFunApp (R a b) (g • f) :=
+          IsFunApp (g • f) :=
         ⟨revTransFun a g, f⟩
 
       instance revTransFun.isFunApp {R : Prerelation α V} [h : HasTrans R] {a b c : α} {g : R b c} :
-          IsFunApp (R b c) (revTransFun a g) :=
+          IsFunApp (revTransFun a g) :=
         ⟨revTransFun₂ a b c, g⟩
 
       instance revTrans.isFunApp₂' {R : Prerelation α V} [h : HasTrans R] {a b c : α}
                                    {g : R b c} {f : R a b} :
-          IsFunApp₂' (R b c) (R a b) (g • f) :=
+          IsFunApp₂' (g • f) :=
         ⟨⟨transFun f c, g⟩⟩
 
       instance transFun.isFunApp {R : Prerelation α V} [h : HasTrans R] {a b c : α} {f : R a b} :
-          IsFunApp (R a b) (transFun f c) :=
+          IsFunApp (transFun f c) :=
         ⟨transFun₂ a b c, f⟩
 
     end HasTrans

@@ -8,7 +8,7 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-open HasFunctors HasSwapFun
+open HasFunctors HasSwapPi
 
 universe u u'
 

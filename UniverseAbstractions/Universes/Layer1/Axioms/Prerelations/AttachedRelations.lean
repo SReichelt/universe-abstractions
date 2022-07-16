@@ -8,8 +8,9 @@ import UniverseAbstractions.Universes.Helpers
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
-open Universe HasFunctors HasIdFun HasRevCompFun₃ Prerelation Helpers
+open Universe HasFunctors HasIdFun HasRevCompFunPiFun Prerelation Helpers
 
 universe u u' u''
 
@@ -36,7 +37,7 @@ namespace HasPreorderRelation
 
   end
 
-  def opposite (α : Sort u) [h : HasPreorderRelation V α] := α
+  def opposite (α : Sort u) [HasPreorderRelation V α] := α
 
   instance opposite.hasPreorderRelation (α : Sort u) [h : HasPreorderRelation V α] :
       HasPreorderRelation V (opposite α) :=
@@ -95,11 +96,11 @@ namespace HasPreorderRelation
         Λ f g => apply' F f g
 
       instance apply.isFunApp₂ {a₁ a₂ : α} {b₁ b₂ : β} {f : a₁ ⟶ a₂} {g : b₁ ⟶ b₂} :
-          IsFunApp₂ (a₁ ⟶ a₂) (b₁ ⟶ b₂) (apply F f g) :=
+          IsFunApp₂ (apply F f g) :=
         ⟨applyFun₂ F a₁ a₂ b₁ b₂, f, g⟩
 
       instance apply'.isFunApp₂ {a₁ a₂ : α} {b₁ b₂ : β} {f : a₁ ⟶ a₂} {g : b₁ ⟶ b₂} :
-          IsFunApp₂ (a₁ ⟶ a₂) (b₁ ⟶ b₂) (apply' F f g) :=
+          IsFunApp₂ (apply' F f g) :=
         ⟨applyFun₂' F a₁ a₂ b₁ b₂, f, g⟩
 
     end
@@ -210,11 +211,11 @@ namespace HasEquivalenceRelationBase
         Λ f g => apply' F f g
 
       instance apply.isFunApp₂ {a₁ a₂ : α} {b₁ b₂ : β} {f : a₁ ≃ a₂} {g : b₁ ≃ b₂} :
-          IsFunApp₂ (a₁ ≃ a₂) (b₁ ≃ b₂) (apply F f g) :=
+          IsFunApp₂ (apply F f g) :=
         ⟨applyFun₂ F a₁ a₂ b₁ b₂, f, g⟩
 
       instance apply'.isFunApp₂ {a₁ a₂ : α} {b₁ b₂ : β} {f : a₁ ≃ a₂} {g : b₁ ≃ b₂} :
-          IsFunApp₂ (a₁ ≃ a₂) (b₁ ≃ b₂) (apply' F f g) :=
+          IsFunApp₂ (apply' F f g) :=
         ⟨applyFun₂' F a₁ a₂ b₁ b₂, f, g⟩
 
     end
@@ -234,8 +235,8 @@ namespace HasLinearLogic
     def funRel : Prerelation U U := λ A B => A ⥤ B
 
     instance funRel.isPreorder : IsPreorder (funRel U) where
-      refl         A := idFun       A
-      revTransFun₂ A := revCompFun₃ A
+      refl         A     := idFun       A
+      revTransFun₂ A B C := revCompFun₃ A B C
 
     instance hasPreorderRelation : HasPreorderRelation U U := ⟨funRel U⟩
 
@@ -257,12 +258,18 @@ namespace HasLinearLogic
 
     @[reducible] def idFun (A : U) : A ⟶ A := idHom A
 
-    @[reducible] def revAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶ B := HasRevAppFun.revAppFun a B
-    @[reducible] def revAppFun₂ (A B : U) : A ⟶ (A ⟶ B) ⟶ B := HasRevAppFun.revAppFun₂ A B
+    @[reducible] def revAppFun {A : U} (a : A) (B : U) : (A ⟶ B) ⟶ B := HasPiAppFun.revAppFun a B
+    @[reducible] def revAppFun₂ (A B : U) : A ⟶ (A ⟶ B) ⟶ B := HasPiAppFunPi.revAppFun₂ A B
 
-    @[reducible] def swapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := HasSwapFun.swapFun F b
-    @[reducible] def swapFun₂ {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := HasSwapFun.swapFun₂ F
-    @[reducible] def swapFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := HasSwapFun₃.swapFun₃ A B C
+    @[reducible] def swapFun {A B C : U} (F : A ⟶ B ⟶ C) (b : B) : A ⟶ C := HasSwapPi.swapFun F b
+    @[reducible] def swapFun₂ {A B C : U} (F : A ⟶ B ⟶ C) : B ⟶ A ⟶ C := HasSwapPi₂.swapFun₂ F
+    @[reducible] def swapFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ (B ⟶ A ⟶ C) := HasSwapPiFun.swapFun₃ A B C
+
+    @[reducible] def revCompFun {A B C : U} (G : B ⟶ C) (F : A ⟶ B) : A ⟶ C := G • F
+    @[reducible] def revCompFun₂ (A : U) {A B C : U} (G : B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
+      HasTrans.revTransFun A G
+    @[reducible] def revCompFun₃ (A B C : U) : (B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) :=
+      HasTrans.revTransFun₂ A B C
 
   end
 
@@ -273,8 +280,8 @@ namespace HasSubLinearLogic
 
   variable {U : Universe} [HasLinearLogic U] [HasSubLinearLogic U]
 
-  @[reducible] def constFun (A : U) {B : U} (b : B) : A ⟶ B := HasConstFun.constFun A b
-  @[reducible] def constFun₂ (A B : U) : B ⟶ (A ⟶ B) := HasConstFun₂.constFun₂ A B
+  @[reducible] def constFun (A : U) {B : U} (b : B) : A ⟶ B := HasConstPi.constFun A b
+  @[reducible] def constFun₂ (A B : U) : B ⟶ (A ⟶ B) := HasConstPiFun.constFun₂ A B
 
 end HasSubLinearLogic
 
@@ -283,11 +290,15 @@ namespace HasNonLinearLogic
 
   variable {U : Universe} [HasLinearLogic U] [HasNonLinearLogic U]
 
-  @[reducible] def dupFun {A B : U} (F : A ⟶ A ⟶ B) : A ⟶ B := HasDupFun.dupFun F
-  @[reducible] def dupFun₂ (A B : U) : (A ⟶ A ⟶ B) ⟶ (A ⟶ B) := HasDupFun₂.dupFun₂ A B
+  @[reducible] def dupFun {A B : U} (F : A ⟶ A ⟶ B) : A ⟶ B := HasDupPi.dupFun F
+  @[reducible] def dupFun₂ (A B : U) : (A ⟶ A ⟶ B) ⟶ (A ⟶ B) := HasDupPiFun.dupFun₂ A B
 
   @[reducible] def revSubstFun {A B C : U} (G : A ⟶ B ⟶ C) (F : A ⟶ B) : A ⟶ C :=
-    HasSubstFun.revSubstFun G F
+    HasSubstPi.revSubstFun G F
+  @[reducible] def revSubstFun₂ {A B C : U} (G : A ⟶ B ⟶ C) : (A ⟶ B) ⟶ (A ⟶ C) :=
+    HasRevSubstPi₂.revSubstFun₂ G
+  @[reducible] def revSubstFun₃ (A B C : U) : (A ⟶ B ⟶ C) ⟶ (A ⟶ B) ⟶ (A ⟶ C) :=
+    HasRevSubstPiFun.revSubstFun₃ A B C
 
 end HasNonLinearLogic
 

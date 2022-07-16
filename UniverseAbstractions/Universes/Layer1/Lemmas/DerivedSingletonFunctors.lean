@@ -21,10 +21,10 @@ namespace HasTop
 
   variable {U : Universe.{u}} [HasLinearLogic U] [HasTop U]
 
-  def defIntroFun (α : Sort u) [HasFunctors α U] [h : HasConstFun α U] : α ⥤{λ _ => ∗_U} ⊤_U :=
-    h.defConstFun ∗_U
+  def defIntroFun (α : Sort u) [HasFunctors α ⊤_U] [HasConstPi α ⊤_U] : α ⥤{λ _ => ∗_U} ⊤_U :=
+    HasConstPi.defConstFun α ∗_U
 
-  @[reducible] def introFun (α : Sort u) [HasFunctors α U] [h : HasConstFun α U] : α ⥤ ⊤_U :=
+  @[reducible] def introFun (α : Sort u) [HasFunctors α ⊤_U] [HasConstPi α ⊤_U] : α ⥤ ⊤_U :=
     (defIntroFun α).inst
 
   def defElimFun₂ (A : U) : A ⥤ ⊤_U ⥤{λ a _ => a} A :=
@@ -32,7 +32,7 @@ namespace HasTop
 
   @[reducible] def elimFun₂ (A : U) : A ⟶ ⊤_U ⟶ A := (defElimFun₂ A).inst
 
-  instance elimFun.isFunApp {A : U} {a : A} : IsFunApp A (elimFun a) := ⟨elimFun₂ A, a⟩
+  instance elimFun.isFunApp {A : U} {a : A} : IsFunApp (elimFun a) := ⟨elimFun₂ A, a⟩
 
   def defInvElimFun (A : U) : (⊤_U ⟶ A) ⥤{λ F => F ∗_U} A := ⟨revAppFun ∗_U A⟩
 

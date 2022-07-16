@@ -31,8 +31,8 @@ namespace HasEquivalences
   @[reducible] def toFun  {A B : U} (E : A ≃ B) : A ⟶ B := toHom  E
   @[reducible] def invFun {A B : U} (E : A ≃ B) : B ⟶ A := invHom E
 
-  instance toFun.isFunApp  {A B : U} {E : A ≃ B} : IsFunApp (A ≃ B) (toFun  E) := ⟨toFun₂  A B, E⟩
-  instance invFun.isFunApp {A B : U} {E : A ≃ B} : IsFunApp (A ≃ B) (invFun E) := ⟨invFun₂ A B, E⟩
+  instance toFun.isFunApp  {A B : U} {E : A ≃ B} : IsFunApp (toFun  E) := ⟨toFun₂  A B, E⟩
+  instance invFun.isFunApp {A B : U} {E : A ≃ B} : IsFunApp (invFun E) := ⟨invFun₂ A B, E⟩
 
   @[reducible] def to  {A B : U} (E : A ≃ B) (a : A) : B := (toFun  E) a
   @[reducible] def inv {A B : U} (E : A ≃ B) (b : B) : A := (invFun E) b

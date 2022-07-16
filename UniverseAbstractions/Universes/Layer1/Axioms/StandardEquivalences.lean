@@ -27,15 +27,17 @@ open HasFunctors HasLinearLogic HasSubLinearLogic HasNonLinearLogic HasEquivalen
 
 namespace HasEquivalences
 
+  open HasInnerProducts HasInnerCoproducts
+
   variable (U : Universe) [HasLinearLogic U] [HasEquivalences U]
 
   @[reducible] def notCtorFun [HasBot U] := (homFun₂ U).app₂ ⊥_U
 
-  def prodCtorFun₂ [hProd : HasInnerProducts U] : PreorderFunctor₂ hProd.Prod where
+  def prodCtorFun₂ [HasInnerProducts U] : PreorderFunctor₂ (prodRel U) where
     app  A := ⟨λ B₁ B₂ => HasInnerProducts.replaceSndFun₂ A B₁ B₂⟩
     app₂ B := ⟨λ A₁ A₂ => HasInnerProducts.replaceFstFun₂ A₁ A₂ B⟩
 
-  def coprodCtorFun₂ [hCoprod : HasInnerCoproducts U] : PreorderFunctor₂ hCoprod.Coprod where
+  def coprodCtorFun₂ [HasInnerCoproducts U] : PreorderFunctor₂ (coprodRel U) where
     app  A := ⟨λ B₁ B₂ => HasInnerCoproducts.replaceSndFun₂ A B₁ B₂⟩
     app₂ B := ⟨λ A₁ A₂ => HasInnerCoproducts.replaceFstFun₂ A₁ A₂ B⟩
 
@@ -90,7 +92,7 @@ class HasBotEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [
 namespace HasBotEquivalences
 
   instance notIsCtor (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasBot U]
-                     [hFunEquiv : HasFunEquivEquivalences U] :
+                     [HasFunEquivEquivalences U] :
       IsIsoFunctor (notCtorFun U) :=
     inferInstance
 
@@ -101,7 +103,7 @@ namespace HasBotEquivalences
   @[reducible] def botIntroEquivFun (A : U) : (A ⟶ ⊥_U) ⟶ (A ≃ ⊥_U) := (h.defBotIntroEquivFun A).inst
   @[reducible] def botIntroEquiv₂ (A : U) : (A ⟶ ⊥_U) ≃ (A ≃ ⊥_U) := h.defBotIntroEquiv₂ A
 
-  instance botIntroEquiv.isFunApp {A : U} {F : A ⟶ ⊥_U} : IsFunApp (A ⟶ ⊥_U) (botIntroEquiv F) :=
+  instance botIntroEquiv.isFunApp {A : U} {F : A ⟶ ⊥_U} : IsFunApp (botIntroEquiv F) :=
     ⟨botIntroEquivFun A, F⟩
 
 end HasBotEquivalences
@@ -324,7 +326,7 @@ class HasPropEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U] [H
   defDupFunEquiv (A B : U) : (A ⟶ A ⟶ B) ≃{dupFun₂ A B, constFun₂ A (A ⟶ B)} (A ⟶ B)
   defDupProdEquiv (A : U) : A ⊓ A ≃{HasInnerProducts.fstFun A A, HasInnerProducts.dupIntroFun A} A
   defDupCoprodEquiv (A : U) :
-    A ⊔ A ≃{asHom (HasCoproducts.elimFun (idFun A) (idFun A)), HasInnerCoproducts.leftIntroFun A A} A
+    A ⊔ A ≃{asHom (HasCoproducts.elimFun (idFun A) (idFun A)), HasCoproducts.leftIntroFun A A} A
   defTopEquiv {A : U} (a : A) : A ≃{constFun A ∗_U, HasTop.elimFun a} ⊤_U
   defTopEquivFun (A : U) : A ⥤{λ a => defTopEquiv a} (A ≃ ⊤_U)
   defTopEquivEquiv (A : U) : (A ≃ ⊤_U) ≃{asHom (Λ E => inv E ∗_U), asHom (defTopEquivFun A)} A
@@ -341,12 +343,12 @@ namespace HasPropEquivalences
   @[reducible] def topEquivFun (A : U) : A ⟶ (A ≃ ⊤_U) := (h.defTopEquivFun A).inst
   @[reducible] def topEquivEquiv (A : U) : (A ≃ ⊤_U) ≃ A := h.defTopEquivEquiv A
 
-  instance topEquiv.isFunApp {A : U} {a : A} : IsFunApp A (topEquiv a) := ⟨topEquivFun A, a⟩
+  instance topEquiv.isFunApp {A : U} {a : A} : IsFunApp (topEquiv a) := ⟨topEquivFun A, a⟩
 
   @[reducible] def idFunTopEquiv (A : U) : (A ⟶ A) ≃ ⊤_U := topEquiv (idFun A)
   @[reducible] def notBotTopEquiv : ~⊥_U ≃ ⊤_U := idFunTopEquiv ⊥_U
-  @[reducible] def coprodTopEquiv (A : U) : ⊤_U ⊔ A ≃ ⊤_U := topEquiv (HasInnerCoproducts.leftIntro ∗_U A)
-  @[reducible] def coprodTopEquiv' (A : U) : A ⊔ ⊤_U ≃ ⊤_U := topEquiv (HasInnerCoproducts.rightIntro A ∗_U)
+  @[reducible] def coprodTopEquiv (A : U) : ⊤_U ⊔ A ≃ ⊤_U := topEquiv (HasCoproducts.leftIntro ∗_U A)
+  @[reducible] def coprodTopEquiv' (A : U) : A ⊔ ⊤_U ≃ ⊤_U := topEquiv (HasCoproducts.rightIntro A ∗_U)
   @[reducible] def reflEquivTopEquiv (A : U) : (A ≃ A) ≃ ⊤_U := topEquiv (idIso A)
 
   def inhabEquiv {A B : U} (a : A) (b : B) : A ≃ B := (topEquiv b)⁻¹ • topEquiv a
@@ -373,7 +375,7 @@ namespace HasClassicalEquivalences
 
     def notElimEquivFun (A B : U) : (~B ≃ ~A) ⟶ (A ≃ B) := Λ E => notElimEquiv E
 
-    instance notElimEquiv.isFunApp {A B : U} {E : ~B ≃ ~A} : IsFunApp (~B ≃ ~A) (notElimEquiv E) :=
+    instance notElimEquiv.isFunApp {A B : U} {E : ~B ≃ ~A} : IsFunApp (notElimEquiv E) :=
       ⟨notElimEquivFun A B, E⟩
 
   end

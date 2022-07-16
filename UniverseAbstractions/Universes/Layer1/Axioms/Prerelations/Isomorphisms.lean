@@ -5,6 +5,7 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations.AttachedRelatio
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
 open Universe HasFunctors Prerelation HasPreorderRelation HasEquivalenceRelationBase
 
@@ -74,11 +75,8 @@ namespace HasPreorderRelation
       @[reducible] def toHomFun (a b : α) : a ≃ b ⟶ (a ⟶ b) := (h.defToHomFun a b).inst
       def invHomFun (a b : α) : a ≃ b ⟶ (b ⟶ a) := toHomFun b a • HasSymm.symmFun a b
 
-      instance toHom.isFunApp {a b : α} {e : a ≃ b} : IsFunApp (a ≃ b) (toHom e) :=
-        ⟨toHomFun a b, e⟩
-
-      instance invHom.isFunApp {a b : α} {e : a ≃ b} : IsFunApp (a ≃ b) (invHom e) :=
-        ⟨invHomFun a b, e⟩
+      instance toHom.isFunApp  {a b : α} {e : a ≃ b} : IsFunApp (toHom  e) := ⟨toHomFun  a b, e⟩
+      instance invHom.isFunApp {a b : α} {e : a ≃ b} : IsFunApp (invHom e) := ⟨invHomFun a b, e⟩
 
       instance coeIso {a b : α} (e : DefIso a b) : Coe (DefType.DefInst (h.defIso a b) e) (a ≃ b) :=
         DefType.DefInst.coeType (h.defIso a b) e
@@ -137,8 +135,7 @@ namespace HasPreorderRelation
       @[reducible] def iso {a b : α} (e : a ≃ b) : φ a ≃ φ b := (hFIso.defIso e).inst
       @[reducible] def isoFun (a b : α) : a ≃ b ⟶ φ a ≃ φ b := (hFIso.defIsoFun a b).inst
 
-      instance iso.isFunApp {a b : α} {e : a ≃ b} : IsFunApp (a ≃ b) (iso F e) :=
-        ⟨isoFun F a b, e⟩
+      instance iso.isFunApp {a b : α} {e : a ≃ b} : IsFunApp (iso F e) := ⟨isoFun F a b, e⟩
 
       @[reducible] def iso.opposite {a b : opposite α} (e : b ≃ a) : φ a ≃ φ b := iso F e
 
@@ -166,7 +163,7 @@ namespace HasPreorderRelation
 
       def toEquivalenceFunctor₂ : EquivalenceFunctor₂ φ where
         app  a := IsIsoFunctor.toEquivalenceFunctor (F.app  a)
-        app₂ b := IsIsoFunctor.toEquivalenceFunctor (F.app₂ b)
+        app₂ b := IsIsoFunctor.toEquivalenceFunctor (F.app₂ b) (hα := hα)
 
     end IsIsoFunctor₂
 

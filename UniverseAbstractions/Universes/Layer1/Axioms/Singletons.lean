@@ -66,7 +66,7 @@ namespace HasBot
 
   @[reducible] def elimFun (A : U) : ⊥_U ⥤ A := h.defElimFun A
 
-  instance elim.isFunApp {b : ⊥_U} {A : U} : IsFunApp ⊥_U (elim b A) := ⟨elimFun A, b⟩
+  instance elim.isFunApp {b : ⊥_U} {A : U} : IsFunApp (elim b A) := ⟨elimFun A, b⟩
 
   def Not (A : U) : U := A ⥤ ⊥_U
   prefix:max "~" => HasBot.Not
