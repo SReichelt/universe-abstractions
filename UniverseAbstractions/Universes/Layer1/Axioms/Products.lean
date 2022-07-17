@@ -7,13 +7,11 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u
-
 open Universe HasFunctors
 
 
 
-class HasProducts {U : Universe.{u}} [HasLinearLogic U] (A B : U) where
+class HasProducts {U : Universe} [HasLinearLogic U] (A B : U) where
   defProdType : DefType U (PProd A B)
   defIntro (a : A) (b : B) : DefType.DefInst defProdType ⟨a, b⟩
   defIntroFun₂ : A ⥤ B ⥤{λ a b => defIntro a b} defProdType.A

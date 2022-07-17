@@ -34,17 +34,46 @@ namespace HasPreorderRelation
 
   end DefIso
 
-  class HasIsomorphisms (α : Sort u) [hα : HasPreorderRelation V α] where
-    defIso (a b : α) : DefType V (DefIso a b)
-    defToHomFun (a b : α) : defIso a b ⥤{λ e => ((defIso a b).elim e).toHom} (a ⟶ b)
-    defRefl (a : α) : DefType.DefInst (defIso a a) (DefIso.refl a)
-    defSymm {a b : α} (e : (defIso a b).A) :
-      DefType.DefInst (defIso b a) (DefIso.symm ((defIso a b).elim e))
-    defSymmFun (a b : α) : defIso a b ⥤{λ e => (defSymm e).inst} defIso b a
-    defTrans {a b c : α} (e : (defIso a b).A) (f : (defIso b c).A) :
-      DefType.DefInst (defIso a c) (DefIso.trans ((defIso a b).elim e) ((defIso b c).elim f))
+  class HasIsomorphismsBase (α : Sort u) [hα : HasPreorderRelation V α] where
+    defIsoType (a b : α) : DefType V (DefIso a b)
+    defToHomFun (a b : α) : defIsoType a b ⥤{λ e => ((defIsoType a b).elim e).toHom} (a ⟶ b)
+
+  namespace HasIsomorphismsBase
+
+    section
+
+      variable {α : Sort u} [HasPreorderRelation V α] [h : HasIsomorphismsBase α]
+
+      @[reducible] def DefIsoInst (a b : α) (toHom : a ⟶ b) (invHom : b ⟶ a) :=
+        DefType.DefInst (h.defIsoType a b) ⟨toHom, invHom⟩
+
+      namespace DefIsoInst
+
+        notation:20 a:21 " ≃{" toHom:0 "," invHom:0 "} " b:21 =>
+          HasPreorderRelation.HasIsomorphismsBase.DefIsoInst a b toHom invHom
+
+        @[reducible] def cast {a b : α} {toHom₁ toHom₂ : a ⟶ b} {invHom₁ invHom₂ : b ⟶ a}
+                              (e : a ≃{toHom₁,invHom₁} b) :
+            a ≃{toHom₂,invHom₂} b :=
+          DefType.DefInst.cast e
+
+      end DefIsoInst
+
+    end
+
+  end HasIsomorphismsBase
+
+  class HasIsomorphisms (α : Sort u) [hα : HasPreorderRelation V α] extends
+      HasIsomorphismsBase α where
+    defRefl (a : α) : DefType.DefInst (defIsoType a a) (DefIso.refl a)
+    defSymm {a b : α} (e : (defIsoType a b).A) :
+      DefType.DefInst (defIsoType b a) (DefIso.symm ((defIsoType a b).elim e))
+    defSymmFun (a b : α) : defIsoType a b ⥤{λ e => (defSymm e).inst} defIsoType b a
+    defTrans {a b c : α} (e : (defIsoType a b).A) (f : (defIsoType b c).A) :
+      DefType.DefInst (defIsoType a c)
+                      (DefIso.trans ((defIsoType a b).elim e) ((defIsoType b c).elim f))
     defRevTransFun₂ (a b c : α) :
-      defIso b c ⥤ defIso a b ⥤{λ f e => (defTrans e f).inst} (defIso a c).A
+      defIsoType b c ⥤ defIsoType a b ⥤{λ f e => (defTrans e f).inst} (defIsoType a c).A
 
   namespace HasIsomorphisms
 
@@ -52,7 +81,7 @@ namespace HasPreorderRelation
 
       variable (α : Sort u) [HasPreorderRelation V α] [h : HasIsomorphisms α]
 
-      def isoRel : Prerelation α V := λ a b => h.defIso a b
+      def isoRel : Prerelation α V := λ a b => h.defIsoType a b
 
       instance isoRel.isEquivalence : IsEquivalence (isoRel α) where
         refl         a     := (h.defRefl a).inst
@@ -67,7 +96,7 @@ namespace HasPreorderRelation
 
       variable {α : Sort u} [HasPreorderRelation V α] [h : HasIsomorphisms α]
 
-      @[reducible] def defIsoInst {a b : α} (e : a ≃ b) : DefIso a b := (h.defIso a b).elim e
+      @[reducible] def defIsoInst {a b : α} (e : a ≃ b) : DefIso a b := (h.defIsoType a b).elim e
 
       @[reducible] def toHom  {a b : α} (e : a ≃ b) : a ⟶ b := (defIsoInst e).toHom
       @[reducible] def invHom {a b : α} (e : a ≃ b) : b ⟶ a := (defIsoInst e).invHom
@@ -78,23 +107,9 @@ namespace HasPreorderRelation
       instance toHom.isFunApp  {a b : α} {e : a ≃ b} : IsFunApp (toHom  e) := ⟨toHomFun  a b, e⟩
       instance invHom.isFunApp {a b : α} {e : a ≃ b} : IsFunApp (invHom e) := ⟨invHomFun a b, e⟩
 
-      instance coeIso {a b : α} (e : DefIso a b) : Coe (DefType.DefInst (h.defIso a b) e) (a ≃ b) :=
-        DefType.DefInst.coeType (h.defIso a b) e
-
-      @[reducible] def DefIsoInst (a b : α) (toHom : a ⟶ b) (invHom : b ⟶ a) :=
-        DefType.DefInst (h.defIso a b) ⟨toHom, invHom⟩
-
-      namespace DefIsoInst
-
-        notation:20 a:21 " ≃{" toHom:0 "," invHom:0 "} " b:21 =>
-          HasPreorderRelation.HasIsomorphisms.DefIsoInst a b toHom invHom
-
-        @[reducible] def cast {a b : α} {toHom₁ toHom₂ : a ⟶ b} {invHom₁ invHom₂ : b ⟶ a}
-                              (e : a ≃{toHom₁,invHom₁} b) :
-            a ≃{toHom₂,invHom₂} b :=
-          DefType.DefInst.cast e
-
-      end DefIsoInst
+      instance coeIso {a b : α} (e : DefIso a b) :
+          Coe (DefType.DefInst (h.defIsoType a b) e) (a ≃ b) :=
+        DefType.DefInst.coeType (h.defIsoType a b) e
 
     end
 
@@ -108,7 +123,7 @@ namespace HasPreorderRelation
         ⟨invHomFun (h := h)⟩
 
       instance opposite.hasIsomorphisms : HasIsomorphisms (opposite α) where
-        defIso (a b : α)            := { A    := b ≃ a,
+        defIsoType (a b : α)        := { A    := b ≃ a,
                                          elim := λ e => ⟨(toHom e : b ⟶ a), (invHom e : a ⟶ b)⟩ }
         defToHomFun (a b : α)       := h.defToHomFun b a
         defRefl (a : α)             := ⟨idIso a⟩
@@ -183,7 +198,7 @@ namespace HasEquivalenceRelationBase
 
   instance hasIsomorphisms (α : Sort u) [hα : HasEquivalenceRelationBase V α] :
       HasIsomorphisms (asPreorder α) where
-    defIso (a b : α)            := { A    := a ≃ b,
+    defIsoType (a b : α)        := { A    := a ≃ b,
                                      elim := defIsoInst }
     defToHomFun (a b : α)       := HasIdFun.defIdFun
     defRefl (a : α)             := ⟨idIso a⟩

@@ -19,7 +19,7 @@ class HasEquivalences (U : Universe) [HasLinearLogic U] extends HasIsomorphisms 
 
 namespace HasEquivalences
 
-  @[reducible] def equivRel (U : Universe) [HasLinearLogic U] [h : HasEquivalences U] :
+  @[reducible] def equivRel (U : Universe) [HasLinearLogic U] [HasEquivalences U] :
       Prerelation U U :=
     isoRel U
 

@@ -7,13 +7,11 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u
-
 open Universe HasFunctors
 
 
 
-class HasCoproducts {U : Universe.{u}} [HasLinearLogic U] (A B : U) where
+class HasCoproducts {U : Universe} [HasLinearLogic U] (A B : U) where
   defCoprodType : DefType U (PSum A B)
   defLeftIntro  (a : A) : DefType.DefInst defCoprodType (PSum.inl a)
   defRightIntro (b : B) : DefType.DefInst defCoprodType (PSum.inr b)
@@ -79,12 +77,12 @@ namespace HasCoproducts
 end HasCoproducts
 
 
-class HasInnerCoproducts (U : Universe.{u}) [HasLinearLogic U] where
+class HasInnerCoproducts (U : Universe) [HasLinearLogic U] where
   [hCoprod (A B : U) : HasCoproducts A B]
 
 namespace HasInnerCoproducts
 
-  variable {U : Universe.{u}} [HasLinearLogic U] [h : HasInnerCoproducts U]
+  variable {U : Universe} [HasLinearLogic U] [h : HasInnerCoproducts U]
 
   instance (A B : U) : HasCoproducts A B := h.hCoprod A B
 

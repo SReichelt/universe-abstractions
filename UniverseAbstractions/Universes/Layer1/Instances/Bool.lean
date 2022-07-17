@@ -12,15 +12,19 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
+universe u
+
+open Universe HasPreorderRelation HasTrivialDefInst HasTrivialDefPi
+
 
 
 -- A universe with exactly two types `true` and `false`. The function that maps a type to its
 -- instances is exactly the same as the coercion from `Bool` to `Prop`. `bool` can be regarded as a
 -- subuniverse of `prop` that is restricted to all decidable propositions.
 
-def bool : Universe.{0, 1} :=
-{ I := Bool,
-  h := ⟨λ b => cond b True False⟩ }
+def bool : Universe.{0, 1} where
+  I := Bool
+  h := ⟨λ b => cond b True False⟩
 
 namespace bool
 
@@ -28,99 +32,104 @@ namespace bool
   def F : bool := false
 
   def inst : T := trivial
-  def elim {α : Sort _} (h : F) : α := False.elim h
+  def elim {α : Sort u} (h : F) : α := False.elim h
 
-  instance decidable (b : bool) : Decidable ⌈b⌉ := match b with
-  | true  => isTrue  inst
-  | false => isFalse elim
+  instance decidable (b : bool) : Decidable b := match b with
+    | true  => isTrue  inst
+    | false => isFalse elim
 
-  instance hasFunctors : HasFunctors bool :=
-  { Fun   := λ b c => cond b c true,
-    apply := λ {b c} f a => match b with
-                            | true  => f
-                            | false => elim a }
+  def defFunType (b c : bool) : DefType bool (b → c) where
+    A      := cond b c true
+    elim f := match b with
+              | true  => λ _ => f
+              | false => elim
 
-  instance hasTrivialFunctoriality : HasTrivialFunctoriality bool :=
-  ⟨λ {b c} f => ⟨match b with
-                 | true  => f inst
-                 | false => inst⟩⟩
+  instance hasFunctors (b c : bool) : HasFunctors b c where
+    defPiType := defFunType b c
+
+  instance hasTrivialDefFun (b c : bool) : HasTrivialDefFun b c where
+    mkDefInst f := ⟨match b with
+                    | true  => f inst
+                    | false => inst⟩
+
+  instance hasUnivFunctors : HasUnivFunctors bool bool := ⟨⟩
+
+  instance hasTrivialFunctoriality : HasTrivialFunctoriality bool bool := ⟨⟩
 
   instance hasFullLogic : HasFullLogic bool := inferInstance
 
-  instance hasTop : HasTop bool :=
-  { T          := true,
-    t          := inst,
-    defElimFun := λ _ => HasTrivialFunctoriality.defFun }
+  instance hasTop : HasTop bool where
+    defTopType   := ⟨true, λ _ => PUnit.unit⟩
+    defTop       := ⟨inst⟩
+    defElimFun _ := defFun
 
-  instance hasBot : HasBot bool :=
-  { B       := false,
-    elimFun := λ b => inst }
+  instance hasBot : HasBot bool where
+    defBotType   := ⟨false, elim⟩
+    defElimFun _ := defFun
 
   instance hasClassicalLogic : HasClassicalLogic bool :=
-  ⟨λ b => match b with
-          | true  => inst
-          | false => inst⟩
+    ⟨λ b => match b with
+            | true  => inst
+            | false => inst⟩
 
-  instance isLogicallyConsistent : IsLogicallyConsistent bool := ⟨id⟩
+  def defProdType (b c : bool) : DefType bool (PProd b c) where
+    A      := b && c
+    elim h := match b, c with
+              | true,  true  => ⟨inst, inst⟩
+              | true,  false => elim h
+              | false, _     => elim h
 
-  instance hasProducts : HasProducts bool :=
-  { Prod      := and,
-    introFun₂ := λ b c => match b, c with
-                          | true,  true  => inst
-                          | true,  false => inst
-                          | false, _     => inst,
-    elimFun₂  := λ b c d => match b, c, d with
-                            | true,  true,  true  => inst
-                            | true,  true,  false => inst
-                            | true,  false, _     => inst
-                            | false, _,     _     => inst }
+  instance hasProducts (b c : bool) : HasProducts b c where
+    defProdType      := defProdType b c
+    defIntro     l r := ⟨match b, c with
+                         | true,  true  => inst
+                         | true,  false => elim r
+                         | false, _     => elim l⟩
+    defIntroFun₂     := defFun₂
+    defElimFun₂  _   := defFun₂
 
-  instance hasCoproducts : HasCoproducts bool :=
-  { Coprod        := or,
-    leftIntroFun  := λ b c => match b with
-                              | true  => inst
-                              | false => inst,
-    rightIntroFun := λ b c => match b, c with
-                              | true,  true  => inst
-                              | false, true  => inst
-                              | _,     false => inst,
-    elimFun₃      := λ b c d => match b, c, d with
-                                | true,  true,  true  => inst
-                                | true,  true,  false => inst
-                                | true,  false, true  => inst
-                                | true,  false, false => inst
-                                | false, true,  true  => inst
-                                | false, true,  false => inst
-                                | false, false, _     => inst }
+  instance hasInnerProducts : HasInnerProducts bool := ⟨⟩
 
-  instance hasEquivalences : HasEquivalences bool :=
-  { Equiv   := λ b c => match b, c with
-                        | true,  true  => true
-                        | false, false => true
-                        | _,     _     => false,
-    toFun₂  := λ b c => match b, c with
-                        | true,  true  => inst
-                        | true,  false => inst
-                        | false, true  => inst
-                        | false, false => inst,
-    invFun₂ := λ b c => match b, c with
-                        | true,  true  => inst
-                        | true,  false => inst
-                        | false, true  => inst
-                        | false, false => inst }
+  def defCoprodType (b c : bool) : DefType bool (PSum b c) where
+    A      := b || c
+    elim h := match b, c with
+              | true,  _     => PSum.inl inst
+              | false, true  => PSum.inr inst
+              | false, false => elim h
 
-  instance hasTrivialEquivalenceCondition : HasTrivialEquivalenceCondition bool :=
-  ⟨λ {b c} to inv => ⟨match b, c with
-                      | true,  true  => inst
-                      | true,  false => elim to
-                      | false, true  => elim inv
-                      | false, false => inst⟩⟩
+  instance hasCoproducts (b c : bool) : HasCoproducts b c where
+    defCoprodType      := defCoprodType b c
+    defLeftIntro     l := match b with
+                          | true  => ⟨inst⟩
+                          | false => ⟨elim l⟩
+    defRightIntro    r := match b, c with
+                          | true,  true  => ⟨inst⟩
+                          | false, true  => ⟨inst⟩
+                          | _,     false => ⟨elim r⟩
+    defLeftIntroFun    := defFun
+    defRightIntroFun   := defFun
+    defElimFun₃      _ := defFun₃
 
-  instance hasEquivOp : HasEquivOp bool := inferInstance
+  instance hasInnerCoproducts : HasInnerCoproducts bool := ⟨⟩
+
+  instance hasIsomorphismsBase (α : Sort u) [HasPreorderRelation bool α] : HasIsomorphismsBase α :=
+    HasInnerProducts.hasIsomorphismsBase α
+
+  instance hasTrivialIsomorphismCondition (α : Sort u) [HasPreorderRelation bool α] :
+      HasTrivialIsomorphismCondition α := ⟨⟩
+
+  instance hasIsomorphisms (α : Sort u) [HasPreorderRelation bool α] : HasIsomorphisms α :=
+    inferInstance
+
+  instance hasEquivalences : HasEquivalences bool := inferInstance
+
+  instance hasFullPositiveEquivalences : HasFullPositiveEquivalences bool := inferInstance
   instance hasFullEquivalences : HasFullEquivalences bool := inferInstance
   instance hasPropEquivalences : HasPropEquivalences bool := inferInstance
   instance hasClassicalEquivalences : HasClassicalEquivalences bool := inferInstance
 
+  instance isPositiveUniverse : IsPositiveUniverse bool := ⟨⟩
+  instance isNegativeUniverse : IsNegativeUniverse bool := ⟨⟩
   instance isStandardUniverse : IsStandardUniverse bool := ⟨⟩
 
 end bool

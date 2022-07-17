@@ -14,6 +14,8 @@ set_option autoImplicit false
 
 universe u
 
+open Universe HasPreorderRelation HasTrivialDefInst HasTrivialDefPi
+
 
 
 def unit : Universe.{0, 0} where
@@ -25,73 +27,66 @@ namespace unit
   def Inst : unit := trivial
   def inst : Inst := trivial
 
-  instance hasInFunctors (U : Universe) : HasFunctors U unit where
-    Fun   _ _ := Inst
-    apply _ _ := inst
+  def defType {α : Sort u} (a : α) : DefType unit α where
+    A      := Inst
+    elim _ := a
 
-  instance (priority := low) hasOutFunctors (U : Universe) : HasFunctors unit U where
-    Fun   _ B := B
-    apply b _ := b
+  instance hasTrivialDefInst {α : Sort u} (a : α) : HasTrivialDefInst (defType a) where
+    mkDefInst := λ _ => ⟨inst⟩
 
-  instance hasInnerFunctors : HasInnerFunctors unit := ⟨⟩
+  instance hasPiType {α : Sort u} (P : α → unit) : HasPiType P where
+    defPiType := defType (λ _ => inst)
 
-  instance hasTrivialInFunctoriality (U : Universe) : HasTrivialFunctoriality U unit :=
-    ⟨λ _ => ⟨inst⟩⟩
+  instance hasTrivialDefPi {α : Sort u} (P : α → unit) : HasTrivialDefPi P where
+    toHasTrivialDefInst := hasTrivialDefInst (λ _ => inst)
 
-  instance hasTrivialOutFunctoriality (U : Universe) : HasTrivialFunctoriality unit U :=
-    ⟨λ f => ⟨f inst⟩⟩
+  instance hasFunctors (p : Prop) (Y : unit) : HasFunctors p Y := ⟨⟩
 
-  instance hasFullLogic (U : Universe) : HasFullLogic U unit := inferInstance
-  instance hasFullInnerLogic : HasFullInnerLogic unit := inferInstance
+  instance hasTrivialDefFun (p : Prop) (Y : unit) : HasTrivialDefFun p Y := ⟨⟩
+
+  instance hasUnivFunctors : HasUnivFunctors unit unit := ⟨⟩
+
+  instance hasTrivialFunctoriality : HasTrivialFunctoriality unit unit := ⟨⟩
+
+  instance hasFullLogic : HasFullLogic unit := inferInstance
 
   instance hasTop : HasTop unit where
-    T            := Inst
-    t            := inst
-    defElimFun _ := HasTrivialFunctoriality.defFun
+    defTopType   := defType PUnit.unit
+    defTop       := defInst
+    defElimFun _ := defFun
 
-  instance hasBot : HasBot unit where
-    B         := Inst
-    elimFun _ := inst
-
-  instance hasClassicalLogic : HasClassicalLogic unit := ⟨λ _ => inst⟩
-
-  instance hasProducts (U : Universe) [HasInnerFunctors U] [HasIdFun U] : HasProducts unit U where
-    Prod         _ B   := B
-    fst          _     := inst
-    snd          b     := b
-    intro        _ b   := b
-    defIntroFun  _ B   := ⟨HasIdFun.idFun B⟩
-    defIntroFun₂ _ _   := HasTrivialFunctoriality.defFun
-    defElimFun   F     := ⟨F⟩
-    defElimFun₂  _ B C := ⟨HasIdFun.appFun₂ B C⟩
+  instance hasProducts (A B : unit) : HasProducts A B where
+    defProdType      := defType ⟨inst, inst⟩
+    defIntro     _ _ := defInst
+    defIntroFun₂     := defFun₂
+    defElimFun₂  _   := defFun₂
 
   instance hasInnerProducts : HasInnerProducts unit := ⟨⟩
 
-  instance hasCoproducts (U : Universe) : HasCoproducts U unit where
-    Coprod        _ _   := Inst
-    leftIntroFun  _ _   := inst
-    rightIntroFun _ _   := inst
-    elimFun₃      _ _ _ := inst
+  instance hasCoproducts (A B : unit) : HasCoproducts A B where
+    defCoprodType      := defType (PSum.inl inst)
+    defLeftIntro     _ := defInst
+    defRightIntro    _ := defInst
+    defLeftIntroFun    := defFun
+    defRightIntroFun   := defFun
+    defElimFun₃      _ := defFun₃
 
   instance hasInnerCoproducts : HasInnerCoproducts unit := ⟨⟩
 
-  instance hasTrivialIsomorphismCondition : HasTrivialIsomorphismCondition unit := ⟨λ _ _ => ⟨inst⟩⟩
+  instance hasIsomorphismsBase (α : Sort u) [HasPreorderRelation unit α] : HasIsomorphismsBase α :=
+    HasInnerProducts.hasIsomorphismsBase α
 
-  instance isIsoRelBase {α : Sort u} (Hom Iso : Prerelation α unit) :
-      Prerelation.IsIsoRelBase Hom Iso where
-    to  := ⟨λ _ _ => inst⟩
-    inv := ⟨λ _ _ => inst⟩
+  instance hasTrivialIsomorphismCondition (α : Sort u) [HasPreorderRelation unit α] :
+      HasTrivialIsomorphismCondition α := ⟨⟩
 
-  instance hasEquivalences : HasEquivalences unit where
-    Equiv _ _ := Inst
-    hIso      := HasTrivialIsomorphismCondition.isIsoRel
+  instance hasIsomorphisms (α : Sort u) [HasPreorderRelation unit α] : HasIsomorphisms α :=
+    inferInstance
 
-  instance hasFullEquivalences : HasFullEquivalences unit := inferInstance
+  instance hasEquivalences : HasEquivalences unit := inferInstance
+
+  instance hasFullPositiveEquivalences : HasFullPositiveEquivalences unit := inferInstance
   instance hasPropEquivalences : HasPropEquivalences unit := inferInstance
-  instance hasClassicalEquivalences : HasClassicalEquivalences unit := inferInstance
 
   instance isPositiveUniverse : IsPositiveUniverse unit := ⟨⟩
-  instance isNegativeUniverse : IsNegativeUniverse unit := ⟨⟩
-  instance isStandardUniverse : IsStandardUniverse unit := ⟨⟩
 
 end unit

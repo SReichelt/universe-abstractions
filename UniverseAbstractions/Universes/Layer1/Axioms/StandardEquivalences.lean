@@ -333,7 +333,7 @@ class HasPropEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U] [H
 
 namespace HasPropEquivalences
 
-  variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasTop U] [HasBot U]
+  variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasTop U]
            [HasInnerProducts U] [HasInnerCoproducts U] [h : HasPropEquivalences U]
 
   @[reducible] def dupFunEquiv (A B : U) : (A ⟶ A ⟶ B) ≃ (A ⟶ B) := h.defDupFunEquiv A B
@@ -346,7 +346,7 @@ namespace HasPropEquivalences
   instance topEquiv.isFunApp {A : U} {a : A} : IsFunApp (topEquiv a) := ⟨topEquivFun A, a⟩
 
   @[reducible] def idFunTopEquiv (A : U) : (A ⟶ A) ≃ ⊤_U := topEquiv (idFun A)
-  @[reducible] def notBotTopEquiv : ~⊥_U ≃ ⊤_U := idFunTopEquiv ⊥_U
+  @[reducible] def notBotTopEquiv [HasBot U] : ~⊥_U ≃ ⊤_U := idFunTopEquiv ⊥_U
   @[reducible] def coprodTopEquiv (A : U) : ⊤_U ⊔ A ≃ ⊤_U := topEquiv (HasCoproducts.leftIntro ∗_U A)
   @[reducible] def coprodTopEquiv' (A : U) : A ⊔ ⊤_U ≃ ⊤_U := topEquiv (HasCoproducts.rightIntro A ∗_U)
   @[reducible] def reflEquivTopEquiv (A : U) : (A ≃ A) ≃ ⊤_U := topEquiv (idIso A)
