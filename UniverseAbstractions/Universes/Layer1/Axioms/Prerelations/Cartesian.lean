@@ -34,7 +34,7 @@ namespace HasPreorderRelation
     prod : α → α → α
     fstHom (a b : α) : prod a b ⟶ a
     sndHom (a b : α) : prod a b ⟶ b
-    prodIntroFun₂ (a b c : α) : (a ⟶ b) ⟶ (a ⟶ c) ⟶ (a ⟶ prod b c)
+    prodIntroFun₂ (a b c : α) : (a ⟶ b) ⥤ (a ⟶ c) ⥤ (a ⟶ prod b c)
 
   @[reducible] def HasProductObjects.product [h : HasProductObjects α] (a b : α) : α :=
     h.prod (V := V) a b
@@ -49,7 +49,7 @@ namespace HasPreorderRelation
   class HasExponentialObjects [HasProductObjects α] where
     exp : α → α → α
     evalHom (a b : α) : exp a b ⊗ a ⟶ b
-    curryFun (a b c : α) : (a ⊗ b ⟶ c) ⟶ (a ⟶ exp b c)
+    curryFun (a b c : α) : (a ⊗ b ⟶ c) ⥤ (a ⟶ exp b c)
 
   @[reducible] def HasExponentialObjects.exponential [HasProductObjects α]
                                                      [h : HasExponentialObjects α] (b a : α) : α :=

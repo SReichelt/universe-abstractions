@@ -20,8 +20,7 @@ universe u
 -- that a corresponding `elimFun₂` is derived from this in `DerivedSingletonFunctors.lean`.
 
 class HasTop (U : Universe.{u}) [HasLinearLogic U] where
-  defTopType : DefType U PUnit.{u}
-  defTop : DefType.DefInst defTopType PUnit.unit
+  defTopType : DefTypeWithIntro U PUnit.{u}
   defElimFun {A : U} (a : A) : defTopType.A ⥤{λ _ => a} A
 
 namespace HasTop
@@ -33,7 +32,7 @@ namespace HasTop
     @[reducible] def Top : U := h.defTopType
     prefix:max "⊤_" => HasTop.Top
 
-    @[reducible] def top : ⊤_U := h.defTop
+    @[reducible] def top : ⊤_U := DefTypeWithIntro.inst h.defTopType PUnit.unit
     prefix:max "∗_" => HasTop.top
 
   end
@@ -55,6 +54,10 @@ namespace HasBot
 
     variable (U : Universe) [HasLinearLogic U] [h : HasBot U]
 
+    def defBotType' : DefTypeWithIntro U PEmpty.{u} where
+      toDefType := h.defBotType
+      defInst b := PEmpty.elim b
+
     @[reducible] def Bot : U := h.defBotType
     prefix:max "⊥_" => HasBot.Bot
 
@@ -62,7 +65,7 @@ namespace HasBot
 
   variable {U : Universe} [HasLinearLogic U] [h : HasBot U]
 
-  @[reducible] def elim (b : ⊥_U) (A : U) : A := PEmpty.elim (defBotType.elim b)
+  @[reducible] def elim (b : ⊥_U) (A : U) : A := PEmpty.elim (h.defBotType.elim b)
 
   @[reducible] def elimFun (A : U) : ⊥_U ⥤ A := h.defElimFun A
 

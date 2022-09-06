@@ -42,8 +42,7 @@ namespace prop
   instance hasFullLogic : HasFullLogic prop := inferInstance
 
   instance hasTop : HasTop prop where
-    defTopType   := ⟨True, λ _ => PUnit.unit⟩
-    defTop       := ⟨trivial⟩
+    defTopType   := ⟨⟨True, λ _ => PUnit.unit⟩, λ _ => ⟨trivial⟩⟩
     defElimFun _ := defFun
 
   instance hasBot : HasBot prop where
@@ -53,19 +52,19 @@ namespace prop
   instance hasClassicalLogic : HasClassicalLogic prop := ⟨@Classical.byContradiction⟩
 
   instance hasProducts (p q : prop) : HasProducts p q where
-    defProdType      := ⟨p ∧ q, λ ⟨l, r⟩ => ⟨l, r⟩⟩
-    defIntro     l r := ⟨⟨l, r⟩⟩
-    defIntroFun₂     := defFun₂
-    defElimFun₂  _   := defFun₂
+    defProdType    := ⟨⟨p ∧ q, λ ⟨l, r⟩ => ⟨l, r⟩⟩, λ ⟨l, r⟩ => ⟨⟨l, r⟩⟩⟩
+    defIntroFun₂   := defFun₂
+    defElimFun₂  _ := defFun₂
 
   instance hasInnerProducts : HasInnerProducts prop := ⟨⟩
 
   noncomputable instance hasCoproducts (p q : prop) : HasCoproducts p q where
-    defCoprodType      := ⟨p ∨ q, λ h => Classical.choice (match h with
-                                                           | Or.inl l => ⟨PSum.inl l⟩
-                                                           | Or.inr r => ⟨PSum.inr r⟩)⟩
-    defLeftIntro     l := ⟨Or.inl l⟩
-    defRightIntro    r := ⟨Or.inr r⟩
+    defCoprodType      := ⟨⟨p ∨ q, λ h => Classical.choice (match h with
+                                                            | Or.inl l => ⟨PSum.inl l⟩
+                                                            | Or.inr r => ⟨PSum.inr r⟩)⟩,
+                           λ s => ⟨match s with
+                                   | PSum.inl l => Or.inl l
+                                   | PSum.inr r => Or.inr r⟩⟩
     defLeftIntroFun    := defFun
     defRightIntroFun   := defFun
     defElimFun₃      _ := defFun₃
@@ -107,12 +106,12 @@ end prop
 namespace Prerelation
 
   def nativePreorder {α : Sort u} {r : Prerelation α prop} (p : Preorder r) :
-    IsPreorder r where
+      IsPreorder r where
     refl         a     := p.refl a
     revTransFun₂ _ _ _ := λ h i => p.trans i h
 
   def nativeEquivalence {α : Sort u} {r : Prerelation α prop} (e : Equivalence r) :
-    IsEquivalence r where
+      IsEquivalence r where
     refl         a     := e.refl a
     symmFun      _ _   := e.symm
     revTransFun₂ _ _ _ := λ h i => e.trans i h

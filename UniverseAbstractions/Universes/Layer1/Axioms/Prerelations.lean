@@ -160,59 +160,64 @@ namespace Prerelation
     @[reducible] def implication (R S : Prerelation α V) : Prerelation α V :=
       λ a b => R a b ⥤ S a b
 
-    def Implication (R S : Prerelation α V) := IsFull (implication R S)
+    -- Using the class `IsFull` here instead of just defining `HasImplication` as a universally
+    -- quantified type seems a little over the top, but it solves the problem that we want the
+    -- quantifier to have explicit binders but also want a `CoeFun` where the same binders are
+    -- implicit.
+    class HasImplication (R S : Prerelation α V) extends IsFull (implication R S)
 
-    namespace Implication
+    namespace HasImplication
 
       instance coeFun (R S : Prerelation α V) :
-          CoeFun (Implication R S) (λ _ => ∀ {a b}, R a b → S a b) :=
+          CoeFun (HasImplication R S) (λ _ => ∀ {a b}, R a b → S a b) :=
         ⟨λ F {a b} => apply (F.inst a b)⟩
 
-      def opposite {R S : Prerelation α V} (F : Implication R S) :
-          Implication (opposite R) (opposite S) where
-        inst a b := F.inst b a
+      def opposite (R S : Prerelation α V) [h : HasImplication R S] :
+          HasImplication (opposite R) (opposite S) where
+        inst a b := h.inst b a
 
-      def lift {R S : Prerelation α V} (F : Implication R S) {ω : Sort w} (l : ω → α) :
-          Implication (lift R l) (lift S l) where
-        inst a b := F.inst (l a) (l b)
+      def lift (R S : Prerelation α V) [h : HasImplication R S] {ω : Sort w} (l : ω → α) :
+          HasImplication (lift R l) (lift S l) where
+        inst a b := h.inst (l a) (l b)
 
-      def idImpl (R : Prerelation α V) : Implication R R where
+      def idImpl (R : Prerelation α V) : HasImplication R R where
         inst a b := idFun (R a b)
 
       def constImpl [HasSubLinearLogic V] (R : Prerelation α V) {C : V} (c : C) :
-          Implication R (unitRelation α C) where
+          HasImplication R (unitRelation α C) where
         inst a b := constFun (R a b) c
 
-      def compImpl {R S T : Prerelation α V} (F : Implication R S) (G : Implication S T) :
-          Implication R T where
-        inst a b := G.inst a b ⊙ F.inst a b
+      def compImpl (R S T : Prerelation α V) [hRS : HasImplication R S] [hST : HasImplication S T] :
+          HasImplication R T where
+        inst a b := hST.inst a b ⊙ hRS.inst a b
 
       def symmImpl (R : Prerelation α V) [HasSymm R] :
-          Implication R (Prerelation.opposite R) where
+          HasImplication R (Prerelation.opposite R) where
         inst := HasSymm.symmFun
 
-    end Implication
+    end HasImplication
 
     @[reducible] def implication₂ (R S T : Prerelation α V) : Prerelation α V :=
       implication R (implication S T)
 
-    @[reducible] def Implication₂ (R S T : Prerelation α V) := Implication R (implication S T)
+    class HasImplication₂ (R S T : Prerelation α V) extends HasImplication R (implication S T)
 
-    namespace Implication₂
+    namespace HasImplication₂
 
-      def swapImpl {R S T : Prerelation α V} (F : Implication₂ R S T) : Implication₂ S R T where
-        inst a b := swapFun₂ (F.inst a b)
+      def swapImpl (R S T : Prerelation α V) [h : HasImplication₂ R S T] :
+          HasImplication₂ S R T where
+        inst a b := swapFun₂ (h.inst a b)
 
-      def dupImpl [HasNonLinearLogic V] {R T : Prerelation α V} (F : Implication₂ R R T) :
-          Implication R T where
-        inst a b := dupFun (F.inst a b)
+      def dupImpl [HasNonLinearLogic V] (R T : Prerelation α V) [h : HasImplication₂ R R T] :
+          HasImplication R T where
+        inst a b := dupFun (h.inst a b)
 
-      def substImpl [HasNonLinearLogic V] {R S T : Prerelation α V} (F : Implication R S)
-                    (G : Implication₂ R S T) :
-          Implication R T where
-        inst a b := revSubstFun (G.inst a b) (F.inst a b)
+      def substImpl [HasNonLinearLogic V] (R S T : Prerelation α V) [hRS : HasImplication R S]
+                    [hRST : HasImplication₂ R S T] :
+          HasImplication R T where
+        inst a b := revSubstFun (hRST.inst a b) (hRS.inst a b)
 
-    end Implication₂
+    end HasImplication₂
 
   end
 

@@ -13,7 +13,7 @@ set_option autoImplicit false
 
 universe u
 
-open HasFunctors HasLinearLogic HasPreorderRelation
+open HasFunctors HasIdFun HasPiAppFun HasPiAppFunPi HasSwapPi₂ HasPreorderRelation
 
 
 
@@ -30,13 +30,13 @@ namespace HasTop
   def defElimFun₂ (A : U) : A ⥤ ⊤_U ⥤{λ a _ => a} A :=
     ⟨defElimFun, ⟨swapFun₂ (elimFun (idFun A))⟩⟩
 
-  @[reducible] def elimFun₂ (A : U) : A ⟶ ⊤_U ⟶ A := (defElimFun₂ A).inst
+  @[reducible] def elimFun₂ (A : U) : A ⥤ ⊤_U ⥤ A := (defElimFun₂ A).inst
 
   instance elimFun.isFunApp {A : U} {a : A} : IsFunApp (elimFun a) := ⟨elimFun₂ A, a⟩
 
-  def defInvElimFun (A : U) : (⊤_U ⟶ A) ⥤{λ F => F ∗_U} A := ⟨revAppFun ∗_U A⟩
+  def defInvElimFun (A : U) : (⊤_U ⥤ A) ⥤{λ F => F ∗_U} A := ⟨revAppFun ∗_U A⟩
 
-  @[reducible] def invElimFun (A : U) : (⊤_U ⟶ A) ⟶ A := (defInvElimFun A).inst
+  @[reducible] def invElimFun (A : U) : (⊤_U ⥤ A) ⥤ A := (defInvElimFun A).inst
 
 end HasTop
 
@@ -46,11 +46,11 @@ namespace HasBot
 
   variable {U : Universe} [HasLinearLogic U] [HasBot U]
 
-  def contraIntroFun (A : U) : A ⟶ ~A ⟶ ⊥_U := revAppFun₂ A ⊥_U
+  def contraIntroFun (A : U) : A ⥤ ~A ⥤ ⊥_U := revAppFun₂ A ⊥_U
 
-  def notNotFun (A : U) : A ⟶ ~~A := contraIntroFun A
+  def notNotFun (A : U) : A ⥤ ~~A := contraIntroFun A
 
-  def notTopIntroFun [HasTop U] : ~⊤_U ⟶ ⊥_U := HasTop.invElimFun ⊥_U
+  def notTopIntroFun [HasTop U] : ~⊤_U ⥤ ⊥_U := HasTop.invElimFun ⊥_U
 
 end HasBot
 

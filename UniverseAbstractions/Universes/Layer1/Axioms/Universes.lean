@@ -2,7 +2,7 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u uu u'
+universe u uu u' v
 
 
 
@@ -74,4 +74,33 @@ namespace Universe
 
   end DefType
 
+  structure DefTypeWithIntro (U : Universe.{u, uu}) (α : Sort u') extends DefType U α where
+    defInst (a : α) : DefType.DefInst toDefType a
+
+  namespace DefTypeWithIntro
+    
+    instance (U : Universe.{u, uu}) (α : Sort u') : Coe (DefTypeWithIntro U α) U := ⟨λ A => A.A⟩
+
+    variable {U : Universe.{u, uu}} {α : Sort u'}
+
+    @[reducible] def inst (A : DefTypeWithIntro U α) (a : α) : A.A := A.defInst a
+
+  end DefTypeWithIntro
+
 end Universe
+
+
+
+class HasPropType (U : Universe.{u, uu}) where
+  propType : U
+  [hPropInst : HasInstances.{v, u} propType]
+
+namespace HasPropType
+
+  variable (U : Universe.{u, uu}) [h : HasPropType U]
+
+  instance : HasInstances.{v, u} h.propType := h.hPropInst
+
+  def propUniv : Universe.{v, u} := ⟨h.propType⟩
+
+end HasPropType

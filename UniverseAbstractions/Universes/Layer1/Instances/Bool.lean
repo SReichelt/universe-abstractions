@@ -59,8 +59,7 @@ namespace bool
   instance hasFullLogic : HasFullLogic bool := inferInstance
 
   instance hasTop : HasTop bool where
-    defTopType   := ⟨true, λ _ => PUnit.unit⟩
-    defTop       := ⟨inst⟩
+    defTopType   := ⟨⟨true, λ _ => PUnit.unit⟩, λ _ => ⟨inst⟩⟩
     defElimFun _ := defFun
 
   instance hasBot : HasBot bool where
@@ -72,40 +71,38 @@ namespace bool
             | true  => inst
             | false => inst⟩
 
-  def defProdType (b c : bool) : DefType bool (PProd b c) where
-    A      := b && c
-    elim h := match b, c with
-              | true,  true  => ⟨inst, inst⟩
-              | true,  false => elim h
-              | false, _     => elim h
+  def defProdType (b c : bool) : DefTypeWithIntro bool (PProd b c) where
+    A         := b && c
+    elim    h := match b, c with
+                 | true,  true  => ⟨inst, inst⟩
+                 | true,  false => elim h
+                 | false, _     => elim h
+    defInst p := ⟨match b, c with
+                  | true,  true  => inst
+                  | true,  false => elim p.snd
+                  | false, _     => elim p.fst⟩
 
   instance hasProducts (b c : bool) : HasProducts b c where
-    defProdType      := defProdType b c
-    defIntro     l r := ⟨match b, c with
-                         | true,  true  => inst
-                         | true,  false => elim r
-                         | false, _     => elim l⟩
-    defIntroFun₂     := defFun₂
-    defElimFun₂  _   := defFun₂
+    defProdType    := defProdType b c
+    defIntroFun₂   := defFun₂
+    defElimFun₂  _ := defFun₂
 
   instance hasInnerProducts : HasInnerProducts bool := ⟨⟩
 
-  def defCoprodType (b c : bool) : DefType bool (PSum b c) where
-    A      := b || c
-    elim h := match b, c with
-              | true,  _     => PSum.inl inst
-              | false, true  => PSum.inr inst
-              | false, false => elim h
+  def defCoprodType (b c : bool) : DefTypeWithIntro bool (PSum b c) where
+    A         := b || c
+    elim    h := match b, c with
+                 | true,  _     => PSum.inl inst
+                 | false, true  => PSum.inr inst
+                 | false, false => elim h
+    defInst s := ⟨match b, c, s with
+                  | false, _,     PSum.inl l => elim l
+                  | _,     false, PSum.inr r => elim r
+                  | false, true,  _          => inst
+                  | true,  _,     _          => inst⟩
 
   instance hasCoproducts (b c : bool) : HasCoproducts b c where
     defCoprodType      := defCoprodType b c
-    defLeftIntro     l := match b with
-                          | true  => ⟨inst⟩
-                          | false => ⟨elim l⟩
-    defRightIntro    r := match b, c with
-                          | true,  true  => ⟨inst⟩
-                          | false, true  => ⟨inst⟩
-                          | _,     false => ⟨elim r⟩
     defLeftIntroFun    := defFun
     defRightIntroFun   := defFun
     defElimFun₃      _ := defFun₃

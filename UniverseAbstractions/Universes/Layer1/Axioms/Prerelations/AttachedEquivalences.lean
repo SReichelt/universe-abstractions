@@ -9,6 +9,8 @@ set_option autoImplicit false
 
 universe u
 
+open HasEquivalenceRelationBase
+
 
 
 class HasEquivalenceRelation (V : outParam Universe) [outParam (HasLinearLogic V)]

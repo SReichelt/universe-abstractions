@@ -12,11 +12,9 @@ open Universe HasFunctors
 
 
 class HasCoproducts {U : Universe} [HasLinearLogic U] (A B : U) where
-  defCoprodType : DefType U (PSum A B)
-  defLeftIntro  (a : A) : DefType.DefInst defCoprodType (PSum.inl a)
-  defRightIntro (b : B) : DefType.DefInst defCoprodType (PSum.inr b)
-  defLeftIntroFun  : A ⥤{λ a => defLeftIntro  a} defCoprodType.A
-  defRightIntroFun : B ⥤{λ b => defRightIntro b} defCoprodType.A
+  defCoprodType : DefTypeWithIntro U (PSum A B)
+  defLeftIntroFun  : A ⥤{λ a => DefTypeWithIntro.inst defCoprodType (PSum.inl a)} defCoprodType.A
+  defRightIntroFun : B ⥤{λ b => DefTypeWithIntro.inst defCoprodType (PSum.inr b)} defCoprodType.A
   defElimFun₃ (C : U) :
     (A ⥤ C) ⥤ (B ⥤ C) ⥤ defCoprodType.A ⥤{λ F G S => match defCoprodType.elim S with
                                                        | PSum.inl a => F a
@@ -29,10 +27,10 @@ namespace HasCoproducts
   @[reducible] def Coprod (A B : U) [h : HasCoproducts A B] : U := h.defCoprodType
   infix:34 " ⊔ " => HasCoproducts.Coprod
 
-  @[reducible] def leftIntro  {A : U} (a : A) (B : U) [h : HasCoproducts A B] : A ⊔ B :=
-    h.defLeftIntro  a
-  @[reducible] def rightIntro (A : U) {B : U} (b : B) [h : HasCoproducts A B] : A ⊔ B :=
-    h.defRightIntro b
+  @[reducible] def leftIntro  {A : U} (a : A) (B : U) [HasCoproducts A B] : A ⊔ B :=
+    DefTypeWithIntro.inst defCoprodType (PSum.inl a)
+  @[reducible] def rightIntro (A : U) {B : U} (b : B) [HasCoproducts A B] : A ⊔ B :=
+    DefTypeWithIntro.inst defCoprodType (PSum.inr b)
 
   section
 

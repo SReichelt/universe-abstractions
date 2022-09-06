@@ -34,6 +34,10 @@ namespace unit
   instance hasTrivialDefInst {α : Sort u} (a : α) : HasTrivialDefInst (defType a) where
     mkDefInst := λ _ => ⟨inst⟩
 
+  def defTypeWithIntro {α : Sort u} (a : α) : DefTypeWithIntro unit α where
+    toDefType := defType a
+    defInst _ := defInst
+
   instance hasPiType {α : Sort u} (P : α → unit) : HasPiType P where
     defPiType := defType (λ _ => inst)
 
@@ -51,22 +55,18 @@ namespace unit
   instance hasFullLogic : HasFullLogic unit := inferInstance
 
   instance hasTop : HasTop unit where
-    defTopType   := defType PUnit.unit
-    defTop       := defInst
+    defTopType   := defTypeWithIntro PUnit.unit
     defElimFun _ := defFun
 
   instance hasProducts (A B : unit) : HasProducts A B where
-    defProdType      := defType ⟨inst, inst⟩
-    defIntro     _ _ := defInst
-    defIntroFun₂     := defFun₂
-    defElimFun₂  _   := defFun₂
+    defProdType    := defTypeWithIntro ⟨inst, inst⟩
+    defIntroFun₂   := defFun₂
+    defElimFun₂  _ := defFun₂
 
   instance hasInnerProducts : HasInnerProducts unit := ⟨⟩
 
   instance hasCoproducts (A B : unit) : HasCoproducts A B where
-    defCoprodType      := defType (PSum.inl inst)
-    defLeftIntro     _ := defInst
-    defRightIntro    _ := defInst
+    defCoprodType      := defTypeWithIntro (PSum.inl inst)
     defLeftIntroFun    := defFun
     defRightIntroFun   := defFun
     defElimFun₃      _ := defFun₃

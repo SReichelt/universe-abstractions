@@ -12,9 +12,8 @@ open Universe HasFunctors
 
 
 class HasProducts {U : Universe} [HasLinearLogic U] (A B : U) where
-  defProdType : DefType U (PProd A B)
-  defIntro (a : A) (b : B) : DefType.DefInst defProdType ⟨a, b⟩
-  defIntroFun₂ : A ⥤ B ⥤{λ a b => defIntro a b} defProdType.A
+  defProdType : DefTypeWithIntro U (PProd A B)
+  defIntroFun₂ : A ⥤ B ⥤{λ a b => DefTypeWithIntro.inst defProdType ⟨a, b⟩} defProdType.A
   defElimFun₂ (C : U) :
     (A ⥤ B ⥤ C) ⥤ defProdType.A ⥤{λ F P => F (defProdType.elim P).fst (defProdType.elim P).snd} C
 
@@ -27,9 +26,9 @@ namespace HasProducts
 
   section
 
-    variable {A B : U} [h : HasProducts A B] (a : A) (b : B)
+    variable {A B : U} [h : HasProducts A B]
 
-    @[reducible] def intro : A ⊓ B := h.defIntro a b
+    @[reducible] def intro (a : A) (b : B) : A ⊓ B := DefTypeWithIntro.inst defProdType ⟨a, b⟩
 
   end
 

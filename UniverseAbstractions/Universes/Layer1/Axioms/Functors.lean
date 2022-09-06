@@ -5,6 +5,7 @@ import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 set_option synthInstance.maxHeartbeats 2500
 
 open Universe
@@ -21,6 +22,10 @@ universe u u' u'' u'''
 -- So at this point, we only define a base class that references a specific property `P`, so that
 -- we can later instantiate it for all `P` that are functors. This way, we can already define
 -- combinators and the `Λ` notation in a generic way, instead of having a separate copy per layer.
+--
+-- On the other hand, functors do make sense in layer 1, but we wish to define them as specialized
+-- Π types. So the class `HasPiType` can be regarded as a slight generalization of `HasFunctors`
+-- that is only defined here in preparation of layers 2 and 3.
 --
 -- Since we cannot compare different instances of a type in layer 1, Π types are essentially just
 -- universally quantified propositions, and functors are essentially just implication.
@@ -40,31 +45,45 @@ namespace HasPiType
   instance coeFun {α : Sort u} (P : α → V) [HasPiType P] : CoeFun (Pi P) (λ _ => ∀ a, P a) :=
     ⟨apply⟩
 
-  @[reducible] def Pi₂ {α : Sort u} {β : Sort u'} (P : α → β → V) [∀ a, HasPiType (P a)]
-                       [HasPiType (λ a => Pi (P a))] : V :=
+  @[reducible] def Pi₂ {α : Sort u} {β : Sort u'} (P : α → β → V) [hPa : ∀ a, HasPiType (P a)]
+                       [hPiPa : HasPiType (λ a => Pi (P a))] : V :=
     Pi (λ a => Pi (P a))
-
-  @[reducible] def Pi₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} (P : α → β → γ → V)
-                       [∀ a b, HasPiType (P a b)] [∀ a, HasPiType (λ b => Pi (P a b))]
-                       [HasPiType (λ a => Pi₂ (P a))] : V :=
-    Pi (λ a => Pi₂ (P a))
-
-  @[reducible] def Pi₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
-                       (P : α → β → γ → δ → V) [∀ a b c, HasPiType (P a b c)]
-                       [∀ a b, HasPiType (λ c => Pi (P a b c))]
-                       [∀ a, HasPiType (λ b => Pi₂ (P a b))]
-                       [HasPiType (λ a => Pi₃ (P a))] : V :=
-    Pi (λ a => Pi₃ (P a))
 
   @[reducible] def apply₂ {α : Sort u} {β : Sort u'} {P : α → β → V} [∀ a, HasPiType (P a)]
                           [HasPiType (λ a => Pi (P a))] (F : Pi₂ P) (a : α) (b : β) : P a b :=
     F a b
+
+  @[reducible] def defPiType₂ {α : Sort u} {β : Sort u'} (P : α → β → V) [∀ a, HasPiType (P a)]
+                              [HasPiType (λ a => Pi (P a))] :
+      DefType V (∀ a b, P a b) where
+    A    := Pi₂ P
+    elim := apply₂
+
+  @[reducible] def Pi₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} (P : α → β → γ → V)
+                       [hPab : ∀ a b, HasPiType (P a b)]
+                       [hPiPab : ∀ a, HasPiType (λ b => Pi (P a b))]
+                       [hPiPa : HasPiType (λ a => Pi₂ (P a))] : V :=
+    Pi (λ a => Pi₂ (P a))
 
   @[reducible] def apply₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} {P : α → β → γ → V}
                           [∀ a b, HasPiType (P a b)] [∀ a, HasPiType (λ b => Pi (P a b))]
                           [HasPiType (λ a => Pi₂ (P a))] (F : Pi₃ P) (a : α) (b : β) (c : γ) :
                           P a b c :=
     F a b c
+
+  @[reducible] def defPiType₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} (P : α → β → γ → V)
+                              [∀ a b, HasPiType (P a b)] [∀ a, HasPiType (λ b => Pi (P a b))]
+                              [HasPiType (λ a => Pi₂ (P a))] :
+      DefType V (∀ a b c, P a b c) where
+    A    := Pi₃ P
+    elim := apply₃
+
+  @[reducible] def Pi₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
+                       (P : α → β → γ → δ → V) [hPabc : ∀ a b c, HasPiType (P a b c)]
+                       [hPiPabc : ∀ a b, HasPiType (λ c => Pi (P a b c))]
+                       [hPiPab : ∀ a, HasPiType (λ b => Pi₂ (P a b))]
+                       [hPiPa : HasPiType (λ a => Pi₃ (P a))] : V :=
+    Pi (λ a => Pi₃ (P a))
 
   @[reducible] def apply₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
                           {P : α → β → γ → δ → V} [∀ a b c, HasPiType (P a b c)]
@@ -73,12 +92,19 @@ namespace HasPiType
                           (F : Pi₄ P) (a : α) (b : β) (c : γ) (d : δ) : P a b c d :=
     F a b c d
 
+  @[reducible] def defPiType₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
+                              (P : α → β → γ → δ → V) [∀ a b c, HasPiType (P a b c)]
+                              [∀ a b, HasPiType (λ c => Pi (P a b c))]
+                              [∀ a, HasPiType (λ b => Pi₂ (P a b))]
+                              [HasPiType (λ a => Pi₃ (P a))] :
+      DefType V (∀ a b c d, P a b c d) where
+    A    := Pi₄ P
+    elim := apply₄
+
   -- Helper classes for the `functoriality` tactic.
   section Helpers
 
-    variable {Y : V}
-
-    class IsPiApp (y : Y) where
+    class IsPiApp {Y : V} (y : Y) where
       {α : Sort u}
       {P : α → V}
       [hP : HasPiType P]
@@ -92,13 +118,13 @@ namespace HasPiType
           IsPiApp (F a) :=
         ⟨F, a, rfl⟩
 
-      variable {y : Y} [hApp : IsPiApp.{u} y]
+      variable {Y : V} {y : Y} [hApp : IsPiApp.{u} y]
 
       instance : HasPiType hApp.P := hApp.hP
 
     end IsPiApp
 
-    class IsPiApp₂ (y : Y) where
+    class IsPiApp₂ {Y : V} (y : Y) where
       {α : Sort u}
       {β : Sort u'}
       {P : α → β → V}
@@ -117,7 +143,7 @@ namespace HasPiType
           IsPiApp₂ (F a b) :=
         ⟨F, a, b, rfl⟩
 
-      variable (y : Y) [hApp : IsPiApp₂.{u, u'} y]
+      variable {Y : V} (y : Y) [hApp : IsPiApp₂.{u, u'} y]
 
       instance (a : hApp.α) : HasPiType (hApp.P a) := hApp.hPa a
       instance : HasPiType (λ a => Pi (hApp.P a)) := hApp.hPiPa
@@ -126,7 +152,7 @@ namespace HasPiType
 
     end IsPiApp₂
 
-    class IsPiApp₃ (y : Y) where
+    class IsPiApp₃ {Y : V} (y : Y) where
       {α : Sort u}
       {β : Sort u'}
       {γ : Sort u''}
@@ -150,7 +176,7 @@ namespace HasPiType
           IsPiApp₃ (F a b c) :=
         ⟨F, a, b, c, rfl⟩
 
-      variable (y : Y) [hApp : IsPiApp₃.{u, u', u''} y]
+      variable {Y : V} (y : Y) [hApp : IsPiApp₃.{u, u', u''} y]
 
       instance (a : hApp.α) (b : hApp.β) : HasPiType (hApp.P a b) := hApp.hPab a b
       instance (a : hApp.α) : HasPiType (λ b => Pi (hApp.P a b)) := hApp.hPiPab a
@@ -164,7 +190,7 @@ namespace HasPiType
 
     end IsPiApp₃
 
-    class IsPiApp₄ (y : Y) where
+    class IsPiApp₄ {Y : V} (y : Y) where
       {α : Sort u}
       {β : Sort u'}
       {γ : Sort u''}
@@ -192,7 +218,7 @@ namespace HasPiType
           IsPiApp₄ (F a b c d) :=
         ⟨F, a, b, c, d, rfl⟩
 
-      variable (y : Y) [hApp : IsPiApp₄.{u, u', u'', u'''} y]
+      variable {Y : V} (y : Y) [hApp : IsPiApp₄.{u, u', u'', u'''} y]
 
       instance (a : hApp.α) (b : hApp.β) (c : hApp.γ) : HasPiType (hApp.P a b c) := hApp.hPabc a b c
       instance (a : hApp.α) (b : hApp.β) : HasPiType (λ c => Pi (hApp.P a b c)) := hApp.hPiPabc a b
@@ -211,13 +237,13 @@ namespace HasPiType
 
     end IsPiApp₄
 
-    class IsPiApp₂' (y : Y) extends IsPiApp.{u} y where
+    class IsPiApp₂' {Y : V} (y : Y) extends IsPiApp.{u} y where
       h₂ : IsPiApp.{u'} y
 
-    class IsPiApp₃' (y : Y) extends IsPiApp₂'.{u, u'} y where
+    class IsPiApp₃' {Y : V} (y : Y) extends IsPiApp₂'.{u, u'} y where
       h₃ : IsPiApp.{u''} y
 
-    class IsPiApp₄' (y : Y) extends IsPiApp₃'.{u, u', u''} y where
+    class IsPiApp₄' {Y : V} (y : Y) extends IsPiApp₃'.{u, u', u''} y where
       h₄ : IsPiApp.{u'''} y
 
   end Helpers
@@ -240,14 +266,20 @@ namespace HasPiType
       instance coeType (f : ∀ a, P a) : Coe (DefPi P f) (Pi P) :=
         DefType.DefInst.coeType h.defPiType f
 
+      def isPiApp {f : ∀ a, P a} (F : DefPi P f) {a : α} : IsPiApp (f a) := ⟨F, a, rfl⟩
+
       @[reducible] def cast {f g : ∀ a, P a} (F : DefPi P f) : DefPi P g := DefType.DefInst.cast F
 
       def defAppPi (F : Pi P) : DefPi P (apply F) := ⟨F⟩
 
     end DefPi
 
-    structure DefPi₂ {α : Sort u} {β : Sort u'} (P : α → β → V) [∀ a, HasPiType (P a)]
-                     [HasPiType (λ a => Pi (P a))] (f : ∀ a b, P a b) where
+    -- We could define this as `DefType.DefInst (defPiType₂ P) f` (see `fromDefInst`), but defining
+    -- it as a structure has the advantage that the `functoriality` tactic can be implemented
+    -- generically for all `DefPiₙ`. Moreover, the nested structure allows us to build derived
+    -- functors using simpler building blocks.
+    structure DefPi₂ {α : Sort u} {β : Sort u'} (P : α → β → V) [hPa : ∀ a, HasPiType (P a)]
+                     [hPiPa : HasPiType (λ a => Pi (P a))] (f : ∀ a b, P a b) where
       app (a : α) : DefPi (P a) (f a)
       toDefPi : DefPi (λ a => Pi (P a)) (λ a => app a)
 
@@ -256,12 +288,24 @@ namespace HasPiType
       variable {α : Sort u} {β : Sort u'} {P : α → β → V} [∀ a, HasPiType (P a)]
                [HasPiType (λ a => Pi (P a))]
 
+      def mk' {f : ∀ a b, P a b} (F : Pi₂ P) : DefPi₂ P f :=
+        ⟨λ a => DefPi.mk (F a), DefPi.defAppPi F⟩
+
       @[reducible] def inst {f : ∀ a b, P a b} (F : DefPi₂ P f) : Pi₂ P := F.toDefPi
 
       instance coeType (f : ∀ a b, P a b) : Coe (DefPi₂ P f) (Pi₂ P) := ⟨inst⟩
 
+      def toDefInst {f : ∀ a b, P a b} (F : DefPi₂ P f) : DefType.DefInst (defPiType₂ P) f :=
+        ⟨F.inst⟩
+
+      def fromDefInst {f : ∀ a b, P a b} (F : DefType.DefInst (defPiType₂ P) f) : DefPi₂ P f :=
+        ⟨λ a => ⟨F.inst a⟩, DefPi.defAppPi F.inst⟩
+
+      def isPiApp₂ {f : ∀ a b, P a b} (F : DefPi₂ P f) {a : α} {b : β} : IsPiApp₂ (f a b) :=
+        ⟨F, a, b, rfl⟩
+
       def cast {f g : ∀ a b, P a b} (F : DefPi₂ P f) : DefPi₂ P g :=
-        ⟨λ a => DefPi.cast (F.app a), DefPi.cast F.toDefPi⟩
+        ⟨λ a => DefPi.cast (F.app a), F.toDefPi⟩
 
       def defAppPi (F : Pi₂ P) : DefPi₂ P (apply₂ F) :=
         ⟨λ a => DefPi.defAppPi (F a), DefPi.defAppPi F⟩
@@ -269,8 +313,8 @@ namespace HasPiType
     end DefPi₂
 
     structure DefPi₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} (P : α → β → γ → V)
-                     [∀ a b, HasPiType (P a b)] [∀ a, HasPiType (λ b => Pi (P a b))]
-                     [HasPiType (λ a => Pi₂ (P a))] (f : ∀ a b c, P a b c) where
+                     [hPab : ∀ a b, HasPiType (P a b)] [hPiPab : ∀ a, HasPiType (λ b => Pi (P a b))]
+                     [hPiPa : HasPiType (λ a => Pi₂ (P a))] (f : ∀ a b c, P a b c) where
       app (a : α) : DefPi₂ (P a) (f a)
       toDefPi : DefPi (λ a => Pi₂ (P a)) (λ a => app a)
 
@@ -280,12 +324,27 @@ namespace HasPiType
                [∀ a b, HasPiType (P a b)] [∀ a, HasPiType (λ b => Pi (P a b))]
                [HasPiType (λ a => Pi₂ (P a))]
 
+      def mk' {f : ∀ a b c, P a b c} (F : Pi₃ P) : DefPi₃ P f :=
+        ⟨λ a => DefPi₂.mk' (F a), DefPi.defAppPi F⟩
+
       @[reducible] def inst {f : ∀ a b c, P a b c} (F : DefPi₃ P f) : Pi₃ P := F.toDefPi
 
       instance coeType (f : ∀ a b c, P a b c) : Coe (DefPi₃ P f) (Pi₃ P) := ⟨inst⟩
 
+      def toDefInst {f : ∀ a b c, P a b c} (F : DefPi₃ P f) : DefType.DefInst (defPiType₃ P) f :=
+        ⟨F.inst⟩
+
+      def fromDefInst {f : ∀ a b c, P a b c} (F : DefType.DefInst (defPiType₃ P) f) : DefPi₃ P f :=
+        ⟨λ a => ⟨λ b => ⟨F.inst a b⟩,
+                 DefPi.defAppPi (F.inst a)⟩,
+         DefPi.defAppPi F.inst⟩
+
+      def isPiApp₃ {f : ∀ a b c, P a b c} (F : DefPi₃ P f) {a : α} {b : β} {c : γ} :
+          IsPiApp₃ (f a b c) :=
+        ⟨F, a, b, c, rfl⟩
+
       def cast {f g : ∀ a b c, P a b c} (F : DefPi₃ P f) : DefPi₃ P g :=
-        ⟨λ a => DefPi₂.cast (F.app a), DefPi.cast F.toDefPi⟩
+        ⟨λ a => DefPi₂.cast (F.app a), F.toDefPi⟩
 
       def defAppPi (F : Pi₃ P) : DefPi₃ P (apply₃ F) :=
         ⟨λ a => DefPi₂.defAppPi (F a), DefPi.defAppPi F⟩
@@ -293,9 +352,10 @@ namespace HasPiType
     end DefPi₃
 
     structure DefPi₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
-                     (P : α → β → γ → δ → V) [∀ a b c, HasPiType (P a b c)]
-                     [∀ a b, HasPiType (λ c => Pi (P a b c))] [∀ a, HasPiType (λ b => Pi₂ (P a b))]
-                     [HasPiType (λ a => Pi₃ (P a))] (f : ∀ a b c d, P a b c d) where
+                     (P : α → β → γ → δ → V) [hPabc : ∀ a b c, HasPiType (P a b c)]
+                     [hPiPabc : ∀ a b, HasPiType (λ c => Pi (P a b c))]
+                     [hPiPab : ∀ a, HasPiType (λ b => Pi₂ (P a b))]
+                     [hPiPa : HasPiType (λ a => Pi₃ (P a))] (f : ∀ a b c d, P a b c d) where
       app (a : α) : DefPi₃ (P a) (f a)
       toDefPi : DefPi (λ a => Pi₃ (P a)) (λ a => app a)
 
@@ -305,12 +365,29 @@ namespace HasPiType
                [∀ a b c, HasPiType (P a b c)] [∀ a b, HasPiType (λ c => Pi (P a b c))]
                [∀ a, HasPiType (λ b => Pi₂ (P a b))] [HasPiType (λ a => Pi₃ (P a))]
 
+      def mk' {f : ∀ a b c d, P a b c d} (F : Pi₄ P) : DefPi₄ P f :=
+        ⟨λ a => DefPi₃.mk' (F a), DefPi.defAppPi F⟩
+
       @[reducible] def inst {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) : Pi₄ P := F.toDefPi
 
       instance coeType (f : ∀ a b c d, P a b c d) : Coe (DefPi₄ P f) (Pi₄ P) := ⟨inst⟩
 
+      def toDefInst {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) : DefType.DefInst (defPiType₄ P) f :=
+        ⟨F.inst⟩
+
+      def fromDefInst {f : ∀ a b c d, P a b c d} (F : DefType.DefInst (defPiType₄ P) f) :
+          DefPi₄ P f :=
+        ⟨λ a => ⟨λ b => ⟨λ c => ⟨F.inst a b c⟩,
+                         DefPi.defAppPi (F.inst a b)⟩,
+                 DefPi.defAppPi (F.inst a)⟩,
+         DefPi.defAppPi F.inst⟩
+
+      def isPiApp₄ {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) {a : α} {b : β} {c : γ} {d : δ} :
+          IsPiApp₄ (f a b c d) :=
+        ⟨F, a, b, c, d, rfl⟩
+
       def cast {f g : ∀ a b c d, P a b c d} (F : DefPi₄ P f) : DefPi₄ P g :=
-        ⟨λ a => DefPi₃.cast (F.app a), DefPi.cast F.toDefPi⟩
+        ⟨λ a => DefPi₃.cast (F.app a), F.toDefPi⟩
 
       def defAppPi (F : Pi₄ P) : DefPi₄ P (apply₄ F) :=
         ⟨λ a => DefPi₃.defAppPi (F a), DefPi.defAppPi F⟩
@@ -620,6 +697,8 @@ namespace HasFunctors
           α ⥤ β ⥤{f} Y :=
         DefPi₂.mk app toDefFun
 
+      @[reducible] def mk' {f : α → β → Y} (F : α ⥤ β ⥤ Y) : α ⥤ β ⥤{f} Y := DefPi₂.mk' F
+
       @[reducible] def app {f : α → β → Y} (F : α ⥤ β ⥤{f} Y) (a : α) : β ⥤{f a} Y :=
         DefPi₂.app F a
 
@@ -656,6 +735,9 @@ namespace HasFunctors
                           (toDefFun : α ⥤{λ a => app a} (β ⥤ γ ⥤ Y)) :
           α ⥤ β ⥤ γ ⥤{f} Y :=
         DefPi₃.mk app toDefFun
+
+      @[reducible] def mk' {f : α → β → γ → Y} (F : α ⥤ β ⥤ γ ⥤ Y) : α ⥤ β ⥤ γ ⥤{f} Y :=
+        DefPi₃.mk' F
 
       @[reducible] def app {f : α → β → γ → Y} (F : α ⥤ β ⥤ γ ⥤{f} Y) (a : α) : β ⥤ γ ⥤{f a} Y :=
         DefPi₃.app F a
@@ -698,6 +780,10 @@ namespace HasFunctors
                           (toDefFun : α ⥤{λ a => app a} (β ⥤ γ ⥤ δ ⥤ Y)) :
           α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y :=
         DefPi₄.mk app toDefFun
+
+      @[reducible] def mk' {f : α → β → γ → δ → Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤ Y) :
+          α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y :=
+        DefPi₄.mk' F
 
       @[reducible] def app {f : α → β → γ → δ → Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y)(a : α) :
           β ⥤ γ ⥤ δ ⥤{f a} Y :=
@@ -764,8 +850,7 @@ namespace HasIdFun
     variable {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → V) [HasPiType P]
              [h : HasIdFun (Pi P)]
 
-    @[reducible] def defAppPi₂ : DefPi₂ (Function.const (Pi P) P) (λ F a => F a) :=
-      ⟨DefPi.defAppPi, h.defIdFun⟩
+    def defAppPi₂ : DefPi₂ (Function.const (Pi P) P) (λ F a => F a) := ⟨DefPi.defAppPi, h.defIdFun⟩
 
     @[reducible] def appPi₂ : Pi₂ (Function.const (Pi P) P) := defAppPi₂ P
 
@@ -775,7 +860,7 @@ namespace HasIdFun
 
     variable {U : Universe} [HasUnivFunctors U U] (A B : U) [h : HasIdFun (A ⥤ B)]
 
-    @[reducible] def defAppFun₂ : (A ⥤ B) ⥤ A ⥤{λ F a => F a} B := defAppPi₂ (Function.const A B)
+    def defAppFun₂ : (A ⥤ B) ⥤ A ⥤{λ F a => F a} B := defAppPi₂ (Function.const A B)
 
     @[reducible] def appFun₂ : (A ⥤ B) ⥤ A ⥤ B := defAppFun₂ A B
 
@@ -801,9 +886,11 @@ namespace HasPiAppFun
   section
 
     variable {α : Sort u} (a : α) {U : Universe.{u}} [HasUnivFunctors U U] (B : U) [HasFunctors α B]
-             [HasPiAppFun (Function.const α B)]
+             [h : HasPiAppFun (Function.const α B)]
 
-    @[reducible] def revAppFun : (α ⥤ B) ⥤ B := piAppFun (Function.const α B) a
+    def defRevAppFun : (α ⥤ B) ⥤{λ F => F a} B := h.defPiAppFun a
+
+    @[reducible] def revAppFun : (α ⥤ B) ⥤ B := defRevAppFun a B
 
   end
 
@@ -835,9 +922,12 @@ namespace HasPiAppFunPi
     instance : HasPiType (λ a => Pi (Function.const α B) ⥤ (Function.const α B) a) :=
       hααBB.toHasPiType
 
-    variable [HasPiAppFunPi (Function.const α B)]
+    variable [h : HasPiAppFunPi (Function.const α B)]
 
-    @[reducible] def revAppFun₂ : α ⥤ (α ⥤ B) ⥤ B := HasPiAppFunPi.piAppFunPi (Function.const α B)
+    def defRevAppFun₂ : α ⥤ (α ⥤ B) ⥤{λ a F => F a} B :=
+      ⟨λ a => HasPiAppFun.defRevAppFun a B, h.defPiAppFunPi⟩
+
+    @[reducible] def revAppFun₂ : α ⥤ (α ⥤ B) ⥤ B := defRevAppFun₂ α B
 
     instance revAppFun.isFunApp {a : α} : IsFunApp (HasPiAppFun.revAppFun a B) :=
       ⟨revAppFun₂ α B, a⟩
@@ -879,10 +969,11 @@ namespace HasSwapPi
   section
 
     variable {α β : Sort u} {U : Universe.{u}} {C : U} [HasFunctors β C] [HasFunctors α (β ⥤ C)]
-             [HasFunctors α C] [HasSwapPi (Function.const α (Function.const β C))]
+             [HasFunctors α C] [h : HasSwapPi (Function.const α (Function.const β C))]
 
-    @[reducible] def swapFun (F : α ⥤ β ⥤ C) (b : β) : α ⥤ C :=
-      swapPi (P := Function.const α (Function.const β C)) F b
+    def defSwapFun (F : α ⥤ β ⥤ C) (b : β) : α ⥤{λ a => F a b} C := h.defSwapPi F b
+
+    @[reducible] def swapFun (F : α ⥤ β ⥤ C) (b : β) : α ⥤ C := defSwapFun F b
 
     @[reducible] def revSwapFun (b : β) (F : α ⥤ β ⥤ C) : α ⥤ C := swapFun F b
 
@@ -909,6 +1000,9 @@ namespace HasSwapPi₂
 
     @[reducible] def swapPi₂ (F : Pi₂ P) : Pi₂ (λ b a => P a b) := h.defSwapPi₂ F
 
+    def defSwapPi₂' (F : Pi₂ P) : DefPi₂ (λ b a => P a b) (λ b a => F a b) :=
+      ⟨h.defSwapPi F, h.defSwapPi₂ F⟩
+
     def defSwapDefPi₂ {f : ∀ a b, P a b} (F : DefPi₂ P f) :
         DefPi₂ (λ b a => P a b) (λ b a => f a b) :=
       ⟨HasSwapPi.defSwapDefPi F, ⟨swapPi₂ F⟩⟩
@@ -933,10 +1027,12 @@ namespace HasSwapPi₂
 
     variable {α β : Sort u} {U : Universe.{u}} {C : U} [HasFunctors β C] [HasFunctors α (β ⥤ C)]
              [HasFunctors α C] [HasFunctors β (α ⥤ C)]
-             [HasSwapPi₂ (Function.const α (Function.const β C))]
+             [h : HasSwapPi₂ (Function.const α (Function.const β C))]
 
-    @[reducible] def swapFun₂ (F : α ⥤ β ⥤ C) : β ⥤ α ⥤ C :=
-      swapPi₂ (P := Function.const α (Function.const β C)) F
+    def defSwapFun₂ (F : α ⥤ β ⥤ C) : β ⥤ α ⥤{λ b a => F a b} C :=
+      ⟨HasSwapPi.defSwapFun F, h.defSwapPi₂ F⟩
+
+    @[reducible] def swapFun₂ (F : α ⥤ β ⥤ C) : β ⥤ α ⥤ C := defSwapFun₂ F
 
     def defSwapDefFun₂ {f : α → β → C} (F : α ⥤ β ⥤{f} C) : β ⥤ α ⥤{λ b a => f a b} C :=
       ⟨HasSwapPi.defSwapDefFun F, ⟨swapFun₂ F⟩⟩
@@ -975,8 +1071,10 @@ namespace HasSwapPiFun
              [HasFunctors α (β ⥤ C)] [HasFunctors α C] [HasFunctors β (α ⥤ C)]
              [h : HasSwapPiFun (Function.const α (Function.const β C))]
 
-    @[reducible] def swapFun₃ : (α ⥤ β ⥤ C) ⥤ (β ⥤ α ⥤ C) :=
-      swapPiFun (Function.const α (Function.const β C))
+    def defSwapFun₃ : (α ⥤ β ⥤ C) ⥤ β ⥤ α ⥤{λ F b a => F a b} C :=
+      ⟨HasSwapPi₂.defSwapFun₂, h.defSwapPiFun⟩
+
+    @[reducible] def swapFun₃ : (α ⥤ β ⥤ C) ⥤ (β ⥤ α ⥤ C) := defSwapFun₃ α β C
 
     instance swapFun₂.isFunApp {F : α ⥤ β ⥤ C} : IsFunApp (HasSwapPi₂.swapFun₂ F) :=
       ⟨swapFun₃ α β C, F⟩
@@ -1010,11 +1108,13 @@ namespace HasCompFunPi
   section
 
     variable {α : Sort u} {V W : Universe.{u}} {B : V} [HasFunctors α B] {C : W} [HasFunctors B C]
-             [HasFunctors α C] [HasCompFunPi α (Function.const B C)]
+             [HasFunctors α C] [h : HasCompFunPi α (Function.const B C)]
 
-    @[reducible] def compFun (F : α ⥤ B) (G : B ⥤ C) : α ⥤ C := compFunPi F G
+    def defCompFun (F : α ⥤ B) (G : B ⥤ C) : α ⥤{λ a => G (F a)} C := h.defCompFunPi F G
 
-    @[reducible] def revCompFun (G : B ⥤ C) (F : α ⥤ B) : α ⥤ C := revCompFunPi G F
+    @[reducible] def compFun (F : α ⥤ B) (G : B ⥤ C) : α ⥤ C := defCompFun F G
+
+    @[reducible] def revCompFun (G : B ⥤ C) (F : α ⥤ B) : α ⥤ C := compFun F G
     infixr:90 " ⊙ " => HasCompFunPi.revCompFun
 
     def defCompFunDefFun (F : α ⥤ B) {g : B → C} (G : B ⥤{g} C) : α ⥤{λ a => g (F a)} C :=
@@ -1062,9 +1162,12 @@ namespace HasRevCompFunPi₂
   section
 
     variable (α : Sort u) {V W : Universe.{u}} [HasUnivFunctors V W] {B : V} [HasFunctors α B]
-             {C : W} [HasFunctors α C] [HasRevCompFunPi₂ α (Function.const B C)]
+             {C : W} [HasFunctors α C] [h : HasRevCompFunPi₂ α (Function.const B C)]
 
-    @[reducible] def revCompFun₂ (G : B ⥤ C) : (α ⥤ B) ⥤ (α ⥤ C) := revCompFunPi₂ α G
+    def defRevCompFun₂ (G : B ⥤ C) : (α ⥤ B) ⥤ α ⥤{λ F a => G (F a)} C :=
+      ⟨λ F => HasCompFunPi.defCompFun F G, h.defRevCompFunPi₂ G⟩
+
+    @[reducible] def revCompFun₂ (G : B ⥤ C) : (α ⥤ B) ⥤ (α ⥤ C) := defRevCompFun₂ α G
 
     def defRevCompDefFun₂ {g : B → C} (G : B ⥤{g} C) : (α ⥤ B) ⥤ α ⥤{λ F a => g (F a)} C :=
       ⟨λ F => HasCompFunPi.defCompFunDefFun F G, ⟨revCompFun₂ α G⟩⟩
@@ -1146,10 +1249,13 @@ namespace HasRevCompFunPiFun
   section
 
     variable (α : Sort u) {V W : Universe.{u}} [HasUnivFunctors V W] [HasUnivFunctors W W] (B : V)
-             [HasFunctors α B] (C : W) [HasFunctors α C] [HasRevCompFunPiFun α (Function.const B C)]
+             [HasFunctors α B] (C : W) [HasFunctors α C]
+             [h : HasRevCompFunPiFun α (Function.const B C)]
 
-    @[reducible] def revCompFun₃ : (B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C) :=
-      revCompFunPiFun α (Function.const B C)
+    def defRevCompFun₃ : (B ⥤ C) ⥤ (α ⥤ B) ⥤ α ⥤{λ G F a => G (F a)} C :=
+      ⟨λ G => HasRevCompFunPi₂.defRevCompFun₂ α G, h.defRevCompFunPiFun⟩
+
+    @[reducible] def revCompFun₃ : (B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C) := defRevCompFun₃ α B C
 
     instance revCompFun₂.isFunApp {G : B ⥤ C} : IsFunApp (HasRevCompFunPi₂.revCompFun₂ α G) :=
       ⟨revCompFun₃ α B C, G⟩
@@ -1163,10 +1269,13 @@ namespace HasRevCompFunPiFun
 
     variable {α : Sort u} {V W : Universe.{u}} [HasUnivFunctors V W] [HasUnivFunctors W W] {B : V}
              [HasFunctors α B] (F : α ⥤ B) (C : W) [HasFunctors α C]
-             [HasRevCompFunPiFun α (Function.const B C)]
+             [h : HasRevCompFunPiFun α (Function.const B C)]
              [HasSwapPi (Function.const (B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
 
-    def compFun₂ : (B ⥤ C) ⥤ (α ⥤ C) := HasSwapPi.swapFun (revCompFun₃ α B C) F
+    def defCompFun₂ : (B ⥤ C) ⥤ α ⥤{λ G a => G (F a)} C :=
+      ⟨λ G => HasCompFunPi.defCompFun F G, ⟨HasSwapPi.swapFun (revCompFun₃ α B C) F⟩⟩
+
+    @[reducible] def compFun₂ : (B ⥤ C) ⥤ (α ⥤ C) := defCompFun₂ F C
 
     instance compFun.isFunApp₂' {G : B ⥤ C} : IsFunApp₂' (HasCompFunPi.compFun F G) :=
       ⟨⟨compFun₂ F C, G⟩⟩
@@ -1179,7 +1288,10 @@ namespace HasRevCompFunPiFun
              [HasFunctors α B] (C : W) [HasFunctors α C] [HasRevCompFunPiFun α (Function.const B C)]
              [HasSwapPi₂ (Function.const (B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
 
-    def compFun₃ : (α ⥤ B) ⥤ (B ⥤ C) ⥤ (α ⥤ C) := HasSwapPi₂.swapFun₂ (revCompFun₃ α B C)
+    def defCompFun₃ : (α ⥤ B) ⥤ (B ⥤ C) ⥤ α ⥤{λ F G a => G (F a)} C :=
+      ⟨λ F => defCompFun₂ F C, ⟨HasSwapPi₂.swapFun₂ (revCompFun₃ α B C)⟩⟩
+
+    @[reducible] def compFun₃ : (α ⥤ B) ⥤ (B ⥤ C) ⥤ (α ⥤ C) := defCompFun₃ α B C
 
     instance compFun₂.isFunApp {F : α ⥤ B} : IsFunApp (compFun₂ F C) := ⟨compFun₃ α B C, F⟩
 
@@ -1206,7 +1318,7 @@ namespace HasConstPi
 
     variable (α : Sort u) {U : Universe.{u}} {B : U} [HasFunctors α B] [h : HasConstPi α B]
 
-    @[reducible] def defConstFun (b : B) : α ⥤{Function.const α b} B := h.defConstPi b
+    def defConstFun (b : B) : α ⥤{Function.const α b} B := h.defConstPi b
 
     @[reducible] def constFun (b : B) : α ⥤ B := defConstFun α b
 
@@ -1217,7 +1329,7 @@ namespace HasConstPi
     variable (α β : Sort u) {U : Universe.{u}} {C : U} [HasFunctors β C] [HasFunctors α (β ⥤ C)]
              [h₁ : HasConstPi β C] [h₂ : HasConstPi α (β ⥤ C)]
 
-    @[reducible] def defConstFun₂ (c : C) : α ⥤ β ⥤{Function.const α (Function.const β c)} C :=
+    def defConstFun₂ (c : C) : α ⥤ β ⥤{Function.const α (Function.const β c)} C :=
       ⟨λ _ => h₁.defConstPi c, h₂.defConstPi (constFun β c)⟩
 
     @[reducible] def constFun₂ (c : C) : α ⥤ β ⥤ C := defConstFun₂ α β c
@@ -1249,7 +1361,10 @@ namespace HasConstPiFun
     variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U] (B : U) [HasFunctors α B]
              [h : HasConstPiFun α B]
 
-    @[reducible] def constFun₂ : B ⥤ (α ⥤ B) := constPiFun α B
+    def defConstFun₂ : B ⥤ α ⥤{λ b _ => b} B :=
+      ⟨λ b => HasConstPi.defConstFun α b, h.defConstPiFun⟩
+
+    @[reducible] def constFun₂ : B ⥤ (α ⥤ B) := defConstFun₂ α B
 
     instance constFun.isFunApp {b : B} : IsFunApp (HasConstPi.constFun α b) := ⟨constFun₂ α B, b⟩
 
@@ -1279,10 +1394,11 @@ namespace HasDupPi
   section
 
     variable {α : Sort u} {U : Universe.{u}} {B : U} [HasFunctors α B] [HasFunctors α (α ⥤ B)]
-             [HasDupPi (Function.const α (Function.const α B))]
+             [h : HasDupPi (Function.const α (Function.const α B))]
 
-    @[reducible] def dupFun (F : α ⥤ α ⥤ B) : α ⥤ B :=
-      dupPi (P := Function.const α (Function.const α B)) F
+    def defDupFun (F : α ⥤ α ⥤ B) : α ⥤{λ a => F a a} B := h.defDupPi F
+
+    @[reducible] def dupFun (F : α ⥤ α ⥤ B) : α ⥤ B := defDupFun F
 
     def defDupDefFun {f : α → α → B} (F : α ⥤ α ⥤{f} B) : α ⥤{λ a => f a a} B := ⟨dupFun F⟩
 
@@ -1316,8 +1432,10 @@ namespace HasDupPiFun
     variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U] (B : U) [HasFunctors α B]
              [HasFunctors α (α ⥤ B)] [h : HasDupPiFun (Function.const α (Function.const α B))]
 
-    @[reducible] def dupFun₂ : (α ⥤ α ⥤ B) ⥤ (α ⥤ B) :=
-      dupPiFun (Function.const α (Function.const α B))
+    def defDupFun₂ : (α ⥤ α ⥤ B) ⥤ α ⥤{λ F a => F a a} B :=
+      ⟨λ F => HasDupPi.defDupFun F, h.defDupPiFun⟩
+
+    @[reducible] def dupFun₂ : (α ⥤ α ⥤ B) ⥤ (α ⥤ B) := defDupFun₂ α B
 
     instance dupFun.isFunApp {F : α ⥤ α ⥤ B} : IsFunApp (HasDupPi.dupFun F) :=
       ⟨dupFun₂ α B, F⟩
@@ -1347,7 +1465,9 @@ namespace HasPiSelfAppPi
     variable {U V : Universe.{u}} [HasUnivFunctors V U] {A : U} {B : V} [HasFunctors A B]
              [HasFunctors (A ⥤ B) B] [h : HasPiSelfAppPi (Function.const A B)]
 
-    @[reducible] def revSelfAppFun (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B := piSelfAppPi F
+    def defRevSelfAppFun (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤{λ G => G (F G)} B := h.defPiSelfAppPi F
+
+    @[reducible] def revSelfAppFun (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B := defRevSelfAppFun F
 
   end
 
@@ -1379,8 +1499,10 @@ namespace HasPiSelfAppPi₂
     variable {U V : Universe.{u}} [HasUnivFunctors U V] [HasUnivFunctors V U]
              [HasUnivFunctors V V] (A : U) (B : V) [h : HasPiSelfAppPi₂ (Function.const A B)]
 
-    @[reducible] def revSelfAppFun₂ : ((A ⥤ B) ⥤ A) ⥤ (A ⥤ B) ⥤ B :=
-      piSelfAppPi₂ (Function.const A B)
+    def defRevSelfAppFun₂ : ((A ⥤ B) ⥤ A) ⥤ (A ⥤ B) ⥤{λ F G => G (F G)} B :=
+      ⟨λ F => HasPiSelfAppPi.defRevSelfAppFun F, h.defPiSelfAppPi₂⟩
+
+    @[reducible] def revSelfAppFun₂ : ((A ⥤ B) ⥤ A) ⥤ (A ⥤ B) ⥤ B := defRevSelfAppFun₂ A B
 
     instance revSelfAppFun.isFunApp {F : (A ⥤ B) ⥤ A} :
         IsFunApp (HasPiSelfAppPi.revSelfAppFun F) :=
@@ -1450,13 +1572,13 @@ namespace HasSubstPi
 
     variable {α : Sort u} {V W : Universe.{u}} {B : V} [HasFunctors α B] {C : W} [HasFunctors B C]
              [HasFunctors α (B ⥤ C)] [HasFunctors α C]
-             [HasSubstPi (Function.const α (Function.const B C))]
+             [h : HasSubstPi (Function.const α (Function.const B C))]
 
-    @[reducible] def substFun (F : α ⥤ B) (G : α ⥤ B ⥤ C) : α ⥤ C :=
-      substPi (Q := Function.const α (Function.const B C)) F G
+    def defSubstFun (F : α ⥤ B) (G : α ⥤ B ⥤ C) : α ⥤{λ a => G a (F a)} C := h.defSubstPi F G
 
-    @[reducible] def revSubstFun (G : α ⥤ B ⥤ C) (F : α ⥤ B) : α ⥤ C :=
-      revSubstPi (Q := Function.const α (Function.const B C)) G F
+    @[reducible] def substFun (F : α ⥤ B) (G : α ⥤ B ⥤ C) : α ⥤ C := defSubstFun F G
+
+    @[reducible] def revSubstFun (G : α ⥤ B ⥤ C) (F : α ⥤ B) : α ⥤ C := substFun F G
 
   end
 
@@ -1520,8 +1642,10 @@ namespace HasRevSubstPi₂
              {C : W} [HasFunctors α (B ⥤ C)] [HasFunctors α C]
              [h : HasRevSubstPi₂ (Function.const α (Function.const B C))]
 
-    @[reducible] def revSubstFun₂ (G : α ⥤ B ⥤ C) : (α ⥤ B) ⥤ (α ⥤ C) :=
-      revSubstPi₂ (Q := Function.const α (Function.const B C)) G
+    def defRevSubstFun₂ (G : α ⥤ B ⥤ C) : (α ⥤ B) ⥤ α ⥤{λ F a => G a (F a)} C :=
+      ⟨λ F => HasSubstPi.defSubstFun F G, h.defRevSubstPi₂ G⟩
+
+    @[reducible] def revSubstFun₂ (G : α ⥤ B ⥤ C) : (α ⥤ B) ⥤ (α ⥤ C) := defRevSubstFun₂ G
 
     instance revSubstFun.isFunApp {F : α ⥤ B} {G : α ⥤ B ⥤ C} :
         IsFunApp (HasSubstPi.revSubstFun G F) :=
@@ -1627,8 +1751,10 @@ namespace HasRevSubstPiFun
              [HasFunctors α B] (C : W) [HasFunctors α (B ⥤ C)] [HasFunctors α C]
              [h : HasRevSubstPiFun (Function.const α (Function.const B C))]
 
-    @[reducible] def revSubstFun₃ : (α ⥤ B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C) :=
-      revSubstPiFun (Function.const α (Function.const B C))
+    def defRevSubstFun₃ : (α ⥤ B ⥤ C) ⥤ (α ⥤ B) ⥤ α ⥤{λ G F a => G a (F a)} C :=
+      ⟨λ G => HasRevSubstPi₂.defRevSubstFun₂ G, h.defRevSubstPiFun⟩
+
+    @[reducible] def revSubstFun₃ : (α ⥤ B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C) := defRevSubstFun₃ α B C
 
     instance revSubstFun₂.isFunApp {G : α ⥤ B ⥤ C} : IsFunApp (HasRevSubstPi₂.revSubstFun₂ G) :=
       ⟨revSubstFun₃ α B C, G⟩
@@ -1646,7 +1772,10 @@ namespace HasRevSubstPiFun
              [HasRevSubstPiFun (Function.const α (Function.const B C))]
              [HasSwapPi (Function.const (α ⥤ B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
 
-    def substFun₂ : (α ⥤ B ⥤ C) ⥤ (α ⥤ C) := HasSwapPi.swapFun (revSubstFun₃ α B C) F
+    def defSubstFun₂ : (α ⥤ B ⥤ C) ⥤ α ⥤{λ G a => G a (F a)} C :=
+      ⟨λ G => HasSubstPi.defSubstFun F G, ⟨HasSwapPi.swapFun (revSubstFun₃ α B C) F⟩⟩
+
+    @[reducible] def substFun₂ : (α ⥤ B ⥤ C) ⥤ (α ⥤ C) := defSubstFun₂ F C
 
     instance substFun.isFunApp₂' {G : α ⥤ B ⥤ C} : IsFunApp₂' (HasSubstPi.substFun F G) :=
       ⟨⟨substFun₂ F C, G⟩⟩
@@ -1660,7 +1789,10 @@ namespace HasRevSubstPiFun
              [HasRevSubstPiFun (Function.const α (Function.const B C))]
              [HasSwapPi₂ (Function.const (α ⥤ B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
 
-    def substFun₃ : (α ⥤ B) ⥤ (α ⥤ B ⥤ C) ⥤ (α ⥤ C) := HasSwapPi₂.swapFun₂ (revSubstFun₃ α B C)
+    def defSubstFun₃ : (α ⥤ B) ⥤ (α ⥤ B ⥤ C) ⥤ α ⥤{λ F G a => G a (F a)} C :=
+      ⟨λ F => defSubstFun₂ F C, ⟨HasSwapPi₂.swapFun₂ (revSubstFun₃ α B C)⟩⟩
+
+    @[reducible] def substFun₃ : (α ⥤ B) ⥤ (α ⥤ B ⥤ C) ⥤ (α ⥤ C) := defSubstFun₃ α B C
 
     instance substFun₂.isFunApp {F : α ⥤ B} : IsFunApp (substFun₂ F C) := ⟨substFun₃ α B C, F⟩
 
@@ -1703,18 +1835,18 @@ namespace HasLinearLogic
   instance (A B C : U) : HasCompFunPi A (λ _ : B => C) := hasCompFunPi A B C
 
   instance hasRevCompFunPi₂ (A B C : U) : HasRevCompFunPi₂ A (Function.const B C) :=
-    ⟨λ G => DefFun.cast ((h.defRevCompFun₃ A B C).app G).toDefPi⟩
+    ⟨λ G => ((h.defRevCompFun₃ A B C).app G).toDefPi⟩
   instance (A B C : U) : HasRevCompFunPi₂ A (λ _ : B => C) := hasRevCompFunPi₂ A B C
 
   instance hasRevCompFunPiFun (A B C : U) : HasRevCompFunPiFun A (Function.const B C) :=
-    ⟨DefFun.cast (h.defRevCompFun₃ A B C).toDefFun⟩
+    ⟨(h.defRevCompFun₃ A B C).toDefFun⟩
   instance (A B C : U) : HasRevCompFunPiFun A (λ _ : B => C) := hasRevCompFunPiFun A B C
 
 end HasLinearLogic
 
 
 class HasSubLinearLogic (U : Universe) [HasUnivFunctors U U] where
-  defConstFun₂ (A B : U) : B ⥤ A ⥤{λ b _ => b} B
+  defConstFun₂ (A B : U) : B ⥤ A ⥤{λ b a => b} B
 
 namespace HasSubLinearLogic
 
@@ -1725,6 +1857,7 @@ namespace HasSubLinearLogic
   variable {U : Universe} [HasUnivFunctors U U] [h : HasSubLinearLogic U]
 
   instance hasConstPi (A B : U) : HasConstPi A B := ⟨(h.defConstFun₂ A B).app⟩
+
   instance hasConstPiFun (A B : U) : HasConstPiFun A B := ⟨(h.defConstFun₂ A B).toDefFun⟩
 
 end HasSubLinearLogic
@@ -1757,3 +1890,56 @@ namespace HasNonLinearLogic
 end HasNonLinearLogic
 
 class HasFullLogic (U : Universe) extends HasAffineLogic U, HasNonLinearLogic U
+
+
+
+class HasExternalPiType {α : Sort u} {V : Universe} [HasLinearLogic V] (P : α → V) extends
+  HasPiType P, HasPiAppFun P
+
+namespace HasExternalPiType
+
+  variable {α : Sort u} {V : Universe} [HasLinearLogic V] (P : α → V) [h : HasExternalPiType P]
+
+  instance hasConstImpl (X : V) : HasPiType (λ a => X ⥤ P a) where
+    defPiType := { A    := X ⥤ Pi P,
+                   elim := λ F a => HasPiAppFun.piAppFun P a ⊙ F }
+
+  instance hasPiAppFunPi : HasPiAppFunPi P := ⟨⟨HasIdFun.idFun (Pi P)⟩⟩
+
+  -- TODO: top, product
+
+end HasExternalPiType
+
+
+class HasExternalPiType₂ {α : Sort u} {β : Sort u'} {V : Universe} [HasLinearLogic V]
+                         (P : α → β → V) where
+  [hasAppPiType (a : α) : HasExternalPiType (P a)]
+  [hasSwapAppPiType (b : β) : HasExternalPiType (λ a => P a b)]
+  [hasPiType₂ : HasExternalPiType (λ a => Pi (P a))]
+  [hasSwapPi : HasSwapPi P]
+  defRevSwapPiFun (b : β) : Pi₂ P ⥤{λ F => HasSwapPi.swapPi F b} Pi (λ a => P a b)
+
+namespace HasExternalPiType₂
+
+  variable {α : Sort u} {β : Sort u'} {V : Universe} [HasLinearLogic V] (P : α → β → V)
+           [h : HasExternalPiType₂ P]
+
+  instance (a : α) : HasExternalPiType (P a) := h.hasAppPiType a
+  instance (a : α) : HasExternalPiType ((λ a b => P a b) a) := h.hasAppPiType a
+  instance (b : β) : HasExternalPiType (λ a => P a b) := h.hasSwapAppPiType b
+  instance (b : β) : HasExternalPiType ((λ b a => P a b) b) := h.hasSwapAppPiType b
+  instance : HasExternalPiType (λ a => Pi (P a)) := h.hasPiType₂
+  instance : HasSwapPi P := h.hasSwapPi
+
+  instance : HasPiType (λ b => Pi (λ a => P a b)) where
+    defPiType := { A    := Pi₂ P,
+                   elim := HasSwapPi.swapPi }
+
+  instance : HasPiAppFun (λ b => Pi (λ a => P a b)) := ⟨h.defRevSwapPiFun⟩
+
+  instance hasSwapPiType₂ : HasExternalPiType (λ b => Pi (λ a => P a b)) := ⟨⟩
+
+  instance : HasSwapPi₂ P := ⟨λ F => ⟨F⟩⟩
+  instance : HasSwapPiFun P := ⟨⟨HasIdFun.idFun (Pi₂ P)⟩⟩
+
+end HasExternalPiType₂

@@ -256,7 +256,7 @@ namespace HasTrivialIsomorphismCondition
     instance isIsoFunctor {α : Sort u} {β : Sort u'} [HasPreorderRelation V α] [HasIsomorphisms α]
                           [HasPreorderRelation V β] [HasIsomorphismsBase β]
                           [HasTrivialIsomorphismCondition β] [HasTrivialFunctoriality V V]
-                          {φ : α → β} {F : PreorderFunctor φ} :
+                          {F : PreorderFunctor α β} :
         HasIsomorphisms.IsIsoFunctor F where
       defIso    _   := defIso
       defIsoFun _ _ := defFun
@@ -265,7 +265,7 @@ namespace HasTrivialIsomorphismCondition
                            [HasIsomorphisms α] [HasPreorderRelation V β] [HasIsomorphisms β]
                            [HasPreorderRelation V γ] [HasIsomorphismsBase γ]
                            [HasTrivialIsomorphismCondition γ] [HasTrivialFunctoriality V V]
-                           {φ : α → β → γ} {F : PreorderFunctor₂ φ} :
+                           {F : PreorderFunctor₂ α β γ} :
         HasIsomorphisms.IsIsoFunctor₂ F where
       app  _ := isIsoFunctor
       app₂ _ := isIsoFunctor

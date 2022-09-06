@@ -25,11 +25,11 @@ namespace HasEquivalences
 
   variable {U : Universe} [HasLinearLogic U] [h : HasEquivalences U]
 
-  @[reducible] def toFun₂  (A B : U) : A ≃ B ⟶ (A ⟶ B) := toHomFun  A B
-  @[reducible] def invFun₂ (A B : U) : A ≃ B ⟶ (B ⟶ A) := invHomFun A B
+  @[reducible] def toFun₂  (A B : U) : A ≃ B ⥤ (A ⥤ B) := toHomFun  A B
+  @[reducible] def invFun₂ (A B : U) : A ≃ B ⥤ (B ⥤ A) := invHomFun A B
 
-  @[reducible] def toFun  {A B : U} (E : A ≃ B) : A ⟶ B := toHom  E
-  @[reducible] def invFun {A B : U} (E : A ≃ B) : B ⟶ A := invHom E
+  @[reducible] def toFun  {A B : U} (E : A ≃ B) : A ⥤ B := toHom  E
+  @[reducible] def invFun {A B : U} (E : A ≃ B) : B ⥤ A := invHom E
 
   instance toFun.isFunApp  {A B : U} {E : A ≃ B} : IsFunApp (toFun  E) := ⟨toFun₂  A B, E⟩
   instance invFun.isFunApp {A B : U} {E : A ≃ B} : IsFunApp (invFun E) := ⟨invFun₂ A B, E⟩
@@ -58,13 +58,16 @@ namespace HasHomEquivalences
   @[reducible] def inIsoEquiv (a : α) {b₁ b₂ : α} (e : b₁ ≃ b₂) : (a ⟶ b₁) ≃ (a ⟶ b₂) :=
     IsIsoFunctor.iso ((homFun₂ α).app a) e
 
+  def isoEquiv {a₁ a₂ : α} (ea : a₂ ≃ a₁) {b₁ b₂ : α} (eb : b₁ ≃ b₂) : (a₁ ⟶ b₁) ≃ (a₂ ⟶ b₂) :=
+    outIsoEquiv ea b₂ • inIsoEquiv a₁ eb
+
 end HasHomEquivalences
 
 
 class HasEquivRelEquivalences {V : Universe} [HasLinearLogic V] [HasEquivalences V] (α : Sort u)
                               [HasEquivalenceRelationBase V α] where
   [hEquivEquiv : HasHomEquivalences (asPreorder α)]
-  defEquivRelSymmEquiv (a b : α) : (a ≃ b) ≃{symmFun a b, symmFun b a} (b ≃ a)
+  defEquivRelSymmEquiv (a b : α) : (a ≃ b) ≃{HasSymm.symmFun a b, HasSymm.symmFun b a} (b ≃ a)
 
 namespace HasEquivRelEquivalences
 
@@ -81,3 +84,9 @@ end HasEquivRelEquivalences
 class HasHomIsoEquivalences {V : Universe} [HasLinearLogic V] [HasEquivalences V] (α : Sort u)
                             [HasPreorderRelation V α] [HasIsomorphisms α] extends
   HasHomEquivalences α, HasEquivRelEquivalences α
+
+
+
+class HasFunctorialPiType {α : Sort u} {V : Universe} [HasLinearLogic V] [HasEquivalences V]
+                          [HasEquivalenceRelationBase V α] (P : EquivalenceFunctor α V) extends
+  HasPiType P.φ
