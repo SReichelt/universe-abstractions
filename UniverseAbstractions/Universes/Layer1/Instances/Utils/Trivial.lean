@@ -210,6 +210,19 @@ end HasTrivialDefPi
 
 open HasTrivialDefPi
 
+namespace HasTrivialDefFun
+
+  instance hasExternalFullLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                                [HasTrivialFunctoriality U U] [∀ B : U, HasFunctors α B]
+                                [∀ B : U, HasTrivialDefFun α B] :
+      HasExternalFullLogic α U where
+    defRevAppFun₂  _   := defFun₂
+    defRevCompFun₃ _ _ := defFun₃
+    defConstFun₂   _   := defFun₂
+    defDupFun₂     _   := defFun₂
+
+end HasTrivialDefFun
+
 namespace HasTrivialFunctoriality
 
   instance hasFullLogic (U : Universe) [HasUnivFunctors U U] [HasTrivialFunctoriality U U] :

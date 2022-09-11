@@ -19,7 +19,7 @@ universe u
 -- `Top` does not hold any data. Therefore, we define a specialized version of `constFun`. Note
 -- that a corresponding `elimFun₂` is derived from this in `DerivedSingletonFunctors.lean`.
 
-class HasTop (U : Universe.{u}) [HasLinearLogic U] where
+class HasTop (U : Universe.{u}) [HasUnivFunctors U U] where
   defTopType : DefTypeWithIntro U PUnit.{u}
   defElimFun {A : U} (a : A) : defTopType.A ⥤{λ _ => a} A
 
@@ -27,7 +27,7 @@ namespace HasTop
 
   section
 
-    variable (U : Universe) [HasLinearLogic U] [h : HasTop U] 
+    variable (U : Universe) [HasUnivFunctors U U] [h : HasTop U] 
 
     @[reducible] def Top : U := h.defTopType
     prefix:max "⊤_" => HasTop.Top
@@ -37,14 +37,14 @@ namespace HasTop
 
   end
 
-  variable {U : Universe} [HasLinearLogic U] [h : HasTop U] 
+  variable {U : Universe} [HasUnivFunctors U U] [h : HasTop U] 
 
   @[reducible] def elimFun {A : U} (a : A) : ⊤_U ⥤ A := h.defElimFun a
 
 end HasTop
 
 
-class HasBot (U : Universe.{u}) [HasLinearLogic U] where
+class HasBot (U : Universe.{u}) [HasUnivFunctors U U] where
   defBotType : DefType U PEmpty.{u}
   defElimFun (A : U) : defBotType.A ⥤{λ b => PEmpty.elim (defBotType.elim b)} A
 
@@ -52,7 +52,7 @@ namespace HasBot
 
   section
 
-    variable (U : Universe) [HasLinearLogic U] [h : HasBot U]
+    variable (U : Universe) [HasUnivFunctors U U] [h : HasBot U]
 
     def defBotType' : DefTypeWithIntro U PEmpty.{u} where
       toDefType := h.defBotType
@@ -63,7 +63,7 @@ namespace HasBot
 
   end
 
-  variable {U : Universe} [HasLinearLogic U] [h : HasBot U]
+  variable {U : Universe} [HasUnivFunctors U U] [h : HasBot U]
 
   @[reducible] def elim (b : ⊥_U) (A : U) : A := PEmpty.elim (h.defBotType.elim b)
 
@@ -76,12 +76,12 @@ namespace HasBot
 
 end HasBot
 
-class HasClassicalLogic (U : Universe.{u}) [HasLinearLogic U] [HasBot U] where
+class HasClassicalLogic (U : Universe.{u}) [HasUnivFunctors U U] [HasBot U] where
   byContradictionFun (A : U) : ~~A ⥤ A
 
 namespace HasClassicalLogic
 
-  variable {U : Universe} [HasLinearLogic U] [HasBot U] [HasClassicalLogic U]
+  variable {U : Universe} [HasUnivFunctors U U] [HasBot U] [HasClassicalLogic U]
 
   @[reducible] def byContradiction {A : U} (F : ~~A) : A := (byContradictionFun A) F
 

@@ -11,7 +11,7 @@ open Universe HasFunctors
 
 
 
-class HasCoproducts {U : Universe} [HasLinearLogic U] (A B : U) where
+class HasCoproducts {U : Universe} [HasUnivFunctors U U] (A B : U) where
   defCoprodType : DefTypeWithIntro U (PSum A B)
   defLeftIntroFun  : A ⥤{λ a => DefTypeWithIntro.inst defCoprodType (PSum.inl a)} defCoprodType.A
   defRightIntroFun : B ⥤{λ b => DefTypeWithIntro.inst defCoprodType (PSum.inr b)} defCoprodType.A
@@ -22,7 +22,7 @@ class HasCoproducts {U : Universe} [HasLinearLogic U] (A B : U) where
 
 namespace HasCoproducts
 
-  variable {U : Universe} [HasLinearLogic U]
+  variable {U : Universe} [HasUnivFunctors U U]
 
   @[reducible] def Coprod (A B : U) [h : HasCoproducts A B] : U := h.defCoprodType
   infix:34 " ⊔ " => HasCoproducts.Coprod
@@ -75,12 +75,12 @@ namespace HasCoproducts
 end HasCoproducts
 
 
-class HasInnerCoproducts (U : Universe) [HasLinearLogic U] where
+class HasInnerCoproducts (U : Universe) [HasUnivFunctors U U] where
   [hCoprod (A B : U) : HasCoproducts A B]
 
 namespace HasInnerCoproducts
 
-  variable {U : Universe} [HasLinearLogic U] [h : HasInnerCoproducts U]
+  variable {U : Universe} [HasUnivFunctors U U] [h : HasInnerCoproducts U]
 
   instance (A B : U) : HasCoproducts A B := h.hCoprod A B
 

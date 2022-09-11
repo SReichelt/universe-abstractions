@@ -52,6 +52,8 @@ namespace unit
 
   instance hasTrivialFunctoriality : HasTrivialFunctoriality unit unit := ⟨⟩
 
+  instance hasExternalFullLogic (p : Prop) : HasExternalFullLogic p unit := inferInstance
+
   instance hasFullLogic : HasFullLogic unit := inferInstance
 
   instance hasTop : HasTop unit where

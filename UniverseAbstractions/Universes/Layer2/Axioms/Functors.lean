@@ -2310,6 +2310,105 @@ end HasRevSubstPiFun
 
 
 
+class HasExternalLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                             [Layer1.HasEquivalenceRelationBase U.V α] where
+  [hFun (B : U) : HasFunctors α B]
+  defRevAppFun₂ (B : U) :
+    α ⥤ (α ⥤ B) ⥤{λ a F => F a,
+                   λ a F₁ F₂ => congrFunFun F₁ F₂ a,
+                   λ a₁ a₂ F => congrArgFun F a₁ a₂} B
+  defRevCompFun₃ (B C : U) :
+    (B ⥤ C) ⥤ (α ⥤ B) ⥤ α ⥤{λ G F a => G (F a),
+                              λ G F a₁ a₂ => Λ e => congrArg G (congrArg F e),
+                              λ G F₁ F₂ a => Λ e => congrArg G (congrFun e a),
+                              λ G₁ G₂ F a => Λ e => congrFun e (F a)} C
+
+namespace HasExternalLinearLogic
+
+  instance (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
+           [Layer1.HasEquivalenceRelationBase U.V α] [h : HasExternalLinearLogic α U] (B : U) :
+      HasFunctors α B :=
+    h.hFun B
+
+  instance toLayer1 (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                    [Layer1.HasEquivalenceRelationBase U.V α] [h : HasExternalLinearLogic α U] :
+      Layer1.HasExternalLinearLogic α U where
+    defRevAppFun₂  B   := (h.defRevAppFun₂  B).toLayer1
+    defRevCompFun₃ B C := (h.defRevCompFun₃ B C).toLayer1
+
+  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
+           [Layer1.HasEquivalenceRelationBase U.V α] [h : HasExternalLinearLogic α U]
+
+  instance (B : U) : Layer1.HasPiAppFunPi (Function.const α B) :=
+    Layer1.HasExternalLinearLogic.hasPiAppFunPi α B
+
+  instance (B C : U) :
+      Layer1.HasRevCompFunPiFun α (Function.const (Layer1.HasInstances.Inst (I := U.toUniverse) B)
+                                                  C) :=
+    Layer1.HasExternalLinearLogic.hasRevCompFunPiFun α B C
+
+  @[reducible] def revAppFun.congrArg {a₁ a₂ : α} (e : a₁ ≃ a₂) (B : U) :
+      Layer1.HasPiAppFun.revAppFun a₁ B ≃ Layer1.HasPiAppFun.revAppFun a₂ B :=
+    (h.defRevAppFun₂ B).appEq.appEq e
+
+  @[reducible] def revCompFun.congrArgRight {B C : U} {F₁ F₂ : α ⥤ B} (e : F₁ ≃ F₂) (G : B ⥤ C) :
+      G ⊙ F₁ ≃ G ⊙ F₂ :=
+    ((h.defRevCompFun₃ B C).app G).appEq.appEq e
+
+  @[reducible] def revCompFun.congrArgLeft {B C : U} (F : α ⥤ B) {G₁ G₂ : B ⥤ C} (e : G₁ ≃ G₂) :
+      G₁ ⊙ F ≃ G₂ ⊙ F :=
+    DefFun.byDef • congrFun ((h.defRevCompFun₃ B C).appEq.appEq e) F • DefFun.byDef⁻¹
+
+  @[reducible] def revCompFun₂.congrArg {B C : U} {G₁ G₂ : B ⥤ C} (e : G₁ ≃ G₂) :
+      Layer1.HasRevCompFunPi₂.revCompFun₂ α G₁ ≃ Layer1.HasRevCompFunPi₂.revCompFun₂ α G₂ :=
+    (h.defRevCompFun₃ B C).appEq.appEq e
+
+  instance {B C : U} (F₁ F₂ : α ⥤ B) (G₁ G₂ : B ⥤ C) :
+      Layer1.HasPiType (λ a => G₁ (F₁ a) ≃ G₂ (F₂ a)) :=
+    DefFun.hasEqPi (((h.defRevCompFun₃ B C).app G₁).app F₁)
+                   (((h.defRevCompFun₃ B C).app G₂).app F₂)
+
+  instance {B C : U} (G₁ G₂ : B ⥤ C) : Layer1.HasCompFunPi α (λ b => G₁ b ≃ G₂ b) :=
+    ⟨λ F e => ⟨revCompFun.congrArgLeft α F e⟩⟩
+
+  instance {B C : U} (G₁ G₂ : B ⥤ C) :
+      Layer1.HasPiType (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => G₁ (F a) ≃ G₂ (F a))) :=
+    DefFun.hasEqPi ((h.defRevCompFun₃ B C).app G₁).toDefFun
+                   ((h.defRevCompFun₃ B C).app G₂).toDefFun
+
+  instance {B C : U} (G₁ G₂ : B ⥤ C) : Layer1.HasRevCompFunPi₂ α (λ b => G₁ b ≃ G₂ b) :=
+    ⟨λ e => ⟨revCompFun₂.congrArg α e⟩⟩
+
+  instance {B C : U} (G₁ G₂ : B ⥤ C) : Layer1.HasRevCompFunPiFun α (λ b => G₁ b ≃ G₂ b) :=
+    ⟨⟨(h.defRevCompFun₃ B C).appEq.appEqFun G₁ G₂⟩⟩
+
+  instance hasPiAppFun (B : U) : HasPiAppFun (Function.const α B) := ⟨(h.defRevAppFun₂ B).app⟩
+  instance (B : U) : HasPiAppFun (λ _ : α => B) := hasPiAppFun α B
+
+  instance hasPiAppFunPi (B : U) : HasPiAppFunPi (Function.const α B) :=
+    ⟨(h.defRevAppFun₂ B).toDefFun.toDefPi⟩
+  instance (B : U) : HasPiAppFunPi (λ _ : α => B) := hasPiAppFunPi α B
+
+  instance hasCompFunPi (B C : U) : HasCompFunPi α (Function.const B C) :=
+    ⟨λ F G => (((h.defRevCompFun₃ B C).app G).app F).toDefPi⟩
+  instance (B C : U) : HasCompFunPi α (λ _ : B => C) := hasCompFunPi α B C
+
+  instance hasRevCompFunPi₂ (B C : U) : HasRevCompFunPi₂ α (Function.const B C) :=
+    ⟨λ G => ((h.defRevCompFun₃ B C).app G).toDefFun.toDefPi⟩
+  instance (B C : U) : HasRevCompFunPi₂ α (λ _ : B => C) := hasRevCompFunPi₂ α B C
+
+  instance hasRevCompFunPiFun (B C : U) : HasRevCompFunPiFun α (Function.const B C) where
+    defRevCompFunPiEq  := { defAppEq    := λ e => { app        := λ G => ⟨(((h.defRevCompFun₃ B C).appEq.defAppEq e).app G).e⟩,
+                                                    toDefEquiv := ⟨((h.defRevCompFun₃ B C).appEq.defAppEq e).toDefEquiv.e⟩ },
+                            defAppEqFun := λ G₁ G₂ => ⟨((h.defRevCompFun₃ B C).appEq.defAppEqFun G₁ G₂).inst⟩ }
+    defRevCompFunPiFun := { inst := (h.defRevCompFun₃ B C).toDefFun.inst,
+                            e    := (h.defRevCompFun₃ B C).toDefFun.e }
+
+  instance (B C : U) : HasRevCompFunPiFun α (λ _ : B => C) := hasRevCompFunPiFun α B C
+
+end HasExternalLinearLogic
+
+
 class HasLinearLogic (U : Universe) extends HasUnivFunctors U U where
   defIdFun (A : U) : A ⥤⦃EquivalenceFunctor.idFun A⦄ A
   defRevAppFun₂ (A B : U) :
@@ -2333,76 +2432,62 @@ namespace HasLinearLogic
 
   variable {U : Universe} [h : HasLinearLogic U]
 
-  instance (A B : U) : Layer1.HasPiAppFunPi (Function.const A B) :=
-    Layer1.HasLinearLogic.hasPiAppFunPi A B
-
-  instance (A B C : U) :
-      Layer1.HasRevCompFunPiFun A (Function.const (Layer1.HasInstances.Inst (I := U.toUniverse) B)
-                                                  C) :=
-    Layer1.HasLinearLogic.hasRevCompFunPiFun A B C
-
-  @[reducible] def revAppFun.congrArg {A : U} {a₁ a₂ : A} (e : a₁ ≃ a₂) (B : U) :
-      Layer1.HasPiAppFun.revAppFun a₁ B ≃ Layer1.HasPiAppFun.revAppFun a₂ B :=
-    (h.defRevAppFun₂ A B).appEq.appEq e
-
-  @[reducible] def revCompFun.congrArgRight {A B C : U} {F₁ F₂ : A ⥤ B} (e : F₁ ≃ F₂) (G : B ⥤ C) :
-      G ⊙ F₁ ≃ G ⊙ F₂ :=
-    ((h.defRevCompFun₃ A B C).app G).appEq.appEq e
-
-  @[reducible] def revCompFun.congrArgLeft {A B C : U} (F : A ⥤ B) {G₁ G₂ : B ⥤ C} (e : G₁ ≃ G₂) :
-      G₁ ⊙ F ≃ G₂ ⊙ F :=
-    DefFun.byDef • congrFun ((h.defRevCompFun₃ A B C).appEq.appEq e) F • DefFun.byDef⁻¹
-
-  @[reducible] def revCompFun₂.congrArg (A : U) {B C : U} {G₁ G₂ : B ⥤ C} (e : G₁ ≃ G₂) :
-      Layer1.HasRevCompFunPi₂.revCompFun₂ A G₁ ≃ Layer1.HasRevCompFunPi₂.revCompFun₂ A G₂ :=
-    (h.defRevCompFun₃ A B C).appEq.appEq e
-
-  instance {A B C : U} (F₁ F₂ : A ⥤ B) (G₁ G₂ : B ⥤ C) :
-      Layer1.HasPiType (λ a => G₁ (F₁ a) ≃ G₂ (F₂ a)) :=
-    DefFun.hasEqPi (((h.defRevCompFun₃ A B C).app G₁).app F₁)
-                   (((h.defRevCompFun₃ A B C).app G₂).app F₂)
-
-  instance (A : U) {B C : U} (G₁ G₂ : B ⥤ C) : Layer1.HasCompFunPi A (λ b => G₁ b ≃ G₂ b) :=
-    ⟨λ F e => ⟨revCompFun.congrArgLeft F e⟩⟩
-
-  instance (A : U) {B C : U} (G₁ G₂ : B ⥤ C) :
-      Layer1.HasPiType (λ F : A ⥤ B => Layer1.HasPiType.Pi (λ a => G₁ (F a) ≃ G₂ (F a))) :=
-    DefFun.hasEqPi ((h.defRevCompFun₃ A B C).app G₁).toDefFun
-                   ((h.defRevCompFun₃ A B C).app G₂).toDefFun
-
-  instance (A : U) {B C : U} (G₁ G₂ : B ⥤ C) : Layer1.HasRevCompFunPi₂ A (λ b => G₁ b ≃ G₂ b) :=
-    ⟨λ e => ⟨revCompFun₂.congrArg A e⟩⟩
-
-  instance (A : U) {B C : U} (G₁ G₂ : B ⥤ C) : Layer1.HasRevCompFunPiFun A (λ b => G₁ b ≃ G₂ b) :=
-    ⟨⟨(h.defRevCompFun₃ A B C).appEq.appEqFun G₁ G₂⟩⟩
-
   instance hasIdFun (A : U) : HasIdFun A := ⟨h.defIdFun A⟩
 
-  instance hasPiAppFun (A B : U) : HasPiAppFun (Function.const A B) := ⟨(h.defRevAppFun₂ A B).app⟩
-  instance (A B : U) : HasPiAppFun (λ _ : A => B) := hasPiAppFun A B
-
-  instance hasPiAppFunPi (A B : U) : HasPiAppFunPi (Function.const A B) :=
-    ⟨(h.defRevAppFun₂ A B).toDefFun.toDefPi⟩
-  instance (A B : U) : HasPiAppFunPi (λ _ : A => B) := hasPiAppFunPi A B
-
-  instance hasCompFunPi (A B C : U) : HasCompFunPi A (Function.const B C) :=
-    ⟨λ F G => (((h.defRevCompFun₃ A B C).app G).app F).toDefPi⟩
-  instance (A B C : U) : HasCompFunPi A (λ _ : B => C) := hasCompFunPi A B C
-
-  instance hasRevCompFunPi₂ (A B C : U) : HasRevCompFunPi₂ A (Function.const B C) :=
-    ⟨λ G => ((h.defRevCompFun₃ A B C).app G).toDefFun.toDefPi⟩
-  instance (A B C : U) : HasRevCompFunPi₂ A (λ _ : B => C) := hasRevCompFunPi₂ A B C
-
-  instance hasRevCompFunPiFun (A B C : U) : HasRevCompFunPiFun A (Function.const B C) where
-    defRevCompFunPiEq  := { defAppEq    := λ e => { app        := λ G => ⟨(((h.defRevCompFun₃ A B C).appEq.defAppEq e).app G).e⟩,
-                                                    toDefEquiv := ⟨((h.defRevCompFun₃ A B C).appEq.defAppEq e).toDefEquiv.e⟩ },
-                            defAppEqFun := λ G₁ G₂ => ⟨((h.defRevCompFun₃ A B C).appEq.defAppEqFun G₁ G₂).inst⟩ }
-    defRevCompFunPiFun := { inst := (h.defRevCompFun₃ A B C).toDefFun.inst,
-                            e    := (h.defRevCompFun₃ A B C).toDefFun.e }
-
-  instance (A B C : U) : HasRevCompFunPiFun A (λ _ : B => C) := hasRevCompFunPiFun A B C
+  instance hasExternalLinearLogic (A : U) : HasExternalLinearLogic A U where
+    defRevAppFun₂  B   := h.defRevAppFun₂  A B
+    defRevCompFun₃ B C := h.defRevCompFun₃ A B C
 
 end HasLinearLogic
+
+
+class HasExternalSubLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                                [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+                                where
+  defConstFun₂ (B : U) :
+    B ⥤ α ⥤{λ b a => b,
+             λ b a₁ a₂ => Layer1.HasConstPi.constFun (a₁ ≃ a₂) (idIso b),
+             λ b₁ b₂ a => Layer1.HasIdFun.idFun (b₁ ≃ b₂)} B
+
+namespace HasExternalSubLinearLogic
+
+  instance toLayer1 (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                    [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+                    [h : HasExternalSubLinearLogic α U] :
+      Layer1.HasExternalSubLinearLogic α U where
+    defConstFun₂ B := (h.defConstFun₂ B).toLayer1
+
+  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
+           [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+           [h : HasExternalSubLinearLogic α U]
+
+  instance (B : U) : Layer1.HasConstPi α B := Layer1.HasExternalSubLinearLogic.hasConstPi α B
+
+  @[reducible] def constFun.congrArg {B : U} {b₁ b₂ : B} (e : b₁ ≃ b₂) :
+      Layer1.HasConstPi.constFun α b₁ ≃ Layer1.HasConstPi.constFun α b₂ :=
+    (h.defConstFun₂ B).appEq.appEq e
+
+  instance {B : U} (b₁ b₂ : B) : Layer1.HasPiType (Function.const α (b₁ ≃ b₂)) :=
+    DefFun.hasEqPi ((h.defConstFun₂ B).app b₁) ((h.defConstFun₂ B).app b₂)
+
+  instance {B : U} (b₁ b₂ : B) : Layer1.HasConstPi α (b₁ ≃ b₂) :=
+    ⟨λ e => ⟨constFun.congrArg α e⟩⟩
+
+  instance {B : U} (b₁ b₂ : B) : Layer1.HasConstPiFun α (b₁ ≃ b₂) :=
+    ⟨⟨(h.defConstFun₂ B).appEq.appEqFun b₁ b₂⟩⟩
+
+  instance hasConstPi (B : U) : HasConstPi α B := ⟨λ b => ((h.defConstFun₂ B).app b).toDefPi⟩
+
+  instance hasConstPiFun (B : U) : HasConstPiFun α B where
+    defConstPiEq  := { defAppEq    := λ e => ⟨((h.defConstFun₂ B).appEq.defAppEq e).e⟩,
+                       defAppEqFun := λ b₁ b₂ => ⟨((h.defConstFun₂ B).appEq.defAppEqFun b₁ b₂).inst⟩ }
+    defConstPiFun := (h.defConstFun₂ B).toDefFun
+
+end HasExternalSubLinearLogic
+
+class HasExternalAffineLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                             [Layer1.HasEquivalenceRelationBase U.V α] extends
+  HasExternalLinearLogic α U, HasExternalSubLinearLogic α U
 
 
 class HasSubLinearLogic (U : Universe) [HasUnivFunctors U U] where
@@ -2419,40 +2504,93 @@ namespace HasSubLinearLogic
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasSubLinearLogic U]
 
-  instance (A B : U) : Layer1.HasConstPi A B := Layer1.HasSubLinearLogic.hasConstPi A B
-
-  @[reducible] def constFun.congrArg (A : U) {B : U} {b₁ b₂ : B} (e : b₁ ≃ b₂) :
-      Layer1.HasConstPi.constFun A b₁ ≃ Layer1.HasConstPi.constFun A b₂ :=
-    (h.defConstFun₂ A B).appEq.appEq e
-
-  instance (A : U) {B : U} (b₁ b₂ : B) : Layer1.HasPiType (Function.const A (b₁ ≃ b₂)) :=
-    DefFun.hasEqPi ((h.defConstFun₂ A B).app b₁) ((h.defConstFun₂ A B).app b₂)
-
-  instance (A : U) {B : U} (b₁ b₂ : B) : Layer1.HasConstPi A (b₁ ≃ b₂) :=
-    ⟨λ e => ⟨constFun.congrArg A e⟩⟩
-
-  instance (A : U) {B : U} (b₁ b₂ : B) : Layer1.HasConstPiFun A (b₁ ≃ b₂) :=
-    ⟨⟨(h.defConstFun₂ A B).appEq.appEqFun b₁ b₂⟩⟩
-
-  instance hasConstPi (A B : U) : HasConstPi A B := ⟨λ b => ((h.defConstFun₂ A B).app b).toDefPi⟩
-
-  instance hasConstPiFun (A B : U) : HasConstPiFun A B where
-    defConstPiEq  := { defAppEq    := λ e => ⟨((h.defConstFun₂ A B).appEq.defAppEq e).e⟩,
-                       defAppEqFun := λ b₁ b₂ => ⟨((h.defConstFun₂ A B).appEq.defAppEqFun b₁ b₂).inst⟩ }
-    defConstPiFun := (h.defConstFun₂ A B).toDefFun
+  instance hasExternalSubLinearLogic (A : U) : HasExternalSubLinearLogic A U where
+    defConstFun₂ B := h.defConstFun₂ A B
 
 end HasSubLinearLogic
 
 class HasAffineLogic (U : Universe) extends HasLinearLogic U, HasSubLinearLogic U
 
-instance HasAffineLogic.toLayer1 (U : Universe) [HasAffineLogic U] : Layer1.HasAffineLogic U := ⟨⟩
+namespace HasAffineLogic
+
+  instance toLayer1 (U : Universe) [HasAffineLogic U] : Layer1.HasAffineLogic U := ⟨⟩
+
+  variable {U : Universe} [h : HasAffineLogic U]
+
+  instance hasExternalAffineLogic (A : U) : HasExternalAffineLogic A U := ⟨⟩
+
+end HasAffineLogic
+
+
+class HasExternalNonLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                                [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+                                where
+  defDupFun₂ (B : U) :
+    (α ⥤ α ⥤ B) ⥤ α ⥤{λ F a => F a a,
+                        λ F a₁ a₂ => Λ e => congrArg₂ F e e,
+                        λ F₁ F₂ a => Λ e => congrFun₂ e a a} B
+
+namespace HasExternalNonLinearLogic
+
+  instance toLayer1 (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                    [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+                    [h : HasExternalNonLinearLogic α U] :
+      Layer1.HasExternalNonLinearLogic α U where
+    defDupFun₂ B := (h.defDupFun₂ B).toLayer1
+
+  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
+           [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+           [h : HasExternalNonLinearLogic α U]
+
+  instance (B : U) : Layer1.HasDupPi (Function.const α (Function.const α B)) :=
+    Layer1.HasExternalNonLinearLogic.hasDupPi α B
+
+  @[reducible] def dupFun.congrArg {B : U} {F₁ F₂ : α ⥤ α ⥤ B} (e : F₁ ≃ F₂) :
+      Layer1.HasDupPi.dupFun F₁ ≃ Layer1.HasDupPi.dupFun F₂ :=
+    (h.defDupFun₂ B).appEq.appEq e
+
+  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) (a₁ : α) :
+      Layer1.HasPiType (λ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
+    hasEqPi (F₁ a₁) (F₂ a₁)
+
+  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) :
+      Layer1.HasPiType (λ a₁ => Layer1.HasPiType.Pi (λ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂)) :=
+    hasEqPi₂ F₁ F₂
+
+  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) : Layer1.HasPiType (λ a => F₁ a a ≃ F₂ a a) :=
+    DefFun.hasEqPi ((h.defDupFun₂ B).app F₁) ((h.defDupFun₂ B).app F₂)
+
+  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) : Layer1.HasDupPi (λ a₁ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
+    ⟨λ e => ⟨dupFun.congrArg α e⟩⟩
+
+  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) : Layer1.HasDupPiFun (λ a₁ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
+    ⟨⟨(h.defDupFun₂ B).appEq.appEqFun F₁ F₂⟩⟩
+
+  instance hasDupPi (B : U) : HasDupPi (Function.const α (Function.const α B)) :=
+    ⟨λ F => ((h.defDupFun₂ B).app F).toDefPi⟩
+  instance (B : U) : HasDupPi (λ _ : α => Function.const α B) := hasDupPi α B
+  instance (B : U) : HasDupPi (λ _ _ : α => B) := hasDupPi α B
+
+  instance hasDupPiFun (B : U) : HasDupPiFun (Function.const α (Function.const α B)) where
+    defDupPiEq  := { defAppEq    := λ e => ⟨((h.defDupFun₂ B).appEq.defAppEq e).e⟩,
+                     defAppEqFun := λ F₁ F₂ => ⟨((h.defDupFun₂ B).appEq.defAppEqFun F₁ F₂).inst⟩ }
+    defDupPiFun := { inst := (h.defDupFun₂ B).toDefFun.inst,
+                     e    := (h.defDupFun₂ B).toDefFun.e }
+  instance (B : U) : HasDupPiFun (λ _ : α => Function.const α B) := hasDupPiFun α B
+  instance (B : U) : HasDupPiFun (λ _ _ : α => B) := hasDupPiFun α B
+
+end HasExternalNonLinearLogic
+
+class HasExternalFullLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                           [Layer1.HasEquivalenceRelationBase U.V α] extends
+  HasExternalAffineLogic α U, HasExternalNonLinearLogic α U
 
 
 class HasNonLinearLogic (U : Universe) [HasUnivFunctors U U] where
-(defDupFun₂ (A B : U) :
-   (A ⥤ A ⥤ B) ⥤ A ⥤{λ F a => F a a,
-                       λ F a₁ a₂ => Λ e => congrArg₂ F e e,
-                       λ F₁ F₂ a => Λ e => congrFun₂ e a a} B)
+  defDupFun₂ (A B : U) :
+    (A ⥤ A ⥤ B) ⥤ A ⥤{λ F a => F a a,
+                        λ F a₁ a₂ => Λ e => congrArg₂ F e e,
+                        λ F₁ F₂ a => Λ e => congrFun₂ e a a} B
 
 namespace HasNonLinearLogic
 
@@ -2462,45 +2600,19 @@ namespace HasNonLinearLogic
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasNonLinearLogic U]
 
-  instance (A B : U) : Layer1.HasDupPi (Function.const A (Function.const A B)) :=
-    Layer1.HasNonLinearLogic.hasDupPi A B
-
-  @[reducible] def dupFun.congrArg {A B : U} {F₁ F₂ : A ⥤ A ⥤ B} (e : F₁ ≃ F₂) :
-      Layer1.HasDupPi.dupFun F₁ ≃ Layer1.HasDupPi.dupFun F₂ :=
-    (h.defDupFun₂ A B).appEq.appEq e
-
-  instance {A B : U} (F₁ F₂ : A ⥤ A ⥤ B) (a₁ : A) :
-      Layer1.HasPiType (λ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
-    hasEqPi (F₁ a₁) (F₂ a₁)
-
-  instance {A B : U} (F₁ F₂ : A ⥤ A ⥤ B) :
-      Layer1.HasPiType (λ a₁ => Layer1.HasPiType.Pi (λ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂)) :=
-    hasEqPi₂ F₁ F₂
-
-  instance {A B : U} (F₁ F₂ : A ⥤ A ⥤ B) : Layer1.HasPiType (λ a => F₁ a a ≃ F₂ a a) :=
-    DefFun.hasEqPi ((h.defDupFun₂ A B).app F₁) ((h.defDupFun₂ A B).app F₂)
-
-  instance {A B : U} (F₁ F₂ : A ⥤ A ⥤ B) : Layer1.HasDupPi (λ a₁ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
-    ⟨λ e => ⟨dupFun.congrArg e⟩⟩
-
-  instance {A B : U} (F₁ F₂ : A ⥤ A ⥤ B) : Layer1.HasDupPiFun (λ a₁ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
-    ⟨⟨(h.defDupFun₂ A B).appEq.appEqFun F₁ F₂⟩⟩
-
-  instance hasDupPi (A B : U) : HasDupPi (Function.const A (Function.const A B)) :=
-    ⟨λ F => ((h.defDupFun₂ A B).app F).toDefPi⟩
-  instance (A B : U) : HasDupPi (λ _ : A => Function.const A B) := hasDupPi A B
-  instance (A B : U) : HasDupPi (λ _ _ : A => B) := hasDupPi A B
-
-  instance hasDupPiFun (A B : U) : HasDupPiFun (Function.const A (Function.const A B)) where
-    defDupPiEq  := { defAppEq    := λ e => ⟨((h.defDupFun₂ A B).appEq.defAppEq e).e⟩,
-                     defAppEqFun := λ F₁ F₂ => ⟨((h.defDupFun₂ A B).appEq.defAppEqFun F₁ F₂).inst⟩ }
-    defDupPiFun := { inst := (h.defDupFun₂ A B).toDefFun.inst,
-                     e    := (h.defDupFun₂ A B).toDefFun.e }
-  instance (A B : U) : HasDupPiFun (λ _ : A => Function.const A B) := hasDupPiFun A B
-  instance (A B : U) : HasDupPiFun (λ _ _ : A => B) := hasDupPiFun A B
+  instance hasExternalNonLinearLogic (A : U) : HasExternalNonLinearLogic A U where
+    defDupFun₂ B := h.defDupFun₂ A B
 
 end HasNonLinearLogic
 
 class HasFullLogic (U : Universe) extends HasAffineLogic U, HasNonLinearLogic U
 
-instance HasFullLogic.toLayer1 (U : Universe) [HasFullLogic U] : Layer1.HasFullLogic U := ⟨⟩
+namespace HasFullLogic
+
+  instance toLayer1 (U : Universe) [HasFullLogic U] : Layer1.HasFullLogic U := ⟨⟩
+
+  variable {U : Universe} [h : HasFullLogic U]
+
+  instance hasExternalFullLogic (A : U) : HasExternalFullLogic A U := ⟨⟩
+
+end HasFullLogic

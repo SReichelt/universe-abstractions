@@ -12,6 +12,7 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
+set_option synthInstance.maxHeartbeats 100000
 set_option linter.unusedVariables false
 
 universe u u'

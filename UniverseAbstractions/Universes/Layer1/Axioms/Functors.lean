@@ -1802,6 +1802,39 @@ end HasRevSubstPiFun
 
 
 
+class HasExternalLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U] where
+  [hFun (B : U) : HasFunctors α B]
+  defRevAppFun₂  (B   : U) : α ⥤ (α ⥤ B) ⥤{λ a F => F a} B
+  defRevCompFun₃ (B C : U) : (B ⥤ C) ⥤ (α ⥤ B) ⥤ α ⥤{λ G F a => G (F a)} C
+
+namespace HasExternalLinearLogic
+
+  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U] [h : HasExternalLinearLogic α U]
+
+  instance (B : U) : HasFunctors α B := h.hFun B
+
+  instance hasPiAppFun (B : U) : HasPiAppFun (Function.const α B) := ⟨(h.defRevAppFun₂ B).app⟩
+  instance (B : U) : HasPiAppFun (λ _ : α => B) := hasPiAppFun α B
+
+  instance hasPiAppFunPi (B : U) : HasPiAppFunPi (Function.const α B) :=
+    ⟨(h.defRevAppFun₂ B).toDefFun⟩
+  instance (B : U) : HasPiAppFunPi (λ _ : α => B) := hasPiAppFunPi α B
+
+  instance hasCompFunPi (B C : U) : HasCompFunPi α (Function.const B C) :=
+    ⟨λ F G => ((h.defRevCompFun₃ B C).app G).app F⟩
+  instance (B C : U) : HasCompFunPi α (λ _ : B => C) := hasCompFunPi α B C
+
+  instance hasRevCompFunPi₂ (B C : U) : HasRevCompFunPi₂ α (Function.const B C) :=
+    ⟨λ G => ((h.defRevCompFun₃ B C).app G).toDefPi⟩
+  instance (B C : U) : HasRevCompFunPi₂ α (λ _ : B => C) := hasRevCompFunPi₂ α B C
+
+  instance hasRevCompFunPiFun (B C : U) : HasRevCompFunPiFun α (Function.const B C) :=
+    ⟨(h.defRevCompFun₃ B C).toDefFun⟩
+  instance (B C : U) : HasRevCompFunPiFun α (λ _ : B => C) := hasRevCompFunPiFun α B C
+
+end HasExternalLinearLogic
+
+
 class HasLinearLogic (U : Universe) extends HasUnivFunctors U U where
   defIdFun       (A     : U) : A ⥤{id} A
   defRevAppFun₂  (A B   : U) : A ⥤ (A ⥤ B) ⥤{λ a F => F a} B
@@ -1823,26 +1856,30 @@ namespace HasLinearLogic
 
   instance hasIdFun (A : U) : HasIdFun A := ⟨h.defIdFun A⟩
 
-  instance hasPiAppFun (A B : U) : HasPiAppFun (Function.const A B) := ⟨(h.defRevAppFun₂ A B).app⟩
-  instance (A B : U) : HasPiAppFun (λ _ : A => B) := hasPiAppFun A B
-
-  instance hasPiAppFunPi (A B : U) : HasPiAppFunPi (Function.const A B) :=
-    ⟨(h.defRevAppFun₂ A B).toDefFun⟩
-  instance (A B : U) : HasPiAppFunPi (λ _ : A => B) := hasPiAppFunPi A B
-
-  instance hasCompFunPi (A B C : U) : HasCompFunPi A (Function.const B C) :=
-    ⟨λ F G => ((h.defRevCompFun₃ A B C).app G).app F⟩
-  instance (A B C : U) : HasCompFunPi A (λ _ : B => C) := hasCompFunPi A B C
-
-  instance hasRevCompFunPi₂ (A B C : U) : HasRevCompFunPi₂ A (Function.const B C) :=
-    ⟨λ G => ((h.defRevCompFun₃ A B C).app G).toDefPi⟩
-  instance (A B C : U) : HasRevCompFunPi₂ A (λ _ : B => C) := hasRevCompFunPi₂ A B C
-
-  instance hasRevCompFunPiFun (A B C : U) : HasRevCompFunPiFun A (Function.const B C) :=
-    ⟨(h.defRevCompFun₃ A B C).toDefFun⟩
-  instance (A B C : U) : HasRevCompFunPiFun A (λ _ : B => C) := hasRevCompFunPiFun A B C
+  instance hasExternalLinearLogic (A : U) : HasExternalLinearLogic A U where
+    defRevAppFun₂  B   := h.defRevAppFun₂  A B
+    defRevCompFun₃ B C := h.defRevCompFun₃ A B C
 
 end HasLinearLogic
+
+
+class HasExternalSubLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                                [∀ B : U, HasFunctors α B] where
+  defConstFun₂ (B : U) : B ⥤ α ⥤{λ b a => b} B
+
+namespace HasExternalSubLinearLogic
+
+  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U] [∀ B : U, HasFunctors α B]
+           [h : HasExternalSubLinearLogic α U]
+
+  instance hasConstPi (B : U) : HasConstPi α B := ⟨(h.defConstFun₂ B).app⟩
+
+  instance hasConstPiFun (B : U) : HasConstPiFun α B := ⟨(h.defConstFun₂ B).toDefFun⟩
+
+end HasExternalSubLinearLogic
+
+class HasExternalAffineLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U] extends
+  HasExternalLinearLogic α U, HasExternalSubLinearLogic α U
 
 
 class HasSubLinearLogic (U : Universe) [HasUnivFunctors U U] where
@@ -1856,13 +1893,45 @@ namespace HasSubLinearLogic
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasSubLinearLogic U]
 
-  instance hasConstPi (A B : U) : HasConstPi A B := ⟨(h.defConstFun₂ A B).app⟩
-
-  instance hasConstPiFun (A B : U) : HasConstPiFun A B := ⟨(h.defConstFun₂ A B).toDefFun⟩
+  instance hasExternalSubLinearLogic (A : U) : HasExternalSubLinearLogic A U where
+    defConstFun₂ B := h.defConstFun₂ A B
 
 end HasSubLinearLogic
 
 class HasAffineLogic (U : Universe) extends HasLinearLogic U, HasSubLinearLogic U
+
+namespace HasAffineLogic
+
+  variable {U : Universe} [h : HasAffineLogic U]
+
+  instance hasExternalAffineLogic (A : U) : HasExternalAffineLogic A U := ⟨⟩
+
+end HasAffineLogic
+
+
+class HasExternalNonLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
+                                [∀ B : U, HasFunctors α B] where
+  defDupFun₂ (B : U) : (α ⥤ α ⥤ B) ⥤ α ⥤{λ F a => F a a} B
+
+namespace HasExternalNonLinearLogic
+
+  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U] [∀ B : U, HasFunctors α B]
+           [h : HasExternalNonLinearLogic α U]
+
+  instance hasDupPi (B : U) : HasDupPi (Function.const α (Function.const α B)) :=
+    ⟨(h.defDupFun₂ B).app⟩
+  instance (B : U) : HasDupPi (λ _ : α => Function.const α B) := hasDupPi α B
+  instance (B : U) : HasDupPi (λ _ _ : α => B) := hasDupPi α B
+
+  instance hasDupPiFun (B : U) : HasDupPiFun (Function.const α (Function.const α B)) :=
+    ⟨(h.defDupFun₂ B).toDefFun⟩
+  instance (B : U) : HasDupPiFun (λ _ : α => Function.const α B) := hasDupPiFun α B
+  instance (B : U) : HasDupPiFun (λ _ _ : α => B) := hasDupPiFun α B
+
+end HasExternalNonLinearLogic
+
+class HasExternalFullLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U] extends
+  HasExternalAffineLogic α U, HasExternalNonLinearLogic α U
 
 
 class HasNonLinearLogic (U : Universe) [HasUnivFunctors U U] where
@@ -1877,19 +1946,20 @@ namespace HasNonLinearLogic
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasNonLinearLogic U]
 
-  instance hasDupPi (A B : U) : HasDupPi (Function.const A (Function.const A B)) :=
-    ⟨(h.defDupFun₂ A B).app⟩
-  instance (A B : U) : HasDupPi (λ _ : A => Function.const A B) := hasDupPi A B
-  instance (A B : U) : HasDupPi (λ _ _ : A => B) := hasDupPi A B
-
-  instance hasDupPiFun (A B : U) : HasDupPiFun (Function.const A (Function.const A B)) :=
-    ⟨(h.defDupFun₂ A B).toDefFun⟩
-  instance (A B : U) : HasDupPiFun (λ _ : A => Function.const A B) := hasDupPiFun A B
-  instance (A B : U) : HasDupPiFun (λ _ _ : A => B) := hasDupPiFun A B
+  instance hasExternalNonLinearLogic (A : U) : HasExternalNonLinearLogic A U where
+    defDupFun₂ B := h.defDupFun₂ A B
 
 end HasNonLinearLogic
 
 class HasFullLogic (U : Universe) extends HasAffineLogic U, HasNonLinearLogic U
+
+namespace HasFullLogic
+
+  variable {U : Universe} [h : HasFullLogic U]
+
+  instance hasExternalFullLogic (A : U) : HasExternalFullLogic A U := ⟨⟩
+
+end HasFullLogic
 
 
 
@@ -1913,10 +1983,10 @@ end HasExternalPiType
 
 class HasExternalPiType₂ {α : Sort u} {β : Sort u'} {V : Universe} [HasLinearLogic V]
                          (P : α → β → V) where
-  [hasAppPiType (a : α) : HasExternalPiType (P a)]
-  [hasSwapAppPiType (b : β) : HasExternalPiType (λ a => P a b)]
-  [hasPiType₂ : HasExternalPiType (λ a => Pi (P a))]
-  [hasSwapPi : HasSwapPi P]
+  [hAppPiType (a : α) : HasExternalPiType (P a)]
+  [hSwapAppPiType (b : β) : HasExternalPiType (λ a => P a b)]
+  [hPiType₂ : HasExternalPiType (λ a => Pi (P a))]
+  [hSwapPi : HasSwapPi P]
   defRevSwapPiFun (b : β) : Pi₂ P ⥤{λ F => HasSwapPi.swapPi F b} Pi (λ a => P a b)
 
 namespace HasExternalPiType₂
@@ -1924,12 +1994,12 @@ namespace HasExternalPiType₂
   variable {α : Sort u} {β : Sort u'} {V : Universe} [HasLinearLogic V] (P : α → β → V)
            [h : HasExternalPiType₂ P]
 
-  instance (a : α) : HasExternalPiType (P a) := h.hasAppPiType a
-  instance (a : α) : HasExternalPiType ((λ a b => P a b) a) := h.hasAppPiType a
-  instance (b : β) : HasExternalPiType (λ a => P a b) := h.hasSwapAppPiType b
-  instance (b : β) : HasExternalPiType ((λ b a => P a b) b) := h.hasSwapAppPiType b
-  instance : HasExternalPiType (λ a => Pi (P a)) := h.hasPiType₂
-  instance : HasSwapPi P := h.hasSwapPi
+  instance (a : α) : HasExternalPiType (P a) := h.hAppPiType a
+  instance (a : α) : HasExternalPiType ((λ a b => P a b) a) := h.hAppPiType a
+  instance (b : β) : HasExternalPiType (λ a => P a b) := h.hSwapAppPiType b
+  instance (b : β) : HasExternalPiType ((λ b a => P a b) b) := h.hSwapAppPiType b
+  instance : HasExternalPiType (λ a => Pi (P a)) := h.hPiType₂
+  instance : HasSwapPi P := h.hSwapPi
 
   instance : HasPiType (λ b => Pi (λ a => P a b)) where
     defPiType := { A    := Pi₂ P,

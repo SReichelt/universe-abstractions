@@ -11,7 +11,7 @@ open Universe HasFunctors
 
 
 
-class HasProducts {U : Universe} [HasLinearLogic U] (A B : U) where
+class HasProducts {U : Universe} [HasUnivFunctors U U] (A B : U) where
   defProdType : DefTypeWithIntro U (PProd A B)
   defIntroFun₂ : A ⥤ B ⥤{λ a b => DefTypeWithIntro.inst defProdType ⟨a, b⟩} defProdType.A
   defElimFun₂ (C : U) :
@@ -19,7 +19,7 @@ class HasProducts {U : Universe} [HasLinearLogic U] (A B : U) where
 
 namespace HasProducts
 
-  variable {U : Universe} [HasLinearLogic U]
+  variable {U : Universe} [HasUnivFunctors U U]
 
   @[reducible] def Prod (A B : U) [h : HasProducts A B] : U := h.defProdType
   infix:35 " ⊓ " => HasProducts.Prod
@@ -66,12 +66,12 @@ namespace HasProducts
 end HasProducts
 
 
-class HasInnerProducts (U : Universe) [HasLinearLogic U] where
+class HasInnerProducts (U : Universe) [HasUnivFunctors U U] where
   [hProd (A B : U) : HasProducts A B]
 
 namespace HasInnerProducts
 
-  variable {U : Universe} [HasLinearLogic U] [h : HasInnerProducts U]
+  variable {U : Universe} [HasUnivFunctors U U] [h : HasInnerProducts U]
 
   instance (A B : U) : HasProducts A B := h.hProd A B
 

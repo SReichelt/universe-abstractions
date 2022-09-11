@@ -39,6 +39,8 @@ namespace prop
 
   instance hasTrivialFunctoriality : HasTrivialFunctoriality prop prop := ⟨⟩
 
+  instance hasExternalFullLogic (p : Prop) : HasExternalFullLogic p prop := inferInstance
+
   instance hasFullLogic : HasFullLogic prop := inferInstance
 
   instance hasTop : HasTop prop where
