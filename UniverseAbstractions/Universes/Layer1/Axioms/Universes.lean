@@ -88,19 +88,3 @@ namespace Universe
   end DefTypeWithIntro
 
 end Universe
-
-
-
-class HasPropType (U : Universe.{u, uu}) where
-  propType : U
-  [hPropInst : HasInstances.{v, u} propType]
-
-namespace HasPropType
-
-  variable (U : Universe.{u, uu}) [h : HasPropType U]
-
-  instance : HasInstances.{v, u} h.propType := h.hPropInst
-
-  def propUniv : Universe.{v, u} := ⟨h.propType⟩
-
-end HasPropType

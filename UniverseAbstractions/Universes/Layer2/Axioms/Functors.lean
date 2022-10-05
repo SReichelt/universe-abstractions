@@ -94,6 +94,10 @@ namespace HasPiTypeBase
 
     variable {α : Sort u} {P : α → V} [h : HasPiTypeBase P]
 
+    def byDef {f : ∀ a, P a} {F : Layer1.HasPiType.DefPi P f} [hF : DefType.HasDefInstEq F] {a : α} :
+        F.inst a ≃ f a :=
+      hF.e a
+
     @[reducible] def congrFun {F G : Pi P} (e : F ≃ G) (a : α) : F a ≃ G a :=
       (h.defPiType.elimCongrArg e) a
 
@@ -160,6 +164,12 @@ namespace HasPiTypeBase
     variable {α : Sort u} {β : Sort u'} {P : α → β → V} [∀ a, HasPiTypeBase (P a)]
              [HasPiTypeBase (λ a => Pi (P a))]
 
+    def byDef₂ {f : ∀ a b, P a b} {F : Layer1.HasPiType.DefPi₂ P f}
+               [hFa : ∀ a, DefType.HasDefInstEq (F.app a)] [hF : DefType.HasDefInstEq F.toDefPi]
+               {a : α} {b : β} :
+        F.inst a b ≃ f a b :=
+      byDef (hF := hFa a) • congrFun (byDef (hF := hF)) b
+
     @[reducible] def congrFun₂ {F G : Pi₂ P} (e : F ≃ G) (a : α) (b : β) : F a b ≃ G a b :=
       congrFun (congrFun e a) b
 
@@ -205,6 +215,13 @@ namespace HasPiTypeBase
     variable {α : Sort u} {β : Sort u'} {γ : Sort u''} {P : α → β → γ → V}
              [∀ a b, HasPiTypeBase (P a b)] [∀ a, HasPiTypeBase (λ b => Pi (P a b))]
              [HasPiTypeBase (λ a => Pi₂ (P a))]
+
+    def byDef₃ {f : ∀ a b c, P a b c} {F : Layer1.HasPiType.DefPi₃ P f}
+               [hFab : ∀ a b, DefType.HasDefInstEq ((F.app a).app b)]
+               [hFa : ∀ a, DefType.HasDefInstEq (F.app a).toDefPi]
+               [hF : DefType.HasDefInstEq F.toDefPi] {a : α} {b : β} {c : γ} :
+        F.inst a b c ≃ f a b c :=
+      byDef₂ (hFa := hFab a) (hF := hFa a) • congrFun₂ (byDef (hF := hF)) b c
 
     @[reducible] def congrFun₃ {F G : Pi₃ P} (e : F ≃ G) (a : α) (b : β) (c : γ) :
         F a b c ≃ G a b c :=
@@ -257,6 +274,14 @@ namespace HasPiTypeBase
     variable {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''} {P : α → β → γ → δ → V}
              [∀ a b c, HasPiTypeBase (P a b c)] [∀ a b, HasPiTypeBase (λ c => Pi (P a b c))]
              [∀ a, HasPiTypeBase (λ b => Pi₂ (P a b))] [HasPiTypeBase (λ a => Pi₃ (P a))]
+
+    def byDef₄ {f : ∀ a b c d, P a b c d} {F : Layer1.HasPiType.DefPi₄ P f}
+               [hFabc : ∀ a b c, DefType.HasDefInstEq (((F.app a).app b).app c)]
+               [hFab : ∀ a b, DefType.HasDefInstEq ((F.app a).app b).toDefPi]
+               [hFa : ∀ a, DefType.HasDefInstEq (F.app a).toDefPi]
+               [hF : DefType.HasDefInstEq F.toDefPi] {a : α} {b : β} {c : γ} {d : δ} :
+        F.inst a b c d ≃ f a b c d :=
+      byDef₃ (hFab := hFabc a) (hFa := hFab a) (hF := hFa a) • congrFun₃ (byDef (hF := hF)) b c d
 
     @[reducible] def congrFun₄ {F G : Pi₄ P} (e : F ≃ G) (a : α) (b : β) (c : γ) (d : δ) :
         F a b c d ≃ G a b c d :=
@@ -546,24 +571,25 @@ namespace HasPiTypeBase
 
       variable {α : Sort u} {P : α → V} [h : HasPiTypeBase P]
 
-      def mk {f : ∀ a, P a} (F : Pi P) (e : ∀ a, F a ≃ f a) : DefPi P f := ⟨⟨F⟩, ⟨e⟩⟩
+      def mk {f : ∀ a, P a} (F : Layer1.HasPiType.DefPi P f) (e : ∀ a, F.inst a ≃ f a) :
+          DefPi P f :=
+        ⟨F, ⟨e⟩⟩
 
       @[reducible] def inst {f : ∀ a, P a} (F : DefPi P f) : Pi P := F.toDefInst.inst
 
       instance coeType (f : ∀ a, P a) : Coe (DefPi P f) (Pi P) :=
         DefType.DefInst.coeType h.defPiType f
 
-      @[reducible] def byDef {f : ∀ a, P a} {F : DefPi P f} {a : α} : F.inst a ≃ f a := F.e a
+      @[reducible] def toLayer1 {f : ∀ a, P a} (F : DefPi P f) : Layer1.HasPiType.DefPi P f :=
+        F.toDefInst
+
+      instance (f : ∀ a, P a) : Coe (DefPi P f) (Layer1.HasPiType.DefPi P f) := ⟨toLayer1⟩
 
       -- TODO: It seems that this should work.
       --def isPiApp {f : ∀ a, P a} (F : DefPi P f) {a : α} : IsPiApp (f a) := ⟨F, a, rfl, F.e a⟩
 
       @[reducible] def cast {f g : ∀ a, P a} (efg : ∀ a, f a ≃ g a) (F : DefPi P f) : DefPi P g :=
         DefType.DefInst.cast efg F
-
-      def toLayer1 {f : ∀ a, P a} (F : DefPi P f) : Layer1.HasPiType.DefPi P f := F.toDefInst
-
-      instance (f : ∀ a, P a) : Coe (DefPi P f) (Layer1.HasPiType.DefPi P f) := ⟨toLayer1⟩
 
       @[reducible] def DefEquiv {f : ∀ a, P a} (F G : DefPi P f) :=
         DefType.DefInst.DefInstEquiv F G
@@ -584,10 +610,15 @@ namespace HasPiTypeBase
 
       @[reducible] def defAppPi (F : Pi P) : DefPi P (apply F) := DefType.DefInst.fromInst F
 
+      def defCongrFun {f g : ∀ a, P a} (F : DefPi P f) (G : DefPi P g) (e : F.inst ≃ G.inst)
+                      (a : α) :
+          f a ≃ g a :=
+        byDef • congrFun e a • byDef⁻¹
+
       def hasEqPi {f g : ∀ a, P a} (F : DefPi P f) (G : DefPi P g) :
           Layer1.HasPiType (λ a => f a ≃ g a) where
         defPiType := { A    := F.inst ≃ G.inst,
-                       elim := λ e a => byDef • congrFun e a • byDef⁻¹ }
+                       elim := defCongrFun F G }
 
     end DefPi
 
@@ -605,12 +636,13 @@ namespace HasPiTypeBase
 
       instance coeType (f : ∀ a b, P a b) : Coe (DefPi₂ P f) (Pi₂ P) := ⟨inst⟩
 
-      def e {f : ∀ a b, P a b} (F : DefPi₂ P f) (a : α) (b : β) : F.inst a b ≃ f a b :=
-        (F.app a).e b • congrFun (F.toDefPi.e a) b
+      @[reducible] def toLayer1 {f : ∀ a b, P a b} (F : DefPi₂ P f) : Layer1.HasPiType.DefPi₂ P f :=
+        ⟨λ a => (F.app a).toLayer1, F.toDefPi.toLayer1⟩
 
-      @[reducible] def byDef {f : ∀ a b, P a b} {F : DefPi₂ P f} {a : α} {b : β} :
-          F.inst a b ≃ f a b :=
-        F.e a b
+      instance (f : ∀ a b, P a b) : Coe (DefPi₂ P f) (Layer1.HasPiType.DefPi₂ P f) := ⟨toLayer1⟩
+
+      def e {f : ∀ a b, P a b} (F : DefPi₂ P f) (a : α) (b : β) : F.inst a b ≃ f a b :=
+        byDef₂ (F := F.toLayer1)
 
       def toDefInst {f : ∀ a b, P a b} (F : DefPi₂ P f) : DefType.DefInst (defPiType₂ P) f :=
         ⟨⟨F.inst⟩, ⟨F.e⟩⟩
@@ -620,11 +652,6 @@ namespace HasPiTypeBase
 
       def cast {f g : ∀ a b, P a b} (efg : ∀ a b, f a b ≃ g a b) (F : DefPi₂ P f) : DefPi₂ P g :=
         ⟨λ a => DefPi.cast (efg a) (F.app a), F.toDefPi⟩
-
-      def toLayer1 {f : ∀ a b, P a b} (F : DefPi₂ P f) : Layer1.HasPiType.DefPi₂ P f :=
-        ⟨λ a => (F.app a).toLayer1, F.toDefPi.toLayer1⟩
-
-      instance (f : ∀ a b, P a b) : Coe (DefPi₂ P f) (Layer1.HasPiType.DefPi₂ P f) := ⟨toLayer1⟩
 
       structure DefEquiv {f : ∀ a b, P a b} (F G : DefPi₂ P f) where
         app (a : α) : DefPi.DefEquiv (F.app a) (G.app a)
@@ -686,13 +713,15 @@ namespace HasPiTypeBase
 
       instance coeType (f : ∀ a b c, P a b c) : Coe (DefPi₃ P f) (Pi₃ P) := ⟨inst⟩
 
+      @[reducible] def toLayer1 {f : ∀ a b c, P a b c} (F : DefPi₃ P f) :
+          Layer1.HasPiType.DefPi₃ P f :=
+        ⟨λ a => (F.app a).toLayer1, F.toDefPi.toLayer1⟩
+
+      instance (f : ∀ a b c, P a b c) : Coe (DefPi₃ P f) (Layer1.HasPiType.DefPi₃ P f) := ⟨toLayer1⟩
+
       def e {f : ∀ a b c, P a b c} (F : DefPi₃ P f) (a : α) (b : β) (c : γ) :
           F.inst a b c ≃ f a b c :=
-        (F.app a).e b c • congrFun₂ (F.toDefPi.e a) b c
-
-      @[reducible] def byDef {f : ∀ a b c, P a b c} {F : DefPi₃ P f} {a : α} {b : β} {c : γ} :
-          F.inst a b c ≃ f a b c :=
-        F.e a b c
+        byDef₃ (F := F.toLayer1)
 
       def toDefInst {f : ∀ a b c, P a b c} (F : DefPi₃ P f) : DefType.DefInst (defPiType₃ P) f :=
         ⟨⟨F.inst⟩, ⟨F.e⟩⟩
@@ -705,11 +734,6 @@ namespace HasPiTypeBase
       def cast {f g : ∀ a b c, P a b c} (efg : ∀ a b c, f a b c ≃ g a b c) (F : DefPi₃ P f) :
           DefPi₃ P g :=
         ⟨λ a => DefPi₂.cast (efg a) (F.app a), F.toDefPi⟩
-
-      def toLayer1 {f : ∀ a b c, P a b c} (F : DefPi₃ P f) : Layer1.HasPiType.DefPi₃ P f :=
-        ⟨λ a => (F.app a).toLayer1, F.toDefPi.toLayer1⟩
-
-      instance (f : ∀ a b c, P a b c) : Coe (DefPi₃ P f) (Layer1.HasPiType.DefPi₃ P f) := ⟨toLayer1⟩
 
       structure DefEquiv {f : ∀ a b c, P a b c} (F G : DefPi₃ P f) where
         app (a : α) : DefPi₂.DefEquiv (F.app a) (G.app a)
@@ -775,14 +799,16 @@ namespace HasPiTypeBase
 
       instance coeType (f : ∀ a b c d, P a b c d) : Coe (DefPi₄ P f) (Pi₄ P) := ⟨inst⟩
 
+      @[reducible] def toLayer1 {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) :
+          Layer1.HasPiType.DefPi₄ P f :=
+        ⟨λ a => (F.app a).toLayer1, F.toDefPi.toLayer1⟩
+
+      instance (f : ∀ a b c d, P a b c d) : Coe (DefPi₄ P f) (Layer1.HasPiType.DefPi₄ P f) :=
+        ⟨toLayer1⟩
+
       def e {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) (a : α) (b : β) (c : γ) (d : δ) :
           F.inst a b c d ≃ f a b c d :=
-        (F.app a).e b c d • congrFun₃ (F.toDefPi.e a) b c d
-
-      @[reducible] def byDef {f : ∀ a b c d, P a b c d} {F : DefPi₄ P f} {a : α} {b : β} {c : γ}
-                             {d : δ} :
-          F.inst a b c d ≃ f a b c d :=
-        F.e a b c d
+        byDef₄ (F := F.toLayer1)
 
       def toDefInst {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) :
           DefType.DefInst (defPiType₄ P) f :=
@@ -799,12 +825,6 @@ namespace HasPiTypeBase
                (F : DefPi₄ P f) :
           DefPi₄ P g :=
         ⟨λ a => DefPi₃.cast (efg a) (F.app a), F.toDefPi⟩
-
-      def toLayer1 {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) : Layer1.HasPiType.DefPi₄ P f :=
-        ⟨λ a => (F.app a).toLayer1, F.toDefPi.toLayer1⟩
-
-      instance (f : ∀ a b c d, P a b c d) : Coe (DefPi₄ P f) (Layer1.HasPiType.DefPi₄ P f) :=
-        ⟨toLayer1⟩
 
       structure DefEquiv {f : ∀ a b c d, P a b c d} (F G : DefPi₄ P f) where
         app (a : α) : DefPi₃.DefEquiv (F.app a) (G.app a)
@@ -1077,7 +1097,7 @@ namespace HasFunctors
 
     instance : HasPiTypeBase (λ _ : α => Y) := h.toHasPiTypeBase
 
-    instance : Layer1.HasFunctors α Y := ⟨⟩
+    instance toLayer1 : Layer1.HasFunctors α Y := ⟨⟩
 
   end
 
@@ -1150,6 +1170,9 @@ namespace HasFunctors
 
     @[reducible] def equivalenceFunctor (F : α ⥤ Y) : EquivalenceFunctor α Y := h.defFunType.elim F
 
+    def byDef {f : α → Y} {F : α ⥤{f} Y} [hF : DefType.HasDefInstEq F] {a : α} : F.inst a ≃ f a :=
+      HasPiTypeBase.byDef
+
     @[reducible] def congrArgFun (F : α ⥤ Y) (a b : α) : a ≃ b ⥤ F a ≃ F b :=
       (equivalenceFunctor F).hφ.inst a b
 
@@ -1187,6 +1210,11 @@ namespace HasFunctors
              [Layer1.HasEquivalenceRelationBase U.V β] {Y : U} [HasFunctors β Y]
              [HasFunctors α (β ⥤ Y)]
 
+    def byDef₂ {f : α → β → Y} {F : α ⥤ β ⥤{f} Y} [hFa : ∀ a, DefType.HasDefInstEq (F.app a)]
+               [hF : DefType.HasDefInstEq F.toDefFun] {a : α} {b : β} :
+        F.inst a b ≃ f a b :=
+      HasPiTypeBase.byDef₂
+
     @[reducible] def congrArg₂ (F : α ⥤ β ⥤ Y) {a₁ a₂ : α} (ea : a₁ ≃ a₂) {b₁ b₂ : β}
                                (eb : b₁ ≃ b₂) :
         F a₁ b₁ ≃ F a₂ b₂ :=
@@ -1205,6 +1233,13 @@ namespace HasFunctors
     variable {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
              [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
              {Y : U} [HasFunctors γ Y] [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)]
+
+    def byDef₃ {f : α → β → γ → Y} {F : α ⥤ β ⥤ γ ⥤{f} Y}
+               [hFab : ∀ a b, DefType.HasDefInstEq ((F.app a).app b)]
+               [hFa : ∀ a, DefType.HasDefInstEq (F.app a).toDefFun]
+               [hF : DefType.HasDefInstEq F.toDefFun] {a : α} {b : β} {c : γ} :
+        F.inst a b c ≃ f a b c :=
+      HasPiTypeBase.byDef₃
 
     @[reducible] def congrArg₃ (F : α ⥤ β ⥤ γ ⥤ Y) {a₁ a₂ : α} (ea : a₁ ≃ a₂) {b₁ b₂ : β}
                                (eb : b₁ ≃ b₂) {c₁ c₂ : γ} (ec : c₁ ≃ c₂) :
@@ -1225,6 +1260,14 @@ namespace HasFunctors
              [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
              [Layer1.HasEquivalenceRelationBase U.V δ] {Y : U} [HasFunctors δ Y]
              [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)]
+
+    def byDef₄ {f : α → β → γ → δ → Y} {F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y}
+               [hFabc : ∀ a b c, DefType.HasDefInstEq (((F.app a).app b).app c)]
+               [hFab : ∀ a b, DefType.HasDefInstEq ((F.app a).app b).toDefFun]
+               [hFa : ∀ a, DefType.HasDefInstEq (F.app a).toDefFun]
+               [hF : DefType.HasDefInstEq F.toDefFun] {a : α} {b : β} {c : γ} {d : δ} :
+        F.inst a b c d ≃ f a b c d :=
+      HasPiTypeBase.byDef₄
 
     @[reducible] def congrArg₄ (F : α ⥤ β ⥤ γ ⥤ δ ⥤ Y) {a₁ a₂ : α} (ea : a₁ ≃ a₂) {b₁ b₂ : β}
                                (eb : b₁ ≃ b₂) {c₁ c₂ : γ} (ec : c₁ ≃ c₂) {d₁ d₂ : δ} (ed : d₁ ≃ d₂) :
@@ -1514,9 +1557,19 @@ namespace HasFunctors
       instance coeType (f : EquivalenceFunctor α Y) : Coe (α ⥤⦃f⦄ Y) (α ⥤ Y) :=
         DefType.DefInst.coeType h.defFunType f
 
-      @[reducible] def byDef {f : EquivalenceFunctor α Y} {F : α ⥤⦃f⦄ Y} {a : α} :
-          F.inst a ≃ f a :=
-        F.e a
+      def toLayer1 {f : EquivalenceFunctor α Y} (F : α ⥤⦃f⦄ Y) : α ⥤{f.φ} Y :=
+        ⟨F.inst⟩
+
+      instance (f : EquivalenceFunctor α Y) : Coe (α ⥤⦃f⦄ Y) (α ⥤{f.φ} Y) := ⟨toLayer1⟩
+
+      def toDefPi {f : EquivalenceFunctor α Y} (F : α ⥤⦃f⦄ Y) : DefPi (Function.const α Y) f.φ :=
+        ⟨⟨F.inst⟩, ⟨F.e⟩⟩
+
+      instance (f : EquivalenceFunctor α Y) : Coe (α ⥤⦃f⦄ Y) (DefPi (Function.const α Y) f.φ) :=
+        ⟨toDefPi⟩
+
+      instance {f : EquivalenceFunctor α Y} (F : α ⥤⦃f⦄ Y) : DefType.HasDefInstEq F.toLayer1 :=
+        F.toDefPi.toHasDefInstEq
 
       def isFunApp {f : EquivalenceFunctor α Y} (F : α ⥤⦃f⦄ Y) {a : α} : IsFunApp (f a) :=
         ⟨F.inst, a, F.e a⟩
@@ -1526,16 +1579,6 @@ namespace HasFunctors
           α ⥤⦃g⦄ Y :=
         DefType.DefInst.cast efg F
       infix:60 " ► " => HasFunctors.DefFun.cast
-
-      def toDefPi {f : EquivalenceFunctor α Y} (F : α ⥤⦃f⦄ Y) : DefPi (Function.const α Y) f.φ :=
-        ⟨⟨F.inst⟩, ⟨F.e⟩⟩
-
-      instance (f : EquivalenceFunctor α Y) : Coe (α ⥤⦃f⦄ Y) (DefPi (Function.const α Y) f.φ) :=
-        ⟨toDefPi⟩
-
-      def toLayer1 {f : EquivalenceFunctor α Y} (F : α ⥤⦃f⦄ Y) : α ⥤{f.φ} Y := ⟨F.inst⟩
-
-      instance (f : EquivalenceFunctor α Y) : Coe (α ⥤⦃f⦄ Y) (α ⥤{f.φ} Y) := ⟨toLayer1⟩
 
       @[reducible] def DefEquiv {f : EquivalenceFunctor α Y} (F G : α ⥤⦃f⦄ Y) :=
         DefPi.DefEquiv (toDefPi F) (toDefPi G)
@@ -1580,13 +1623,16 @@ namespace HasFunctors
 
       instance coeType (f : EquivalenceFunctor₂ α β Y) : Coe (α ⥤ β ⥤⦃f⦄ Y) (α ⥤ β ⥤ Y) := ⟨inst⟩
 
+      @[reducible] def toLayer1 {f : EquivalenceFunctor₂ α β Y} (F : α ⥤ β ⥤⦃f⦄ Y) :
+          α ⥤ β ⥤{f.φ} Y :=
+        ⟨λ a => (F.app a).toLayer1, F.toDefFun.toLayer1⟩
+
+      instance (f : EquivalenceFunctor₂ α β Y) : Coe (α ⥤ β ⥤⦃f⦄ Y) (α ⥤ β ⥤{f.φ} Y) :=
+        ⟨toLayer1⟩
+
       def e {f : EquivalenceFunctor₂ α β Y} (F : α ⥤ β ⥤⦃f⦄ Y) (a : α) (b : β) :
           F.inst a b ≃ f a b :=
-        (F.app a).e b • congrFun (F.toDefFun.e a) b
-
-      @[reducible] def byDef {f : EquivalenceFunctor₂ α β Y} {F : α ⥤ β ⥤⦃f⦄ Y} {a : α} {b : β} :
-          F.inst a b ≃ f a b :=
-        F.e a b
+        byDef₂ (F := F.toLayer1)
 
       def isFunApp₂ {f : EquivalenceFunctor₂ α β Y} (F : α ⥤ β ⥤⦃f⦄ Y) {a : α} {b : β} :
           IsFunApp₂ (f a b) :=
@@ -1619,12 +1665,6 @@ namespace HasFunctors
       instance (f : EquivalenceFunctor₂ α β Y) :
           Coe (α ⥤ β ⥤⦃f⦄ Y) (DefPi₂ (Function.const α (Function.const β Y)) f.φ) :=
         ⟨toDefPi₂⟩
-
-      def toLayer1 {f : EquivalenceFunctor₂ α β Y} (F : α ⥤ β ⥤⦃f⦄ Y) : α ⥤ β ⥤{f.φ} Y :=
-        ⟨λ a => (F.app a).toLayer1, F.toDefFun.toLayer1⟩
-
-      instance (f : EquivalenceFunctor₂ α β Y) : Coe (α ⥤ β ⥤⦃f⦄ Y) (α ⥤ β ⥤{f.φ} Y) :=
-        ⟨toLayer1⟩
 
       @[reducible] def DefEquiv {f : EquivalenceFunctor₂ α β Y} (F G : α ⥤ β ⥤⦃f⦄ Y) :=
         DefPi₂.DefEquiv (toDefPi₂ F) (toDefPi₂ G)
@@ -1683,14 +1723,16 @@ namespace HasFunctors
           Coe (α ⥤ β ⥤ γ ⥤⦃f⦄ Y) (α ⥤ β ⥤ γ ⥤ Y) :=
         ⟨inst⟩
 
+      @[reducible] def toLayer1 {f : EquivalenceFunctor₃ α β γ Y} (F : α ⥤ β ⥤ γ ⥤⦃f⦄ Y) :
+          α ⥤ β ⥤ γ ⥤{f.φ} Y :=
+        ⟨λ a => (F.app a).toLayer1, F.toDefFun.toLayer1⟩
+
+      instance (f : EquivalenceFunctor₃ α β γ Y) : Coe (α ⥤ β ⥤ γ ⥤⦃f⦄ Y) (α ⥤ β ⥤ γ ⥤{f.φ} Y) :=
+        ⟨toLayer1⟩
+
       def e {f : EquivalenceFunctor₃ α β γ Y} (F : α ⥤ β ⥤ γ ⥤⦃f⦄ Y) (a : α) (b : β) (c : γ) :
           F.inst a b c ≃ f a b c :=
-        (F.app a).e b c • congrFun₂ (F.toDefFun.e a) b c
-
-      @[reducible] def byDef {f : EquivalenceFunctor₃ α β γ Y} {F : α ⥤ β ⥤ γ ⥤⦃f⦄ Y} {a : α}
-                             {b : β} {c : γ} :
-          F.inst a b c ≃ f a b c :=
-        F.e a b c
+        byDef₃ (F := F.toLayer1)
 
       def isFunApp₃ {f : EquivalenceFunctor₃ α β γ Y} (F : α ⥤ β ⥤ γ ⥤⦃f⦄ Y) {a : α} {b : β}
                     {c : γ} :
@@ -1726,13 +1768,6 @@ namespace HasFunctors
           Coe (α ⥤ β ⥤ γ ⥤⦃f⦄ Y)
               (DefPi₃ (Function.const α (Function.const β (Function.const γ Y))) f.φ) :=
         ⟨toDefPi₃⟩
-
-      def toLayer1 {f : EquivalenceFunctor₃ α β γ Y} (F : α ⥤ β ⥤ γ ⥤⦃f⦄ Y) :
-          α ⥤ β ⥤ γ ⥤{f.φ} Y :=
-        ⟨λ a => (F.app a).toLayer1, F.toDefFun.toLayer1⟩
-
-      instance (f : EquivalenceFunctor₃ α β γ Y) : Coe (α ⥤ β ⥤ γ ⥤⦃f⦄ Y) (α ⥤ β ⥤ γ ⥤{f.φ} Y) :=
-        ⟨toLayer1⟩
 
       @[reducible] def DefEquiv {f : EquivalenceFunctor₃ α β γ Y}
                                 (F G : α ⥤ β ⥤ γ ⥤⦃f⦄ Y) :=
@@ -1801,15 +1836,18 @@ namespace HasFunctors
           Coe (α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) (α ⥤ β ⥤ γ ⥤ δ ⥤ Y) :=
         ⟨inst⟩
 
+      @[reducible] def toLayer1 {f : EquivalenceFunctor₄ α β γ δ Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) :
+          α ⥤ β ⥤ γ ⥤ δ ⥤{f.φ} Y :=
+        ⟨λ a => (F.app a).toLayer1, F.toDefFun.toLayer1⟩
+
+      instance (f : EquivalenceFunctor₄ α β γ δ Y) :
+          Coe (α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) (α ⥤ β ⥤ γ ⥤ δ ⥤{f.φ} Y) :=
+        ⟨toLayer1⟩
+
       def e {f : EquivalenceFunctor₄ α β γ δ Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) (a : α) (b : β) (c : γ)
             (d : δ) :
           F.inst a b c d ≃ f a b c d :=
-        (F.app a).e b c d • congrFun₃ (F.toDefFun.e a) b c d
-
-      @[reducible] def byDef {f : EquivalenceFunctor₄ α β γ δ Y} {F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y}
-                             {a : α} {b : β} {c : γ} {d : δ} :
-          F.inst a b c d ≃ f a b c d :=
-        F.e a b c d
+        byDef₄ (F := F.toLayer1)
 
       def isFunApp₄ {f : EquivalenceFunctor₄ α β γ δ Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) {a : α} {b : β}
                     {c : γ} {d : δ} :
@@ -1847,14 +1885,6 @@ namespace HasFunctors
               (DefPi₄ (Function.const α (Function.const β (Function.const γ (Function.const δ Y))))
                       f.φ) :=
         ⟨toDefPi₄⟩
-
-      def toLayer1 {f : EquivalenceFunctor₄ α β γ δ Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) :
-          α ⥤ β ⥤ γ ⥤ δ ⥤{f.φ} Y :=
-        ⟨λ a => (F.app a).toLayer1, F.toDefFun.toLayer1⟩
-
-      instance (f : EquivalenceFunctor₄ α β γ δ Y) :
-          Coe (α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) (α ⥤ β ⥤ γ ⥤ δ ⥤{f.φ} Y) :=
-        ⟨toLayer1⟩
 
       @[reducible] def DefEquiv {f : EquivalenceFunctor₄ α β γ δ Y} (F G : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) :=
         DefPi₄.DefEquiv (toDefPi₄ F) (toDefPi₄ G)
@@ -2098,16 +2128,20 @@ class HasRevCompFunPiFun (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalence
 
 namespace HasRevCompFunPiFun
 
-  variable (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α] {W : Universe}
-           [HasUnivFunctors W W] {B : V} [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
-           [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
-           [HasPiTypeBase (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => Q (F a)))]
-           [h : HasRevCompFunPiFun α Q]
+  section
 
-  instance toLayer1 : Layer1.HasRevCompFunPiFun α Q := ⟨h.defRevCompFunPiFun.toLayer1⟩
+    variable (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α]
+             {W : Universe} [HasUnivFunctors W W] {B : V} [HasFunctors α B] (Q : B → W)
+             [HasPiTypeBase Q] [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
+             [HasPiTypeBase (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => Q (F a)))]
+             [h : HasRevCompFunPiFun α Q]
 
-  instance hasDefInstEq : DefType.HasDefInstEq (toLayer1 α Q).defRevCompFunPiFun :=
-    ⟨h.defRevCompFunPiFun.e⟩
+    instance toLayer1 : Layer1.HasRevCompFunPiFun α Q := ⟨h.defRevCompFunPiFun.toLayer1⟩
+
+    instance hasDefInstEq : DefType.HasDefInstEq (toLayer1 α Q).defRevCompFunPiFun :=
+      ⟨h.defRevCompFunPiFun.e⟩
+
+  end
 
 end HasRevCompFunPiFun
 
@@ -2185,7 +2219,7 @@ end HasDupPiFun
 
 
 class HasPiSelfAppPi {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-                     [HasUnivFunctors V U] {A : U} (Q : A → (Universe.fromLayer1 V))
+                     [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V)
                      [HasPiTypeBase Q]
                      [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))] where
   defPiSelfAppPi (F : Layer1.HasPiType.Pi Q ⥤ A) : DefPi (λ G => Q (F G)) (λ G => G (F G))
@@ -2193,7 +2227,7 @@ class HasPiSelfAppPi {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositio
 namespace HasPiSelfAppPi
 
   variable {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-           [HasUnivFunctors V U] {A : U} (Q : A → (Universe.fromLayer1 V)) [HasPiTypeBase Q]
+           [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V) [HasPiTypeBase Q]
            [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))] [h : HasPiSelfAppPi Q]
 
   instance toLayer1 : Layer1.HasPiSelfAppPi Q := ⟨λ F => (h.defPiSelfAppPi F).toLayer1⟩
@@ -2205,7 +2239,7 @@ namespace HasPiSelfAppPi
 end HasPiSelfAppPi
 
 class HasPiSelfAppPi₂ {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-                      [HasUnivFunctors V U] {A : U} (Q : A → (Universe.fromLayer1 V))
+                      [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V)
                       [HasPiTypeBase Q]
                       [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))]
                       [HasPiTypeBase (λ (F : Layer1.HasPiType.Pi Q ⥤ A) =>
@@ -2217,7 +2251,7 @@ class HasPiSelfAppPi₂ {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasProposi
 namespace HasPiSelfAppPi₂
 
   variable {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-           [HasUnivFunctors V U] {A : U} (Q : A → (Universe.fromLayer1 V)) [HasPiTypeBase Q]
+           [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V) [HasPiTypeBase Q]
            [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))]
            [HasPiTypeBase (λ (F : Layer1.HasPiType.Pi Q ⥤ A) => Layer1.HasPiType.Pi (λ G => Q (F G)))]
            [h : HasPiSelfAppPi₂ Q]
@@ -2357,7 +2391,9 @@ namespace HasExternalLinearLogic
 
   @[reducible] def revCompFun.congrArgLeft {B C : U} (F : α ⥤ B) {G₁ G₂ : B ⥤ C} (e : G₁ ≃ G₂) :
       G₁ ⊙ F ≃ G₂ ⊙ F :=
-    DefFun.byDef • congrFun ((h.defRevCompFun₃ B C).appEq.appEq e) F • DefFun.byDef⁻¹
+    DefPi.defCongrFun ((h.defRevCompFun₃ B C).app G₁).toDefPi₂.toDefPi
+                      ((h.defRevCompFun₃ B C).app G₂).toDefPi₂.toDefPi
+                      ((h.defRevCompFun₃ B C).appEq.appEq e) F
 
   @[reducible] def revCompFun₂.congrArg {B C : U} {G₁ G₂ : B ⥤ C} (e : G₁ ≃ G₂) :
       Layer1.HasRevCompFunPi₂.revCompFun₂ α G₁ ≃ Layer1.HasRevCompFunPi₂.revCompFun₂ α G₂ :=
@@ -2406,6 +2442,70 @@ namespace HasExternalLinearLogic
 
   instance (B C : U) : HasRevCompFunPiFun α (λ _ : B => C) := hasRevCompFunPiFun α B C
 
+  instance revAppFun.hasDefInstEq (B : U) (a : α) :
+      DefType.HasDefInstEq (Layer1.HasPiAppFun.defRevAppFun a B) :=
+    HasPiAppFun.hasDefInstEq (Function.const α B) a
+
+  def revAppFun.byDef {B : U} {a : α} {F : α ⥤ B} :
+      (Layer1.HasPiAppFun.revAppFun a B) F ≃ F a :=
+    HasFunctors.byDef
+
+  instance revAppFun₂.hasDefInstEq (B : U) :
+      DefType.HasDefInstEq (Layer1.HasPiAppFunPi.defRevAppFun₂ α B).toDefPi :=
+    HasPiAppFunPi.hasDefInstEq (Function.const α B)
+
+  def revAppFun₂.byDef {B : U} {a : α} :
+      (Layer1.HasPiAppFunPi.revAppFun₂ α B) a ≃ Layer1.HasPiAppFun.revAppFun a B :=
+    HasFunctors.byDef
+
+  def revAppFun₂.byDef₂ {B : U} {a : α} {F : α ⥤ B} :
+      (Layer1.HasPiAppFunPi.revAppFun₂ α B) a F ≃ F a :=
+    HasFunctors.byDef₂ (F := Layer1.HasPiAppFunPi.defRevAppFun₂ α B)
+                       (hFa := revAppFun.hasDefInstEq α B) (hF := revAppFun₂.hasDefInstEq α B)
+
+  instance compFun.hasDefInstEq {B C : U} (F : α ⥤ B) (G : B ⥤ C) :
+      DefType.HasDefInstEq (Layer1.HasCompFunPi.defCompFun F G) :=
+    HasCompFunPi.hasDefInstEq α (Function.const B C) F G
+
+  def compFun.byDef {B C : U} {F : α ⥤ B} {G : B ⥤ C} {a : α} : (G ⊙ F) a ≃ G (F a) :=
+    HasFunctors.byDef
+
+  instance revCompFun₂.hasDefInstEq {B C : U} (G : B ⥤ C) :
+      DefType.HasDefInstEq (Layer1.HasRevCompFunPi₂.defRevCompFun₂ α G).toDefPi :=
+    HasRevCompFunPi₂.hasDefInstEq α (Function.const B C) G
+
+  def revCompFun₂.byDef {B C : U} {G : B ⥤ C} {F : α ⥤ B} :
+      (Layer1.HasRevCompFunPi₂.revCompFun₂ α G) F ≃ G ⊙ F :=
+    HasFunctors.byDef
+
+  def revCompFun₂.byDef₂ {B C : U} {G : B ⥤ C} {F : α ⥤ B} {a : α} :
+      (Layer1.HasRevCompFunPi₂.revCompFun₂ α G) F a ≃ G (F a) :=
+    HasFunctors.byDef₂ (F := Layer1.HasRevCompFunPi₂.defRevCompFun₂ α G)
+                       (hFa := λ F => compFun.hasDefInstEq α F G)
+                       (hF := revCompFun₂.hasDefInstEq α G)
+
+  instance revCompFun₃.hasDefInstEq (B C : U):
+      DefType.HasDefInstEq (Layer1.HasRevCompFunPiFun.defRevCompFun₃ α B C).toDefPi :=
+    HasRevCompFunPiFun.hasDefInstEq α (Function.const B C)
+
+  def revCompFun₃.byDef {B C : U} {G : B ⥤ C} :
+      (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) G ≃ Layer1.HasRevCompFunPi₂.revCompFun₂ α G :=
+    HasFunctors.byDef
+
+  def revCompFun₃.byDef₂ {B C : U} {G : B ⥤ C} {F : α ⥤ B} :
+      (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) G F ≃ G ⊙ F :=
+    HasFunctors.byDef₂ (α := B ⥤ C) (β := α ⥤ B) (Y := α ⥤ C)
+                       (F := (Layer1.HasRevCompFunPiFun.defRevCompFun₃ α B C).toDefFun₂)
+                       (hFa := revCompFun₂.hasDefInstEq α)
+                       (hF := revCompFun₃.hasDefInstEq α B C)
+
+  def revCompFun₃.byDef₃ {B C : U} {G : B ⥤ C} {F : α ⥤ B} {a : α} :
+      (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) G F a ≃ G (F a) :=
+    HasFunctors.byDef₃ (F := Layer1.HasRevCompFunPiFun.defRevCompFun₃ α B C)
+                       (hFab := λ G F => compFun.hasDefInstEq α F G)
+                       (hFa := revCompFun₂.hasDefInstEq α)
+                       (hF := revCompFun₃.hasDefInstEq α B C)
+
 end HasExternalLinearLogic
 
 
@@ -2437,6 +2537,11 @@ namespace HasLinearLogic
   instance hasExternalLinearLogic (A : U) : HasExternalLinearLogic A U where
     defRevAppFun₂  B   := h.defRevAppFun₂  A B
     defRevCompFun₃ B C := h.defRevCompFun₃ A B C
+
+  instance idFun.hasDefInstEq (A : U) : DefType.HasDefInstEq (Layer1.HasIdFun.defIdFun (A := A)) :=
+    HasIdFun.hasDefInstEq A
+
+  def idFun.byDef {A : U} {a : A} : (Layer1.HasIdFun.idFun A) a ≃ a := HasPiTypeBase.byDef
 
 end HasLinearLogic
 
@@ -2482,6 +2587,25 @@ namespace HasExternalSubLinearLogic
     defConstPiEq  := { defAppEq    := λ e => ⟨((h.defConstFun₂ B).appEq.defAppEq e).e⟩,
                        defAppEqFun := λ b₁ b₂ => ⟨((h.defConstFun₂ B).appEq.defAppEqFun b₁ b₂).inst⟩ }
     defConstPiFun := (h.defConstFun₂ B).toDefFun
+
+  instance constFun.hasDefInstEq (B : U) (b : B) :
+      DefType.HasDefInstEq (Layer1.HasConstPi.defConstFun α b) :=
+    HasConstPi.hasDefInstEq α B b
+
+  def constFun.byDef {B : U} {b : B} {a : α} : (Layer1.HasConstPi.constFun α b) a ≃ b :=
+    HasFunctors.byDef
+
+  instance constFun₂.hasDefInstEq (B : U) :
+      DefType.HasDefInstEq (Layer1.HasConstPiFun.defConstFun₂ α B).toDefPi :=
+    HasConstPiFun.hasDefInstEq α B
+
+  def constFun₂.byDef {B : U} {b : B} :
+      (Layer1.HasConstPiFun.constFun₂ α B) b ≃ Layer1.HasConstPi.constFun α b :=
+    HasFunctors.byDef
+
+  def constFun₂.byDef₂ {B : U} {b : B} {a : α} : (Layer1.HasConstPiFun.constFun₂ α B) b a ≃ b :=
+    HasFunctors.byDef₂ (F := Layer1.HasConstPiFun.defConstFun₂ α B)
+                       (hFa := constFun.hasDefInstEq α B) (hF := constFun₂.hasDefInstEq α B)
 
 end HasExternalSubLinearLogic
 
@@ -2578,6 +2702,26 @@ namespace HasExternalNonLinearLogic
                      e    := (h.defDupFun₂ B).toDefFun.e }
   instance (B : U) : HasDupPiFun (λ _ : α => Function.const α B) := hasDupPiFun α B
   instance (B : U) : HasDupPiFun (λ _ _ : α => B) := hasDupPiFun α B
+
+  instance dupFun.hasDefInstEq (B : U) (F : α ⥤ α ⥤ B) :
+      DefType.HasDefInstEq (Layer1.HasDupPi.defDupFun F) :=
+    HasDupPi.hasDefInstEq (Function.const α (Function.const α B)) F
+
+  def dupFun.byDef {B : U} {F : α ⥤ α ⥤ B} {a : α} : (Layer1.HasDupPi.dupFun F) a ≃ F a a :=
+    HasFunctors.byDef
+
+  instance dupFun₂.hasDefInstEq (B : U) :
+      DefType.HasDefInstEq (Layer1.HasDupPiFun.defDupFun₂ α B).toDefPi :=
+    HasDupPiFun.hasDefInstEq (Function.const α (Function.const α B))
+
+  def dupFun₂.byDef {B : U} {F : α ⥤ α ⥤ B} :
+      (Layer1.HasDupPiFun.dupFun₂ α B) F ≃ Layer1.HasDupPi.dupFun F :=
+    HasFunctors.byDef
+
+  def dupFun₂.byDef₂ {B : U} {F : α ⥤ α ⥤ B} {a : α} :
+      (Layer1.HasDupPiFun.dupFun₂ α B) F a ≃ F a a :=
+    HasFunctors.byDef₂ (F := Layer1.HasDupPiFun.defDupFun₂ α B)
+                       (hFa := dupFun.hasDefInstEq α B) (hF := dupFun₂.hasDefInstEq α B)
 
 end HasExternalNonLinearLogic
 

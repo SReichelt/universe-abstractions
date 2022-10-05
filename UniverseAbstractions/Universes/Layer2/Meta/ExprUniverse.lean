@@ -7,7 +7,7 @@ import UniverseAbstractions.Universes.Layer2.Axioms.Universes
 
 namespace UniverseAbstractions.Layer2.Meta
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open Lean Layer1 Layer1.Meta
 

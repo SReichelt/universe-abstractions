@@ -11,7 +11,7 @@ import UniverseAbstractions.Universes.Layer2.Instances.Utils.Trivial
 
 namespace UniverseAbstractions.Layer2
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 universe u uu
 

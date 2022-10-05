@@ -339,6 +339,10 @@ namespace HasPiType
                  DefPi.defAppPi (F.inst a)⟩,
          DefPi.defAppPi F.inst⟩
 
+      def toDefPi₂ {f : ∀ a b c, P a b c} (F : DefPi₃ P f) :
+          DefPi₂ (λ a b => Pi (P a b)) (λ a b => (F.app a).app b) :=
+        ⟨λ a => (F.app a).toDefPi, F.toDefPi⟩
+
       def isPiApp₃ {f : ∀ a b c, P a b c} (F : DefPi₃ P f) {a : α} {b : β} {c : γ} :
           IsPiApp₃ (f a b c) :=
         ⟨F, a, b, c, rfl⟩
@@ -381,6 +385,14 @@ namespace HasPiType
                          DefPi.defAppPi (F.inst a b)⟩,
                  DefPi.defAppPi (F.inst a)⟩,
          DefPi.defAppPi F.inst⟩
+
+      def toDefPi₂ {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) :
+          DefPi₂ (λ a b => Pi₂ (P a b)) (λ a b => (F.app a).app b) :=
+        ⟨λ a => (F.app a).toDefPi, F.toDefPi⟩
+
+      def toDefPi₃ {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) :
+          DefPi₃ (λ a b c => Pi (P a b c)) (λ a b c => ((F.app a).app b).app c) :=
+        ⟨λ a => (F.app a).toDefPi₂, F.toDefPi⟩
 
       def isPiApp₄ {f : ∀ a b c d, P a b c d} (F : DefPi₄ P f) {a : α} {b : β} {c : γ} {d : δ} :
           IsPiApp₄ (f a b c d) :=
@@ -746,6 +758,10 @@ namespace HasFunctors
           α ⥤{λ a => F.app a} (β ⥤ γ ⥤ Y) :=
         DefPi₃.toDefPi F
 
+      @[reducible] def toDefFun₂ {f : α → β → γ → Y} (F : α ⥤ β ⥤ γ ⥤{f} Y) :
+          α ⥤ β ⥤{λ a b => (F.app a).app b} (γ ⥤ Y) :=
+        DefPi₃.toDefPi₂ F
+
       @[reducible] def inst {f : α → β → γ → Y} (F : α ⥤ β ⥤ γ ⥤{f} Y) : α ⥤ β ⥤ γ ⥤ Y :=
         DefPi₃.inst F
 
@@ -792,6 +808,14 @@ namespace HasFunctors
       @[reducible] def toDefFun {f : α → β → γ → δ → Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y) :
           α ⥤{λ a => F.app a} (β ⥤ γ ⥤ δ ⥤ Y) :=
         DefPi₄.toDefPi F
+
+      @[reducible] def toDefFun₂ {f : α → β → γ → δ → Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y) :
+          α ⥤ β ⥤{λ a b => (F.app a).app b} (γ ⥤ δ ⥤ Y) :=
+        DefPi₄.toDefPi₂ F
+
+      @[reducible] def toDefFun₃ {f : α → β → γ → δ → Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y) :
+          α ⥤ β ⥤ γ ⥤{λ a b c => ((F.app a).app b).app c} (δ ⥤ Y) :=
+        DefPi₄.toDefPi₃ F
 
       @[reducible] def inst {f : α → β → γ → δ → Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y) : α ⥤ β ⥤ γ ⥤ δ ⥤ Y :=
         DefPi₄.inst F

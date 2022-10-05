@@ -8,7 +8,7 @@ import UniverseAbstractions.Universes.Layer2.Axioms.FunctorialImplications
 
 namespace UniverseAbstractions.Layer2
 
-set_option autoBoundImplicitLocal false
+set_option autoImplicit false
 
 open HasFunctors
 
