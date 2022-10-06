@@ -9,7 +9,7 @@ set_option autoImplicit false
 
 universe u
 
-open Universe Layer1 Layer1.HasPiType Layer1.HasFunctors Layer1.HasLinearLogic
+open Layer1 Layer1.HasPiType Layer1.HasFunctors Layer1.HasLinearLogic
      Layer1.HasSubLinearLogic Layer1.HasNonLinearLogic Layer1.HasPreorderRelation
      HasPiTypeBase HasFunctors
 

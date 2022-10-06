@@ -14,17 +14,17 @@ set_option autoImplicit false
 
 universe u u' u''
 
-open Universe HasPiType Prerelation HasPreorderRelation HasEquivalenceRelationBase HasEquivalences
+open HasPiType Prerelation HasPreorderRelation HasEquivalenceRelationBase HasEquivalences
 
 
 
-namespace Universe.DefType
+namespace DefType
 
   def native {U : Universe} (A : U) : DefType U A where
     A    := A
     elim := id
 
-end Universe.DefType
+end DefType
 
 
 

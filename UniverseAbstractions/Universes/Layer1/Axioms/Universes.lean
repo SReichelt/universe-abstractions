@@ -1,8 +1,22 @@
-namespace UniverseAbstractions.Layer1
+namespace UniverseAbstractions
 
 set_option autoImplicit false
 
-universe u uu u' v
+universe u uu u' u'' v
+
+
+
+-- Workaround for Lean compiler problems:
+-- Define "compiler_bug" and "compiler_slow" as aliases for "noncomputable".
+def makeNoncomputable (c : Lean.Syntax) : Lean.Syntax :=
+  let declModifiers := c.getArg 0
+  let noncomp := declModifiers.getArg 3
+  let noncomp := noncomp.setArgs #[Lean.mkNode `Command.noncomputable #[Lean.mkAtom "noncomputable"]]
+  let declModifiers := declModifiers.setArg 3 noncomp
+  c.setArg 0 declModifiers
+
+macro "compiler_bug "  c:command : command => pure (makeNoncomputable c)
+macro "compiler_slow " c:command : command => pure (makeNoncomputable c)
 
 
 
@@ -51,6 +65,12 @@ namespace Universe
   instance instInst (U : Universe.{u, uu}) : HasInstances.{u, uu} U.I := U.h
   instance (U : Universe) : HasInstances U := instInst U
 
+end Universe
+
+
+
+namespace Layer1
+
   structure DefType (U : Universe.{u, uu}) (α : Sort u') where
     A : U
     elim : A → α
@@ -72,6 +92,10 @@ namespace Universe
 
     end DefInst
 
+    def map (A : DefType U α) {β : Sort u''} (f : α → β) : DefType U β where
+      A      := A.A
+      elim a := f (A.elim a)
+
   end DefType
 
   structure DefTypeWithIntro (U : Universe.{u, uu}) (α : Sort u') extends DefType U α where
@@ -87,4 +111,4 @@ namespace Universe
 
   end DefTypeWithIntro
 
-end Universe
+end Layer1

@@ -9,8 +9,6 @@ namespace UniverseAbstractions.Layer2
 
 set_option autoImplicit false
 
-open Universe
-
 
 
 -- TODO define real properties

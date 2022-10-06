@@ -7,7 +7,7 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-open Universe HasFunctors
+open HasFunctors
 
 
 

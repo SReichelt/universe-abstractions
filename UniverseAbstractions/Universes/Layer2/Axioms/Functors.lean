@@ -11,57 +11,50 @@ namespace UniverseAbstractions.Layer2
 
 set_option autoImplicit false
 set_option linter.unusedVariables false
+set_option maxHeartbeats 500000
 
 universe u u' u'' u''' w
 
-open Universe Layer1.HasPreorderRelation Layer1.HasEquivalenceRelationBase
+open Layer1.HasPreorderRelation Layer1.HasEquivalenceRelationBase
+
+variable {Prp : Universe} [Layer1.HasLinearLogic Prp] [Layer1.HasEquivalences Prp]
 
 
 
-def funDefEq {α : Sort u} {V : Universe} (P : α → V) {Fun : Sort w} (apply : Fun → ∀ a, P a) :
-    HasDefEq Fun where
-  DefEq F G     := ∀ a, apply F a ≃ apply G a
-  refl  F       := λ a => idIso (apply F a)
-  symm  efg     := λ a => (efg a)⁻¹
-  trans efg egh := λ a => egh a • efg a
+section
 
-instance {α : Sort u} {V : Universe} (P : α → V) : HasDefEq (∀ a, P a) := funDefEq P id
+  variable {V : Universe} [HasPropositions Prp V]
 
-def funDefEq₂ {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β → V) {Fun : Sort w}
-              (apply : Fun → ∀ a b, P a b) :
-    HasDefEq Fun where
-  DefEq F G     := ∀ a b, apply F a b ≃ apply G a b
-  refl  F       := λ a b => idIso (apply F a b)
-  symm  efg     := λ a b => (efg a b)⁻¹
-  trans efg egh := λ a b => egh a b • efg a b
+  instance funDefEq {α : Sort u} (P : α → V) :
+      HasDefEq (∀ a, P a) where
+    DefEq f g     := ∀ a, f a ≃ g a
+    refl  f       := λ a => idIso (f a)
+    symm  efg     := λ a => (efg a)⁻¹
+    trans efg egh := λ a => egh a • efg a
 
-instance {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β → V) : HasDefEq (∀ a b, P a b) :=
-  funDefEq₂ P id
+  instance funDefEq₂ {α : Sort u} {β : Sort u'} (P : α → β → V) :
+      HasDefEq (∀ a b, P a b) where
+    DefEq f g     := ∀ a b, f a b ≃ g a b
+    refl  f       := λ a b => idIso (f a b)
+    symm  efg     := λ a b => (efg a b)⁻¹
+    trans efg egh := λ a b => egh a b • efg a b
 
-def funDefEq₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} {V : Universe} (P : α → β → γ → V)
-              {Fun : Sort w} (apply : Fun → ∀ a b c, P a b c) :
-    HasDefEq Fun where
-  DefEq F G     := ∀ a b c, apply F a b c ≃ apply G a b c
-  refl  F       := λ a b c => idIso (apply F a b c)
-  symm  efg     := λ a b c => (efg a b c)⁻¹
-  trans efg egh := λ a b c => egh a b c • efg a b c
+  instance funDefEq₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} (P : α → β → γ → V) :
+      HasDefEq (∀ a b c, P a b c) where
+    DefEq f g     := ∀ a b c, f a b c ≃ g a b c
+    refl  f       := λ a b c => idIso (f a b c)
+    symm  efg     := λ a b c => (efg a b c)⁻¹
+    trans efg egh := λ a b c => egh a b c • efg a b c
 
-instance {α : Sort u} {β : Sort u'} {γ : Sort u''} {V : Universe} (P : α → β → γ → V) :
-    HasDefEq (∀ a b c, P a b c) :=
-  funDefEq₃ P id
+  instance funDefEq₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
+                     (P : α → β → γ → δ → V) :
+      HasDefEq (∀ a b c d, P a b c d) where
+    DefEq f g     := ∀ a b c d, f a b c d ≃ g a b c d
+    refl  f       := λ a b c d => idIso (f a b c d)
+    symm  efg     := λ a b c d => (efg a b c d)⁻¹
+    trans efg egh := λ a b c d => egh a b c d • efg a b c d
 
-def funDefEq₄ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''} {V : Universe}
-              (P : α → β → γ → δ → V) {Fun : Sort w} (apply : Fun → ∀ a b c d, P a b c d) :
-    HasDefEq Fun where
-  DefEq F G     := ∀ a b c d, apply F a b c d ≃ apply G a b c d
-  refl  F       := λ a b c d => idIso (apply F a b c d)
-  symm  efg     := λ a b c d => (efg a b c d)⁻¹
-  trans efg egh := λ a b c d => egh a b c d • efg a b c d
-
-instance {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''} {V : Universe}
-         (P : α → β → γ → δ → V) :
-    HasDefEq (∀ a b c d, P a b c d) :=
-  funDefEq₄ P id
+end
 
 
 
@@ -71,7 +64,7 @@ instance {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''} {V : Univ
 -- define `Layer2.HasPiType` later and only introduce a common base class `Layer2.HasPiTypeBase`
 -- without `congrArg` here.
 
-class HasPiTypeBase {α : Sort u} {V : Universe} (P : α → V) where
+class HasPiTypeBase {α : Sort u} {V : Universe} [HasPropositions Prp V] (P : α → V) where
   defPiType : DefType V (∀ a, P a)
   defCongrFunFun (F G : defPiType.A) (a : α) :
     F ≃ G ⥤{λ e => (defPiType.elimCongrArg e) a} (defPiType.elim F) a ≃ (defPiType.elim G) a
@@ -80,7 +73,7 @@ namespace HasPiTypeBase
 
   open Layer1.HasPiType
 
-  variable {V : Universe}
+  variable {V : Universe} [HasPropositions Prp V]
 
   section
 
@@ -247,7 +240,9 @@ namespace HasPiTypeBase
       c := c
       codomainEq := rfl
 
-    instance invIso.isPiApp₃ {F G : Pi₃ P} (eFG : Pi₃ (λ a b c => F a b c ≃ G a b c)) (a : α)
+    instance invIso.isPiApp₃ {F G : Pi₃ P} (eFG : Pi₃ (hPiPab := λ a => hasEqPi₂ (F a) (G a))
+                                                      (hPiPa := hasEqPi₃ F G)
+                                                      (λ a b c => F a b c ≃ G a b c)) (a : α)
                              (b : β) (c : γ) :
         IsPiApp₃ (eFG a b c)⁻¹ where
       hPiPa := hasEqPi₃ G F
@@ -257,8 +252,12 @@ namespace HasPiTypeBase
       c := c
       codomainEq := rfl
 
-    instance compIso.isPiApp₃ {F G H : Pi₃ P} (eFG : Pi₃ (λ a b c => F a b c ≃ G a b c))
-                              (eGH : Pi₃ (λ a b c => G a b c ≃ H a b c)) (a : α) (b : β) (c : γ) :
+    instance compIso.isPiApp₃ {F G H : Pi₃ P}
+                              (eFG : Pi₃ (hPiPab := λ a => hasEqPi₂ (F a) (G a))
+                                         (hPiPa := hasEqPi₃ F G) (λ a b c => F a b c ≃ G a b c))
+                              (eGH : Pi₃ (hPiPab := λ a => hasEqPi₂ (G a) (H a))
+                                         (hPiPa := hasEqPi₃ G H) (λ a b c => G a b c ≃ H a b c))
+                                         (a : α) (b : β) (c : γ) :
         IsPiApp₃ (eGH a b c • eFG a b c) where
       hPiPa := hasEqPi₃ F H
       F := compIso eFG eGH
@@ -604,7 +603,7 @@ namespace HasPiTypeBase
         @[reducible] def cast {f g : ∀ a, P a} {efgF efgG : ∀ a, f a ≃ g a} {F G : DefPi P f}
                               (e : DefEquiv F G) :
             DefEquiv (cast efgF F) (cast efgG G) :=
-          Layer1.Universe.DefType.DefInst.cast e
+          Layer1.DefType.DefInst.cast e
 
       end DefEquiv
 
@@ -881,7 +880,7 @@ namespace HasPiTypeBase
 
   section DefPiAppEq
 
-    structure DefPiAppEq {α : Sort u} {β : Sort u'} [Layer1.HasEquivalenceRelationBase V.V α]
+    structure DefPiAppEq {α : Sort u} {β : Sort u'} [Layer1.HasEquivalenceRelationBase Prp α]
                          {P : β → V} [HasPiTypeBase P] {f : α → ∀ b, P b} (app : ∀ a, DefPi P (f a))
                          (hfe : ∀ {a₁ a₂ : α} (e : a₁ ≃ a₂) b, f a₁ b ≃ f a₂ b) where
       defAppEq {a₁ a₂ : α} (e : a₁ ≃ a₂) :
@@ -890,7 +889,7 @@ namespace HasPiTypeBase
 
     namespace DefPiAppEq
 
-      variable {α : Sort u} {β : Sort u'} [Layer1.HasEquivalenceRelationBase V.V α] {P : β → V}
+      variable {α : Sort u} {β : Sort u'} [Layer1.HasEquivalenceRelationBase Prp α] {P : β → V}
                [HasPiTypeBase P]
 
       section
@@ -924,7 +923,7 @@ namespace HasPiTypeBase
     end DefPiAppEq
 
     structure DefPiAppEq₂ {α : Sort u} {β : Sort u'} {γ : Sort u''}
-                          [Layer1.HasEquivalenceRelationBase V.V α] {P : β → γ → V}
+                          [Layer1.HasEquivalenceRelationBase Prp α] {P : β → γ → V}
                           [∀ b, HasPiTypeBase (P b)] [HasPiTypeBase (λ b => Pi (P b))]
                           {f : α → ∀ b c, P b c} (app : ∀ a, DefPi₂ P (f a))
                           (hfe : ∀ {a₁ a₂ : α} (e : a₁ ≃ a₂) b c, f a₁ b c ≃ f a₂ b c) where
@@ -934,7 +933,7 @@ namespace HasPiTypeBase
 
     namespace DefPiAppEq₂
 
-      variable {α : Sort u} {β : Sort u'} {γ : Sort u''} [Layer1.HasEquivalenceRelationBase V.V α]
+      variable {α : Sort u} {β : Sort u'} {γ : Sort u''} [Layer1.HasEquivalenceRelationBase Prp α]
                {P : β → γ → V} [∀ b, HasPiTypeBase (P b)] [HasPiTypeBase (λ b => Pi (P b))]
 
       section
@@ -971,7 +970,7 @@ namespace HasPiTypeBase
     end DefPiAppEq₂
 
     structure DefPiAppEq₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
-                          [Layer1.HasEquivalenceRelationBase V.V α] {P : β → γ → δ → V}
+                          [Layer1.HasEquivalenceRelationBase Prp α] {P : β → γ → δ → V}
                           [∀ b c, HasPiTypeBase (P b c)] [∀ b, HasPiTypeBase (λ c => Pi (P b c))]
                           [HasPiTypeBase (λ b => Pi₂ (P b))] {f : α → ∀ b c d, P b c d}
                           (app : ∀ a, DefPi₃ P (f a))
@@ -983,7 +982,7 @@ namespace HasPiTypeBase
     namespace DefPiAppEq₃
 
       variable {α : Sort u} {β : Sort u'} {γ : Sort u''} {δ : Sort u'''}
-               [Layer1.HasEquivalenceRelationBase V.V α] {P : β → γ → δ → V}
+               [Layer1.HasEquivalenceRelationBase Prp α] {P : β → γ → δ → V}
                [∀ b c, HasPiTypeBase (P b c)] [∀ b, HasPiTypeBase (λ c => Pi (P b c))]
                [HasPiTypeBase (λ b => Pi₂ (P b))]
 
@@ -1048,31 +1047,36 @@ open HasPiTypeBase
 
 
 
-instance (α : Sort u) {U : Universe.{u}} [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) :
-    HasDefEq (EquivalenceFunctor α Y) :=
-  funDefEq (Function.const α Y) PreorderFunctor.φ
+section
 
-instance (α β : Sort u) {U : Universe.{u}} [Layer1.HasEquivalenceRelationBase U.V α]
-         [Layer1.HasEquivalenceRelationBase U.V β] (Y : U) :
-    HasDefEq (EquivalenceFunctor₂ α β Y) :=
-  funDefEq₂ (Function.const α (Function.const β Y)) PreorderFunctor₂.φ
+  variable {U : Universe.{u}} [HasPropositions Prp U]
 
-instance (α β γ : Sort u) {U : Universe.{u}} [Layer1.HasEquivalenceRelationBase U.V α]
-         [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
-         (Y : U) :
-    HasDefEq (EquivalenceFunctor₃ α β γ Y) :=
-  funDefEq₃ (Function.const α (Function.const β (Function.const γ Y))) PreorderFunctor₃.φ
+  instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) :
+      HasDefEq (EquivalenceFunctor α Y) :=
+    HasDefEq.lift (α := α → Y) PreorderFunctor.φ
 
-instance (α β γ δ : Sort u) {U : Universe.{u}} [Layer1.HasEquivalenceRelationBase U.V α]
-         [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
-         [Layer1.HasEquivalenceRelationBase U.V δ] (Y : U) :
-    HasDefEq (EquivalenceFunctor₄ α β γ δ Y) :=
-  funDefEq₄ (Function.const α (Function.const β (Function.const γ (Function.const δ Y))))
-            PreorderFunctor₄.φ
+  instance (α β : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+           [Layer1.HasEquivalenceRelationBase Prp β] (Y : U) :
+      HasDefEq (EquivalenceFunctor₂ α β Y) :=
+    HasDefEq.lift (α := α → β → Y) PreorderFunctor₂.φ
+
+  instance (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+           [Layer1.HasEquivalenceRelationBase Prp β] [Layer1.HasEquivalenceRelationBase Prp γ]
+           (Y : U) :
+      HasDefEq (EquivalenceFunctor₃ α β γ Y) :=
+    HasDefEq.lift (α := α → β → γ → Y) PreorderFunctor₃.φ
+
+  instance (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+           [Layer1.HasEquivalenceRelationBase Prp β] [Layer1.HasEquivalenceRelationBase Prp γ]
+           [Layer1.HasEquivalenceRelationBase Prp δ] (Y : U) :
+      HasDefEq (EquivalenceFunctor₄ α β γ δ Y) :=
+    HasDefEq.lift (α := α → β → γ → δ → Y) PreorderFunctor₄.φ
+
+end
 
 
-class HasFunctors (α : Sort u) {U : Universe.{u}} [Layer1.HasEquivalenceRelationBase U.V α] (Y : U)
-                  where
+class HasFunctors (α : Sort u) {U : Universe.{u}} [HasPropositions Prp U]
+                  [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) where
   defFunType : DefType U (EquivalenceFunctor α Y)
   defCongrFunFun (F G : defFunType.A) (a : α) :
     F ≃ G ⥤{λ e => (defFunType.elimCongrArg e) a} (defFunType.elim F) a ≃ (defFunType.elim G) a
@@ -1081,19 +1085,17 @@ namespace HasFunctors
 
   open Layer1.HasFunctors
 
-  variable {U : Universe.{u}}
+  variable {U : Universe.{u}} [HasPropositions Prp U]
 
   section
 
-    variable (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
 
     instance toHasPiTypeBase : HasPiTypeBase (Function.const α Y) where
       defPiType      := { A            := h.defFunType.A,
                           elim         := λ F => (h.defFunType.elim F).φ,
                           elimCongrArg := h.defFunType.elimCongrArg }
       defCongrFunFun := h.defCongrFunFun
-
-    instance : HasPiTypeBase (Function.const (α := U.toUniverse) α Y) := h.toHasPiTypeBase
 
     instance : HasPiTypeBase (λ _ : α => Y) := h.toHasPiTypeBase
 
@@ -1105,49 +1107,49 @@ namespace HasFunctors
 
     open Layer1.HasPiType
 
-    instance {α : Sort u} [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    instance {α : Sort u} [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
              {β : Sort u'} (b : β) :
         HasFunctors α ((Function.const β Y) b) :=
       h
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
              {β : Sort u'} (b : β) :
         HasPiTypeBase ((Function.const β (Function.const α Y)) b) :=
       h.toHasPiTypeBase
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
              {β : Sort u'} {γ : Sort u'} (b : β) (c : γ) :
         HasPiTypeBase ((Function.const γ (Function.const β (Function.const α Y))) c b) :=
       h.toHasPiTypeBase
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
              {β : Sort u'} (f : α → β) :
         HasPiTypeBase (λ a => (Function.const β Y) (f a)) :=
       h.toHasPiTypeBase
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
              {β : Sort u'} (f : α → β) :
         HasPiTypeBase (λ a => (Function.const α (Function.const β Y)) a (f a)) :=
       h.toHasPiTypeBase
 
-    instance {α β : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-             [Layer1.HasEquivalenceRelationBase U.V β] {Y : U} [HasFunctors β Y]
+    instance {α β : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+             [Layer1.HasEquivalenceRelationBase Prp β] {Y : U} [HasFunctors β Y]
              [h : HasFunctors α (β ⥤ Y)] :
         HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Function.const α (Function.const β Y) a)) :=
       h.toHasPiTypeBase
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] {β : Sort u'} (P : β → U)
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {β : Sort u'} (P : β → U)
              [HasPiTypeBase P] [h : HasFunctors α (Pi P)] :
         HasPiTypeBase (λ a => Pi ((Function.const α P) a)) :=
       h.toHasPiTypeBase
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (β : Sort u') (γ : Sort u'')
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (β : Sort u') (γ : Sort u'')
              (P : β → γ → U) [∀ b, HasPiTypeBase (P b)] [HasPiTypeBase (λ b => Pi (P b))]
              [h : HasFunctors α (Pi₂ P)] :
         HasPiTypeBase (λ a => Pi₂ ((Function.const α P) a)) :=
       h.toHasPiTypeBase
 
-    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (β : Sort u') (γ : Sort u'')
+    instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (β : Sort u') (γ : Sort u'')
              (δ : Sort u''') (P : β → γ → δ → U) [∀ b c, HasPiTypeBase (P b c)]
              [∀ b, HasPiTypeBase (λ c => Pi (P b c))] [HasPiTypeBase (λ b => Pi₂ (P b))]
              [h : HasFunctors α (Pi₃ P)] :
@@ -1166,7 +1168,7 @@ namespace HasFunctors
 
   section
 
-    variable {α : Sort u} [Layer1.HasEquivalenceRelationBase U.V α] {Y : U} [h : HasFunctors α Y]
+    variable {α : Sort u} [Layer1.HasEquivalenceRelationBase Prp α] {Y : U} [h : HasFunctors α Y]
 
     @[reducible] def equivalenceFunctor (F : α ⥤ Y) : EquivalenceFunctor α Y := h.defFunType.elim F
 
@@ -1189,13 +1191,15 @@ namespace HasFunctors
         IsPreorderFunctor (α := asPreorder α) (β := asPreorder Y) (apply (α := α) F) where
       inst := congrArgFun F
 
-    @[reducible] def eqPiFun (F G : α ⥤ Y) : EquivalenceFunctor α U.V where
+    @[reducible] def eqPiFun [Layer1.HasNonLinearLogic Prp] (F G : α ⥤ Y) :
+        EquivalenceFunctor α Prp where
       φ  := λ a => F a ≃ G a
       hφ := { inst := λ a₁ a₂ => Λ e => Layer1.HasHomEquivalences.isoEquiv (α := asPreorder Y)
                                                                            (congrArg F e⁻¹)
                                                                            (congrArg G e) }
 
-    instance hasFunEqPi (F G : α ⥤ Y) : Layer1.HasFunctorialPiType (eqPiFun F G) where
+    instance hasFunEqPi [Layer1.HasNonLinearLogic Prp] (F G : α ⥤ Y) :
+        Layer1.HasFunctorialPiType (eqPiFun F G) where
       toHasPiType := hasEqPi F G
 
     instance hasNat (F G : α ⥤ Y) :
@@ -1206,8 +1210,8 @@ namespace HasFunctors
 
   section
 
-    variable {α β : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-             [Layer1.HasEquivalenceRelationBase U.V β] {Y : U} [HasFunctors β Y]
+    variable {α β : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+             [Layer1.HasEquivalenceRelationBase Prp β] {Y : U} [HasFunctors β Y]
              [HasFunctors α (β ⥤ Y)]
 
     def byDef₂ {f : α → β → Y} {F : α ⥤ β ⥤{f} Y} [hFa : ∀ a, DefType.HasDefInstEq (F.app a)]
@@ -1230,8 +1234,8 @@ namespace HasFunctors
 
   section
 
-    variable {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-             [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
+    variable {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+             [Layer1.HasEquivalenceRelationBase Prp β] [Layer1.HasEquivalenceRelationBase Prp γ]
              {Y : U} [HasFunctors γ Y] [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)]
 
     def byDef₃ {f : α → β → γ → Y} {F : α ⥤ β ⥤ γ ⥤{f} Y}
@@ -1256,9 +1260,9 @@ namespace HasFunctors
 
   section
 
-    variable {α β γ δ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-             [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
-             [Layer1.HasEquivalenceRelationBase U.V δ] {Y : U} [HasFunctors δ Y]
+    variable {α β γ δ : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+             [Layer1.HasEquivalenceRelationBase Prp β] [Layer1.HasEquivalenceRelationBase Prp γ]
+             [Layer1.HasEquivalenceRelationBase Prp δ] {Y : U} [HasFunctors δ Y]
              [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)]
 
     def byDef₄ {f : α → β → γ → δ → Y} {F : α ⥤ β ⥤ γ ⥤ δ ⥤{f} Y}
@@ -1285,27 +1289,27 @@ namespace HasFunctors
 
   section
 
-    @[reducible] def defFunType₂ (α β : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                                 [Layer1.HasEquivalenceRelationBase U.V β] (Y : U) [HasFunctors β Y]
+    @[reducible] def defFunType₂ (α β : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                                 [Layer1.HasEquivalenceRelationBase Prp β] (Y : U) [HasFunctors β Y]
                                  [HasFunctors α (β ⥤ Y)] :
         DefType U (EquivalenceFunctor₂ α β Y) where
       A              := α ⥤ β ⥤ Y
       elim F         := ⟨apply₂ (α := α) (β := β) F⟩
       elimCongrArg e := congrFun₂ e
 
-    @[reducible] def defFunType₃ (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                                 [Layer1.HasEquivalenceRelationBase U.V β]
-                                 [Layer1.HasEquivalenceRelationBase U.V γ] (Y : U) [HasFunctors γ Y]
+    @[reducible] def defFunType₃ (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                                 [Layer1.HasEquivalenceRelationBase Prp β]
+                                 [Layer1.HasEquivalenceRelationBase Prp γ] (Y : U) [HasFunctors γ Y]
                                  [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)] :
         DefType U (EquivalenceFunctor₃ α β γ Y) where
       A              := α ⥤ β ⥤ γ ⥤ Y
       elim F         := ⟨apply₃ (α := α) (β := β) (γ := γ) F⟩
       elimCongrArg e := congrFun₃ e
 
-    @[reducible] def defFunType₄ (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                                 [Layer1.HasEquivalenceRelationBase U.V β]
-                                 [Layer1.HasEquivalenceRelationBase U.V γ]
-                                 [Layer1.HasEquivalenceRelationBase U.V δ] (Y : U) [HasFunctors δ Y]
+    @[reducible] def defFunType₄ (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                                 [Layer1.HasEquivalenceRelationBase Prp β]
+                                 [Layer1.HasEquivalenceRelationBase Prp γ]
+                                 [Layer1.HasEquivalenceRelationBase Prp δ] (Y : U) [HasFunctors δ Y]
                                  [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)]
                                  [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)] :
         DefType U (EquivalenceFunctor₄ α β γ δ Y) where
@@ -1322,7 +1326,7 @@ namespace HasFunctors
 
     class IsFunApp (y : Y) where
       {α : Sort u}
-      [hαEq : Layer1.HasEquivalenceRelationBase U.V α]
+      [hαEq : Layer1.HasEquivalenceRelationBase Prp α]
       [hα : HasFunctors α Y]
       F : α ⥤ Y
       a : α
@@ -1330,14 +1334,14 @@ namespace HasFunctors
 
     namespace IsFunApp
 
-      instance (priority := low) refl {α : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
+      instance (priority := low) refl {α : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
                                       [HasFunctors α Y] {F : α ⥤ Y} {a : α} :
           IsFunApp (F a) :=
         ⟨F, a, idIso (F a)⟩
 
       variable (y : Y) [hApp : IsFunApp y]
 
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.α := hApp.hαEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.α := hApp.hαEq
       instance : HasFunctors hApp.α Y := hApp.hα
 
       def isPiApp : IsPiApp y := ⟨hApp.F, hApp.a, rfl, hApp.e⟩
@@ -1348,8 +1352,8 @@ namespace HasFunctors
 
     class IsFunApp₂ (y : Y) where
       {α β : Sort u}
-      [hαEq : Layer1.HasEquivalenceRelationBase U.V α]
-      [hβEq : Layer1.HasEquivalenceRelationBase U.V β]
+      [hαEq : Layer1.HasEquivalenceRelationBase Prp α]
+      [hβEq : Layer1.HasEquivalenceRelationBase Prp β]
       [hβ : HasFunctors β Y]
       [hα : HasFunctors α (β ⥤ Y)]
       F : α ⥤ β ⥤ Y
@@ -1359,16 +1363,16 @@ namespace HasFunctors
 
     namespace IsFunApp₂
 
-      instance (priority := low) refl {α β : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-                                      [Layer1.HasEquivalenceRelationBase U.V β] [HasFunctors β Y]
+      instance (priority := low) refl {α β : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+                                      [Layer1.HasEquivalenceRelationBase Prp β] [HasFunctors β Y]
                                       [HasFunctors α (β ⥤ Y)] {F : α ⥤ β ⥤ Y} {a : α} {b : β} :
           IsFunApp₂ (F a b) :=
         ⟨F, a, b, idIso (F a b)⟩
 
       variable (y : Y) [hApp : IsFunApp₂ y]
 
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.α := hApp.hαEq
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.β := hApp.hβEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.α := hApp.hαEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.β := hApp.hβEq
       instance : HasFunctors hApp.β Y := hApp.hβ
       instance : HasFunctors hApp.α (hApp.β ⥤ Y) := hApp.hα
 
@@ -1382,9 +1386,9 @@ namespace HasFunctors
 
     class IsFunApp₃ (y : Y) where
       {α β γ : Sort u}
-      [hαEq : Layer1.HasEquivalenceRelationBase U.V α]
-      [hβEq : Layer1.HasEquivalenceRelationBase U.V β]
-      [hγEq : Layer1.HasEquivalenceRelationBase U.V γ]
+      [hαEq : Layer1.HasEquivalenceRelationBase Prp α]
+      [hβEq : Layer1.HasEquivalenceRelationBase Prp β]
+      [hγEq : Layer1.HasEquivalenceRelationBase Prp γ]
       [hγ : HasFunctors γ Y]
       [hβ : HasFunctors β (γ ⥤ Y)]
       [hα : HasFunctors α (β ⥤ γ ⥤ Y)]
@@ -1396,9 +1400,9 @@ namespace HasFunctors
 
     namespace IsFunApp₃
 
-      instance (priority := low) refl {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-                                      [Layer1.HasEquivalenceRelationBase U.V β]
-                                      [Layer1.HasEquivalenceRelationBase U.V γ] [HasFunctors γ Y]
+      instance (priority := low) refl {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+                                      [Layer1.HasEquivalenceRelationBase Prp β]
+                                      [Layer1.HasEquivalenceRelationBase Prp γ] [HasFunctors γ Y]
                                       [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)]
                                       {F : α ⥤ β ⥤ γ ⥤ Y} {a : α} {b : β} {c : γ} :
           IsFunApp₃ (F a b c) :=
@@ -1406,9 +1410,9 @@ namespace HasFunctors
 
       variable (y : Y) [hApp : IsFunApp₃ y]
 
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.α := hApp.hαEq
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.β := hApp.hβEq
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.γ := hApp.hγEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.α := hApp.hαEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.β := hApp.hβEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.γ := hApp.hγEq
       instance : HasFunctors hApp.γ Y := hApp.hγ
       instance : HasFunctors hApp.β (hApp.γ ⥤ Y) := hApp.hβ
       instance : HasFunctors hApp.α (hApp.β ⥤ hApp.γ ⥤ Y) := hApp.hα
@@ -1428,10 +1432,10 @@ namespace HasFunctors
 
     class IsFunApp₄ (y : Y) where
       {α β γ δ : Sort u}
-      [hαEq : Layer1.HasEquivalenceRelationBase U.V α]
-      [hβEq : Layer1.HasEquivalenceRelationBase U.V β]
-      [hγEq : Layer1.HasEquivalenceRelationBase U.V γ]
-      [hδEq : Layer1.HasEquivalenceRelationBase U.V δ]
+      [hαEq : Layer1.HasEquivalenceRelationBase Prp α]
+      [hβEq : Layer1.HasEquivalenceRelationBase Prp β]
+      [hγEq : Layer1.HasEquivalenceRelationBase Prp γ]
+      [hδEq : Layer1.HasEquivalenceRelationBase Prp δ]
       [hδ : HasFunctors δ Y]
       [hγ : HasFunctors γ (δ ⥤ Y)]
       [hβ : HasFunctors β (γ ⥤ δ ⥤ Y)]
@@ -1445,10 +1449,10 @@ namespace HasFunctors
 
     namespace IsFunApp₄
 
-      instance (priority := low) refl {α β γ δ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-                                      [Layer1.HasEquivalenceRelationBase U.V β]
-                                      [Layer1.HasEquivalenceRelationBase U.V γ]
-                                      [Layer1.HasEquivalenceRelationBase U.V δ] [HasFunctors δ Y]
+      instance (priority := low) refl {α β γ δ : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+                                      [Layer1.HasEquivalenceRelationBase Prp β]
+                                      [Layer1.HasEquivalenceRelationBase Prp γ]
+                                      [Layer1.HasEquivalenceRelationBase Prp δ] [HasFunctors δ Y]
                                       [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)]
                                       [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)] {F : α ⥤ β ⥤ γ ⥤ δ ⥤ Y}
                                       {a : α} {b : β} {c : γ} {d : δ} :
@@ -1457,10 +1461,10 @@ namespace HasFunctors
 
       variable (y : Y) [hApp : IsFunApp₄ y]
 
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.α := hApp.hαEq
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.β := hApp.hβEq
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.γ := hApp.hγEq
-      instance : Layer1.HasEquivalenceRelationBase U.V hApp.δ := hApp.hδEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.α := hApp.hαEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.β := hApp.hβEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.γ := hApp.hγEq
+      instance : Layer1.HasEquivalenceRelationBase Prp hApp.δ := hApp.hδEq
       instance : HasFunctors hApp.δ Y := hApp.hδ
       instance : HasFunctors hApp.γ (hApp.δ ⥤ Y) := hApp.hγ
       instance : HasFunctors hApp.β (hApp.γ ⥤ hApp.δ ⥤ Y) := hApp.hβ
@@ -1532,11 +1536,11 @@ namespace HasFunctors
 
   section DefFun
 
-    def DefFun (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U) [h : HasFunctors α Y]
+    def DefFun (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U) [h : HasFunctors α Y]
                (f : EquivalenceFunctor α Y) :=
       DefType.DefInst h.defFunType f
 
-    @[reducible] def DefFun' (α : Sort u) [Layer1.HasEquivalenceRelationBase U.V α] (Y : U)
+    @[reducible] def DefFun' (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (Y : U)
                              [h : HasFunctors α Y] (f : α → Y)
                              (hf : ∀ a₁ a₂, a₁ ≃ a₂ ⥤ f a₁ ≃ f a₂) :=
       DefFun α Y (EquivalenceFunctor.mk f (hφ := IsPreorderFunctor.construct hf))
@@ -1546,7 +1550,7 @@ namespace HasFunctors
       notation:20 α:21 " ⥤⦃" f:0 "⦄ " Y:21 => HasFunctors.DefFun α Y f
       notation:20 α:21 " ⥤{" f:0 ", " hf:0 "} " Y:21 => HasFunctors.DefFun' α Y f hf
 
-      variable {α : Sort u} [Layer1.HasEquivalenceRelationBase U.V α] {Y : U} [h : HasFunctors α Y]
+      variable {α : Sort u} [Layer1.HasEquivalenceRelationBase Prp α] {Y : U} [h : HasFunctors α Y]
 
       @[reducible] def mk {f : EquivalenceFunctor α Y} (F : α ⥤ Y) (e : ∀ a, F a ≃ f a) :
           α ⥤⦃f⦄ Y :=
@@ -1593,15 +1597,15 @@ namespace HasFunctors
 
     end DefFun
 
-    structure DefFun₂ (α β : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                      [Layer1.HasEquivalenceRelationBase U.V β] (Y : U) [HasFunctors β Y]
+    structure DefFun₂ (α β : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                      [Layer1.HasEquivalenceRelationBase Prp β] (Y : U) [HasFunctors β Y]
                       [HasFunctors α (β ⥤ Y)] (f : EquivalenceFunctor₂ α β Y) where
       app (a : α) : β ⥤⦃f.app a⦄ Y
       appEq : DefPiAppEq (λ a => DefFun.toDefPi (app a)) (λ e b => (f.app₂ b).hφ e)
       toDefFun : α ⥤⦃DefPiAppEq.eqFun appEq⦄ (β ⥤ Y)
 
-    @[reducible] def DefFun₂' (α β : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                              [Layer1.HasEquivalenceRelationBase U.V β] (Y : U) [HasFunctors β Y]
+    @[reducible] def DefFun₂' (α β : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                              [Layer1.HasEquivalenceRelationBase Prp β] (Y : U) [HasFunctors β Y]
                               [HasFunctors α (β ⥤ Y)] (f : α → β → Y)
                               (hfa : ∀ a b₁ b₂, b₁ ≃ b₂ ⥤ f a b₁ ≃ f a b₂)
                               (hfb : ∀ a₁ a₂ b, a₁ ≃ a₂ ⥤ f a₁ b ≃ f a₂ b) :=
@@ -1614,8 +1618,8 @@ namespace HasFunctors
       notation:20 α:21 " ⥤ " β:21 " ⥤{" f:0 ", " hfa:0 ", " hfb:0 "} " Y:21 =>
         HasFunctors.DefFun₂' α β Y f hfa hfb
 
-      variable {α β : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-               [Layer1.HasEquivalenceRelationBase U.V β] {Y : U} [HasFunctors β Y]
+      variable {α β : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+               [Layer1.HasEquivalenceRelationBase Prp β] {Y : U} [HasFunctors β Y]
                [HasFunctors α (β ⥤ Y)]
 
       @[reducible] def inst {f : EquivalenceFunctor₂ α β Y} (F : α ⥤ β ⥤⦃f⦄ Y) : α ⥤ β ⥤ Y :=
@@ -1684,18 +1688,18 @@ namespace HasFunctors
 
     end DefFun₂
 
-    structure DefFun₃ (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                      [Layer1.HasEquivalenceRelationBase U.V β]
-                      [Layer1.HasEquivalenceRelationBase U.V γ] (Y : U) [HasFunctors γ Y]
+    structure DefFun₃ (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                      [Layer1.HasEquivalenceRelationBase Prp β]
+                      [Layer1.HasEquivalenceRelationBase Prp γ] (Y : U) [HasFunctors γ Y]
                       [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)]
                       (f : EquivalenceFunctor₃ α β γ Y) where
       app (a : α) : β ⥤ γ ⥤⦃f.app a⦄ Y
       appEq : DefPiAppEq₂ (λ a => DefFun₂.toDefPi₂ (app a)) (λ e b c => (f.hφ.app₂₃ b c) e)
       toDefFun : α ⥤⦃DefPiAppEq₂.eqFun appEq⦄ (β ⥤ γ ⥤ Y)
 
-    @[reducible] def DefFun₃' (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                              [Layer1.HasEquivalenceRelationBase U.V β]
-                              [Layer1.HasEquivalenceRelationBase U.V γ] (Y : U) [HasFunctors γ Y]
+    @[reducible] def DefFun₃' (α β γ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                              [Layer1.HasEquivalenceRelationBase Prp β]
+                              [Layer1.HasEquivalenceRelationBase Prp γ] (Y : U) [HasFunctors γ Y]
                               [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)]
                               (f : α → β → γ → Y)
                               (hfab : ∀ a b c₁ c₂, c₁ ≃ c₂ ⥤ f a b c₁ ≃ f a b c₂)
@@ -1711,8 +1715,8 @@ namespace HasFunctors
       notation:20 α:21 " ⥤ " β:21 " ⥤ " γ:21 " ⥤{" f:0 ", " hfab:0 ", " hfac:0 ", " hfbc:0 "} " Y:21 =>
         HasFunctors.DefFun₃' α β γ Y f hfab hfac hfbc
 
-      variable {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-               [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
+      variable {α β γ : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+               [Layer1.HasEquivalenceRelationBase Prp β] [Layer1.HasEquivalenceRelationBase Prp γ]
                {Y : U} [HasFunctors γ Y] [HasFunctors β (γ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ Y)]
 
       @[reducible] def inst {f : EquivalenceFunctor₃ α β γ Y} (F : α ⥤ β ⥤ γ ⥤⦃f⦄ Y) :
@@ -1791,20 +1795,20 @@ namespace HasFunctors
 
     end DefFun₃
 
-    structure DefFun₄ (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                      [Layer1.HasEquivalenceRelationBase U.V β]
-                      [Layer1.HasEquivalenceRelationBase U.V γ]
-                      [Layer1.HasEquivalenceRelationBase U.V δ] (Y : U) [HasFunctors δ Y]
+    structure DefFun₄ (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                      [Layer1.HasEquivalenceRelationBase Prp β]
+                      [Layer1.HasEquivalenceRelationBase Prp γ]
+                      [Layer1.HasEquivalenceRelationBase Prp δ] (Y : U) [HasFunctors δ Y]
                       [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)]
                       [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)] (f : EquivalenceFunctor₄ α β γ δ Y) where
       app (a : α) : β ⥤ γ ⥤ δ ⥤⦃f.app a⦄ Y
       appEq : DefPiAppEq₃ (λ a => DefFun₃.toDefPi₃ (app a)) (λ e b c d => (f.hφ.app₂₃₄ b c d) e)
       toDefFun : α ⥤⦃DefPiAppEq₃.eqFun appEq⦄ (β ⥤ γ ⥤ δ ⥤ Y)
 
-    @[reducible] def DefFun₄' (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase U.V α]
-                              [Layer1.HasEquivalenceRelationBase U.V β]
-                              [Layer1.HasEquivalenceRelationBase U.V γ]
-                              [Layer1.HasEquivalenceRelationBase U.V δ] (Y : U) [HasFunctors δ Y]
+    @[reducible] def DefFun₄' (α β γ δ : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                              [Layer1.HasEquivalenceRelationBase Prp β]
+                              [Layer1.HasEquivalenceRelationBase Prp γ]
+                              [Layer1.HasEquivalenceRelationBase Prp δ] (Y : U) [HasFunctors δ Y]
                               [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)]
                               [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)]
                               (f : α → β → γ → δ → Y)
@@ -1823,9 +1827,9 @@ namespace HasFunctors
       notation:20 α:21 " ⥤ " β:21 " ⥤ " γ:21 " ⥤ " δ:21 " ⥤{" f:0 ", " hfabc:0 ", " hfabd:0 ", " hfacd:0 ", " hfbcd:0 "} " Y:21 =>
         HasFunctors.DefFun₄' α β γ δ Y f hfabc hfabd hfacd hfbcd
 
-      variable {α β γ δ : Sort u} [Layer1.HasEquivalenceRelationBase U.V α]
-               [Layer1.HasEquivalenceRelationBase U.V β] [Layer1.HasEquivalenceRelationBase U.V γ]
-               [Layer1.HasEquivalenceRelationBase U.V δ] {Y : U} [HasFunctors δ Y]
+      variable {α β γ δ : Sort u} [Layer1.HasEquivalenceRelationBase Prp α]
+               [Layer1.HasEquivalenceRelationBase Prp β] [Layer1.HasEquivalenceRelationBase Prp γ]
+               [Layer1.HasEquivalenceRelationBase Prp δ] {Y : U} [HasFunctors δ Y]
                [HasFunctors γ (δ ⥤ Y)] [HasFunctors β (γ ⥤ δ ⥤ Y)] [HasFunctors α (β ⥤ γ ⥤ δ ⥤ Y)]
 
       @[reducible] def inst {f : EquivalenceFunctor₄ α β γ δ Y} (F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) :
@@ -1866,7 +1870,7 @@ namespace HasFunctors
       --  appEq    := _
       --  toDefFun := DefFun.defAppFun F.inst
 
-      -- TODO: This is really slow to compile.
+      -- TODO: This is really slow to type-check.
       --@[reducible] def cast {f g : EquivalenceFunctor₄ α β γ δ Y}
       --                      (efg : ∀ (a : α) (b : β) (c : γ) (d : δ), f a b c d ≃ g a b c d)
       --                      (F : α ⥤ β ⥤ γ ⥤ δ ⥤⦃f⦄ Y) :
@@ -1919,42 +1923,28 @@ open HasFunctors
 
 
 
-class HasUnivFunctors (U : Layer1.Universe.{u}) (V : Universe.{u}) [HasPropositions V.V U] where
+class HasUnivFunctors (U V : Universe.{u}) [HasPropositions Prp U] [HasPropositions Prp V] where
   [hFun (A : U) (B : V) : HasFunctors A B]
 
 namespace HasUnivFunctors
 
-  section
+  variable (U V : Universe.{u}) [HasPropositions Prp U] [HasPropositions Prp V]
+           [h : HasUnivFunctors U V]
 
-    variable (U : Layer1.Universe.{u}) (V : Universe.{u}) [HasPropositions V.V U]
-             [h : HasUnivFunctors U V]
+  instance (A : U) (B : V) : HasFunctors A B := h.hFun A B
 
-    instance (A : U) (B : V) : HasFunctors A B := h.hFun A B
-
-    instance toLayer1 : Layer1.HasUnivFunctors U V := ⟨⟩
-
-  end
-
-  section
-
-    variable (U : Universe.{u}) [h : HasUnivFunctors U U]
-
-    instance (A B : U) : HasFunctors A B := h.hFun A B
-
-    instance : Layer1.HasUnivFunctors U U := inferInstance
-
-  end
+  instance toLayer1 : Layer1.HasUnivFunctors U V := ⟨⟩
 
 end HasUnivFunctors
 
 
 
-class HasIdFun {U : Universe} (A : U) [HasFunctors A A] where
+class HasIdFun {U : Universe} [HasPropositions Prp U] (A : U) [HasFunctors A A] where
   defIdFun : A ⥤⦃EquivalenceFunctor.idFun A⦄ A
 
 namespace HasIdFun
 
-  variable {U : Universe} (A : U) [HasFunctors A A] [h : HasIdFun A]
+  variable {U : Universe} [HasPropositions Prp U] (A : U) [HasFunctors A A] [h : HasIdFun A]
 
   instance toLayer1 : Layer1.HasIdFun A := ⟨h.defIdFun.toLayer1⟩
 
@@ -1963,14 +1953,14 @@ namespace HasIdFun
 end HasIdFun
 
 
-class HasPiAppFun {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → V) [HasPiTypeBase P]
-                  where
+class HasPiAppFun {α : Sort u} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V]
+                  (P : α → V) [HasPiTypeBase P] where
   defPiAppFun (a : α) : Layer1.HasPiType.Pi P ⥤{λ F => F a, λ F₁ F₂ => congrFunFun F₁ F₂ a} P a
 
 namespace HasPiAppFun
 
-  variable {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → V) [HasPiTypeBase P]
-           [h : HasPiAppFun P]
+  variable {α : Sort u} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V] (P : α → V)
+           [HasPiTypeBase P] [h : HasPiAppFun P]
 
   instance toLayer1 : Layer1.HasPiAppFun P := ⟨λ a => (h.defPiAppFun a).toLayer1⟩
 
@@ -1979,15 +1969,17 @@ namespace HasPiAppFun
 
 end HasPiAppFun
 
-class HasPiAppFunPi {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → V) [HasPiTypeBase P]
+class HasPiAppFunPi {α : Sort u} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V]
+                    (P : α → V) [HasPiTypeBase P]
                     [HasPiTypeBase (λ a => Layer1.HasPiType.Pi P ⥤ P a)] extends
     HasPiAppFun P where
   defPiAppFunPi : DefPi (λ a => Layer1.HasPiType.Pi P ⥤ P a) (Layer1.HasPiAppFun.piAppFun P)
 
 namespace HasPiAppFunPi
 
-  variable {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → V) [HasPiTypeBase P]
-           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi P ⥤ P a)] [h : HasPiAppFunPi P]
+  variable {α : Sort u} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V] (P : α → V)
+           [HasPiTypeBase P] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi P ⥤ P a)]
+           [h : HasPiAppFunPi P]
 
   instance toLayer1 : Layer1.HasPiAppFunPi P := ⟨h.defPiAppFunPi.toLayer1⟩
 
@@ -1996,16 +1988,16 @@ namespace HasPiAppFunPi
 end HasPiAppFunPi
 
 
-class HasSwapPi {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β → V) [∀ a, HasPiTypeBase (P a)]
-                [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
+class HasSwapPi {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V] (P : α → β → V)
+                [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
                 [∀ b, HasPiTypeBase (λ a => P a b)] where
   defSwapPi (F : Layer1.HasPiType.Pi₂ P) (b : β) : DefPi (λ a => P a b) (λ a => F a b)
 
 namespace HasSwapPi
 
-  variable {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β → V) [∀ a, HasPiTypeBase (P a)]
-           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))] [∀ b, HasPiTypeBase (λ a => P a b)]
-           [h : HasSwapPi P]
+  variable {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V] (P : α → β → V)
+           [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
+           [∀ b, HasPiTypeBase (λ a => P a b)] [h : HasSwapPi P]
 
   instance toLayer1 : Layer1.HasSwapPi P := ⟨λ F b => (h.defSwapPi F b).toLayer1⟩
 
@@ -2017,7 +2009,7 @@ namespace HasSwapPi
 
 end HasSwapPi
 
-class HasSwapPi₂ {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β → V)
+class HasSwapPi₂ {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V] (P : α → β → V)
                  [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
                  [∀ b, HasPiTypeBase (λ a => P a b)]
                  [HasPiTypeBase (λ b => Layer1.HasPiType.Pi (λ a => P a b))] extends
@@ -2027,7 +2019,7 @@ class HasSwapPi₂ {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β �
 
 namespace HasSwapPi₂
 
-  def defSwapPi₂' {α : Sort u} {β : Sort u'} {V : Universe} {P : α → β → V}
+  def defSwapPi₂' {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V] {P : α → β → V}
                   [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
                   [∀ b, HasPiTypeBase (λ a => P a b)]
                   [HasPiTypeBase (λ b => Layer1.HasPiType.Pi (λ a => P a b))] [h : HasSwapPi₂ P]
@@ -2035,8 +2027,9 @@ namespace HasSwapPi₂
       DefPi₂ (λ b a => P a b) (λ b a => F a b) :=
     ⟨h.defSwapPi F, h.defSwapPi₂ F⟩
 
-  variable {α : Sort u} {β : Sort u'} {V : Universe} (P : α → β → V) [∀ a, HasPiTypeBase (P a)]
-           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))] [∀ b, HasPiTypeBase (λ a => P a b)]
+  variable {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V] (P : α → β → V)
+           [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
+           [∀ b, HasPiTypeBase (λ a => P a b)]
            [HasPiTypeBase (λ b => Layer1.HasPiType.Pi (λ a => P a b))] [h : HasSwapPi₂ P]
 
   instance toLayer1 : Layer1.HasSwapPi₂ P := ⟨λ F => (h.defSwapPi₂ F).toLayer1⟩
@@ -2047,8 +2040,9 @@ namespace HasSwapPi₂
 
 end HasSwapPi₂
 
-class HasSwapPiFun {α : Sort u} {β : Sort u'} {V : Universe} [HasUnivFunctors V V] (P : α → β → V)
-                   [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
+class HasSwapPiFun {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V]
+                   [HasUnivFunctors V V] (P : α → β → V) [∀ a, HasPiTypeBase (P a)]
+                   [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
                    [∀ b, HasPiTypeBase (λ a => P a b)]
                    [HasPiTypeBase (λ b => Layer1.HasPiType.Pi (λ a => P a b))] extends
     HasSwapPi₂ P where
@@ -2058,9 +2052,9 @@ class HasSwapPiFun {α : Sort u} {β : Sort u'} {V : Universe} [HasUnivFunctors 
 
 namespace HasSwapPiFun
 
-  variable {α : Sort u} {β : Sort u'} {V : Universe} [HasUnivFunctors V V] (P : α → β → V)
-           [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
-           [∀ b, HasPiTypeBase (λ a => P a b)]
+  variable {α : Sort u} {β : Sort u'} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V]
+           (P : α → β → V) [∀ a, HasPiTypeBase (P a)]
+           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))] [∀ b, HasPiTypeBase (λ a => P a b)]
            [HasPiTypeBase (λ b => Layer1.HasPiType.Pi (λ a => P a b))] [h : HasSwapPiFun P]
 
   instance toLayer1 : Layer1.HasSwapPiFun P := ⟨h.defSwapPiFun.toLayer1⟩
@@ -2070,16 +2064,18 @@ namespace HasSwapPiFun
 end HasSwapPiFun
 
 
-class HasCompFunPi (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α]
-                   {W : Universe} {B : V} [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
+class HasCompFunPi (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V : Universe.{u}}
+                   [HasPropositions Prp V] {W : Universe} [HasPropositions Prp W] {B : V}
+                   [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
                    [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))] where
   defCompFunPi (F : α ⥤ B) (G : Layer1.HasPiType.Pi Q) : DefPi (λ a => Q (F a)) (λ a => G (F a))
 
 namespace HasCompFunPi
 
-  variable (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α] {W : Universe}
-           {B : V} [HasFunctors α B] (Q : B → W)  [HasPiTypeBase Q]
-           [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))] [h : HasCompFunPi α Q]
+  variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V : Universe.{u}}
+           [HasPropositions Prp V] {W : Universe} [HasPropositions Prp W] {B : V} [HasFunctors α B]
+           (Q : B → W)  [HasPiTypeBase Q] [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
+           [h : HasCompFunPi α Q]
 
   instance toLayer1 : Layer1.HasCompFunPi α Q := ⟨λ F G => (h.defCompFunPi F G).toLayer1⟩
 
@@ -2089,8 +2085,9 @@ namespace HasCompFunPi
 
 end HasCompFunPi
 
-class HasRevCompFunPi₂ (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α]
-                       {W : Universe} {B : V} [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
+class HasRevCompFunPi₂ (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V : Universe.{u}}
+                       [HasPropositions Prp V] {W : Universe} [HasPropositions Prp W] {B : V}
+                       [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
                        [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
                        [HasPiTypeBase (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => Q (F a)))] extends
     HasCompFunPi α Q where
@@ -2099,9 +2096,9 @@ class HasRevCompFunPi₂ (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalence
 
 namespace HasRevCompFunPi₂
 
-  variable (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α] {W : Universe}
-           {B : V} [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
-           [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
+  variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V : Universe.{u}}
+           [HasPropositions Prp V] {W : Universe} [HasPropositions Prp W] {B : V} [HasFunctors α B]
+           (Q : B → W) [HasPiTypeBase Q] [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
            [HasPiTypeBase (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => Q (F a)))]
            [h : HasRevCompFunPi₂ α Q]
 
@@ -2113,8 +2110,9 @@ namespace HasRevCompFunPi₂
 
 end HasRevCompFunPi₂
 
-class HasRevCompFunPiFun (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α]
-                         {W : Universe} [HasUnivFunctors W W] {B : V} [HasFunctors α B] (Q : B → W)
+class HasRevCompFunPiFun (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V : Universe.{u}}
+                         [HasPropositions Prp V] {W : Universe} [HasPropositions Prp W]
+                         [HasUnivFunctors W W] {B : V} [HasFunctors α B] (Q : B → W)
                          [HasPiTypeBase Q] [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
                          [HasPiTypeBase (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => Q (F a)))]
                          extends
@@ -2130,9 +2128,10 @@ namespace HasRevCompFunPiFun
 
   section
 
-    variable (α : Sort u) {V : Universe.{u}} [Layer1.HasEquivalenceRelationBase V.V α]
-             {W : Universe} [HasUnivFunctors W W] {B : V} [HasFunctors α B] (Q : B → W)
-             [HasPiTypeBase Q] [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
+    variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V : Universe.{u}}
+             [HasPropositions Prp V] {W : Universe} [HasPropositions Prp W] [HasUnivFunctors W W]
+             {B : V} [HasFunctors α B] (Q : B → W) [HasPiTypeBase Q]
+             [∀ F : α ⥤ B, HasPiTypeBase (λ a => Q (F a))]
              [HasPiTypeBase (λ F : α ⥤ B => Layer1.HasPiType.Pi (λ a => Q (F a)))]
              [h : HasRevCompFunPiFun α Q]
 
@@ -2143,16 +2142,47 @@ namespace HasRevCompFunPiFun
 
   end
 
+  section
+
+    variable {α : Sort u} [Layer1.HasEquivalenceRelationBase Prp α] {V W : Universe.{u}}
+             [HasPropositions Prp V] [HasPropositions Prp W] [HasUnivFunctors V W]
+             [HasUnivFunctors W W] {B : V} [HasFunctors α B] (F : α ⥤ B) (C : W) [HasFunctors α C]
+             [h : HasRevCompFunPiFun α (Function.const B C)]
+             [HasSwapPi (Function.const (B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
+
+    instance compFun₂.hasDefInstEq :
+        DefType.HasDefInstEq (Layer1.HasRevCompFunPiFun.defCompFun₂ F C).toDefFun :=
+      ⟨λ G => HasFunctors.byDef •
+              congrFun (HasFunctors.byDef (hF := HasRevCompFunPiFun.hasDefInstEq α (Function.const B C))) F •
+              HasFunctors.byDef (hF := HasSwapPi.hasDefInstEq (Function.const (B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C))) (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) F)⟩
+
+  end
+
+  section
+
+    variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V W : Universe.{u}}
+             [HasPropositions Prp V] [HasPropositions Prp W] [HasUnivFunctors V W]
+             [HasUnivFunctors W W] (B : V) [HasFunctors α B] (C : W) [HasFunctors α C]
+             [HasRevCompFunPiFun α (Function.const B C)]
+             [HasSwapPi₂ (Function.const (B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
+
+    instance compFun₃.hasDefInstEq :
+        DefType.HasDefInstEq (Layer1.HasRevCompFunPiFun.defCompFun₃ α B C).toDefFun :=
+      ⟨λ F => HasFunctors.byDef (hF := HasSwapPi₂.hasDefInstEq (Function.const (B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C))) (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C))⟩
+
+  end
+
 end HasRevCompFunPiFun
 
 
-class HasConstPi (α : Sort u) {V : Universe} (B : V) [HasPiTypeBase (Function.const α B)] where
+class HasConstPi (α : Sort u) {V : Universe} [HasPropositions Prp V] (B : V)
+                 [HasPiTypeBase (Function.const α B)] where
   defConstPi (b : B) : DefPi (Function.const α B) (Function.const α b)
 
 namespace HasConstPi
 
-  variable (α : Sort u) {V : Universe} (B : V) [HasPiTypeBase (Function.const α B)]
-           [h : HasConstPi α B]
+  variable (α : Sort u) {V : Universe} [HasPropositions Prp V] (B : V)
+           [HasPiTypeBase (Function.const α B)] [h : HasConstPi α B]
 
   instance toLayer1 : Layer1.HasConstPi α B := ⟨λ b => (h.defConstPi b).toLayer1⟩
 
@@ -2161,15 +2191,15 @@ namespace HasConstPi
 
 end HasConstPi
 
-class HasConstPiFun (α : Sort u) {V : Universe} [HasUnivFunctors V V] (B : V)
-                    [HasPiTypeBase (Function.const α B)] extends
+class HasConstPiFun (α : Sort u) {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V]
+                    (B : V) [HasPiTypeBase (Function.const α B)] extends
     HasConstPi α B where
   defConstPiEq : DefPiAppEq defConstPi (λ e a => e)
   defConstPiFun : B ⥤⦃defConstPiEq.eqFun⦄ Layer1.HasPiType.Pi (Function.const α B)
 
 namespace HasConstPiFun
 
-  variable (α : Sort u) {V : Universe} [HasUnivFunctors V V] (B : V)
+  variable (α : Sort u) {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V] (B : V)
            [HasPiTypeBase (Function.const α B)] [h : HasConstPiFun α B]
 
   instance toLayer1 : Layer1.HasConstPiFun α B := ⟨h.defConstPiFun.toLayer1⟩
@@ -2179,16 +2209,16 @@ namespace HasConstPiFun
 end HasConstPiFun
 
 
-class HasDupPi {α : Sort u} {V : Universe} (P : α → α → V) [∀ a, HasPiTypeBase (P a)]
-               [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))] [HasPiTypeBase (λ a => P a a)]
-               where
+class HasDupPi {α : Sort u} {V : Universe} [HasPropositions Prp V] (P : α → α → V)
+               [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
+               [HasPiTypeBase (λ a => P a a)] where
   defDupPi (F : Layer1.HasPiType.Pi₂ P) : DefPi (λ a => P a a) (λ a => F a a)
 
 namespace HasDupPi
 
-  variable {α : Sort u} {V : Universe} (P : α → α → V) [∀ a, HasPiTypeBase (P a)]
-           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))] [HasPiTypeBase (λ a => P a a)]
-           [h : HasDupPi P]
+  variable {α : Sort u} {V : Universe} [HasPropositions Prp V] (P : α → α → V)
+           [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
+           [HasPiTypeBase (λ a => P a a)] [h : HasDupPi P]
 
   instance toLayer1 : Layer1.HasDupPi P := ⟨λ F => (h.defDupPi F).toLayer1⟩
 
@@ -2198,16 +2228,17 @@ namespace HasDupPi
 
 end HasDupPi
 
-class HasDupPiFun {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → α → V)
-                  [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
-                  [HasPiTypeBase (λ a => P a a)] extends
+class HasDupPiFun {α : Sort u} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V]
+                  (P : α → α → V) [∀ a, HasPiTypeBase (P a)]
+                  [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))] [HasPiTypeBase (λ a => P a a)]
+                  extends
     HasDupPi P where
   defDupPiEq : DefPiAppEq defDupPi (λ e a => congrFun₂ e a a)
   defDupPiFun : Layer1.HasPiType.Pi₂ P ⥤⦃defDupPiEq.eqFun⦄ Layer1.HasPiType.Pi (λ a => P a a)
 
 namespace HasDupPiFun
 
-  variable {α : Sort u} {V : Universe} [HasUnivFunctors V V] (P : α → α → V)
+  variable {α : Sort u} {V : Universe} [HasPropositions Prp V] [HasUnivFunctors V V] (P : α → α → V)
            [∀ a, HasPiTypeBase (P a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (P a))]
            [HasPiTypeBase (λ a => P a a)] [h : HasDupPiFun P]
 
@@ -2218,16 +2249,16 @@ namespace HasDupPiFun
 end HasDupPiFun
 
 
-class HasPiSelfAppPi {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-                     [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V)
+class HasPiSelfAppPi {U V : Universe.{u}} [HasPropositions Prp U] [HasPropositions Prp V]
+                     [HasUnivFunctors V U] {A : U} (Q : A → V)
                      [HasPiTypeBase Q]
                      [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))] where
   defPiSelfAppPi (F : Layer1.HasPiType.Pi Q ⥤ A) : DefPi (λ G => Q (F G)) (λ G => G (F G))
 
 namespace HasPiSelfAppPi
 
-  variable {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-           [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V) [HasPiTypeBase Q]
+  variable {U V : Universe.{u}} [HasPropositions Prp U] [HasPropositions Prp V]
+           [HasUnivFunctors V U] {A : U} (Q : A → V) [HasPiTypeBase Q]
            [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))] [h : HasPiSelfAppPi Q]
 
   instance toLayer1 : Layer1.HasPiSelfAppPi Q := ⟨λ F => (h.defPiSelfAppPi F).toLayer1⟩
@@ -2238,8 +2269,8 @@ namespace HasPiSelfAppPi
 
 end HasPiSelfAppPi
 
-class HasPiSelfAppPi₂ {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-                      [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V)
+class HasPiSelfAppPi₂ {U V : Universe.{u}} [HasPropositions Prp U] [HasPropositions Prp V]
+                      [HasUnivFunctors V U] {A : U} (Q : A → V)
                       [HasPiTypeBase Q]
                       [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))]
                       [HasPiTypeBase (λ (F : Layer1.HasPiType.Pi Q ⥤ A) =>
@@ -2250,8 +2281,8 @@ class HasPiSelfAppPi₂ {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasProposi
 
 namespace HasPiSelfAppPi₂
 
-  variable {U : Universe.{u}} {V : Layer1.Universe.{u}} [HasPropositions U.V V]
-           [HasUnivFunctors V U] {A : U} (Q : A → Universe.fromLayer1 V) [HasPiTypeBase Q]
+  variable {U V : Universe.{u}} [HasPropositions Prp U] [HasPropositions Prp V]
+           [HasUnivFunctors V U] {A : U} (Q : A → V) [HasPiTypeBase Q]
            [∀ F : Layer1.HasPiType.Pi Q ⥤ A, HasPiTypeBase (λ G => Q (F G))]
            [HasPiTypeBase (λ (F : Layer1.HasPiType.Pi Q ⥤ A) => Layer1.HasPiType.Pi (λ G => Q (F G)))]
            [h : HasPiSelfAppPi₂ Q]
@@ -2264,16 +2295,18 @@ namespace HasPiSelfAppPi₂
 end HasPiSelfAppPi₂
 
 
-class HasSubstPi {α : Sort u} {V W : Universe} {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W)
-                 [∀ a, HasPiTypeBase (Q a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
+class HasSubstPi {α : Sort u} {V W : Universe} [HasPropositions Prp V] [HasPropositions Prp W]
+                 {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W) [∀ a, HasPiTypeBase (Q a)]
+                 [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
                  [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))] where
   defSubstPi (F : Layer1.HasPiType.Pi P) (G : Layer1.HasPiType.Pi (λ a => Layer1.HasPiType.Pi (Q a))) :
     DefPi (λ a => Q a (F a)) (λ a => G a (F a))
 
 namespace HasSubstPi
 
-  variable {α : Sort u} {V W : Universe} {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W)
-           [∀ a, HasPiTypeBase (Q a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
+  variable {α : Sort u} {V W : Universe} [HasPropositions Prp V] [HasPropositions Prp W] {P : α → V}
+           [HasPiTypeBase P] (Q : ∀ a, P a → W) [∀ a, HasPiTypeBase (Q a)]
+           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
            [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))] [h : HasSubstPi Q]
 
   instance toLayer1 : Layer1.HasSubstPi Q := ⟨λ F G => (h.defSubstPi F G).toLayer1⟩
@@ -2285,8 +2318,9 @@ namespace HasSubstPi
 
 end HasSubstPi
 
-class HasRevSubstPi₂ {α : Sort u} {V W : Universe} {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W)
-                     [∀ a, HasPiTypeBase (Q a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
+class HasRevSubstPi₂ {α : Sort u} {V W : Universe} [HasPropositions Prp V] [HasPropositions Prp W]
+                     {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W) [∀ a, HasPiTypeBase (Q a)]
+                     [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
                      [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))]
                      [HasPiTypeBase (λ F : Layer1.HasPiType.Pi P =>
                                      Layer1.HasPiType.Pi (λ a => Q a (F a)))] extends
@@ -2297,8 +2331,9 @@ class HasRevSubstPi₂ {α : Sort u} {V W : Universe} {P : α → V} [HasPiTypeB
 
 namespace HasRevSubstPi₂
 
-  variable {α : Sort u} {V W : Universe} {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W)
-           [∀ a, HasPiTypeBase (Q a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
+  variable {α : Sort u} {V W : Universe} [HasPropositions Prp V] [HasPropositions Prp W] {P : α → V}
+           [HasPiTypeBase P] (Q : ∀ a, P a → W) [∀ a, HasPiTypeBase (Q a)]
+           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
            [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))]
            [HasPiTypeBase (λ F : Layer1.HasPiType.Pi P => Layer1.HasPiType.Pi (λ a => Q a (F a)))]
            [h : HasRevSubstPi₂ Q]
@@ -2311,9 +2346,9 @@ namespace HasRevSubstPi₂
 
 end HasRevSubstPi₂
 
-class HasRevSubstPiFun {α : Sort u} {V W : Universe} [HasUnivFunctors W W] {P : α → V}
-                       [HasPiTypeBase P] (Q : ∀ a, P a → W) [∀ a, HasPiTypeBase (Q a)]
-                       [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
+class HasRevSubstPiFun {α : Sort u} {V W : Universe} [HasPropositions Prp V] [HasPropositions Prp W]
+                       [HasUnivFunctors W W] {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W)
+                       [∀ a, HasPiTypeBase (Q a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
                        [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))]
                        [HasPiTypeBase (λ F : Layer1.HasPiType.Pi P =>
                                        Layer1.HasPiType.Pi (λ a => Q a (F a)))] extends
@@ -2328,24 +2363,59 @@ class HasRevSubstPiFun {α : Sort u} {V W : Universe} [HasUnivFunctors W W] {P :
 
 namespace HasRevSubstPiFun
 
-  variable {α : Sort u} {V W : Universe} [HasUnivFunctors W W] {P : α → V} [HasPiTypeBase P]
-           (Q : ∀ a, P a → W) [∀ a, HasPiTypeBase (Q a)]
-           [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
-           [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))]
-           [HasPiTypeBase (λ F : Layer1.HasPiType.Pi P => Layer1.HasPiType.Pi (λ a => Q a (F a)))]
-           [h : HasRevSubstPiFun Q]
+  section
 
-  instance toLayer1 : Layer1.HasRevSubstPiFun Q := ⟨h.defRevSubstPiFun.toLayer1⟩
+    variable {α : Sort u} {V W : Universe} [HasPropositions Prp V] [HasPropositions Prp W]
+             [HasUnivFunctors W W] {P : α → V} [HasPiTypeBase P] (Q : ∀ a, P a → W)
+             [∀ a, HasPiTypeBase (Q a)] [HasPiTypeBase (λ a => Layer1.HasPiType.Pi (Q a))]
+             [∀ F : Layer1.HasPiType.Pi P, HasPiTypeBase (λ a => Q a (F a))]
+             [HasPiTypeBase (λ F : Layer1.HasPiType.Pi P => Layer1.HasPiType.Pi (λ a => Q a (F a)))]
+             [h : HasRevSubstPiFun Q]
 
-  instance hasDefInstEq : DefType.HasDefInstEq (toLayer1 Q).defRevSubstPiFun :=
-    ⟨h.defRevSubstPiFun.e⟩
+    instance toLayer1 : Layer1.HasRevSubstPiFun Q := ⟨h.defRevSubstPiFun.toLayer1⟩
+
+    instance hasDefInstEq : DefType.HasDefInstEq (toLayer1 Q).defRevSubstPiFun :=
+      ⟨h.defRevSubstPiFun.e⟩
+
+  end
+
+  section
+
+    variable {α : Sort u} [Layer1.HasEquivalenceRelationBase Prp α] {V W : Universe.{u}}
+             [HasPropositions Prp V] [HasPropositions Prp W] [HasUnivFunctors V W]
+             [HasUnivFunctors W W] {B : V} [HasFunctors α B] (F : α ⥤ B) (C : W)
+             [HasFunctors α (B ⥤ C)] [HasFunctors α C]
+             [h : HasRevSubstPiFun (Function.const α (Function.const B C))]
+             [HasSwapPi (Function.const (α ⥤ B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
+
+    instance substFun₂.hasDefInstEq :
+        DefType.HasDefInstEq (Layer1.HasRevSubstPiFun.defSubstFun₂ F C).toDefFun :=
+      ⟨λ G => HasFunctors.byDef •
+              congrFun (HasFunctors.byDef (hF := HasRevSubstPiFun.hasDefInstEq (Function.const α (Function.const B C)))) F •
+              HasFunctors.byDef (hF := HasSwapPi.hasDefInstEq (Function.const (α ⥤ B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C))) (Layer1.HasRevSubstPiFun.revSubstFun₃ α B C) F)⟩
+
+  end
+
+  section
+
+    variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {V W : Universe.{u}}
+             [HasPropositions Prp V] [HasPropositions Prp W] [HasUnivFunctors V W]
+             [HasUnivFunctors W W] (B : V) [HasFunctors α B] (C : W) [HasFunctors α (B ⥤ C)]
+             [HasFunctors α C] [HasRevSubstPiFun (Function.const α (Function.const B C))]
+             [HasSwapPi₂ (Function.const (α ⥤ B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C)))]
+
+    instance substFun₃.hasDefInstEq :
+        DefType.HasDefInstEq (Layer1.HasRevSubstPiFun.defSubstFun₃ α B C).toDefFun :=
+      ⟨λ F => HasFunctors.byDef (hF := HasSwapPi₂.hasDefInstEq (Function.const (α ⥤ B ⥤ C) (Function.const (α ⥤ B) (α ⥤ C))) (Layer1.HasRevSubstPiFun.revSubstFun₃ α B C))⟩
+
+  end
 
 end HasRevSubstPiFun
 
 
 
-class HasExternalLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                             [Layer1.HasEquivalenceRelationBase U.V α] where
+class HasExternalLinearLogic (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α]
+                             (U : Universe.{u}) [HasPropositions Prp U] [HasUnivFunctors U U] where
   [hFun (B : U) : HasFunctors α B]
   defRevAppFun₂ (B : U) :
     α ⥤ (α ⥤ B) ⥤{λ a F => F a,
@@ -2359,27 +2429,19 @@ class HasExternalLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U
 
 namespace HasExternalLinearLogic
 
-  instance (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
-           [Layer1.HasEquivalenceRelationBase U.V α] [h : HasExternalLinearLogic α U] (B : U) :
+  instance (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {U : Universe.{u}}
+           [HasPropositions Prp U] [HasUnivFunctors U U] [h : HasExternalLinearLogic α U] (B : U) :
       HasFunctors α B :=
     h.hFun B
 
-  instance toLayer1 (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                    [Layer1.HasEquivalenceRelationBase U.V α] [h : HasExternalLinearLogic α U] :
+  instance toLayer1 (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                    [HasPropositions Prp U] [HasUnivFunctors U U] [h : HasExternalLinearLogic α U] :
       Layer1.HasExternalLinearLogic α U where
     defRevAppFun₂  B   := (h.defRevAppFun₂  B).toLayer1
     defRevCompFun₃ B C := (h.defRevCompFun₃ B C).toLayer1
 
-  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
-           [Layer1.HasEquivalenceRelationBase U.V α] [h : HasExternalLinearLogic α U]
-
-  instance (B : U) : Layer1.HasPiAppFunPi (Function.const α B) :=
-    Layer1.HasExternalLinearLogic.hasPiAppFunPi α B
-
-  instance (B C : U) :
-      Layer1.HasRevCompFunPiFun α (Function.const (Layer1.HasInstances.Inst (I := U.toUniverse) B)
-                                                  C) :=
-    Layer1.HasExternalLinearLogic.hasRevCompFunPiFun α B C
+  variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {U : Universe.{u}}
+           [HasPropositions Prp U] [HasUnivFunctors U U] [h : HasExternalLinearLogic α U]
 
   @[reducible] def revAppFun.congrArg {a₁ a₂ : α} (e : a₁ ≃ a₂) (B : U) :
       Layer1.HasPiAppFun.revAppFun a₁ B ≃ Layer1.HasPiAppFun.revAppFun a₂ B :=
@@ -2432,15 +2494,15 @@ namespace HasExternalLinearLogic
   instance hasRevCompFunPi₂ (B C : U) : HasRevCompFunPi₂ α (Function.const B C) :=
     ⟨λ G => ((h.defRevCompFun₃ B C).app G).toDefFun.toDefPi⟩
   instance (B C : U) : HasRevCompFunPi₂ α (λ _ : B => C) := hasRevCompFunPi₂ α B C
-
-  instance hasRevCompFunPiFun (B C : U) : HasRevCompFunPiFun α (Function.const B C) where
+ 
+  compiler_slow instance hasRevCompFunPiFun (B C : U) : HasRevCompFunPiFun α (Function.const B C) where
     defRevCompFunPiEq  := { defAppEq    := λ e => { app        := λ G => ⟨(((h.defRevCompFun₃ B C).appEq.defAppEq e).app G).e⟩,
                                                     toDefEquiv := ⟨((h.defRevCompFun₃ B C).appEq.defAppEq e).toDefEquiv.e⟩ },
                             defAppEqFun := λ G₁ G₂ => ⟨((h.defRevCompFun₃ B C).appEq.defAppEqFun G₁ G₂).inst⟩ }
     defRevCompFunPiFun := { inst := (h.defRevCompFun₃ B C).toDefFun.inst,
                             e    := (h.defRevCompFun₃ B C).toDefFun.e }
 
-  instance (B C : U) : HasRevCompFunPiFun α (λ _ : B => C) := hasRevCompFunPiFun α B C
+  compiler_slow instance (B C : U) : HasRevCompFunPiFun α (λ _ : B => C) := hasRevCompFunPiFun α B C
 
   instance revAppFun.hasDefInstEq (B : U) (a : α) :
       DefType.HasDefInstEq (Layer1.HasPiAppFun.defRevAppFun a B) :=
@@ -2484,22 +2546,22 @@ namespace HasExternalLinearLogic
                        (hFa := λ F => compFun.hasDefInstEq α F G)
                        (hF := revCompFun₂.hasDefInstEq α G)
 
-  instance revCompFun₃.hasDefInstEq (B C : U):
+  compiler_slow instance revCompFun₃.hasDefInstEq (B C : U):
       DefType.HasDefInstEq (Layer1.HasRevCompFunPiFun.defRevCompFun₃ α B C).toDefPi :=
     HasRevCompFunPiFun.hasDefInstEq α (Function.const B C)
 
-  def revCompFun₃.byDef {B C : U} {G : B ⥤ C} :
+  compiler_slow def revCompFun₃.byDef {B C : U} {G : B ⥤ C} :
       (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) G ≃ Layer1.HasRevCompFunPi₂.revCompFun₂ α G :=
     HasFunctors.byDef
 
-  def revCompFun₃.byDef₂ {B C : U} {G : B ⥤ C} {F : α ⥤ B} :
+  compiler_slow def revCompFun₃.byDef₂ {B C : U} {G : B ⥤ C} {F : α ⥤ B} :
       (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) G F ≃ G ⊙ F :=
     HasFunctors.byDef₂ (α := B ⥤ C) (β := α ⥤ B) (Y := α ⥤ C)
                        (F := (Layer1.HasRevCompFunPiFun.defRevCompFun₃ α B C).toDefFun₂)
                        (hFa := revCompFun₂.hasDefInstEq α)
                        (hF := revCompFun₃.hasDefInstEq α B C)
 
-  def revCompFun₃.byDef₃ {B C : U} {G : B ⥤ C} {F : α ⥤ B} {a : α} :
+  compiler_slow def revCompFun₃.byDef₃ {B C : U} {G : B ⥤ C} {F : α ⥤ B} {a : α} :
       (Layer1.HasRevCompFunPiFun.revCompFun₃ α B C) G F a ≃ G (F a) :=
     HasFunctors.byDef₃ (F := Layer1.HasRevCompFunPiFun.defRevCompFun₃ α B C)
                        (hFab := λ G F => compFun.hasDefInstEq α F G)
@@ -2509,7 +2571,7 @@ namespace HasExternalLinearLogic
 end HasExternalLinearLogic
 
 
-class HasLinearLogic (U : Universe) extends HasUnivFunctors U U where
+class HasLinearLogic (U : Universe) [HasPropositions Prp U] extends HasUnivFunctors U U where
   defIdFun (A : U) : A ⥤⦃EquivalenceFunctor.idFun A⦄ A
   defRevAppFun₂ (A B : U) :
     A ⥤ (A ⥤ B) ⥤{λ a F => F a,
@@ -2523,14 +2585,17 @@ class HasLinearLogic (U : Universe) extends HasUnivFunctors U U where
 
 namespace HasLinearLogic
 
-  instance {U : Universe} [h : HasLinearLogic U] (A B : U) : HasFunctors A B := h.hFun A B
+  instance {U : Universe} [HasPropositions Prp U] [h : HasLinearLogic U] (A B : U) :
+      HasFunctors A B :=
+    h.hFun A B
 
-  instance toLayer1 (U : Universe) [h : HasLinearLogic U] : Layer1.HasLinearLogic U where
+  instance toLayer1 (U : Universe) [HasPropositions Prp U] [h : HasLinearLogic U] :
+      Layer1.HasLinearLogic U where
     defIdFun       A     := (h.defIdFun       A).toLayer1
     defRevAppFun₂  A B   := (h.defRevAppFun₂  A B).toLayer1
     defRevCompFun₃ A B C := (h.defRevCompFun₃ A B C).toLayer1
 
-  variable {U : Universe} [h : HasLinearLogic U]
+  variable {U : Universe} [HasPropositions Prp U] [h : HasLinearLogic U]
 
   instance hasIdFun (A : U) : HasIdFun A := ⟨h.defIdFun A⟩
 
@@ -2546,9 +2611,10 @@ namespace HasLinearLogic
 end HasLinearLogic
 
 
-class HasExternalSubLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                                [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
-                                where
+class HasExternalSubLinearLogic [Layer1.HasSubLinearLogic Prp] (α : Sort u)
+                                [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                                [HasPropositions Prp U] [HasUnivFunctors U U]
+                                [∀ B : U, HasFunctors α B] where
   defConstFun₂ (B : U) :
     B ⥤ α ⥤{λ b a => b,
              λ b a₁ a₂ => Layer1.HasConstPi.constFun (a₁ ≃ a₂) (idIso b),
@@ -2556,14 +2622,16 @@ class HasExternalSubLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctor
 
 namespace HasExternalSubLinearLogic
 
-  instance toLayer1 (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                    [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+  variable [Layer1.HasSubLinearLogic Prp]
+
+  instance toLayer1 (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                    [HasPropositions Prp U] [HasUnivFunctors U U] [∀ B : U, HasFunctors α B]
                     [h : HasExternalSubLinearLogic α U] :
       Layer1.HasExternalSubLinearLogic α U where
     defConstFun₂ B := (h.defConstFun₂ B).toLayer1
 
-  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
-           [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+  variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {U : Universe.{u}}
+           [HasPropositions Prp U] [HasUnivFunctors U U] [∀ B : U, HasFunctors α B]
            [h : HasExternalSubLinearLogic α U]
 
   instance (B : U) : Layer1.HasConstPi α B := Layer1.HasExternalSubLinearLogic.hasConstPi α B
@@ -2609,12 +2677,14 @@ namespace HasExternalSubLinearLogic
 
 end HasExternalSubLinearLogic
 
-class HasExternalAffineLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                             [Layer1.HasEquivalenceRelationBase U.V α] extends
+class HasExternalAffineLogic [Layer1.HasSubLinearLogic Prp] (α : Sort u)
+                             [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                             [HasPropositions Prp U] [HasUnivFunctors U U] extends
   HasExternalLinearLogic α U, HasExternalSubLinearLogic α U
 
 
-class HasSubLinearLogic (U : Universe) [HasUnivFunctors U U] where
+class HasSubLinearLogic [Layer1.HasSubLinearLogic Prp] (U : Universe) [HasPropositions Prp U]
+                        [HasUnivFunctors U U] where
   defConstFun₂ (A B : U) :
     B ⥤ A ⥤{λ b a => b,
              λ b a₁ a₂ => Layer1.HasConstPi.constFun (a₁ ≃ a₂) (idIso b),
@@ -2622,33 +2692,42 @@ class HasSubLinearLogic (U : Universe) [HasUnivFunctors U U] where
 
 namespace HasSubLinearLogic
 
-  instance toLayer1 (U : Universe) [HasUnivFunctors U U] [h : HasSubLinearLogic U] :
+  variable [Layer1.HasSubLinearLogic Prp]
+
+  instance toLayer1 (U : Universe) [HasPropositions Prp U] [HasUnivFunctors U U]
+                    [h : HasSubLinearLogic U] :
       Layer1.HasSubLinearLogic U where
     defConstFun₂ A B := (h.defConstFun₂ A B).toLayer1
 
-  variable {U : Universe} [HasUnivFunctors U U] [h : HasSubLinearLogic U]
+  variable {U : Universe} [HasPropositions Prp U] [HasUnivFunctors U U] [h : HasSubLinearLogic U]
 
   instance hasExternalSubLinearLogic (A : U) : HasExternalSubLinearLogic A U where
     defConstFun₂ B := h.defConstFun₂ A B
 
 end HasSubLinearLogic
 
-class HasAffineLogic (U : Universe) extends HasLinearLogic U, HasSubLinearLogic U
+class HasAffineLogic [Layer1.HasSubLinearLogic Prp] (U : Universe) [HasPropositions Prp U] extends
+  HasLinearLogic U, HasSubLinearLogic U
 
 namespace HasAffineLogic
 
-  instance toLayer1 (U : Universe) [HasAffineLogic U] : Layer1.HasAffineLogic U := ⟨⟩
+  variable [Layer1.HasSubLinearLogic Prp]
 
-  variable {U : Universe} [h : HasAffineLogic U]
+  instance toLayer1 (U : Universe) [HasPropositions Prp U] [HasAffineLogic U] :
+      Layer1.HasAffineLogic U :=
+    ⟨⟩
+
+  variable {U : Universe} [HasPropositions Prp U] [h : HasAffineLogic U]
 
   instance hasExternalAffineLogic (A : U) : HasExternalAffineLogic A U := ⟨⟩
 
 end HasAffineLogic
 
 
-class HasExternalNonLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                                [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
-                                where
+class HasExternalNonLinearLogic [Layer1.HasNonLinearLogic Prp] (α : Sort u)
+                                [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                                [HasPropositions Prp U] [HasUnivFunctors U U]
+                                [∀ B : U, HasFunctors α B] where
   defDupFun₂ (B : U) :
     (α ⥤ α ⥤ B) ⥤ α ⥤{λ F a => F a a,
                         λ F a₁ a₂ => Λ e => congrArg₂ F e e,
@@ -2656,25 +2735,23 @@ class HasExternalNonLinearLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctor
 
 namespace HasExternalNonLinearLogic
 
-  instance toLayer1 (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                    [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+  variable [Layer1.HasNonLinearLogic Prp]
+
+  instance toLayer1 (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                    [HasPropositions Prp U] [HasUnivFunctors U U] [∀ B : U, HasFunctors α B]
                     [h : HasExternalNonLinearLogic α U] :
       Layer1.HasExternalNonLinearLogic α U where
     defDupFun₂ B := (h.defDupFun₂ B).toLayer1
 
-  variable (α : Sort u) {U : Universe.{u}} [HasUnivFunctors U U]
-           [Layer1.HasEquivalenceRelationBase U.V α] [∀ B : U, HasFunctors α B]
+  variable (α : Sort u) [Layer1.HasEquivalenceRelationBase Prp α] {U : Universe.{u}}
+           [HasPropositions Prp U] [HasUnivFunctors U U] [∀ B : U, HasFunctors α B]
            [h : HasExternalNonLinearLogic α U]
-
-  instance (B : U) : Layer1.HasDupPi (Function.const α (Function.const α B)) :=
-    Layer1.HasExternalNonLinearLogic.hasDupPi α B
 
   @[reducible] def dupFun.congrArg {B : U} {F₁ F₂ : α ⥤ α ⥤ B} (e : F₁ ≃ F₂) :
       Layer1.HasDupPi.dupFun F₁ ≃ Layer1.HasDupPi.dupFun F₂ :=
     (h.defDupFun₂ B).appEq.appEq e
 
-  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) (a₁ : α) :
-      Layer1.HasPiType (λ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
+  instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) (a₁ : α) : Layer1.HasPiType (λ a₂ => F₁ a₁ a₂ ≃ F₂ a₁ a₂) :=
     hasEqPi (F₁ a₁) (F₂ a₁)
 
   instance {B : U} (F₁ F₂ : α ⥤ α ⥤ B) :
@@ -2725,12 +2802,14 @@ namespace HasExternalNonLinearLogic
 
 end HasExternalNonLinearLogic
 
-class HasExternalFullLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctors U U]
-                           [Layer1.HasEquivalenceRelationBase U.V α] extends
+class HasExternalFullLogic [Layer1.HasSubLinearLogic Prp] [Layer1.HasNonLinearLogic Prp] (α : Sort u)
+                           [Layer1.HasEquivalenceRelationBase Prp α] (U : Universe.{u})
+                           [HasPropositions Prp U] [HasUnivFunctors U U] extends
   HasExternalAffineLogic α U, HasExternalNonLinearLogic α U
 
 
-class HasNonLinearLogic (U : Universe) [HasUnivFunctors U U] where
+class HasNonLinearLogic [Layer1.HasNonLinearLogic Prp] (U : Universe) [HasPropositions Prp U]
+                        [HasUnivFunctors U U] where
   defDupFun₂ (A B : U) :
     (A ⥤ A ⥤ B) ⥤ A ⥤{λ F a => F a a,
                         λ F a₁ a₂ => Λ e => congrArg₂ F e e,
@@ -2738,24 +2817,33 @@ class HasNonLinearLogic (U : Universe) [HasUnivFunctors U U] where
 
 namespace HasNonLinearLogic
 
-  instance toLayer1 (U : Universe) [HasUnivFunctors U U] [h : HasNonLinearLogic U] :
+  variable [Layer1.HasNonLinearLogic Prp]
+
+  instance toLayer1 (U : Universe) [HasPropositions Prp U] [HasUnivFunctors U U]
+                    [h : HasNonLinearLogic U] :
       Layer1.HasNonLinearLogic U where
     defDupFun₂ A B := (h.defDupFun₂ A B).toLayer1
 
-  variable {U : Universe} [HasUnivFunctors U U] [h : HasNonLinearLogic U]
+  variable {U : Universe} [HasPropositions Prp U] [HasUnivFunctors U U] [h : HasNonLinearLogic U]
 
   instance hasExternalNonLinearLogic (A : U) : HasExternalNonLinearLogic A U where
     defDupFun₂ B := h.defDupFun₂ A B
 
 end HasNonLinearLogic
 
-class HasFullLogic (U : Universe) extends HasAffineLogic U, HasNonLinearLogic U
+class HasFullLogic [Layer1.HasSubLinearLogic Prp] [Layer1.HasNonLinearLogic Prp] (U : Universe)
+                   [HasPropositions Prp U] extends
+  HasAffineLogic U, HasNonLinearLogic U
 
 namespace HasFullLogic
 
-  instance toLayer1 (U : Universe) [HasFullLogic U] : Layer1.HasFullLogic U := ⟨⟩
+  variable [Layer1.HasSubLinearLogic Prp] [Layer1.HasNonLinearLogic Prp]
 
-  variable {U : Universe} [h : HasFullLogic U]
+  instance toLayer1 (U : Universe) [HasPropositions Prp U] [HasFullLogic U] :
+      Layer1.HasFullLogic U :=
+    ⟨⟩
+
+  variable {U : Universe} [HasPropositions Prp U] [h : HasFullLogic U]
 
   instance hasExternalFullLogic (A : U) : HasExternalFullLogic A U := ⟨⟩
 

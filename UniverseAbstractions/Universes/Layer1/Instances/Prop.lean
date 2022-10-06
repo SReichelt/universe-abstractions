@@ -17,7 +17,7 @@ set_option autoImplicit false
 
 universe u
 
-open Universe HasPreorderRelation HasTrivialDefInst HasTrivialDefPi
+open HasPreorderRelation HasTrivialDefInst HasTrivialDefPi
 
 
 

@@ -8,7 +8,7 @@ namespace UniverseAbstractions.Layer1
 set_option autoImplicit false
 set_option linter.unusedVariables false
 
-open Universe HasPiType HasFunctors HasPreorderRelation HasIsomorphisms
+open HasPiType HasFunctors HasPreorderRelation HasIsomorphisms
 
 universe u v
 

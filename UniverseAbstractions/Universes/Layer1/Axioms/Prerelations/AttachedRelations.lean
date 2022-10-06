@@ -10,7 +10,7 @@ namespace UniverseAbstractions.Layer1
 set_option autoImplicit false
 set_option linter.unusedVariables false
 
-open Universe HasFunctors HasIdFun HasRevCompFunPiFun Prerelation Helpers
+open HasFunctors HasIdFun HasRevCompFunPiFun Prerelation Helpers
 
 universe u u' u'' u''' u''''
 

@@ -8,8 +8,6 @@ set_option autoImplicit false
 set_option linter.unusedVariables false
 set_option synthInstance.maxHeartbeats 2500
 
-open Universe
-
 universe u u' u'' u'''
 
 

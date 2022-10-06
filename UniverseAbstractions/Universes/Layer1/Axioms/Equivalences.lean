@@ -10,7 +10,7 @@ set_option autoImplicit false
 
 universe u
 
-open Universe HasFunctors HasLinearLogic Prerelation HasPreorderRelation HasIsomorphisms
+open HasFunctors HasLinearLogic Prerelation HasPreorderRelation HasIsomorphisms
      HasEquivalenceRelationBase
 
 
