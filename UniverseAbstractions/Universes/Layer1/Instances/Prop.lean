@@ -17,7 +17,7 @@ set_option autoImplicit false
 
 universe u
 
-open HasPreorderRelation HasTrivialDefInst HasTrivialDefPi
+open HasPreorderRelation
 
 
 
@@ -25,70 +25,62 @@ def prop : Universe.{0, 1} := ⟨Prop⟩
 
 namespace prop
 
-  instance hasPiType {α : Sort u} (P : α → prop) : HasPiType P where
-    defPiType := DefType.native _
+  instance hasPiType {α : Sort u} (P : α → prop) : HasTypeWithIntro prop (∀ a, P a) :=
+    HasTypeWithIntro.native _
 
-  instance hasTrivialDefPi {α : Sort u} (P : α → prop) : HasTrivialDefPi P where
-    toHasTrivialDefInst := HasTrivialDefInst.native _
+  instance hasFunctors (p : Prop) : HasFunctorsWithIntro p prop := ⟨⟩
 
-  instance hasFunctors (p : Prop) (Y : prop) : HasFunctors p Y := ⟨⟩
-
-  instance hasTrivialDefFun (p : Prop) (Y : prop) : HasTrivialDefFun p Y := ⟨⟩
-
-  instance hasUnivFunctors : HasUnivFunctors prop prop := ⟨⟩
-
-  instance hasTrivialFunctoriality : HasTrivialFunctoriality prop prop := ⟨⟩
+  instance hasUnivFunctors : HasUnivFunctorsWithIntro prop prop := ⟨⟩
 
   instance hasExternalFullLogic (p : Prop) : HasExternalFullLogic p prop := inferInstance
 
   instance hasFullLogic : HasFullLogic prop := inferInstance
 
-  instance hasTop : HasTop prop where
-    defTopType   := ⟨⟨True, λ _ => PUnit.unit⟩, λ _ => ⟨trivial⟩⟩
-    defElimFun _ := defFun
+  instance hasTopType : HasTypeWithIntro prop PUnit.{0} where
+    A      := True
+    hElim  := ⟨λ _ => PUnit.unit⟩
+    hIntro := ⟨λ _ => trivial⟩
 
-  instance hasBot : HasBot prop where
-    defBotType   := ⟨False, False.elim⟩
-    defElimFun _ := defFun
+  instance hasTop : HasTop prop := inferInstance
+
+  instance hasBotType : HasType prop PEmpty.{0} where
+    A     := False
+    hElim := ⟨False.elim⟩
+
+  instance hasBot : HasBot prop := inferInstance
 
   instance hasClassicalLogic : HasClassicalLogic prop := ⟨@Classical.byContradiction⟩
 
-  instance hasProducts (p q : prop) : HasProducts p q where
-    defProdType    := ⟨⟨p ∧ q, λ ⟨l, r⟩ => ⟨l, r⟩⟩, λ ⟨l, r⟩ => ⟨⟨l, r⟩⟩⟩
-    defIntroFun₂   := defFun₂
-    defElimFun₂  _ := defFun₂
+  instance hasProductType (p q : prop) : HasTypeWithIntro prop (PProd p q) where
+    A      := p ∧ q
+    hElim  := ⟨λ ⟨l, r⟩ => ⟨l, r⟩⟩
+    hIntro := ⟨λ ⟨l, r⟩ => ⟨l, r⟩⟩
 
-  instance hasInnerProducts : HasInnerProducts prop := ⟨⟩
+  instance hasProducts : HasProducts prop := inferInstance
 
-  noncomputable instance hasCoproducts (p q : prop) : HasCoproducts p q where
-    defCoprodType      := ⟨⟨p ∨ q, λ h => Classical.choice (match h with
-                                                            | Or.inl l => ⟨PSum.inl l⟩
-                                                            | Or.inr r => ⟨PSum.inr r⟩)⟩,
-                           λ s => ⟨match s with
-                                   | PSum.inl l => Or.inl l
-                                   | PSum.inr r => Or.inr r⟩⟩
-    defLeftIntroFun    := defFun
-    defRightIntroFun   := defFun
-    defElimFun₃      _ := defFun₃
+  noncomputable instance hasCoproductType (p q : prop) : HasTypeWithIntro prop (PSum p q) where
+    A      := p ∨ q
+    hElim  := ⟨λ h => Classical.choice (match h with
+                                        | Or.inl l => ⟨PSum.inl l⟩
+                                        | Or.inr r => ⟨PSum.inr r⟩)⟩
+    hIntro := ⟨λ s => match s with
+                      | PSum.inl l => Or.inl l
+                      | PSum.inr r => Or.inr r⟩
 
-  noncomputable instance hasInnerCoproducts : HasInnerCoproducts prop := ⟨⟩
+  noncomputable instance hasCoproducts : HasCoproducts prop := inferInstance
 
-  instance hasIsomorphismsBase (α : Sort u) [HasPreorderRelation prop α] : HasIsomorphismsBase α :=
-    HasInnerProducts.hasIsomorphismsBase α
+  instance hasIsomorphisms (α : Sort u) [HasPreorderRelation prop α] : HasIsomorphismsWithIntro α :=
+    HasProducts.hasIsomorphismsWithIntro α
 
-  instance hasTrivialIsomorphismCondition (α : Sort u) [HasPreorderRelation prop α] :
-      HasTrivialIsomorphismCondition α := ⟨⟩
+  -- Specialization of `hasIsomorphisms` that uses `Iff` instead of `And`, for nicer results.
+  instance (priority := high) hasEquivalenceIsoType (p q : prop) :
+      HasTypeWithIntro prop (DefIso p q) where
+    A      := p ↔ q
+    hElim  := ⟨λ ⟨mp, mpr⟩ => ⟨mp, mpr⟩⟩
+    hIntro := ⟨λ ⟨toHom, invHom⟩ => ⟨toHom, invHom⟩⟩
 
-  instance hasIsomorphisms (α : Sort u) [HasPreorderRelation prop α] : HasIsomorphisms α :=
-    inferInstance
-
-  -- Specialization of `hasIsomorphismsBase` that uses `Iff` instead of `And`, for nicer results.
-  instance (priority := high) hasEquivalencesBase : HasIsomorphismsBase prop where
-    defIsoType  p q := ⟨p ↔ q, λ h => ⟨h.mp, h.mpr⟩⟩
-    defToHomFun _ _ := defFun
-
-  instance hasTrivialEquivalenceCondition : HasTrivialIsomorphismCondition prop where
-    hDefIso _ _ := ⟨λ ⟨toHom, invHom⟩ => ⟨toHom, invHom⟩⟩
+  instance (priority := high) hasEquivalenceIsos : HasIsomorphismsWithIntro prop where
+    hIsoType := hasEquivalenceIsoType
 
   instance hasEquivalences : HasEquivalences prop := inferInstance
 

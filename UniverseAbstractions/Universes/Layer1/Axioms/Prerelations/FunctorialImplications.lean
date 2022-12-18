@@ -7,7 +7,7 @@ namespace UniverseAbstractions.Layer1
 set_option autoImplicit false
 set_option linter.unusedVariables false
 
-open HasPiType HasFunctors HasPreorderRelation
+open HasPiType HasFunctors HasLinearLogic HasPreorderRelation
 
 universe u v v' v''
 
@@ -31,13 +31,9 @@ namespace HasPreorderRelation
       variable (F : PreorderFunctor α β) (G : PreorderFunctor α γ)
                [h : HasFunctorialImplication F G]
 
-      instance (a : α) : HasExternalPiType (λ b => (F a ⟶ F b) ⥤ (G a ⟶ G b)) :=
-        h.hasAppPiType a
+      instance (a : α) : HasExternalPiType (λ b => (F a ⟶ F b) ⥤ (G a ⟶ G b)) := h.hAppPiType a
 
       @[reducible] def FunImp : V := Pi₂ (λ a b => (F a ⟶ F b) ⥤ (G a ⟶ G b))
-
-      @[reducible] def DefFunImp (h : ∀ a b, (F a ⟶ F b) ⥤ (G a ⟶ G b)) :=
-        DefPi₂ (λ a b => (F a ⟶ F b) ⥤ (G a ⟶ G b)) h
 
     end HasFunctorialImplication
 
@@ -49,7 +45,7 @@ namespace HasPreorderRelation
   class HasTrivFunImp {α : Sort u} {β : Sort v} [HasPreorderRelation V α] [HasPreorderRelation V β]
                       (F : PreorderFunctor α β)
                       [HasFunctorialImplication (PreorderFunctor.idFun α) F] where
-    defTrivFunImp : DefFunImp (PreorderFunctor.idFun α) F F.hφ.inst
+    defTrivFunImp : [FunImp (PreorderFunctor.idFun α) F]_{F.hφ.inst}
 
   namespace HasTrivFunImp
 
@@ -66,7 +62,7 @@ namespace HasPreorderRelation
                            [HasPreorderRelation V β] [HasPreorderRelation V γ]
                            (F : PreorderFunctor α β) (G : PreorderFunctor β γ)
                            [HasFunctorialImplication F (PreorderFunctor.compFun F G)] where
-    defRightCompFunImp : DefFunImp F (PreorderFunctor.compFun F G) (λ a b => G.hφ.inst (F a) (F b))
+    defRightCompFunImp : [FunImp F (PreorderFunctor.compFun F G)]_{λ a b => G.hφ.inst (F a) (F b)}
 
   namespace HasRightCompFunImp
 
@@ -89,9 +85,9 @@ namespace HasPreorderRelation
                           [HasFunctorialImplication (PreorderFunctor.compFun F G) H]
                           [HasFunctorialImplication F H] where
     defLeftCompFunImp (i : FunImp (PreorderFunctor.compFun F G) H) :
-      DefFunImp F H (λ a b => i a b ⊙ G.hφ.inst (F a) (F b))
+      [FunImp F H]_{λ a b => i a b ⊙ G.hφ.inst (F a) (F b)}
     defLeftCompFunImpFun :
-      FunImp (PreorderFunctor.compFun F G) H ⥤{λ i => (defLeftCompFunImp i).inst} FunImp F H
+      [FunImp (PreorderFunctor.compFun F G) H ⥤ FunImp F H]_{defLeftCompFunImp}
 
   namespace HasLeftCompFunImp
 
@@ -129,7 +125,7 @@ namespace HasPreorderRelation
 
   class HasIdFunImp {α : Sort u} {β : Sort v} [HasPreorderRelation V α] [HasPreorderRelation V β]
                     (F : PreorderFunctor α β) [HasFunctorialImplication F F] where
-    defIdFunImp : DefFunImp F F (λ a b => HasIdFun.idFun (F a ⟶ F b))
+    defIdFunImp : [FunImp F F]_{λ a b => idFun (F a ⟶ F b)}
 
   namespace HasIdFunImp
 
@@ -146,8 +142,8 @@ namespace HasPreorderRelation
                       [HasPreorderRelation V δ] (F : PreorderFunctor α β) (G : PreorderFunctor α γ)
                       (H : PreorderFunctor α δ) [HasFunctorialImplication F G]
                       [HasFunctorialImplication G H] [HasFunctorialImplication F H] where
-    defCompFunImp (i : FunImp F G) (j : FunImp G H) : DefFunImp F H (λ a b => j a b ⊙ i a b)
-    defRevCompFunImpFun₂ : FunImp G H ⥤ FunImp F G ⥤{λ j i => (defCompFunImp i j).inst} FunImp F H
+    defCompFunImp (i : FunImp F G) (j : FunImp G H) : [FunImp F H]_{λ a b => j a b ⊙ i a b}
+    defRevCompFunImpFun₂ : [FunImp G H ⥤ FunImp F G ⥤ FunImp F H]__{λ j i => defCompFunImp i j}
 
   namespace HasCompFunImp
 

@@ -123,24 +123,23 @@ end DependentTypedExpr
 
 
 structure LambdaAbstraction {α : _sort} {v : Level} {p : α → _sort.mkSortType v}
-                            (P : α ⥤{p} _sort.mkSortType v) where
+                            (P : [α ⥤ _sort.mkSortType v]_{p}) where
   {a : FVar α}
   t : DependentTypedExpr a ⟨p a.a⟩
 
 namespace LambdaAbstraction
 
-  def fromPi {α : _sort} {v : Level} {p : α → _sort.mkSortType v} {P : α ⥤{p} _sort.mkSortType v}
+  def fromPi {α : _sort} {v : Level} {p : α → _sort.mkSortType v} {P : [α ⥤ _sort.mkSortType v]_{p}}
              (f : Pi (_sort.defFunToProp P)) {γ : Type} (k : LambdaAbstraction P → MetaM γ) :
       MetaM γ :=
     match f with
     | Expr.lam n d b c =>
-      withLocalDecl n c.binderInfo d
-                    (fun a => k (LambdaAbstraction.mk (a := ⟨a, n⟩) ⟨b.instantiate1 a⟩))
+      withLocalDecl n c d (fun a => k (LambdaAbstraction.mk (a := ⟨a, n⟩) ⟨b.instantiate1 a⟩))
     | f =>
       withLocalDeclD Name.anonymous α.α
                      (fun a => k (LambdaAbstraction.mk (a := ⟨a, Name.anonymous⟩) ⟨mkApp f a⟩))
 
-  variable {α : _sort} {v : Level} {p : α → _sort.mkSortType v} {P : α ⥤{p} _sort.mkSortType v}
+  variable {α : _sort} {v : Level} {p : α → _sort.mkSortType v} {P : [α ⥤ _sort.mkSortType v]_{p}}
            (f : LambdaAbstraction P)
 
   def type : DependentExpr f.a := ⟨p f.a.a⟩

@@ -8,8 +8,8 @@ universe u v
 
 
 
-def Empty.elim {C : Sort v} (e : Empty) : C := Empty.casesOn (λ _ => C) e
-def PEmpty.elim {C : Sort v} (e : PEmpty.{u}) : C := PEmpty.casesOn (λ _ => C) e
+def Empty.elim {C : Sort v} (e : Empty) : C := Empty.casesOn e
+def PEmpty.elim {C : Sort v} (e : PEmpty.{u}) : C := PEmpty.casesOn e
 
 
 

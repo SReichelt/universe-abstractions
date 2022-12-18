@@ -5,6 +5,6 @@ open Lake DSL
 package UniverseAbstractions
 
 require Qq from git
-  "https://github.com/SReichelt/quote4.git"@"eac8452e694ce3172aff1ff906c7c722aa181348"
+  "https://github.com/gebner/quote4.git"@"81be563ea260ef89fe7f26998811f44816998238"
 
 @[defaultTarget] lean_lib UniverseAbstractions

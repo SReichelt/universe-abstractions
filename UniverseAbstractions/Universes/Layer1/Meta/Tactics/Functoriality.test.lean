@@ -7,7 +7,7 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1.Meta.Tactics.Functoriality.Test
 
 set_option autoImplicit false
-set_option trace.Meta.Tactic true
+--set_option trace.Meta.Tactic true
 set_option linter.unusedVariables false
 
 universe u uu
@@ -31,16 +31,24 @@ open HasPiType HasFunctors HasLinearLogic
 
 variable {U : Universe.{u, uu}} [HasFullLogic U] (A B C D : U)
 
-def testRawFun (F : A ⥤ B) : A ⥤ B := makeFunctor (HasFunctors.apply F)
+def testRawFun (F : A ⥤ B) : A ⥤ B := makeFunctor (HasPiType.apply F)
 #print testRawFun
 
-def testRawPi {P : A → U} [HasPiType P] (F : Pi P) : Pi P := makeFunctor (HasPiType.apply F)
+def testRawPi {P : A → U} [HasType U (∀ a, P a)] (F : Pi P) : Pi P :=
+  makeFunctor (HasPiType.apply F)
 #print testRawPi
 
-def testRawFunct (F : A ⥤ B) : A ⥤{HasFunctors.apply F} B := by functoriality
+def testRawFunct (F : A ⥤ B) : [A ⥤ B]_{HasPiType.apply F} := by functoriality
 #print testRawFunct
 
-def testRawPiFunct {P : A → U} [HasPiType P] (F : Pi P) : DefPi P (HasPiType.apply F) :=
+def testRawFunct₂ (F : A ⥤ B ⥤ C) : [A ⥤ B ⥤ C]__{λ a b => F a b} := by functoriality
+#print testRawFunct₂
+
+def testRawFunct₃ (F : A ⥤ B ⥤ C ⥤ D) : [A ⥤ B ⥤ C ⥤ D]___{λ a b c => F a b c} := by functoriality
+#print testRawFunct₂
+
+def testRawPiFunct {P : A → U} [HasType U (∀ a, P a)] (F : Pi P) :
+    [∀ a, P a | U]_{HasPiType.apply F} :=
   by functoriality
 #print testRawPiFunct
 
@@ -50,7 +58,7 @@ def testConst (b : B) : A ⥤ B := Λ a => b
 def testNamedConst (b : B) : A ⥤ B := makeFunctor (Function.const A b)
 #print testNamedConst
 
-def testConstFunct (b : B) : A ⥤{Function.const A b} B := by functoriality
+def testConstFunct (b : B) : [A ⥤ B]_{Function.const A b} := by functoriality
 #print testConstFunct
 
 def testTestConst : B ⥤ (A ⥤ B) := Λ b => testConst A B b
@@ -75,7 +83,7 @@ def testIndirFun (F : A ⥤ B) : A ⥤ B := Λ a => app F a
 def testApp (a : A) : (A ⥤ B) ⥤ B := Λ F => F a
 #print testApp
 
-def testAppPi {P : A → U} [HasPiType P] [HasPiAppFun P] (a : A) : Pi P ⥤ P a := Λ F => F a
+def testAppPi {P : A → U} [HasType U (∀ a, P a)] [HasPiAppFun P] (a : A) : Pi P ⥤ P a := Λ F => F a
 #print testAppPi
 
 def testTestApp : A ⥤ (A ⥤ B) ⥤ B := Λ a => testApp A B a
@@ -90,8 +98,8 @@ def testIndirApp (a : A) : (A ⥤ B) ⥤ B := Λ F => app F a
 def testFixSnd (F : A ⥤ B ⥤ C) (b : B) : A ⥤ C := Λ a => F a b
 #print testFixSnd
 
-def testFixSndPi {P : A → B → U} [∀ a, HasPiType (P a)] [HasPiType (λ a => Pi (P a))]
-                 [∀ b, HasPiType (λ a => P a b)] [HasSwapPi P] (F : Pi₂ P) (b : B) :
+def testFixSndPi {P : A → B → U} [∀ a, HasType U (∀ b, P a b)] [HasType U (∀ a, Pi (P a))]
+                 [∀ b, HasType U (∀ a, P a b)] [HasSwapPi P] (F : Pi₂ P) (b : B) :
     Pi (λ a => P a b) :=
   Λ a => F a b
 #print testFixSndPi
@@ -108,7 +116,7 @@ def testSwap₂₃ : (A ⥤ B ⥤ C ⥤ D) ⥤ (A ⥤ C ⥤ B ⥤ D) := Λ F a c
 def testComp (F : A ⥤ B) (G : B ⥤ C) : A ⥤ C := Λ a => G (F a)
 #print testComp
 
-def testCompFunPi {Q : B → U} [HasPiType Q] [∀ F : A ⥤ B, HasPiType (λ a => Q (F a))]
+def testCompFunPi {Q : B → U} [HasType U (∀ b, Q b)] [∀ F : A ⥤ B, HasType U (∀ a, Q (F a))]
                   (F : A ⥤ B) (G : Pi Q) [HasCompFunPi A Q] :
     Pi (λ a => Q (F a)) :=
   Λ a => G (F a)
@@ -133,7 +141,7 @@ def testIndirComp (F : A ⥤ B) (G : B ⥤ C) : A ⥤ C := Λ a => comp F G a
 def testCompComp (F : A ⥤ B) (G : B ⥤ C) (H : C ⥤ D) : A ⥤ D := Λ a => H (G (F a))
 #print testCompComp
 
-def testCompCompFunct (F : A ⥤ B) (G : B ⥤ C) (H : C ⥤ D) : A ⥤{λ a => H (G (F a))} D :=
+def testCompCompFunct (F : A ⥤ B) (G : B ⥤ C) (H : C ⥤ D) : [A ⥤ D]_{λ a => H (G (F a))} :=
   by functoriality
 #print testCompCompFunct
 
@@ -142,17 +150,17 @@ def testTestCompComp : (A ⥤ B) ⥤ (B ⥤ C) ⥤ (C ⥤ D) ⥤ (A ⥤ D) :=
 #print testTestCompComp
 
 def testTestCompCompFunct (F : A ⥤ B) (H : C ⥤ D) :
-    (B ⥤ C) ⥤{λ G => testCompComp A B C D F G H} (A ⥤ D) :=
+    [(B ⥤ C) ⥤ (A ⥤ D)]_{λ G => testCompComp A B C D F G H} :=
   by functoriality
 #print testTestCompCompFunct
 
 def testTestCompCompFunct₂ (F : A ⥤ B) :
-    (B ⥤ C) ⥤ (C ⥤ D) ⥤{λ G H => testCompComp A B C D F G H} (A ⥤ D) :=
+    [(B ⥤ C) ⥤ (C ⥤ D) ⥤ (A ⥤ D)]__{λ G H => testCompComp A B C D F G H} :=
   by functoriality
 #print testTestCompCompFunct₂
 
 def testTestCompCompFunct₃ :
-    (A ⥤ B) ⥤ (B ⥤ C) ⥤ (C ⥤ D) ⥤{λ F G H => testCompComp A B C D F G H} (A ⥤ D) :=
+    [(A ⥤ B) ⥤ (B ⥤ C) ⥤ (C ⥤ D) ⥤ (A ⥤ D)]___{λ F G H => testCompComp A B C D F G H} :=
   by functoriality
 #print testTestCompCompFunct₃
 
@@ -166,7 +174,7 @@ def testRevTestComp₂ : (C ⥤ D) ⥤ (A ⥤ B ⥤ C) ⥤ (A ⥤ B ⥤ D) := Λ
 #print testRevTestComp₂
 
 def testRevTestComp₂Funct :
-    (C ⥤ D) ⥤{λ G => Λ F => testComp₂ A B C D F G} ((A ⥤ B ⥤ C) ⥤ (A ⥤ B ⥤ D)) :=
+    [(C ⥤ D) ⥤ (A ⥤ B ⥤ C) ⥤ (A ⥤ B ⥤ D)]__{λ G F => testComp₂ A B C D F G} :=
   by functoriality
 #print testRevTestComp₂Funct
 
@@ -176,8 +184,8 @@ def testRevAppApp : A ⥤ (A ⥤ B) ⥤ (B ⥤ C) ⥤ C := Λ a F G => G (F a)
 def testDup (F : A ⥤ A ⥤ B) : A ⥤ B := Λ a => F a a
 #print testDup
 
-def testDupPi {P : A → A → U} [∀ a, HasPiType (P a)] [HasPiType (λ a => Pi (P a))]
-              [HasPiType (λ a => P a a)] [HasDupPi P] (F : Pi₂ P) :
+def testDupPi {P : A → A → U} [∀ a, HasType U (∀ a', P a a')] [HasType U (∀ a, Pi (P a))]
+              [HasType U (∀ a, P a a)] [HasDupPi P] (F : Pi₂ P) :
     Pi (λ a => P a a) :=
   Λ a => F a a
 #print testDupPi
@@ -200,7 +208,7 @@ def testTestSelfApp : (A ⥤ B) ⥤ ((A ⥤ B) ⥤ A) ⥤ B := Λ G => testSelfA
 def testRevSelfApp (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B := Λ G => G (F G)
 #print testRevSelfApp
 
-def testRevSelfAppPi {P : A → U} [HasPiType P] [∀ F : Pi P ⥤ A, HasPiType (λ G => P (F G))]
+def testRevSelfAppPi {P : A → U} [HasType U (∀ a, P a)] [∀ F : Pi P ⥤ A, HasType U (∀ G, P (F G))]
                      [HasPiSelfAppPi P] (F : Pi P ⥤ A) :
     Pi (λ G : Pi P => P (F G)) :=
   Λ G => G (F G)
@@ -212,8 +220,8 @@ def testTestRevSelfApp : ((A ⥤ B) ⥤ A) ⥤ (A ⥤ B) ⥤ B := Λ F => testRe
 def testSubst (F : A ⥤ B) (G : A ⥤ B ⥤ C) : A ⥤ C := Λ a => G a (F a)
 #print testSubst
 
-def testSubstPi {P : A → U} {Q : ∀ a, P a → U} [HasPiType P] [∀ a, HasPiType (Q a)]
-                [HasPiType (λ a => Pi (Q a))] [∀ F : Pi P, HasPiType (λ a => Q a (F a))]
+def testSubstPi {P : A → U} {Q : ∀ a, P a → U} [HasType U (∀ a, P a)] [∀ a, HasType U (∀ b, Q a b)]
+                [HasType U (∀ a, Pi (Q a))] [∀ F : Pi P, HasType U (∀ a, Q a (F a))]
                 [HasSubstPi Q] (F : Pi P) (G : Pi (λ a => Pi (Q a))) :
     Pi (λ a => Q a (F a)) :=
   Λ a => G a (F a)

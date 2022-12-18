@@ -58,15 +58,15 @@ namespace HasPreorderRelation
     def covariantYonedaInv (x : F a) (b : α) : (a ⟶ b) ⥤ F b := Λ f => (F.hφ f) x
     def covariantYonedaInvFun (b : α) : F a ⥤ (a ⟶ b) ⥤ F b := Λ x => covariantYonedaInv F a x b
 
-    instance hasCovariantYonedaPiType : HasPiType (λ b => (a ⟶ b) ⥤ F b) where
-      defPiType := { A    := F a,
-                     elim := covariantYonedaInv F a }
+    instance hasCovariantYonedaPiType : HasType V (∀ b, (a ⟶ b) ⥤ F b) where
+      A     := F a
+      hElim := ⟨covariantYonedaInv F a⟩
 
     instance hasCovariantYonedaPiAppFun : HasPiAppFun (λ b => (a ⟶ b) ⥤ F b) :=
-      ⟨λ b => ⟨covariantYonedaInvFun F a b⟩⟩
+      ⟨covariantYonedaInvFun F a⟩
 
     instance hasCovariantYoneda : HasNaturalTransformations ((homFun₂ α).app a) F where
-      toHasPiType   := hasCovariantYonedaPiType   F a
+      toHasType     := hasCovariantYonedaPiType   F a
       toHasPiAppFun := hasCovariantYonedaPiAppFun F a
 
     def covariantYonedaFun : Nat ((homFun₂ α).app a) F ⥤ F a := Λ η => (η a) (idHom a)
@@ -81,15 +81,15 @@ namespace HasPreorderRelation
     def contravariantYonedaInvFun (a : α) : F b ⥤ (a ⟶ b) ⥤ F a :=
       Λ y => contravariantYonedaInv F b y a
 
-    instance hasContravariantYonedaPiType : HasPiType (λ a => (a ⟶ b) ⥤ F a) where
-      defPiType := { A    := F b,
-                     elim := contravariantYonedaInv F b }
+    instance hasContravariantYonedaPiType : HasType V (∀ a, (a ⟶ b) ⥤ F a) where
+      A     := F b
+      hElim := ⟨contravariantYonedaInv F b⟩
 
     instance hasContravariantYonedaPiAppFun : HasPiAppFun (λ a => (a ⟶ b) ⥤ F a) :=
-      ⟨λ a => ⟨contravariantYonedaInvFun F b a⟩⟩
+      ⟨contravariantYonedaInvFun F b⟩
 
     instance hasContravariantYoneda : HasNaturalTransformations ((homFun₂ α).app₂ b) F where
-      toHasPiType   := hasContravariantYonedaPiType   F b
+      toHasType     := hasContravariantYonedaPiType   F b
       toHasPiAppFun := hasContravariantYonedaPiAppFun F b
 
     def contravariantYonedaFun : Nat ((homFun₂ α).app₂ b) F ⥤ F b := Λ η => (η b) (idHom b)

@@ -33,9 +33,7 @@ namespace HasPreorderRelation
 
     variable (f g : ∀ a, P a) [HasNaturalTransformationsBase f g]
 
-    @[reducible] def Nat : V := Pi (λ a => f a ⟶ g a)
-
-    @[reducible] def DefNat (h : ∀ a, f a ⟶ g a) := DefPi (λ a => f a ⟶ g a) h
+    @[reducible] def Nat : V := [∀ a, f a ⟶ g a | V]
 
   end HasNaturalTransformationsBase
 
@@ -43,7 +41,7 @@ namespace HasPreorderRelation
 
 
   class HasIdNatBase (f : ∀ a, P a) [HasNaturalTransformationsBase f f] where
-    defIdNat : DefNat f f (λ a => idHom (f a))
+    defIdNat : [Nat f f]_{λ a => idHom (f a)}
 
   namespace HasIdNatBase
 
@@ -58,8 +56,8 @@ namespace HasPreorderRelation
 
   class HasCompNatBase (f g h : ∀ a, P a) [HasNaturalTransformationsBase f g]
                        [HasNaturalTransformationsBase g h] [HasNaturalTransformationsBase f h] where
-    defCompNat (η : Nat f g) (ε : Nat g h) : DefNat f h (λ a => ε a • η a)
-    defCompNatFun₂ : Nat g h ⥤ Nat f g ⥤{λ ε η => defCompNat η ε} Nat f h
+    defCompNat (η : Nat f g) (ε : Nat g h) : [Nat f h]_{λ a => ε a • η a}
+    defCompNatFun₂ : [Nat g h ⥤ Nat f g ⥤ Nat f h]__{λ ε η => defCompNat η ε}
 
   namespace HasCompNatBase
 
@@ -103,12 +101,10 @@ namespace HasEquivalenceRelationBase
 
     variable (f g : ∀ a, P a) [h : HasNaturalTransformationsBase (P := λ a => asPreorder (P a)) f g]
 
-    instance : HasPiType (λ a => f a ≃ g a) := h.toHasPiType
+    instance : HasType V (∀ a, f a ≃ g a) := h.toHasType
     instance : HasPiAppFun (λ a => f a ≃ g a) := h.toHasPiAppFun
 
-    @[reducible] def Nat : V := Pi (λ a => f a ≃ g a)
-
-    @[reducible] def DefNat (h : ∀ a, f a ≃ g a) := DefPi (λ a => f a ≃ g a) h
+    @[reducible] def Nat : V := [∀ a, f a ≃ g a | V]
 
   end HasNaturalTransformationsBase
 
@@ -118,8 +114,8 @@ namespace HasEquivalenceRelationBase
   class HasInvNatBase (f g : ∀ a, P a)
                       [HasNaturalTransformationsBase (P := λ a => asPreorder (P a)) f g]
                       [HasNaturalTransformationsBase (P := λ a => asPreorder (P a)) g f] where
-    defInvNat (η : Nat f g) : DefNat g f (λ a => (η a)⁻¹)
-    defInvNatFun : Nat f g ⥤{λ η => defInvNat η} Nat g f
+    defInvNat (η : Nat f g) : [Nat g f]_{λ a => (η a)⁻¹}
+    defInvNatFun : [Nat f g ⥤ Nat g f]_{defInvNat}
 
   namespace HasInvNatBase
 
@@ -183,8 +179,6 @@ namespace HasPreorderRelation
 
     @[reducible] def Nat : V := HasNaturalTransformationsBase.Nat F.φ G.φ
 
-    @[reducible] def DefNat (h : ∀ a, F a ⟶ G a) := HasNaturalTransformationsBase.DefNat F.φ G.φ h
-
   end HasNaturalTransformations
 
   open HasNaturalTransformations
@@ -243,9 +237,9 @@ namespace HasPreorderRelation
                              [HasNaturalTransformations (IsIsoFunctor.toEquivalenceFunctor F)
                                                         (IsIsoFunctor.toEquivalenceFunctor G)]
                              (η : Nat F G) (ε : Nat G F) where
-    defAppIso (a : α) : DefType.DefInst (hβIso.defIsoType (F a) (G a)) ⟨η a, ε a⟩
-    defNatIso : DefNat (IsIsoFunctor.toEquivalenceFunctor F) (IsIsoFunctor.toEquivalenceFunctor G)
-                       (λ a => (defAppIso a).inst)
+    defAppIso (a : α) : [F a ≃ G a]_{⟨η a, ε a⟩}
+    defNatIso :
+      [Nat (IsIsoFunctor.toEquivalenceFunctor F) (IsIsoFunctor.toEquivalenceFunctor G)]_{defAppIso}
 
 end HasPreorderRelation
 
@@ -262,9 +256,7 @@ namespace HasEquivalenceRelationBase
     instance : HasNaturalTransformationsBase (P := λ a => asPreorder β) F.φ G.φ :=
       h.toHasNaturalTransformationsBase
 
-    @[reducible] def Nat : V := Pi (λ a => F a ≃ G a)
-
-    @[reducible] def DefNat (h : ∀ a, F a ≃ G a) := DefPi (λ a => F a ≃ G a) h
+    @[reducible] def Nat : V := [∀ a, F a ≃ G a | V]
 
   end HasNaturalTransformations
 
@@ -278,23 +270,25 @@ namespace HasEquivalenceRelationBase
   namespace HasInvNat
 
     @[reducible] def invNat {F G : EquivalenceFunctor α β} [HasNaturalTransformations F G]
-                            [HasNaturalTransformations G F] [h : HasInvNat F G] (η : Nat F G) :
-        Nat G F :=
+                            [HasNaturalTransformations G F] [h : HasInvNat F G]
+                            (η : HasNaturalTransformations.Nat F G) :
+        HasNaturalTransformations.Nat G F :=
       HasInvNatBase.invNat η
 
     instance invIso.isPiApp {F G : EquivalenceFunctor α β} [HasNaturalTransformations F G]
-                            [HasNaturalTransformations G F] [h : HasInvNat F G] {η : Nat F G}
-                            {a : α} :
+                            [HasNaturalTransformations G F] [h : HasInvNat F G]
+                            {η : HasNaturalTransformations.Nat F G} {a : α} :
         IsPiApp (η a)⁻¹ :=
       HasInvNatBase.invIso.isPiApp
 
     @[reducible] def invNatFun (F G : EquivalenceFunctor α β) [HasNaturalTransformations F G]
                                [HasNaturalTransformations G F] [h : HasInvNat F G] :
-        Nat F G ⥤ Nat G F :=
+        HasNaturalTransformations.Nat F G ⥤ HasNaturalTransformations.Nat G F :=
       HasInvNatBase.invNatFun F.φ G.φ
 
     instance invNat.isFunApp {F G : EquivalenceFunctor α β} [HasNaturalTransformations F G]
-                             [HasNaturalTransformations G F] [h : HasInvNat F G] {η : Nat F G} :
+                             [HasNaturalTransformations G F] [h : HasInvNat F G]
+                             {η : HasNaturalTransformations.Nat F G} :
         IsFunApp (invNat η) :=
       HasInvNatBase.invNat.isFunApp
 

@@ -54,8 +54,8 @@ namespace mkHasInstances
     mkInst' A
 
   def defInstFun {u : Level} (I : _sort) [h : mkHasInstances u I] :
-      I ⥤{mkInst'} _sort.mkSortType u :=
-    ⟨mkHasInstances''.mkInstFun h.h⟩
+      [I ⥤ _sort.mkSortType u]_{mkInst'} :=
+    mkHasInstances''.mkInstFun h.h
 
   @[reducible] def instFun {u : Level} (I : _sort) [mkHasInstances u I] : I ⥤ _sort.mkSortType u :=
     defInstFun I
@@ -117,7 +117,7 @@ namespace _Universe
   @[reducible] def mkInstInst (A : U) : _sort := mkInstInst' _(A)
   notation "_⌈" A:0 "⌉" => _Universe.mkInstInst A
 
-  def defInstInstFun (U : _Universe u) : _[U] ⥤{λ A : U => _⌈A⌉.α} _sort.mkSortType u :=
+  def defInstInstFun (U : _Universe u) : [_[U] ⥤ _sort.mkSortType u]_{λ A : U => _⌈A⌉.α} :=
     mkHasInstances.defInstFun _[U]
 
   @[reducible] def instInstFun (U : _Universe u) : _[U] ⥤ _sort.mkSortType u := defInstInstFun U

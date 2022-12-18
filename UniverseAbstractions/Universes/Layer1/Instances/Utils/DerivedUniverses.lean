@@ -1,6 +1,7 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Universes
 import UniverseAbstractions.Universes.Layer1.Axioms.Functors
 import UniverseAbstractions.Universes.Layer1.Instances.Utils.Trivial
+import UniverseAbstractions.Universes.Helpers
 
 
 
@@ -8,7 +9,9 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u
+universe u v w
+
+open Helpers
 
 
 
@@ -40,12 +43,14 @@ namespace functionUniverse
 
   variable (U : Universe)
 
-  instance hasInnerFunctors : HasInnerFunctors (functionUniverse U) where
-    Fun   := BinaryTree.inner
-    apply := id
+  instance hasFunType (A B : functionUniverse U) :
+      HasTypeWithIntro (functionUniverse U) (A → B) where
+    A      := BinaryTree.inner A B
+    hElim  := ⟨id⟩
+    hIntro := ⟨id⟩
 
-  instance hasTrivialFunctoriality :
-      HasTrivialFunctoriality (functionUniverse U) (functionUniverse U) :=
-    ⟨λ f => ⟨f⟩⟩
+  instance hasFunctors (A : functionUniverse U) : HasFunctorsWithIntro A (functionUniverse U) := ⟨⟩
+
+  instance hasUnivFunctors : HasUnivFunctorsWithIntro (functionUniverse U) (functionUniverse U) := ⟨⟩
 
 end functionUniverse

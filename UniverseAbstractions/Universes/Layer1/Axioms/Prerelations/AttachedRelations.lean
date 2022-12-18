@@ -10,7 +10,7 @@ namespace UniverseAbstractions.Layer1
 set_option autoImplicit false
 set_option linter.unusedVariables false
 
-open HasFunctors HasIdFun HasRevCompFunPiFun Prerelation Helpers
+open HasFunctors HasIdFun HasExternalLinearLogic Prerelation Helpers
 
 universe u u' u'' u''' u''''
 
@@ -630,7 +630,7 @@ namespace HasLinearLogic
 
     @[reducible] def asHom {A B : U} (F : A ⥤ B) : A ⟶ B := F
 
-    instance (A B : U) : CoeFun (A ⟶ B) (λ _ => A → B) := HasFunctors.coeFun A B
+    instance (A B : U) : CoeFun (A ⟶ B) (λ _ => A → B) := HasPiType.coeFun (λ _ : A => B)
 
     -- The hom-bifunctor is covariant in one argument and contravariant in the other.
     def homFun₂ (α : Sort u) [hα : HasPreorderRelation U α] :

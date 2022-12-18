@@ -69,6 +69,10 @@ namespace Bundled
 
   end HasFunctors
 
+
+#exit
+
+
   class HasTopInstance where
   (topInst : Φ PUnit)
   (elimIsFun {A : univ Φ} (a : A) : hFunInst.IsFun (λ _ : type Φ topInst => a))

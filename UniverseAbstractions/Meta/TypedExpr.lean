@@ -13,12 +13,8 @@ open Lean Lean.Meta Elab Tactic Qq
 
 
 
-def unfoldOnce (a : Expr) : MetaM Expr :=
-  withReducibleAndInstances do
-    let a ← whnfCore a
-    match ← unfoldDefinition? a with
-    | some a' => pure a'
-    | none    => pure a
+def unfoldDefinitionI (a : Expr) : MetaM Expr :=
+  withReducibleAndInstances (unfoldDefinition a)
 
 
 
@@ -54,7 +50,9 @@ namespace TypedExpr
   def unfold_whnfD  {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnfD
   def unfold_whnfI  {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := whnfI
   def unfold_reduce {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := reduce
-  def unfold_once   {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := unfoldOnce
+  def unfold_def?   {α : Expr} : TypedExpr α → MetaM (Option (TypedExpr α)) := unfoldDefinition?
+  def unfold_def    {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := unfoldDefinition
+  def unfold_defI   {α : Expr} : TypedExpr α → MetaM (TypedExpr α) := unfoldDefinitionI
 
   def unfold_whnfHeadPred {α : Expr} (a : TypedExpr α) (pred : TypedExpr α → MetaM Bool) :
       MetaM (TypedExpr α) :=
@@ -65,11 +63,11 @@ end TypedExpr
 
 
 -- The most generic `QQ`-based expression that can be considered a type, i.e. we know that its
--- type is `mkSort u` for some `u`.
+-- type is `.sort u` for some `u`.
 -- `type_u` should always be `q(Type u)`, but currently the `q` macro sometimes produces
 -- something different.
 @[reducible] def TypeExpr (u : Level) (type_u : Expr := q(Type u)) :=
-QQ (@QQ.qq type_u (mkSort u))
+  QQ (@QQ.qq type_u (.sort u))
 
 -- We eliminate the distinction between `Q(⬝)` and `q(⬝)` by always using `q(⬝)` and treating
 -- quoted types (i.e. object-level expressions of type `Sort u`) as types on the meta level,
@@ -115,7 +113,7 @@ namespace InstanceExpr
 
   def synthesize? {C : ClassExpr} : MetaM (Option C) := do
     match ← TypedExpr.synthesize? with
-    | Option.some h => pure (some ⟨h⟩)
-    | Option.none   => pure none
+    | .some h => pure (some ⟨h⟩)
+    | .none   => pure none
 
 end InstanceExpr

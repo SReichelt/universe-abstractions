@@ -67,7 +67,7 @@ end HasHomEquivalences
 class HasEquivRelEquivalences {V : Universe} [HasLinearLogic V] [HasEquivalences V] (α : Sort u)
                               [HasEquivalenceRelationBase V α] where
   [hEquivEquiv : HasHomEquivalences (asPreorder α)]
-  defEquivRelSymmEquiv (a b : α) : (a ≃ b) ≃{HasSymm.symmFun a b, HasSymm.symmFun b a} (b ≃ a)
+  defEquivRelSymmEquiv (a b : α) : [(a ≃ b) ≃ (b ≃ a)]_{⟨HasSymm.symmFun a b, HasSymm.symmFun b a⟩}
 
 namespace HasEquivRelEquivalences
 
@@ -89,4 +89,4 @@ class HasHomIsoEquivalences {V : Universe} [HasLinearLogic V] [HasEquivalences V
 
 class HasFunctorialPiType {α : Sort u} {V : Universe} [HasLinearLogic V] [HasEquivalences V]
                           [HasEquivalenceRelationBase V α] (P : EquivalenceFunctor α V) extends
-  HasPiType P.φ
+  HasType V (∀ a, P a)

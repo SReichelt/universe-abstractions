@@ -13,18 +13,17 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
-set_option synthInstance.maxHeartbeats 10000
 set_option linter.unusedVariables false
 
 universe u
 
-open HasFunctors HasIdFun HasCoproducts HasPreorderRelation
+open HasFunctors HasLinearLogic HasCoproducts HasPreorderRelation
 
 
 
-namespace HasInnerCoproducts
+namespace HasCoproducts
 
-  variable {U : Universe} [HasLinearLogic U] [HasInnerCoproducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasCoproducts U]
 
   def leftCoIntro {A B C : U} (F : A ⊔ B ⥤ C) (a : A) : C := F (leftIntro a B)
   def leftCoIntroFun {A B C : U} (F : A ⊔ B ⥤ C) : A ⥤ C := Λ a => leftCoIntro F a
@@ -105,7 +104,7 @@ namespace HasInnerCoproducts
 
   section
 
-    variable [HasInnerProducts U]
+    variable [HasProducts U]
 
     def distrFun [HasNonLinearLogic U] (A B C : U) : (A ⊔ B ⥤ C) ⥤ (A ⥤ C) ⊓ (B ⥤ C) :=
       Λ F => HasProducts.intro (leftCoIntroFun F) (rightCoIntroFun F)
@@ -124,16 +123,16 @@ namespace HasInnerCoproducts
 
   end
 
-end HasInnerCoproducts
+end HasCoproducts
 
-open HasInnerCoproducts
+open HasCoproducts
 
 
 
 namespace HasClassicalLogic
 
   variable {U : Universe} [HasLinearLogic U] [HasNonLinearLogic U]
-           [HasBot U] [HasClassicalLogic U] [HasInnerCoproducts U]
+           [HasBot U] [HasClassicalLogic U] [HasCoproducts U]
 
   def excludedMiddle  (A : U) : A ⊔ ~A := byContradiction (Λ F => rightCoIntro F (leftCoIntroFun F))
   def excludedMiddle' (A : U) : ~A ⊔ A := byContradiction (Λ F => leftCoIntro F (rightCoIntroFun F))
@@ -144,14 +143,14 @@ end HasClassicalLogic
 
 namespace Prerelation
 
-  @[reducible] def coproduct {α : Sort u} {V : Universe} [HasLinearLogic V] [HasInnerCoproducts V]
+  @[reducible] def coproduct {α : Sort u} {V : Universe} [HasLinearLogic V] [HasCoproducts V]
                              (R S : Prerelation α V) :
       Prerelation α V :=
     λ a b => R a b ⊔ S a b
 
   namespace coproduct
 
-    variable {α : Sort u} {V : Universe} [HasLinearLogic V] [HasInnerCoproducts V]
+    variable {α : Sort u} {V : Universe} [HasLinearLogic V] [HasCoproducts V]
              (R S : Prerelation α V)
 
     instance isFull_left [hR : IsFull R] : IsFull (coproduct R S) :=
@@ -172,12 +171,12 @@ end Prerelation
 
 
 
-namespace HasInnerCoproducts
+namespace HasCoproducts
 
-  def coprodRel (U : Universe) [HasLinearLogic U] [HasInnerCoproducts U] : Prerelation U U :=
+  def coprodRel (U : Universe) [HasLinearLogic U] [HasCoproducts U] : Prerelation U U :=
     λ A B => A ⊔ B
 
-  variable (U : Universe) [HasLinearLogic U] [HasInnerCoproducts U]
+  variable (U : Universe) [HasLinearLogic U] [HasCoproducts U]
 
   instance hasCoproductObjects : HasCoproductObjects U where
     prod                      := coprodRel U
@@ -185,4 +184,4 @@ namespace HasInnerCoproducts
     sndHom        (A B   : U) := rightIntroFun A B
     prodIntroFun₂ (A B C : U) := elimFun₃ B C A
 
-end HasInnerCoproducts
+end HasCoproducts

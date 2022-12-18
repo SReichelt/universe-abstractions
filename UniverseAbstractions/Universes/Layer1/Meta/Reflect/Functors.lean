@@ -33,7 +33,7 @@ open Lean Lean.Meta Qq UniverseAbstractions.Meta
 
 
 def mkHasPiType' {u v vv : Level} (α : Q(Sort u)) (V : Q(Universe.{v, vv})) (P : Q($α → $V)) :=
-  ⌜HasPiType $P⌝
+  ⌜HasType $V (∀ a, $P a)⌝
 
 namespace mkHasPiType'
 
@@ -56,19 +56,24 @@ namespace mkHasPiType'
 
     def mkApply (F : Q(Pi $P)) : Q(∀ a, $P a) := ⌜HasPiType.apply $F⌝
 
-    def mkDefPi (f : Q(∀ a, $P a)) := ⌜DefPi $P $f⌝
+    def mkDefPi (f : Q(∀ a, $P a)) : Q($V) := ⌜[∀ a, $P a | $V]_{$f}⌝
 
-    namespace mkDefPi
+  end
 
-      variable (f : Q(∀ a, $P a))
+  section
 
-      def mkMk (F : Q(Pi $P)) : mkDefPi h f := ⌜DefPi.mk (f := $f) $F⌝
+    def mkHasDepElim' {u u' v vv : Level} (α : Q(Sort u)) (V : Q(Universe.{v, vv})) (P : Q($α → $V))
+                      (β : Q($α → Sort u')) :=
+      ⌜∀ a, HasElim ($P a) ($β a)⌝
 
-      variable (F : mkDefPi h f)
+    variable {u u' v vv : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {P : Q($α → $V)}
+             {β : Q($α → Sort u')} (h : mkHasDepElim' α V P β)
 
-      def mkInst : Q(Pi $P) := ⌜($F).inst⌝
+    def mkHasDepElim'.mkApp (f : Q(∀ a, $β a)) (a : Q($α)) : Q($V) :=
+      ⌜[$P $a]_{$f $a}⌝
 
-    end mkDefPi
+    def mkDefPi' (hP : mkHasPiType' α V P) (f : Q(∀ a, $β a)) : Q($V) :=
+      ⌜HasElim.DefInst (Pi $P) $f (h := HasPiType.hasElim₂ $P)⌝
 
   end
 
@@ -79,7 +84,7 @@ namespace mkHasPiType'
     structure PiApp (u : Level) where
       α  : Q(Sort u)
       P  : Q($α → $V)
-      hP : Q(HasPiType $P)
+      hP : Q(HasType $V (∀ a, $P a))
       F  : Q(Pi $P)
       a  : Q($α)
 
@@ -92,11 +97,11 @@ namespace mkHasPiType'
       variable {u : Level} (hApp : mkIsPiApp V Y y u)
 
       def mkApp : MetaM (PiApp V u) := do
-        let α  : Q(Sort u)       ← unfoldOnce ⌜($hApp).α⌝
-        let P  : Q($α → $V)      ← unfoldOnce ⌜($hApp).P⌝
-        let hP : Q(HasPiType $P) ← unfoldOnce ⌜($hApp).hP⌝
-        let F  : Q(Pi $P)        ← unfoldOnce ⌜($hApp).F⌝
-        let a  : Q($α)           ← unfoldOnce ⌜($hApp).a⌝
+        let α  : Q(Sort u)                 ← unfoldDefinitionI ⌜($hApp).α⌝
+        let P  : Q($α → $V)                ← unfoldDefinitionI ⌜($hApp).P⌝
+        let hP : Q(HasType $V (∀ a, $P a)) ← unfoldDefinitionI ⌜($hApp).hP⌝
+        let F  : Q(Pi $P)                  ← unfoldDefinitionI ⌜($hApp).F⌝
+        let a  : Q($α)                     ← unfoldDefinitionI ⌜($hApp).a⌝
         pure { α  := α,
                P  := P,
                hP := hP,
@@ -112,14 +117,14 @@ namespace mkHasPiType'
       variable {u u' : Level} (hApp : mkIsPiApp₂ V Y y u u')
 
       def mkApp : MetaM (PiApp V u') := do
-        let α     : Q(Sort u)                       ← unfoldOnce ⌜($hApp).α⌝
-        let β     : Q(Sort u')                      ← unfoldOnce ⌜($hApp).β⌝
-        let P     : Q($α → $β → $V)                 ← unfoldOnce ⌜($hApp).P⌝
-        let hPa   : Q(∀ a, HasPiType ($P a))        ← unfoldOnce ⌜($hApp).hPa⌝
-        let hPiPa : Q(HasPiType (λ a => Pi ($P a))) ← unfoldOnce ⌜($hApp).hPiPa⌝
-        let F     : Q(Pi₂ $P)                       ← unfoldOnce ⌜($hApp).F⌝
-        let a     : Q($α)                           ← unfoldOnce ⌜($hApp).a⌝
-        let b     : Q($β)                           ← unfoldOnce ⌜($hApp).b⌝
+        let α     : Q(Sort u)                        ← unfoldDefinitionI ⌜($hApp).α⌝
+        let β     : Q(Sort u')                       ← unfoldDefinitionI ⌜($hApp).β⌝
+        let P     : Q($α → $β → $V)                  ← unfoldDefinitionI ⌜($hApp).P⌝
+        let hPa   : Q(∀ a, HasType $V (∀ b, $P a b)) ← unfoldDefinitionI ⌜($hApp).hPa⌝
+        let hPiPa : Q(HasType $V (∀ a, Pi ($P a)))   ← unfoldDefinitionI ⌜($hApp).hPiPa⌝
+        let F     : Q(Pi₂ $P)                        ← unfoldDefinitionI ⌜($hApp).F⌝
+        let a     : Q($α)                            ← unfoldDefinitionI ⌜($hApp).a⌝
+        let b     : Q($β)                            ← unfoldDefinitionI ⌜($hApp).b⌝
         pure { α  := β,
                P  := ⌜$P   $a⌝,
                hP := ⌜$hPa $a⌝,
@@ -128,360 +133,13 @@ namespace mkHasPiType'
 
     end mkIsPiApp₂
 
-    def mkIsPiApp₂' (u u' : Level) := ⌜IsPiApp₂'.{u, u'} $y⌝
-
-    namespace mkIsPiApp₂'
-
-      variable {u u' : Level} (hApp : mkIsPiApp₂' V Y y u u')
-    
-      def mkH₂ : mkIsPiApp V Y y u' := ⌜($hApp).h₂⌝
-      def mkIsPiApp : mkIsPiApp V Y y u := ⌜($hApp).toIsPiApp⌝
-
-    end mkIsPiApp₂'
-
-    def mkIsPiApp₃ (u u' u'' : Level) := ⌜IsPiApp₃.{u, u', u''} $y⌝
-
-    namespace mkIsPiApp₃
-
-      variable {u u' u'' : Level} (hApp : mkIsPiApp₃ V Y y u u' u'')
-
-      def mkApp : MetaM (PiApp V u'') := do
-        let α      : Q(Sort u)                              ← unfoldOnce ⌜($hApp).α⌝
-        let β      : Q(Sort u')                             ← unfoldOnce ⌜($hApp).β⌝
-        let γ      : Q(Sort u'')                            ← unfoldOnce ⌜($hApp).γ⌝
-        let P      : Q($α → $β → $γ → $V)                   ← unfoldOnce ⌜($hApp).P⌝
-        let hPab   : Q(∀ a b, HasPiType ($P a b))           ← unfoldOnce ⌜($hApp).hPab⌝
-        let hPiPab : Q(∀ a, HasPiType (λ b => Pi ($P a b))) ← unfoldOnce ⌜($hApp).hPiPab⌝
-        let hPiPa  : Q(HasPiType (λ a => Pi₂ ($P a)))       ← unfoldOnce ⌜($hApp).hPiPa⌝
-        let F      : Q(Pi₃ $P)                              ← unfoldOnce ⌜($hApp).F⌝
-        let a      : Q($α)                                  ← unfoldOnce ⌜($hApp).a⌝
-        let b      : Q($β)                                  ← unfoldOnce ⌜($hApp).b⌝
-        let c      : Q($γ)                                  ← unfoldOnce ⌜($hApp).c⌝
-        pure { α  := γ,
-               P  := ⌜$P    $a $b⌝,
-               hP := ⌜$hPab $a $b⌝,
-               F  := ⌜$F    $a $b⌝,
-               a  := c }
-
-    end mkIsPiApp₃
-
-    def mkIsPiApp₃' (u u' u'' : Level) := ⌜IsPiApp₃'.{u, u', u''} $y⌝
-
-    namespace mkIsPiApp₃'
-
-      variable {u u' u'' : Level} (hApp : mkIsPiApp₃' V Y y u u' u'')
-    
-      def mkH₃ : mkIsPiApp V Y y u'' := ⌜($hApp).h₃⌝
-      def mkIsPiApp₂' : mkIsPiApp₂' V Y y u u' := ⌜($hApp).toIsPiApp₂'⌝
-
-    end mkIsPiApp₃'
-
-    def mkIsPiApp₄ (u u' u'' u''' : Level) := ⌜IsPiApp₄.{u, u', u'', u'''} $y⌝
-
-    namespace mkIsPiApp₄
-
-      variable {u u' u'' u''' : Level} (hApp : mkIsPiApp₄ V Y y u u' u'' u''')
-
-      def mkApp : MetaM (PiApp V u''') := do
-        let α       : Q(Sort u)                                  ← unfoldOnce ⌜($hApp).α⌝
-        let β       : Q(Sort u')                                 ← unfoldOnce ⌜($hApp).β⌝
-        let γ       : Q(Sort u'')                                ← unfoldOnce ⌜($hApp).γ⌝
-        let δ       : Q(Sort u''')                               ← unfoldOnce ⌜($hApp).δ⌝
-        let P       : Q($α → $β → $γ → $δ → $V)                  ← unfoldOnce ⌜($hApp).P⌝
-        let hPabc   : Q(∀ a b c, HasPiType ($P a b c))           ← unfoldOnce ⌜($hApp).hPabc⌝
-        let hPiPabc : Q(∀ a b, HasPiType (λ c => Pi ($P a b c))) ← unfoldOnce ⌜($hApp).hPiPabc⌝
-        let hPiPab  : Q(∀ a, HasPiType (λ b => Pi₂ ($P a b)))    ← unfoldOnce ⌜($hApp).hPiPab⌝
-        let hPiPa   : Q(HasPiType (λ a => Pi₃ ($P a)))           ← unfoldOnce ⌜($hApp).hPiPa⌝
-        let F       : Q(Pi₄ $P)                                  ← unfoldOnce ⌜($hApp).F⌝
-        let a       : Q($α)                                      ← unfoldOnce ⌜($hApp).a⌝
-        let b       : Q($β)                                      ← unfoldOnce ⌜($hApp).b⌝
-        let c       : Q($γ)                                      ← unfoldOnce ⌜($hApp).c⌝
-        let d       : Q($δ)                                      ← unfoldOnce ⌜($hApp).d⌝
-        pure { α  := δ,
-               P  := ⌜$P     $a $b $c⌝,
-               hP := ⌜$hPabc $a $b $c⌝,
-               F  := ⌜$F     $a $b $c⌝,
-               a  := d }
-
-    end mkIsPiApp₄
-
-    def mkIsPiApp₄' (u u' u'' u''' : Level) := ⌜IsPiApp₄'.{u, u', u'', u'''} $y⌝
-
-    namespace mkIsPiApp₄'
-
-      variable {u u' u'' u''' : Level} (hApp : mkIsPiApp₄' V Y y u u' u'' u''')
-    
-      def mkH₄ : mkIsPiApp V Y y u''' := ⌜($hApp).h₄⌝
-      def mkIsPiApp₃' : mkIsPiApp₃' V Y y u u' u'' := ⌜($hApp).toIsPiApp₃'⌝
-
-    end mkIsPiApp₄'
-
   end
 
 end mkHasPiType'
 
-
-def mkHasQuantPiType' {u u' v vv : Level} (α : Q(Sort u)) (β : Q(Sort u')) (V : Q(Universe.{v, vv}))
-                      (P : Q($α → $β → $V)) :=
-  ⌜∀ a, HasPiType ($P a)⌝
-
-namespace mkHasQuantPiType'
-
-  variable {u u' v vv : Level} {α : Q(Sort u)} {β : Q(Sort u')} {V : Q(Universe.{v, vv})}
-           {P : Q($α → $β → $V)} (hP : mkHasQuantPiType' α β V P)
-
-  def app (a : Q($α)) : mkHasPiType' β V ⌜$P $a⌝ := ⌜$hP $a⌝
-
-  def mkPiProp : Q($α → $V) := ⌜λ a => Pi ($P a)⌝
-
-end mkHasQuantPiType'
-
-
-def mkHasQuantDepPiType' {u v vv w ww : Level} (α : Q(Sort u)) (V : Q(Universe.{v, vv}))
-                         (P : Q($α → $V)) (W : Q(Universe.{w, ww})) (Q : Q(∀ a, $P a → $W)) :=
-  ⌜∀ a, HasPiType ($Q a)⌝
-
-namespace mkHasQuantDepPiType'
-
-  def metaProp {u v vv w ww : Level} (α : Q(Sort u)) (V : Q(Universe.{v, vv}))
-               (P : Q($α → $V)) (W : Q(Universe.{w, ww})) :
-      Q($α → Sort (imax v ww)) :=
-    ⌜λ a => $P a → $W⌝
-
-  variable {u v vv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {P : Q($α → $V)}
-           {W : Q(Universe.{w, ww})} {Q : Q(∀ a, $P a → $W)} (hQ : mkHasQuantDepPiType' α V P W Q)
-
-  def app (a : Q($α)) : mkHasPiType' ⌜$P $a⌝ W ⌜$Q $a⌝ := ⌜$hQ $a⌝
-
-  def mkPiProp : Q($α → $W) := ⌜λ a => Pi ($Q a)⌝
-
-end mkHasQuantDepPiType'
-
-
-def mkHasFunctors' {u uu : Level} (α : Q(Sort u)) (U : Q(Universe.{u, uu})) (Y : Q($U)) :=
-  ⌜HasFunctors $α $Y⌝
-
-namespace mkHasFunctors'
-
-  variable {u uu : Level}
-
-  section
-
-    variable (α : Q(Sort u)) (U : Q(Universe.{u, uu})) (Y : Q($U))
-
-    def mkFunction := ⌜$α → $Y⌝
-
-    def mkFunction.mkApp (f : Q($α → $Y)) (a : Q($α)) : Q($Y) := ⌜$f $a⌝
-  
-  end
-
-  section
-
-    variable {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {Y : Q($U)} (h : mkHasFunctors' α U Y)
-
-    def toMkHasPiType' : mkHasPiType' α U ⌜Function.const $α $Y⌝ := ⌜($h).toHasPiType⌝
-
-    def mkFun : Q($U) := ⌜$α ⥤ $Y⌝
-
-    def mkApply (F : Q($α ⥤ $Y)) : Q($α → $Y) := ⌜HasFunctors.apply $F⌝
-
-    def mkDefFun (f : Q($α → $Y)) := ⌜$α ⥤{$f} $Y⌝
-
-    namespace mkDefFun
-
-      variable (f : Q($α → $Y))
-
-      def mkMk (F : Q($α ⥤ $Y)) : mkDefFun h f := ⌜DefFun.mk (f := $f) $F⌝
-
-      variable (F : mkDefFun h f)
-
-      def mkInst : Q($α ⥤ $Y) := ⌜($F).inst⌝
-
-    end mkDefFun
-
-  end
-
-  section
-
-    variable (U : Q(Universe.{u, uu})) (Y : Q($U))
-
-    structure FunApp where
-      α  : Q(Sort u)
-      hα : Q(HasFunctors $α $Y)
-      F  : Q($α ⥤ $Y)
-      a  : Q($α)
-
-    def FunApp.toPiApp (app : FunApp U Y) : mkHasPiType'.PiApp U u where
-      α  := app.α
-      P  := ⌜Function.const _ $Y⌝
-      hP := ⌜$(app.hα).toHasPiType⌝
-      F  := app.F
-      a  := app.a
-
-    variable (y : Q($Y))
-
-    def mkIsFunApp := ⌜IsFunApp.{u} $y⌝
-
-    namespace mkIsFunApp
-
-      variable (hApp : mkIsFunApp U Y y)
-
-      def mkApp : MetaM (FunApp U Y) := do
-        let α  : Q(Sort u)            ← unfoldOnce ⌜($hApp).α⌝
-        let hα : Q(HasFunctors $α $Y) ← unfoldOnce ⌜($hApp).hα⌝
-        let F  : Q($α ⥤ $Y)           ← unfoldOnce ⌜($hApp).F⌝
-        let a  : Q($α)                ← unfoldOnce ⌜($hApp).a⌝
-        pure { α  := α,
-               hα := hα,
-               F  := F,
-               a  := a }
-
-    end mkIsFunApp
-
-    def mkIsFunApp₂ := ⌜IsFunApp₂ $y⌝
-
-    namespace mkIsFunApp₂
-
-      variable (hApp : mkIsFunApp₂ U Y y)
-
-      def mkApp : MetaM (FunApp U Y) := do
-        let α  : Q(Sort u)                   ← unfoldOnce ⌜($hApp).α⌝
-        let β  : Q(Sort u)                   ← unfoldOnce ⌜($hApp).β⌝
-        let hβ : Q(HasFunctors $β $Y)        ← unfoldOnce ⌜($hApp).hβ⌝
-        let hα : Q(HasFunctors $α ($β ⥤ $Y)) ← unfoldOnce ⌜($hApp).hα⌝
-        let F  : Q($α ⥤ $β ⥤ $Y)             ← unfoldOnce ⌜($hApp).F⌝
-        let a  : Q($α)                       ← unfoldOnce ⌜($hApp).a⌝
-        let b  : Q($β)                       ← unfoldOnce ⌜($hApp).b⌝
-        pure { α  := β,
-               hα := hβ,
-               F  := ⌜$F $a⌝,
-               a  := b }
-
-    end mkIsFunApp₂
-
-    def mkIsFunApp₂' := ⌜IsFunApp₂' $y⌝
-
-    namespace mkIsFunApp₂'
-
-      variable (hApp : mkIsFunApp₂' U Y y)
-    
-      def mkH₂ : mkIsFunApp U Y y := ⌜($hApp).h₂⌝
-      def mkIsFunApp : mkIsFunApp U Y y := ⌜($hApp).toIsFunApp⌝
-
-    end mkIsFunApp₂'
-
-    def mkIsFunApp₃ := ⌜IsFunApp₃ $y⌝
-
-    namespace mkIsFunApp₃
-
-      variable (hApp : mkIsFunApp₃ U Y y)
-
-      def mkApp : MetaM (FunApp U Y) := do
-        let α  : Q(Sort u)                        ← unfoldOnce ⌜($hApp).α⌝
-        let β  : Q(Sort u)                        ← unfoldOnce ⌜($hApp).β⌝
-        let γ  : Q(Sort u)                        ← unfoldOnce ⌜($hApp).γ⌝
-        let hγ : Q(HasFunctors $γ $Y)             ← unfoldOnce ⌜($hApp).hγ⌝
-        let hβ : Q(HasFunctors $β ($γ ⥤ $Y))      ← unfoldOnce ⌜($hApp).hβ⌝
-        let hα : Q(HasFunctors $α ($β ⥤ $γ ⥤ $Y)) ← unfoldOnce ⌜($hApp).hα⌝
-        let F  : Q($α ⥤ $β ⥤ $γ ⥤ $Y)             ← unfoldOnce ⌜($hApp).F⌝
-        let a  : Q($α)                            ← unfoldOnce ⌜($hApp).a⌝
-        let b  : Q($β)                            ← unfoldOnce ⌜($hApp).b⌝
-        let c  : Q($γ)                            ← unfoldOnce ⌜($hApp).c⌝
-        pure { α  := γ,
-               hα := hγ,
-               F  := ⌜$F $a $b⌝,
-               a  := c }
-
-    end mkIsFunApp₃
-
-    def mkIsFunApp₃' := ⌜IsFunApp₃' $y⌝
-
-    namespace mkIsFunApp₃'
-
-      variable (hApp : mkIsFunApp₃' U Y y)
-    
-      def mkH₃ : mkIsFunApp U Y y := ⌜($hApp).h₃⌝
-      def mkIsFunApp₂' : mkIsFunApp₂' U Y y := ⌜($hApp).toIsFunApp₂'⌝
-
-    end mkIsFunApp₃'
-
-    def mkIsFunApp₄ := ⌜IsFunApp₄ $y⌝
-
-    namespace mkIsFunApp₄
-
-      variable (hApp : mkIsFunApp₄ U Y y)
-
-      def mkApp : MetaM (FunApp U Y) := do
-        let α  : Q(Sort u)                             ← unfoldOnce ⌜($hApp).α⌝
-        let β  : Q(Sort u)                             ← unfoldOnce ⌜($hApp).β⌝
-        let γ  : Q(Sort u)                             ← unfoldOnce ⌜($hApp).γ⌝
-        let δ  : Q(Sort u)                             ← unfoldOnce ⌜($hApp).δ⌝
-        let hδ : Q(HasFunctors $δ $Y)                  ← unfoldOnce ⌜($hApp).hδ⌝
-        let hγ : Q(HasFunctors $γ ($δ ⥤ $Y))           ← unfoldOnce ⌜($hApp).hγ⌝
-        let hβ : Q(HasFunctors $β ($γ ⥤ $δ ⥤ $Y))      ← unfoldOnce ⌜($hApp).hβ⌝
-        let hα : Q(HasFunctors $α ($β ⥤ $γ ⥤ $δ ⥤ $Y)) ← unfoldOnce ⌜($hApp).hα⌝
-        let F  : Q($α ⥤ $β ⥤ $γ ⥤ $δ ⥤ $Y)             ← unfoldOnce ⌜($hApp).F⌝
-        let a  : Q($α)                                 ← unfoldOnce ⌜($hApp).a⌝
-        let b  : Q($β)                                 ← unfoldOnce ⌜($hApp).b⌝
-        let c  : Q($γ)                                 ← unfoldOnce ⌜($hApp).c⌝
-        let d  : Q($δ)                                 ← unfoldOnce ⌜($hApp).d⌝
-        pure { α  := δ,
-               hα := hδ,
-               F  := ⌜$F $a $b $c⌝,
-               a  := d }
-
-    end mkIsFunApp₄
-
-    def mkIsFunApp₄' := ⌜IsFunApp₄' $y⌝
-
-    namespace mkIsFunApp₄'
-
-      variable (hApp : mkIsFunApp₄' U Y y)
-    
-      def mkH₄ : mkIsFunApp U Y y := ⌜($hApp).h₄⌝
-      def mkIsFunApp₃' : mkIsFunApp₃' U Y y := ⌜($hApp).toIsFunApp₃'⌝
-
-    end mkIsFunApp₄'
-
-  end
-
-end mkHasFunctors'
-
-
-def mkHasUnivTypeFunctors' {u uu uv : Level} (U : Q(Universe.{u, uu})) (V : Q(Universe.{u, uv}))
-                           (A : Q($U)) (B : Q($V)) :=
-  ⌜HasFunctors $A $B⌝
-
-namespace mkHasUnivTypeFunctors'
-
-  instance {u uu uv : Level} (U : Q(Universe.{u, uu})) (V : Q(Universe.{u, uv})) (A : Q($U))
-           (B : Q($V)) :
-      Coe (mkHasUnivTypeFunctors' U V A B) (mkHasFunctors' ⌜$A⌝ V B) :=
-    ⟨id⟩
-
-end mkHasUnivTypeFunctors'
-
-
-def mkHasUnivFunctors' {u uu uv : Level} (U : Q(Universe.{u, uu})) (V : Q(Universe.{u, uv})) :=
-  ⌜HasUnivFunctors $U $V⌝
-
-namespace mkHasUnivFunctors'
-
-  variable {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
-           (h : mkHasUnivFunctors' U V)
-
-  def mkHasUnivTypeFunctors' (A : Q($U)) (B : Q($V)) : mkHasUnivTypeFunctors' U V A B :=
-    ⌜inferInstance⌝
-
-end mkHasUnivFunctors'
-
-
-
-class mkHasPiType {α : _sort} {v : Level} {V : _Universe v} {p : α → V} (P : α ⥤{p} _[V]) where
-  h     : mkHasPiType' α.α V.U P.inst
-  -- Optional `HasFunctors` instance, to output better terms if `P` is known to be constant, i.e. if
-  -- `p` is a constant function at the meta level.
-  hFun? : Option (mkHasFunctors' (u := v) α.α V.U (p default))
+def mkHasPiType {α : _sort} {v : Level} {V : _Universe v} {p : α → V} (P : [α ⥤ _[V]]_{p}) :
+    ClassExpr :=
+  ⟨mkHasPiType' α.α V.U P⟩
 
 namespace mkHasPiType
 
@@ -489,103 +147,49 @@ namespace mkHasPiType
 
     variable {α : _sort} {v : Level} {V : _Universe v}
 
-    def codomain? {p : α → V} (P : α ⥤{p} _[V]) [hP : mkHasPiType P] : Option V :=
-      match hP.hFun? with
-      | some _ => some (p default)
-      | none => none
+    @[reducible] def reflectProp {p : α → V} (P : [α ⥤ _[V]]_{p}) : α → V := p
 
-    def mkFreshMVar (P : α ⥤ _[V]) : MetaM (mkHasPiType (DefFun.defAppFun P)) := do
-      pure { h     := ← TypedExpr.mkFreshMVar,
-             hFun? := none }
+    instance reflect {p : α → V} (P : [α ⥤ _[V]]_{p}) [h : mkHasPiType P] :
+        HasType V (∀ a, (reflectProp P) a) where
+      A     := mkHasPiType'.mkPi h.h
+      hElim := ⟨λ F => mkHasPiType'.mkForAll.mkApp α.α V.U P (mkHasPiType'.mkApply h.h F)⟩
 
-    def instantiate {p : α → V} {P : α ⥤{p} _[V]} (hP : mkHasPiType P) {α' : _sort} {v' : Level}
-                    {V' : _Universe v'} (P' : α' ⥤ _[V']) :
-        MetaM (Σ (p' : α' → V') (P' : α' ⥤{p'} _[V']), mkHasPiType P') := do
-      let Y : V' ← _Universe.mkFreshTypeMVar
-      let P'const := HasConstPi.defConstFun α _(Y)
-      if ← isDefEq P' P'const.inst then
-        let Y : V' ← _Universe.instantiateTypeMVars Y
-        let P'const := HasConstPi.defConstFun α' _(Y)
-        let hP' : mkHasPiType P'const := { h     := ← hP.h.instantiate,
-                                           hFun? := ← TypedExpr.synthesize? }
-        return ⟨_, P'const, hP'⟩
-      let hP' : mkHasPiType (DefFun.defAppFun P') := { h     := ← hP.h.instantiate,
-                                                       hFun? := none }
-      pure ⟨_, DefFun.defAppFun P', hP'⟩
+    def mkPi {p : α → V} (P : [α ⥤ _[V]]_{p}) [h : mkHasPiType P] : V := Pi (reflectProp P)
 
-    def synthesize (P : α ⥤ _[V]) : MetaM (Σ (p : α → V) (P : α ⥤{p} _[V]), mkHasPiType P) := do
-      let Y : V ← _Universe.mkFreshTypeMVar
-      let Pconst := HasConstPi.defConstFun α _(Y)
-      if ← isDefEq P Pconst.inst then
-        let Y : V ← _Universe.instantiateTypeMVars Y
-        match ← TypedExpr.synthesize? (α := mkHasFunctors' (u := v) α.α V.U Y) with
-        | some hFun => do
-          let Pconst := HasConstPi.defConstFun α _(Y)
-          let hP : mkHasPiType Pconst := { h     := mkHasFunctors'.toMkHasPiType' hFun,
-                                           hFun? := some hFun }
-          return ⟨_, Pconst, hP⟩
-        | none => pure ()
-      let hP : mkHasPiType (DefFun.defAppFun P) := { h     := ← TypedExpr.synthesize,
-                                                     hFun? := none }
-      pure ⟨_, DefFun.defAppFun P, hP⟩
+    def defSortPropFun {p : α → V} (P : [α ⥤ _[V]]_{p}) :
+        [α ⥤ _sort.mkSortType v]_{λ a => _⌈(reflectProp P) a⌉.α} :=
+      let P' : Q($α.α → $V.U) := P
+      ⌜λ a => ⌈$P' a⌉⌝
 
-    def synthesizeDef {p : α → V} {P : α ⥤{p} _[V]} (Y? : Option V) : MetaM (mkHasPiType P) := do
-      match Y? with
-      | some Y => do
-        match ← TypedExpr.synthesize? (α := mkHasFunctors' (u := v) α.α V.U Y) with
-        | some hFun => do
-          let hP : mkHasPiType P := { h     := mkHasFunctors'.toMkHasPiType' hFun,
-                                      hFun? := some hFun }
-          return hP
-        | none => pure ()
-      | none => pure ()
-      let hP : mkHasPiType P := { h     := ← TypedExpr.synthesize,
-                                  hFun? := none }
-      pure hP
-
-    @[reducible] def reflectProp {p : α → V} (P : α ⥤{p} _[V]) : α → V := p
-
-    instance reflect {p : α → V} (P : α ⥤{p} _[V]) [h : mkHasPiType P] :
-        HasPiType (reflectProp P) where
-      defPiType := match h.hFun? with
-                   | some hFun =>
-                     { A    := mkHasFunctors'.mkFun hFun,
-                       elim := λ F => mkHasFunctors'.mkFunction.mkApp (u := v) α.α V.U (p default)
-                                                                      (mkHasFunctors'.mkApply hFun F) }
-                   | none =>
-                     { A    := mkHasPiType'.mkPi h.h,
-                       elim := λ F => mkHasPiType'.mkForAll.mkApp α.α V.U P.inst
-                                                                  (mkHasPiType'.mkApply h.h F) }
-
-    def defSortPropFun {p : α → V} (P : α ⥤{p} _[V]) :
-        α ⥤{λ a => _⌈(reflectProp P) a⌉.α} _sort.mkSortType v :=
-      let P' : Q($α.α → $V.U) := P.inst
-      let P'' : Q($α.α → Sort v) := ⌜λ a => $P' a⌝
-      ⟨P''⟩
-
-    @[reducible] def sortProp {p : α → V} (P : α ⥤{p} _[V]) :=
+    @[reducible] def sortProp {p : α → V} (P : [α ⥤ _[V]]_{p}) : α → _sort :=
       _sort.defFunToProp (defSortPropFun P)
 
-    def mkApply {p : α → V} {P : α ⥤{p} _[V]} [h : mkHasPiType P] (F : Pi (reflectProp P)) :
+    def mkApply {p : α → V} {P : [α ⥤ _[V]]_{p}} [h : mkHasPiType P] (F : mkPi P) :
         Pi (sortProp P) :=
-      match h.hFun? with
-      | some hFun => mkHasFunctors'.mkApply hFun F
-      | none => mkHasPiType'.mkApply h.h F
+      mkHasPiType'.mkApply h.h F
 
-    def mkDefPi {p : α → V} (P : α ⥤{p} _[V]) [h : mkHasPiType P] (f : Pi (sortProp P)) :=
+    def mkDefPi {p : α → V} (P : [α ⥤ _[V]]_{p}) [h : mkHasPiType P] (f : Pi (sortProp P)) : V :=
       mkHasPiType'.mkDefPi h.h f
 
-    namespace mkDefPi
+  end
 
-      variable {p : α → V} (P : α ⥤{p} _[V]) [h : mkHasPiType P] (f : Pi (sortProp P))
+  section
 
-      def mkMk (F : Pi (reflectProp P)) : mkDefPi P f := mkHasPiType'.mkDefPi.mkMk h.h f F
+    variable {α : _sort} {u' v : Level} {V : _Universe v} {p : α → V} (P : [α ⥤ _[V]]_{p})
+             (β : α ⥤ _sort.mkSortType u')
 
-      variable (F : mkDefPi P f)
+    def mkHasDepElim' : ClassExpr := ⟨mkHasPiType'.mkHasDepElim' (u' := u') α.α V.U P β⟩
 
-      def mkInst : Pi (reflectProp P) := mkHasPiType'.mkDefPi.mkInst h.h f F
+    @[reducible] def sortProp' {α : _sort} {u' : Level} (β : α ⥤ _sort.mkSortType u') :
+        α → _sort :=
+      _sort.funToProp β
 
-    end mkDefPi
+    variable [h : mkHasDepElim' P β]
+
+    def mkHasDepElim'.mkApp (f : Pi (sortProp' β)) (a : α) : V :=
+      mkHasPiType'.mkHasDepElim'.mkApp h.h f a
+
+    def mkDefPi' [hP : mkHasPiType P] (f : Pi (sortProp' β)) : V := mkHasPiType'.mkDefPi' h.h hP.h f
 
   end
 
@@ -613,90 +217,34 @@ namespace mkHasPiType
 
     end mkIsPiApp₂
 
-    def mkIsPiApp₂' (u u' : Level) : ClassExpr := ⟨mkHasPiType'.mkIsPiApp₂' V.U Y y u u'⟩
-
-    namespace mkIsPiApp₂'
-
-      variable (u u' : Level) [hApp : mkIsPiApp₂' y u u']
-    
-      instance : mkIsPiApp y u' := ⟨mkHasPiType'.mkIsPiApp₂'.mkH₂ V.U Y y hApp.h⟩
-      instance : mkIsPiApp y u := ⟨mkHasPiType'.mkIsPiApp₂'.mkIsPiApp V.U Y y hApp.h⟩
-
-    end mkIsPiApp₂'
-
-    def mkIsPiApp₃ (u u' u'' : Level) : ClassExpr := ⟨mkHasPiType'.mkIsPiApp₃ V.U Y y u u' u''⟩
-
-    namespace mkIsPiApp₃
-
-      variable (u u' u'' : Level) [hApp : mkIsPiApp₃ y u u' u'']
-
-      def mkApp : MetaM (mkHasPiType'.PiApp V.U u'') := mkHasPiType'.mkIsPiApp₃.mkApp V.U Y y hApp.h
-
-    end mkIsPiApp₃
-
-    def mkIsPiApp₃' (u u' u'' : Level) : ClassExpr := ⟨mkHasPiType'.mkIsPiApp₃' V.U Y y u u' u''⟩
-
-    namespace mkIsPiApp₃'
-
-      variable (u u' u'' : Level) [hApp : mkIsPiApp₃' y u u' u'']
-
-      instance : mkIsPiApp y u'' := ⟨mkHasPiType'.mkIsPiApp₃'.mkH₃ V.U Y y hApp.h⟩
-      instance : mkIsPiApp₂' y u u' := ⟨mkHasPiType'.mkIsPiApp₃'.mkIsPiApp₂' V.U Y y hApp.h⟩
-
-    end mkIsPiApp₃'
-
-    def mkIsPiApp₄ (u u' u'' u''' : Level) : ClassExpr :=
-      ⟨mkHasPiType'.mkIsPiApp₄ V.U Y y u u' u'' u'''⟩
-
-    namespace mkIsPiApp₄
-
-      variable (u u' u'' u''' : Level) [hApp : mkIsPiApp₄ y u u' u'' u''']
-
-      def mkApp : MetaM (mkHasPiType'.PiApp V.U u''') :=
-        mkHasPiType'.mkIsPiApp₄.mkApp V.U Y y hApp.h
-
-    end mkIsPiApp₄
-
-    def mkIsPiApp₄' (u u' u'' u''' : Level) : ClassExpr :=
-      ⟨mkHasPiType'.mkIsPiApp₄' V.U Y y u u' u'' u'''⟩
-
-    namespace mkIsPiApp₄'
-
-      variable (u u' u'' u''' : Level) [hApp : mkIsPiApp₄' y u u' u'' u''']
-
-      instance : mkIsPiApp y u''' :=  ⟨mkHasPiType'.mkIsPiApp₄'.mkH₄ V.U Y y hApp.h⟩
-      instance : mkIsPiApp₃' y u u' u'' := ⟨mkHasPiType'.mkIsPiApp₄'.mkIsPiApp₃' V.U Y y hApp.h⟩
-
-    end mkIsPiApp₄'
-
   end
 
   section
 
     variable {u v : Level} {U : _Universe u} {A : U} {V : _Universe v}
 
-    @[reducible] def reflectProp' {p : A → V} (P : _⌈A⌉ ⥤{p} _[V]) :
+    @[reducible] def reflectProp' {p : A → V} (P : [_⌈A⌉ ⥤ _[V]]_{p}) :
         A → V :=
       reflectProp P
 
-    instance reflect' {p : A → V} (P : _⌈A⌉ ⥤{p} _[V]) [h : mkHasPiType P] :
-        HasPiType (reflectProp' P) :=
+    instance reflect' {p : A → V} (P : [_⌈A⌉ ⥤ _[V]]_{p}) [h : mkHasPiType P] :
+        HasType V (∀ a, (reflectProp' P) a) :=
       reflect P
 
   end
 
   section
 
-    instance {α : _sort} {v : Level} {V : _Universe v} {p : α → V} (P : α ⥤{p} _[V]) :
-        HasPiType (λ a => _⌈(reflectProp P) a⌉) :=
-      let P' : Q($α.α → $V.U) := P.inst
+    instance {α : _sort} {v : Level} {V : _Universe v} {p : α → V} (P : [α ⥤ _[V]]_{p}) :
+        HasType _sort (∀ a, _⌈(reflectProp P) a⌉) :=
+      let P' : Q($α.α → $V.U) := P
       let P'' : Q($α.α → Sort v) := ⌜λ a => $P' a⌝
-      _sort.hasPiType ⟨P''⟩
+      _sort.hasPiType P''
 
-    instance {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : α ⥤{p} _[V]}
+    instance {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : [α ⥤ _[V]]_{p}}
              (W : _Universe w) :
-        HasPiType (λ a => (_⌈(reflectProp P) a⌉ ⥤ _[W])) :=
-      let P' : Q($α.α → $V.U) := P.inst
+        HasType _sort (∀ a, (_⌈(reflectProp P) a⌉ ⥤ _[W])) :=
+      let P' : Q($α.α → $V.U) := P
       let Q : Q($α.α → Sort (imax v $W.uu)) := ⌜λ a => $P' a → $W.U⌝
       _sort.hasPiType' Q
 
@@ -705,209 +253,353 @@ namespace mkHasPiType
 end mkHasPiType
 
 
-class mkHasQuantPiType {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V}
-                       (P : α ⥤ β ⥤{p} _[V]) where
-  h     : mkHasQuantPiType' α.α β.α V.U P.inst
-  hFun? : Option (mkHasFunctors' (u := v) β.α V.U (p default default))
+def mkHasQuantPiType' {u u' v vv : Level} (α : Q(Sort u)) (β : Q($α → Sort u'))
+                      (V : Q(Universe.{v, vv})) (P : Q(∀ a, $β a → $V)) :=
+  ⌜∀ a, HasType $V (∀ b, $P a b)⌝
+
+namespace mkHasQuantPiType'
+
+  def metaProp {u u' v vv : Level} (α : Q(Sort u)) (β : Q($α → Sort u')) (V : Q(Universe.{v, vv})) :
+      Q($α → Sort (imax u' vv)) :=
+    ⌜λ a => $β a → $V⌝
+
+  variable {u u' v vv : Level} {α : Q(Sort u)} {β : Q($α → Sort u')} {V : Q(Universe.{v, vv})}
+           {P : Q(∀ a, $β a → $V)} (hP : mkHasQuantPiType' α β V P)
+
+  def app (a : Q($α)) : mkHasPiType' ⌜$β $a⌝ V ⌜$P $a⌝ := ⌜$hP $a⌝
+
+  def mkPiProp : Q($α → $V) := ⌜λ a => Pi ($P a)⌝
+
+  variable (hPiPa : mkHasPiType' α V (mkPiProp hP))
+
+  def mkPi₂ : Q($V) := ⌜Pi₂ $P⌝
+
+  def mkDefPi₂ (f : Q(∀ a b, $P a b)) : Q($V) := ⌜[∀ a b, $P a b | $V]_{$f}⌝
+
+end mkHasQuantPiType'
+
+@[reducible] def mkHasQuantPiType.metaProp {α : _sort} {u' v : Level} {β' : α → _sort.mkSortType u'}
+                                           (β : [α ⥤ _sort.mkSortType u']_{β'}) (V : _Universe v) :
+    α → _sort :=
+  _sort.defFunToProp (v := mkLevelIMax u' V.uu) (p := λ a => _sort.funType (β' a) _[V])
+                     (mkHasQuantPiType'.metaProp (u' := u') α.α β V.U)
+
+def mkHasQuantPiType {α : _sort} {u' v : Level} {β' : α → _sort.mkSortType u'}
+                     {β : [α ⥤ _sort.mkSortType u']_{β'}} {V : _Universe v} {p : ∀ a, β' a → V}
+                     {P' : ∀ a, [β' a ⥤ _[V]]_{p a}}
+                     (P : [∀ a, (mkHasQuantPiType.metaProp β V) a | _sort]_{P'}) :
+    ClassExpr :=
+  ⟨mkHasQuantPiType' (u' := u') α.α β V.U P⟩
 
 namespace mkHasQuantPiType
 
-  variable {α β : _sort} {v : Level} {V : _Universe v}
+  variable {α : _sort} {u' v : Level} {β' : α → _sort.mkSortType u'}
+           {β : [α ⥤ _sort.mkSortType u']_{β'}} {V : _Universe v}
 
-  def codomain? {p : α → β → V} (P : α ⥤ β ⥤{p} _[V]) [h : mkHasQuantPiType P] : Option V :=
-    match h.hFun? with
-    | some _ => some (p default default)
-    | none => none
+  @[reducible] def reflectProp {p : ∀ a, β' a → V} {P' : ∀ a, [β' a ⥤ _[V]]_{p a}}
+                               (P : [∀ a, (mkHasQuantPiType.metaProp β V) a | _sort]_{P'}) :
+      ∀ a, β' a → V :=
+    λ a => mkHasPiType.reflectProp (P' a)
 
-  def appFunType? {p : α → β → V} (P : α ⥤ β ⥤{p} _[V]) [h : mkHasQuantPiType P] : Option V :=
-    match h.hFun? with
-    | some hFun => some (mkHasFunctors'.mkFun hFun)
-    | none => none
+  variable {p : ∀ a, β' a → V} {P' : ∀ a, [β' a ⥤ _[V]]_{p a}}
+           (P : [∀ a, (mkHasQuantPiType.metaProp β V) a | _sort]_{P'}) [h : mkHasQuantPiType P]
 
-  def synthesize (P : α ⥤ β ⥤ _[V]) :
-      MetaM (Σ (p : α → β → V) (P : α ⥤ β ⥤{p} _[V]), mkHasQuantPiType P) := do
-    let Y : V ← _Universe.mkFreshTypeMVar
-    let Pconst := HasConstPi.defConstFun₂ α β _(Y)
-    if ← isDefEq P Pconst.inst then
-      let Y : V ← _Universe.instantiateTypeMVars Y
-      match ← TypedExpr.synthesize? (α := mkHasFunctors' (u := v) β.α V.U Y) with
-      | some hFun => do
-        let Pconst := HasConstPi.defConstFun₂ α β _(Y)
-        let hP : mkHasQuantPiType Pconst :=
-            { h     := mkConstFun α.α _ (mkHasFunctors'.toMkHasPiType' hFun),
-              hFun? := some hFun }
-        return ⟨_, Pconst, hP⟩
-      | none => pure ()
-    let hP : mkHasQuantPiType (DefFun₂.defAppFun P) := { h     := ← TypedExpr.synthesize,
-                                                         hFun? := none }
-    pure ⟨_, DefFun₂.defAppFun P, hP⟩
+  instance app (a : α) : mkHasPiType (P' a) := ⟨mkHasQuantPiType'.app h.h a⟩
 
-  def synthesizeDef {p : α → β → V} {P : α ⥤ β ⥤{p} _[V]} (Y? : Option V) :
-      MetaM (mkHasQuantPiType P) := do
-    match Y? with
-    | some Y => do
-      match ← TypedExpr.synthesize? (α := mkHasFunctors' (u := v) β.α V.U Y) with
-      | some hFun => do
-        let hP : mkHasQuantPiType P :=
-            { h     := mkConstFun α.α _ (mkHasFunctors'.toMkHasPiType' hFun),
-              hFun? := some hFun }
-        return hP
-      | none => pure ()
-    | none => pure ()
-    let hP : mkHasQuantPiType P := { h     := ← TypedExpr.synthesize,
-                                     hFun? := none }
-    pure hP
-
-  @[reducible] def reflectAppProp {p : α → β → V} (P : α ⥤ β ⥤{p} _[V]) (a : α) :
-      β → V :=
-    mkHasPiType.reflectProp (P.app a)
-
-  @[reducible] def reflectProp₂ {p : α → β → V} (P : α ⥤ β ⥤{p} _[V]) :
-      α → β → V :=
-    p
-
-  variable {p : α → β → V} (P : α ⥤ β ⥤{p} _[V]) [h : mkHasQuantPiType P]
-
-  instance app (a : α) : mkHasPiType (P.app a) where
-    h     := mkHasQuantPiType'.app h.h a
-    hFun? := h.hFun?
-
-  def piProp : α ⥤{λ a => Pi (reflectAppProp P a)} _[V] := ⟨mkHasQuantPiType'.mkPiProp h.h⟩
+  def piProp : [α ⥤ _[V]]_{λ a => Pi ((reflectProp P) a)} := mkHasQuantPiType'.mkPiProp h.h
 
 end mkHasQuantPiType
 
 
-@[reducible] def mkHasQuantDepPiType.metaProp {α : _sort} {v w : Level} {V : _Universe v}
-                                              {p : α → V} (P : α ⥤{p} _[V]) (W : _Universe w) :=
-  _sort.defFunToProp (v := mkLevelIMax v W.uu)
-                     (p := λ a => _sort.funType _⌈(mkHasPiType.reflectProp P) a⌉ _[W])
-                     ⟨mkHasQuantDepPiType'.metaProp α.α V.U P.inst W.U⟩
+@[reducible] def mkHasIndepQuantPiType' {u u' v vv : Level} (α : Q(Sort u)) (β : Q(Sort u'))
+                                        (V : Q(Universe.{v, vv})) (P : Q($α → $β → $V)) :=
+  mkHasQuantPiType' (u' := u') α ⌜λ _ => $β⌝ V P
 
-class mkHasQuantDepPiType {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : α ⥤{p} _[V]}
-                          {W : _Universe w} {q : ∀ a, _⌈p a⌉ → W} {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                          (Q : DefPi (mkHasQuantDepPiType.metaProp P W) (λ a => (qa a).inst)) where
-  h     : mkHasQuantDepPiType' α.α V.U P.inst W.U Q.inst
-  hFun? : Option (mkHasFunctors' (u := w) _⌈p default⌉.α W.U (q default default))
+@[reducible] def mkHasIndepQuantPiType.prop {α β : _sort} {v : Level} {V : _Universe v}
+                                            {p : α → β → V} (P : [α ⥤ β ⥤ _[V]]__{p}) (a : α) :
+    [β ⥤ _[V]]_{p a} :=
+  P a
 
-namespace mkHasQuantDepPiType
+@[reducible] def mkHasIndepQuantPiType.prop₂ {α β : _sort} {v : Level} {V : _Universe v}
+                                             {p : α → β → V} (P : [α ⥤ β ⥤ _[V]]__{p}) :
+    [∀ a, (mkHasQuantPiType.metaProp (HasConstPi.defConstPi (_sort.mkSortType.fromSort β)) V) a |
+     _sort]_{λ a => prop P a} :=
+  P
 
-  variable {α : _sort} {v w : Level} {V : _Universe v} {W : _Universe w}
+@[reducible] def mkHasIndepQuantPiType {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V}
+                                       (P : [α ⥤ β ⥤ _[V]]__{p}) :
+    ClassExpr :=
+  mkHasQuantPiType (mkHasIndepQuantPiType.prop₂ P)
 
-  def codomain? {p : α → V} {P : α ⥤{p} _[V]} {q : ∀ a, _⌈p a⌉ → W} {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                (Q : DefPi (mkHasQuantDepPiType.metaProp P W) (λ a => (qa a).inst))
-                [h : mkHasQuantDepPiType Q] :
-      Option W :=
-    match h.hFun? with
-    | some _ => some (q default default)
-    | none => none
+namespace mkHasIndepQuantPiType
 
-  def appFunType? {p : α → V} {P : α ⥤{p} _[V]} {q : ∀ a, _⌈p a⌉ → W}
-                  {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                  (Q : DefPi (mkHasQuantDepPiType.metaProp P W) (λ a => (qa a).inst))
-                  [h : mkHasQuantDepPiType Q] :
-      Option W :=
-    match h.hFun? with
-    | some hFun => some (mkHasFunctors'.mkFun hFun)
-    | none => none
+  @[reducible] def reflectProp {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V}
+                               (P : [α ⥤ β ⥤ _[V]]__{p}) :
+      α → β → V :=
+    p
 
-  def synthesize {p : α → V} {P : α ⥤{p} _[V]} (Q : Pi (metaProp P W)) (Y? : Option V) :
-      MetaM (Σ (q : ∀ a, _⌈p a⌉ → W) (qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W])
-               (Q : DefPi (metaProp P W) (λ a => (qa a).inst)),
-             mkHasQuantDepPiType Q) := do
-    match Y? with
-    | some Y =>
-      let Z : W ← _Universe.mkFreshTypeMVar
-      let Qconst := HasConstPi.defConstPi (α := α) (HasConstPi.constFun _⌈Y⌉ _(Z))
-      if ← isDefEq Q Qconst.inst then
-        let Z : W ← _Universe.instantiateTypeMVars Z
-        match ← TypedExpr.synthesize? (α := mkHasFunctors' (u := w) _⌈Y⌉.α W.U Z) with
-        | some hFun => do
-          let qaconst := λ a => (HasConstPi.defConstFun _⌈p a⌉ _(Z))
-          let Qconst : DefPi (metaProp P W) (λ a => (qaconst a).inst) := ⟨Q⟩
-          let hQ : mkHasQuantDepPiType Qconst :=
-              { h     := mkConstFun α.α _ (mkHasFunctors'.toMkHasPiType' hFun),
-                hFun? := some hFun }
-          return ⟨_, qaconst, Qconst, hQ⟩
-        | none => pure ()
-    | none => pure ()
-    let qa : ∀ a, _⌈p a⌉ ⥤{HasFunctors.apply (Q a)} _[W] := λ a => DefFun.defAppFun (Q a)
-    let hQ : mkHasQuantDepPiType (qa := qa) (DefPi.defAppPi Q) := { h     := ← TypedExpr.synthesize,
-                                                                    hFun? := none }
-    pure ⟨_, qa, DefPi.defAppPi Q, hQ⟩
+  variable {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V} (P : [α ⥤ β ⥤ _[V]]__{p})
+           [h : mkHasIndepQuantPiType P]
 
-  variable {p : α → V} {P : α ⥤{p} _[V]}
+  instance app (a : α) : mkHasPiType (prop P a) := mkHasQuantPiType.app (prop₂ P) a
 
-  @[reducible] def appProp {q : ∀ a, _⌈p a⌉ → W} {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                           (Q : DefPi (metaProp P W) (λ a => (qa a).inst)) (a : α) :
-      _⌈(mkHasPiType.reflectProp P) a⌉ ⥤{q a} _[W] :=
-    qa a
+  instance (a : α) : HasType V (∀ b, (reflectProp P) a b) := mkHasPiType.reflect (prop P a)
 
-  @[reducible] def reflectAppProp {q : ∀ a, _⌈p a⌉ → W} {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                                  (Q : DefPi (metaProp P W) (λ a => (qa a).inst))
-                                  (a : α) :
-      (mkHasPiType.reflectProp P) a → W :=
-    mkHasPiType.reflectProp (appProp Q a)
+  def piProp : [α ⥤ _[V]]_{λ a => Pi ((reflectProp P) a)} := mkHasQuantPiType.piProp (prop₂ P)
 
-  @[reducible] def reflectProp₂ {q : ∀ a, _⌈p a⌉ → W} {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                                (Q : DefPi (metaProp P W) (λ a => (qa a).inst)) :
-      ∀ a, p a → W :=
-    λ a b => q a b
-
-  variable {q : ∀ a, _⌈p a⌉ → W} {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-           (Q : DefPi (metaProp P W) (λ a => (qa a).inst)) [h : mkHasQuantDepPiType Q]
-
-  instance app (a : α) : mkHasPiType (appProp Q a) where
-    h     := mkHasQuantDepPiType'.app h.h a
-    hFun? := h.hFun?
-
-  def piProp : α ⥤{λ a => Pi (reflectAppProp Q a)} _[W] := ⟨mkHasQuantDepPiType'.mkPiProp h.h⟩
-
-end mkHasQuantDepPiType
+end mkHasIndepQuantPiType
 
 
-def mkHasFunctors (α : _sort) {U : _Universe α.u} (Y : U) : ClassExpr :=
-  ⟨mkHasFunctors' α.α U.U Y⟩
+@[reducible] def mkHasUnivQuantPiType' {u v vv w ww : Level} (α : Q(Sort u))
+                                       (V : Q(Universe.{v, vv})) (P : Q($α → $V))
+                                       (W : Q(Universe.{w, ww})) (Q : Q(∀ a, $P a → $W)) :=
+  mkHasQuantPiType' (u' := v) α ⌜λ a => $P a⌝ W Q
 
-namespace mkHasFunctors
+@[reducible] def mkHasUnivQuantPiType.metaProp {α : _sort} {v w : Level} {V : _Universe v}
+                                               {p : α → _[V]} (P : [α ⥤ _[V]]_{p})
+                                               (W : _Universe w) :
+    α → _sort :=
+  mkHasQuantPiType.metaProp (mkHasPiType.defSortPropFun P) W
 
-  instance toMkHasPiType (α : _sort) {U : _Universe α.u} (Y : U) [h : mkHasFunctors α Y] :
-      mkHasPiType (HasConstPi.defConstFun α _(Y)) where
-    h     := mkHasFunctors'.toMkHasPiType' h.h
-    hFun? := some h.h
+@[reducible] def mkHasUnivQuantPiType {α : _sort} {v w : Level} {V : _Universe v}
+                                      {p : α → _[V]} {P : [α ⥤ _[V]]_{p}} {W : _Universe w}
+                                      {q : ∀ a, (mkHasPiType.reflectProp P) a → W}
+                                      {Q' : ∀ a, [_⌈(mkHasPiType.reflectProp P) a⌉ ⥤ _[W]]_{q a}}
+                                      (Q : [∀ a, (mkHasUnivQuantPiType.metaProp P W) a | _sort]_{Q'}) :=
+  mkHasQuantPiType Q
 
-  instance reflect (α : _sort) {U : _Universe α.u} (Y : U) [h : mkHasFunctors α Y] :
-    HasFunctors α Y := ⟨⟩
+namespace mkHasUnivQuantPiType
 
-  instance reflect' {u : Level} {U V : _Universe u} (A : U) (B : V) [h : mkHasFunctors _⌈A⌉ B] :
-      HasFunctors A B :=
-    reflect _⌈A⌉ B
+  variable {α : _sort} {v w : Level} {V : _Universe v} {p : α → _[V]} {P : [α ⥤ _[V]]_{p}}
+           {W : _Universe w}
 
-  def toPi {α : _sort} {U : _Universe α.u} {Y : U} [h : mkHasFunctors α Y] (F : α ⥤ Y) :
-      Pi (mkHasPiType.reflectProp (HasConstPi.defConstFun α _(Y))) :=
-    F
+  @[reducible] def reflectProp {q : ∀ a, (mkHasPiType.reflectProp P) a → W}
+                               {Q' : ∀ a, [_⌈(mkHasPiType.reflectProp P) a⌉ ⥤ _[W]]_{q a}}
+                               (Q : [∀ a, (mkHasUnivQuantPiType.metaProp P W) a | _sort]_{Q'}) :
+      ∀ a, (mkHasPiType.reflectProp P) a → W :=
+    λ a => mkHasPiType.reflectProp' (Q' a)
 
-  def mkApply {α : _sort} {U : _Universe α.u} {Y : U} [h : mkHasFunctors α Y] (F : α ⥤ Y) :
-      α ⥤ _⌈Y⌉ :=
-    mkHasPiType.mkApply (toPi F)
+  variable {q : ∀ a, (mkHasPiType.reflectProp P) a → W}
+           {Q' : ∀ a, [_⌈(mkHasPiType.reflectProp P) a⌉ ⥤ _[W]]_{q a}}
+           (Q : [∀ a, (mkHasUnivQuantPiType.metaProp P W) a | _sort]_{Q'})
+           [h : mkHasUnivQuantPiType Q]
+
+  instance app (a : α) : mkHasPiType (Q' a) := mkHasQuantPiType.app Q a
+
+  def piProp : [α ⥤ _[W]]_{λ a => Pi ((reflectProp Q) a)} := mkHasQuantPiType.piProp Q
+
+end mkHasUnivQuantPiType
+
+
+def mkHasFunctors' {u uu : Level} (α : Q(Sort u)) (U : Q(Universe.{u, uu})) :=
+  ⌜HasFunctors $α $U⌝
+
+namespace mkHasFunctors'
+
+  variable {u uu : Level}
 
   section
 
-    variable (α : _sort) {U : _Universe α.u} (Y : U) [h : mkHasFunctors α Y]
+    variable (α : Q(Sort u)) (U : Q(Universe.{u, uu})) (Y : Q($U))
 
-    def mkDefFun (f : α ⥤ _⌈Y⌉) := mkHasFunctors'.mkDefFun h.h f
+    def mkFunction := ⌜$α → $Y⌝
 
-    namespace mkDefFun
+    def mkFunction.mkApp (f : Q($α → $Y)) (a : Q($α)) : Q($Y) := ⌜$f $a⌝
+  
+  end
 
-      variable (f : α ⥤ _⌈Y⌉)
+  section
 
-      def mkMk (F : α ⥤ Y) : mkDefFun α Y f :=
-        mkHasFunctors'.mkDefFun.mkMk h.h f F
+    variable {α : Q(Sort u)} {U : Q(Universe.{u, uu})} (h : mkHasFunctors' α U) (Y : Q($U))
 
-      variable (F : mkDefFun α Y f)
+    def toMkHasPiType' : mkHasPiType' α U ⌜λ _ => $Y⌝ := ⌜($h).hFun $Y⌝
 
-      def mkInst : α ⥤ Y := mkHasFunctors'.mkDefFun.mkInst h.h f F
+    def mkFun : Q($U) := ⌜$α ⥤ $Y⌝
 
-    end mkDefFun
+    def mkApply (F : Q($α ⥤ $Y)) : Q($α → $Y) := ⌜HasPiType.apply $F⌝
+
+    def mkDefFun (f : Q($α → $Y)) : Q($U) := ⌜[$α ⥤ $Y]_{$f}⌝
+
+  end
+
+  section
+
+    variable (U : Q(Universe.{u, uu})) (Y : Q($U))
+
+    structure FunApp where
+      α  : Q(Sort u)
+      hα : Q(HasFunctors $α $U)
+      F  : Q($α ⥤ $Y)
+      a  : Q($α)
+
+    def FunApp.toPiApp (app : FunApp U Y) : mkHasPiType'.PiApp U u where
+      α  := app.α
+      P  := ⌜λ _ => $Y⌝
+      hP := ⌜$(app.hα).hFun $Y⌝
+      F  := app.F
+      a  := app.a
+
+    variable (y : Q($Y))
+
+    def mkIsFunApp := ⌜IsFunApp.{u} $y⌝
+
+    namespace mkIsFunApp
+
+      variable (hApp : mkIsFunApp U Y y)
+
+      def mkApp : MetaM (FunApp U Y) := do
+        let α  : Q(Sort u)            ← unfoldDefinitionI ⌜($hApp).α⌝
+        let hα : Q(HasFunctors $α $U) ← unfoldDefinitionI ⌜($hApp).hα⌝
+        let F  : Q($α ⥤ $Y)           ← unfoldDefinitionI ⌜($hApp).F⌝
+        let a  : Q($α)                ← unfoldDefinitionI ⌜($hApp).a⌝
+        pure { α  := α,
+               hα := hα,
+               F  := F,
+               a  := a }
+
+    end mkIsFunApp
+
+    def mkIsFunApp₂ := ⌜IsFunApp₂ $y⌝
+
+    namespace mkIsFunApp₂
+
+      variable (hApp : mkIsFunApp₂ U Y y)
+
+      def mkApp : MetaM (FunApp U Y) := do
+        let α  : Q(Sort u)            ← unfoldDefinitionI ⌜($hApp).α⌝
+        let β  : Q(Sort u)            ← unfoldDefinitionI ⌜($hApp).β⌝
+        let hα : Q(HasFunctors $α $U) ← unfoldDefinitionI ⌜($hApp).hα⌝
+        let hβ : Q(HasFunctors $β $U) ← unfoldDefinitionI ⌜($hApp).hβ⌝
+        let F  : Q($α ⥤ $β ⥤ $Y)      ← unfoldDefinitionI ⌜($hApp).F⌝
+        let a  : Q($α)                ← unfoldDefinitionI ⌜($hApp).a⌝
+        let b  : Q($β)                ← unfoldDefinitionI ⌜($hApp).b⌝
+        pure { α  := β,
+               hα := hβ,
+               F  := ⌜$F $a⌝,
+               a  := b }
+
+    end mkIsFunApp₂
+
+    def mkIsFunApp₂' := ⌜IsFunApp₂' $y⌝
+
+    namespace mkIsFunApp₂'
+
+      variable (hApp : mkIsFunApp₂' U Y y)
+    
+      def mkH₂ : mkIsFunApp U Y y := ⌜($hApp).h₂⌝
+      def mkIsFunApp : mkIsFunApp U Y y := ⌜($hApp).toIsFunApp⌝
+
+    end mkIsFunApp₂'
+
+    def mkIsFunApp₃ := ⌜IsFunApp₃ $y⌝
+
+    namespace mkIsFunApp₃
+
+      variable (hApp : mkIsFunApp₃ U Y y)
+
+      def mkApp : MetaM (FunApp U Y) := do
+        let α  : Q(Sort u)            ← unfoldDefinitionI ⌜($hApp).α⌝
+        let β  : Q(Sort u)            ← unfoldDefinitionI ⌜($hApp).β⌝
+        let γ  : Q(Sort u)            ← unfoldDefinitionI ⌜($hApp).γ⌝
+        let hα : Q(HasFunctors $α $U) ← unfoldDefinitionI ⌜($hApp).hα⌝
+        let hβ : Q(HasFunctors $β $U) ← unfoldDefinitionI ⌜($hApp).hβ⌝
+        let hγ : Q(HasFunctors $γ $U) ← unfoldDefinitionI ⌜($hApp).hγ⌝
+        let F  : Q($α ⥤ $β ⥤ $γ ⥤ $Y) ← unfoldDefinitionI ⌜($hApp).F⌝
+        let a  : Q($α)                ← unfoldDefinitionI ⌜($hApp).a⌝
+        let b  : Q($β)                ← unfoldDefinitionI ⌜($hApp).b⌝
+        let c  : Q($γ)                ← unfoldDefinitionI ⌜($hApp).c⌝
+        pure { α  := γ,
+               hα := hγ,
+               F  := ⌜$F $a $b⌝,
+               a  := c }
+
+    end mkIsFunApp₃
+
+    def mkIsFunApp₃' := ⌜IsFunApp₃' $y⌝
+
+    namespace mkIsFunApp₃'
+
+      variable (hApp : mkIsFunApp₃' U Y y)
+    
+      def mkH₃ : mkIsFunApp U Y y := ⌜($hApp).h₃⌝
+      def mkIsFunApp₂' : mkIsFunApp₂' U Y y := ⌜($hApp).toIsFunApp₂'⌝
+
+    end mkIsFunApp₃'
+
+    def mkIsFunApp₄ := ⌜IsFunApp₄ $y⌝
+
+    namespace mkIsFunApp₄
+
+      variable (hApp : mkIsFunApp₄ U Y y)
+
+      def mkApp : MetaM (FunApp U Y) := do
+        let α  : Q(Sort u)                             ← unfoldDefinitionI ⌜($hApp).α⌝
+        let β  : Q(Sort u)                             ← unfoldDefinitionI ⌜($hApp).β⌝
+        let γ  : Q(Sort u)                             ← unfoldDefinitionI ⌜($hApp).γ⌝
+        let δ  : Q(Sort u)                             ← unfoldDefinitionI ⌜($hApp).δ⌝
+        let hα : Q(HasFunctors $α $U)                  ← unfoldDefinitionI ⌜($hApp).hα⌝
+        let hβ : Q(HasFunctors $β $U)                  ← unfoldDefinitionI ⌜($hApp).hβ⌝
+        let hγ : Q(HasFunctors $γ $U)                  ← unfoldDefinitionI ⌜($hApp).hγ⌝
+        let hδ : Q(HasFunctors $δ $U)                  ← unfoldDefinitionI ⌜($hApp).hδ⌝
+        let F  : Q($α ⥤ $β ⥤ $γ ⥤ $δ ⥤ $Y)             ← unfoldDefinitionI ⌜($hApp).F⌝
+        let a  : Q($α)                                 ← unfoldDefinitionI ⌜($hApp).a⌝
+        let b  : Q($β)                                 ← unfoldDefinitionI ⌜($hApp).b⌝
+        let c  : Q($γ)                                 ← unfoldDefinitionI ⌜($hApp).c⌝
+        let d  : Q($δ)                                 ← unfoldDefinitionI ⌜($hApp).d⌝
+        pure { α  := δ,
+               hα := hδ,
+               F  := ⌜$F $a $b $c⌝,
+               a  := d }
+
+    end mkIsFunApp₄
+
+    def mkIsFunApp₄' := ⌜IsFunApp₄' $y⌝
+
+    namespace mkIsFunApp₄'
+
+      variable (hApp : mkIsFunApp₄' U Y y)
+    
+      def mkH₄ : mkIsFunApp U Y y := ⌜($hApp).h₄⌝
+      def mkIsFunApp₃' : mkIsFunApp₃' U Y y := ⌜($hApp).toIsFunApp₃'⌝
+
+    end mkIsFunApp₄'
+
+  end
+
+end mkHasFunctors'
+
+def mkHasFunctors (α : _sort) (U : _Universe α.u) : ClassExpr := ⟨mkHasFunctors' α.α U.U⟩
+
+namespace mkHasFunctors
+
+  instance toMkHasPiType (α : _sort) {U : _Universe α.u} [h : mkHasFunctors α U] (Y : U) :
+      mkHasPiType (HasConstPi.defConstPi (α := α) _(Y)) :=
+    ⟨mkHasFunctors'.toMkHasPiType' h.h Y⟩
+
+  instance reflect (α : _sort) (U : _Universe α.u) [h : mkHasFunctors α U] :
+      HasFunctors α U where
+    hFun Y := { A     := mkHasFunctors'.mkFun h.h Y,
+                hElim := ⟨λ F => mkHasFunctors'.mkFunction.mkApp α.α U.U Y (mkHasFunctors'.mkApply h.h Y F)⟩ }
+
+  instance reflect' {u : Level} {U : _Universe u} (A : U) (V : _Universe u)
+                    [h : mkHasFunctors _⌈A⌉ V] :
+      HasFunctors A V :=
+    reflect _⌈A⌉ V
+
+  def mkApply {α : _sort} {U : _Universe α.u} [h : mkHasFunctors α U] {Y : U} (F : α ⥤ Y) :
+      α ⥤ _⌈Y⌉ :=
+    mkHasFunctors'.mkApply h.h Y F
+
+  def mkApply' {u : Level} {U V : _Universe u} {A : U} [h : mkHasFunctors _⌈A⌉ V] {B : V}
+               (F : A ⥤ B) :
+      _⌈A⌉ ⥤ _⌈B⌉ :=
+    mkApply F
+
+  section
+
+    variable (α : _sort) {U : _Universe α.u} [h : mkHasFunctors α U] (Y : U)
+
+    def mkDefFun (f : α ⥤ _⌈Y⌉) := mkHasFunctors'.mkDefFun h.h Y f
 
   end
 
@@ -997,14 +689,26 @@ namespace mkHasFunctors
 end mkHasFunctors
 
 
+def mkHasUnivFunctors' {u uu uv : Level} (U : Q(Universe.{u, uu})) (V : Q(Universe.{u, uv})) :=
+  ⌜HasUnivFunctors $U $V⌝
+
+namespace mkHasUnivFunctors'
+
+  variable {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
+           (h : mkHasUnivFunctors' U V)
+
+  def toMkHasFunctors' (A : Q($U)) : mkHasFunctors' ⌜$A⌝ V := ⌜($h).hFun $A⌝
+
+end mkHasUnivFunctors'
+
 def mkHasUnivFunctors {u : Level} (U V : _Universe u) : ClassExpr := ⟨mkHasUnivFunctors' U.U V.U⟩
 
 namespace mkHasUnivFunctors
 
   variable {u : Level} (U V : _Universe u) [h : mkHasUnivFunctors U V]
 
-  instance toMkHasFunctors (A : U) (B : V) : mkHasFunctors _⌈A⌉ B :=
-    ⟨mkHasUnivFunctors'.mkHasUnivTypeFunctors' h.h A B⟩
+  instance toMkHasFunctors (A : U) : mkHasFunctors _⌈A⌉ V :=
+    ⟨mkHasUnivFunctors'.toMkHasFunctors' h.h A⟩
 
   instance reflect : HasUnivFunctors U V := ⟨⟩
 
@@ -1015,39 +719,54 @@ end mkHasUnivFunctors
 structure PiData {v : Level} (V : _Universe v) where
   {α : _sort}
   {p : α → V}
-  (P : α ⥤{p} _[V])
+  (P : [α ⥤ _[V]]_{p})
   [h : mkHasPiType P]
+  (hFun? : Option (mkHasFunctors (_sort.mk (u := v) α.α) V))
 
 namespace PiData
+
+  def constructPi {α : _sort} {v : Level} {V : _Universe v} {p : α → V} (P : [α ⥤ _[V]]_{p})
+                  [h : mkHasPiType P] : PiData V :=
+    ⟨P, none⟩
+
+  def constructFun (α : _sort) {U : _Universe α.u} [h : mkHasFunctors α U] (Y : U) : PiData U :=
+    ⟨HasConstPi.defConstPi (α := α) _(Y), some h⟩
 
   def mkFreshMVar {v : Level} (V : _Universe v) : MetaM (PiData V) := do
     let α ← _sort.mkFreshMVar
     let P : α ⥤ _[V] ← _sort.mkFreshInstMVar
-    let P' := DefFun.defAppFun P
-    let h : mkHasPiType P' ← mkHasPiType.mkFreshMVar P
-    pure ⟨P'⟩
+    let P' := defAppFun P
+    let h : mkHasPiType P' ← InstanceExpr.mkFreshMVar
+    pure ⟨P', none⟩
 
   variable {v : Level} {V : _Universe v}
 
   def instantiate (φ : PiData V) {v' : Level} (V' : _Universe v') : MetaM (PiData V') := do
     let α ← _sort.instantiate φ.α
-    let P : α ⥤ _[V'] ← _sort.instantiateInstMVars φ.P.inst
-    let ⟨p, P', h⟩ ← φ.h.instantiate P
-    pure ⟨P'⟩
+    let P : α ⥤ _[V'] ← _sort.instantiateInstMVars φ.P
+    let P' := defAppFun P
+    let h : mkHasPiType P' ← φ.h.instantiate
+    pure ⟨P', none⟩
 
   variable (φ : PiData V)
 
   instance : mkHasPiType φ.P := φ.h
 
-  @[reducible] def mkPi     : V     := Pi (mkHasPiType.reflectProp φ.P)
-  @[reducible] def mkSortPi : _sort := Pi (mkHasPiType.sortProp    φ.P)
+  @[reducible] def mkPiRaw : V := Pi (mkHasPiType.reflectProp φ.P)
+
+  @[reducible] def mkPi : V :=
+    match φ.hFun? with
+    | some hFun => (_sort.mk (u := v) φ.α.α) ⥤ φ.p default
+    | none      => φ.mkPiRaw
+
+  @[reducible] def mkSortPi : _sort := Pi (mkHasPiType.sortProp φ.P)
 
 end PiData
 
 
 structure PiApp {v : Level} {V : _Universe v} {Y : V} (y : Y) extends
     PiData V where
-  F : Pi (mkHasPiType.reflectProp P)
+  F : toPiData.mkPi
   a : α
 
 namespace PiApp
@@ -1059,206 +778,131 @@ namespace PiApp
   def constructPi {u : Level} (app : mkHasPiType'.PiApp V.U u) : MetaM (PiApp y) := do
     let α : _sort := ⟨app.α⟩
     let P : α ⥤ _[V] := app.P
-    let P' := DefFun.defAppFun P
-    let h : mkHasPiType P' := { h := app.hP, hFun? := none }
-    pure ⟨⟨P'⟩, app.F, app.a⟩
+    let P' := defAppFun P
+    let h : mkHasPiType P' := ⟨app.hP⟩
+    pure ⟨PiData.constructPi P', app.F, app.a⟩
 
   def constructFun (app : mkHasFunctors'.FunApp V.U Y) : MetaM (PiApp y) := do
-    let α : _sort := ⟨app.α⟩
-    let h : mkHasFunctors α Y := { h := app.hα }
-    pure ⟨⟨HasConstPi.defConstFun α _(Y)⟩, app.F, app.a⟩
+    let α : _sort.mkSortType v := app.α
+    let h : mkHasFunctors α V := ⟨app.hα⟩
+    pure ⟨PiData.constructFun α Y, app.F, app.a⟩
 
   def getLiteralPiApp : MetaM (List (PiApp y)) := do
     let φ ← PiData.mkFreshMVar V
-    let F : φ.mkPi ← _Universe.mkFreshInstMVar
+    let F : φ.mkPiRaw ← _Universe.mkFreshInstMVar
     let a : φ.α ← _sort.mkFreshInstMVar
     if ← isDefEq y (F a) then
       let φ ← φ.instantiate V
-      let F : φ.mkPi ← _Universe.instantiateInstMVars F
+      let F : φ.mkPiRaw ← _Universe.instantiateInstMVars F
       let a : φ.α ← _sort.instantiateInstMVars a
       return [⟨φ, F, a⟩]
     pure []
 
   -- `y` and `y'` must be defeq.
 
-  def synthesizePiApps'.app₄ {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.piApp₂ {y' : Y} : MetaM (List (PiApp y')) := do
+    let u ← mkFreshLevelMVar
+    let u' ← mkFreshLevelMVar
+    let hApp? : Option (mkHasPiType'.mkIsPiApp₂ V.U Y y u u') ← TypedExpr.synthesize?
+    match hApp? with
+    | some hApp =>
+      let u ← instantiateLevelMVars u
+      let u' ← instantiateLevelMVars u'
+      let _ : mkIsPiApp₂ y u u' := ⟨← hApp.instantiate⟩
+      pure [← constructPi y' (← mkIsPiApp₂.mkApp y u u')]
+    | none => pure []
+
+  def synthesizePiApps'.piApp {y' : Y} : MetaM (List (PiApp y')) := do
+    let u ← mkFreshLevelMVar
+    let hApp? : Option (mkHasPiType'.mkIsPiApp V.U Y y u) ← TypedExpr.synthesize?
+    match hApp? with
+    | some hApp =>
+      let u ← instantiateLevelMVars u
+      let _ : mkIsPiApp y u := ⟨← hApp.instantiate⟩
+      pure [← constructPi y' (← mkIsPiApp.mkApp y u)]
+    | none => synthesizePiApps'.piApp₂ y
+
+  def synthesizePiApps'.funApp₄ {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp₄ V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp₄ y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp₄ y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp₄.mkApp y)]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let u' ← mkFreshLevelMVar
-      let u'' ← mkFreshLevelMVar
-      let u''' ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp₄ V.U Y y u u' u'' u''') ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let u' ← instantiateLevelMVars u'
-        let u'' ← instantiateLevelMVars u''
-        let u''' ← instantiateLevelMVars u'''
-        let _ : mkIsPiApp₄ y u u' u'' u''' := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp₄.mkApp y u u' u'' u''')]
-      | none => pure []
+    | none => pure []
 
-  def synthesizePiApps'.app₃ {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.funApp₃ {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp₃ V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp₃ y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp₃ y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp₃.mkApp y)]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let u' ← mkFreshLevelMVar
-      let u'' ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp₃ V.U Y y u u' u'') ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let u' ← instantiateLevelMVars u'
-        let u'' ← instantiateLevelMVars u''
-        let _ : mkIsPiApp₃ y u u' u'' := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp₃.mkApp y u u' u'')]
-      | none => synthesizePiApps'.app₄ y
+    | none => synthesizePiApps'.funApp₄ y
 
-  def synthesizePiApps'.app₂ {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.funApp₂ {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp₂ V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp₂ y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp₂ y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp₂.mkApp y)]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let u' ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp₂ V.U Y y u u') ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let u' ← instantiateLevelMVars u'
-        let _ : mkIsPiApp₂ y u u' := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp₂.mkApp y u u')]
-      | none => synthesizePiApps'.app₃ y
+    | none => synthesizePiApps'.funApp₃ y
 
-  def synthesizePiApps'.app {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.funApp {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp.mkApp y)]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp V.U Y y u) ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let _ : mkIsPiApp y u := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp.mkApp y u)]
-      | none => synthesizePiApps'.app₂ y
+    | none => synthesizePiApps'.funApp₂ y
 
-  def synthesizePiApps'.app₂' {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.funApp₂' {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp₂' V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp₂' y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp₂' y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp.mkApp y),
             ← constructFun y' (← mkIsFunApp.mkApp y (hApp := mkIsFunApp₂'.mkH₂ y))]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let u' ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp₂' V.U Y y u u') ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let u' ← instantiateLevelMVars u'
-        let _ : mkIsPiApp₂' y u u' := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp.mkApp y u),
-              ← constructPi y' (← mkIsPiApp.mkApp y u')]
-      | none => synthesizePiApps'.app y
+    | none => synthesizePiApps'.funApp y
 
-  def synthesizePiApps'.app₃' {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.funApp₃' {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp₃' V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp₃' y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp₃' y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp.mkApp y),
             ← constructFun y' (← mkIsFunApp.mkApp y (hApp := mkIsFunApp₂'.mkH₂ y)),
             ← constructFun y' (← mkIsFunApp.mkApp y (hApp := mkIsFunApp₃'.mkH₃ y))]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let u' ← mkFreshLevelMVar
-      let u'' ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp₃' V.U Y y u u' u'') ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let u' ← instantiateLevelMVars u'
-        let u'' ← instantiateLevelMVars u''
-        let _ : mkIsPiApp₃' y u u' u'' := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp.mkApp y u),
-              ← constructPi y' (← mkIsPiApp.mkApp y u'),
-              ← constructPi y' (← mkIsPiApp.mkApp y u'')]
-      | none => synthesizePiApps'.app₂' y
+    | none => synthesizePiApps'.funApp₂' y
 
-  def synthesizePiApps'.app₄' {y' : Y} : MetaM (List (PiApp y')) := do
+  def synthesizePiApps'.funApp₄' {y' : Y} : MetaM (List (PiApp y')) := do
     let hApp? : Option (mkHasFunctors'.mkIsFunApp₄' V.U Y y) ← TypedExpr.synthesize?
     match hApp? with
     | some hApp =>
-      let _ : mkIsFunApp₄' y := { h := ← hApp.instantiate }
+      let _ : mkIsFunApp₄' y := ⟨← hApp.instantiate⟩
       pure [← constructFun y' (← mkIsFunApp.mkApp y),
             ← constructFun y' (← mkIsFunApp.mkApp y (hApp := mkIsFunApp₂'.mkH₂ y)),
             ← constructFun y' (← mkIsFunApp.mkApp y (hApp := mkIsFunApp₃'.mkH₃ y)),
             ← constructFun y' (← mkIsFunApp.mkApp y (hApp := mkIsFunApp₄'.mkH₄ y))]
-    | none =>
-      let u ← mkFreshLevelMVar
-      let u' ← mkFreshLevelMVar
-      let u'' ← mkFreshLevelMVar
-      let u''' ← mkFreshLevelMVar
-      let hApp? : Option (mkHasPiType'.mkIsPiApp₄' V.U Y y u u' u'' u''') ← TypedExpr.synthesize?
-      match hApp? with
-      | some hApp =>
-        let u ← instantiateLevelMVars u
-        let u' ← instantiateLevelMVars u'
-        let u'' ← instantiateLevelMVars u''
-        let u''' ← instantiateLevelMVars u'''
-        let _ : mkIsPiApp₄' y u u' u'' u''' := { h := ← hApp.instantiate }
-        pure [← constructPi y' (← mkIsPiApp.mkApp y u),
-              ← constructPi y' (← mkIsPiApp.mkApp y u'),
-              ← constructPi y' (← mkIsPiApp.mkApp y u''),
-              ← constructPi y' (← mkIsPiApp.mkApp y u''')]
-      | none => synthesizePiApps'.app₃' y
+    | none => synthesizePiApps'.funApp₃' y
 
-  def synthesizePiApps' {y' : Y} : MetaM (List (PiApp y')) :=
-    synthesizePiApps'.app₄' y
+  def synthesizePiApps' {y' : Y} : MetaM (List (PiApp y')) := do
+    let piApps: List (PiApp y') ← synthesizePiApps'.piApp y
+    let funApps: List (PiApp y') ← synthesizePiApps'.funApp₄' y
+    pure (funApps ++ piApps)
 
   def synthesizePiApps : MetaM (List (PiApp y)) := do
-    -- First, check whether we can find an instance of `IsPiApp`.
+    -- First, check whether we can find an instance of `IsFunApp` and/or `IsPiApp`.
     match ← synthesizePiApps' y with
     | List.nil =>
-      -- If none was found, check if `y` is an application of `DefPi.inst`. If it is, pass that to
-      -- `IsPiApp` instead of the original value of `y`, as `IsPiApp` is usually defined on such
-      -- terms.
-      let ψ ← PiData.mkFreshMVar V
-      let f_y : ψ.mkSortPi ← _sort.mkFreshInstMVar
-      let F_y : mkHasPiType.mkDefPi ψ.P f_y ← TypedExpr.mkFreshMVar
-      let y' : ψ.mkPi := mkHasPiType.mkDefPi.mkInst ψ.P f_y F_y
-      if ← isDefEq y y' then
-        let ψ ← ψ.instantiate V
-        let f_y : ψ.mkSortPi ← _sort.instantiateInstMVars f_y
-        let F_y : ψ.mkPi ← _Universe.instantiateInstMVars F_y
-        let y' : Y := mkHasPiType.mkDefPi.mkInst ψ.P f_y F_y
-        -- However, if that is in turn reducibly an application of `DefPi.mk`, then use the
-        -- argument of that.
-        let y'' : Y ← _Universe.mkFreshInstMVar
-        let F_y' := mkHasPiType.mkDefPi.mkMk ψ.P f_y y''
-        if ← withReducible (isDefEq F_y F_y') then
-          let y'' : Y ← _Universe.instantiateInstMVars y''
-          return ← synthesizePiApps' y''
-        return ← synthesizePiApps' y'
-      -- Lastly, check whether `y` is literally a functor application.
+      -- If none was found, unfold `y` once and try again, to support the use of definitions in
+      -- `Λ` bodies.
+      if let some (y' : Y) ← TypedExpr.unfold_def? y then
+        match ← synthesizePiApps' y' with
+        | List.nil => pure ()
+        | result => return result
+      -- Finally, check whether `y` is literally a functor application.
       -- This sees through some definitions that are opaque to type class synthesis.
-      -- Only do this if all else fails, as we want to return all alternatives if multiple exist.
+      -- (We do not do this unconditionally because we want to return all alternatives if multiple
+      -- exist.)
       getLiteralPiApp y
     | result => pure result
 
@@ -1266,29 +910,29 @@ end PiApp
 
 
 
-def mkHasIdFun' {u uu : Level} {U : Q(Universe.{u, uu})} {A : Q($U)}
-                (hAA : mkHasUnivTypeFunctors' U U A A) :=
+def mkHasIdFun' {u uu : Level} {U : Q(Universe.{u, uu})} (hUU : mkHasUnivFunctors' U U)
+                (A : Q($U)) :=
   ⌜HasIdFun $A⌝
 
 namespace mkHasIdFun'
 
-  variable {u uu : Level} {U : Q(Universe.{u, uu})} {A : Q($U)}
-           {hAA : mkHasUnivTypeFunctors' U U A A} (h : ⌜HasIdFun $A⌝)
+  variable {u uu : Level} {U : Q(Universe.{u, uu})} {hUU : mkHasUnivFunctors' U U} {A : Q($U)}
+           (h : mkHasIdFun' hUU A)
 
   def mkIdFun : Q($A ⥤ $A) := ⌜HasIdFun.idFun $A⌝
 
 end mkHasIdFun'
 
-def mkHasIdFun {u : Level} {U : _Universe u} (A : U) [hAA : mkHasFunctors _⌈A⌉ A] : ClassExpr :=
-  ⟨mkHasIdFun' (U := U.U) (A := A) hAA.h⟩
+def mkHasIdFun {u : Level} {U : _Universe u} [hUU : mkHasUnivFunctors U U] (A : U) : ClassExpr :=
+  ⟨mkHasIdFun' (U := U.U) (A := A) hUU.h⟩
 
 namespace mkHasIdFun
 
-  variable {u : Level} {U : _Universe u} (A : U) [mkHasFunctors _⌈A⌉ A] [h : mkHasIdFun A]
+  variable {u : Level} {U : _Universe u} [hUU : mkHasUnivFunctors U U] (A : U) [h : mkHasIdFun A]
 
   def mkIdFun : A ⥤ A := mkHasIdFun'.mkIdFun h.h
 
-  instance reflect : HasIdFun A := ⟨⟨mkIdFun A⟩⟩
+  instance reflect : HasIdFun A := ⟨mkIdFun A⟩
 
 end mkHasIdFun
 
@@ -1306,254 +950,169 @@ namespace mkHasPiAppFun'
 
 end mkHasPiAppFun'
 
-def mkHasRevAppFun' {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})}
-                    (hU : mkHasUnivFunctors' U U) {B : Q($U)} (hαB : mkHasFunctors' α U B) :=
-  ⌜HasPiAppFun (Function.const $α $B)⌝
-
-namespace mkHasRevAppFun'
-
-  variable {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {hU : mkHasUnivFunctors' U U}
-           {B : Q($U)} {hαB : mkHasFunctors' α U B} (h : mkHasRevAppFun' hU hαB)
-
-  def mkRevAppFun (a : Q($α)) : Q(($α ⥤ $B) ⥤ $B) := ⌜HasPiAppFun.revAppFun $a $B⌝
-
-end mkHasRevAppFun'
-
 def mkHasPiAppFun {α : _sort} {v : Level} {V : _Universe v} [hV : mkHasUnivFunctors V V]
-                  {p : α → V} (P : α ⥤{p} _[V]) [hP : mkHasPiType P] :
+                  {p : α → V} (P : [α ⥤ _[V]]_{p}) [hP : mkHasPiType P] :
     ClassExpr :=
   ⟨mkHasPiAppFun' hV.h hP.h⟩
 
 namespace mkHasPiAppFun
 
   variable {α : _sort} {v : Level} {V : _Universe v} [hV : mkHasUnivFunctors V V] {p : α → V}
-           (P : α ⥤{p} _[V]) [hP : mkHasPiType P] [h : mkHasPiAppFun P]
+           (P : [α ⥤ _[V]]_{p}) [hP : mkHasPiType P] [h : mkHasPiAppFun P]
 
   def mkPiAppFun (a : α) : Pi (mkHasPiType.reflectProp P) ⥤ p a :=
-    match hP.hFun? with
-    | some hαB => mkHasRevAppFun'.mkRevAppFun (hU := hV.h) (hαB := hαB) h.h a
-    | none => mkHasPiAppFun'.mkPiAppFun h.h a
+    mkHasPiAppFun'.mkPiAppFun h.h a
 
-  instance reflect : HasPiAppFun (mkHasPiType.reflectProp P) := ⟨λ a => ⟨mkPiAppFun P a⟩⟩
+  instance reflect : HasPiAppFun (mkHasPiType.reflectProp P) := ⟨mkPiAppFun P⟩
 
 end mkHasPiAppFun
 
 
 def mkHasSwapPi' {u u' v vv : Level} {α : Q(Sort u)} {β : Q(Sort u')} {V : Q(Universe.{v, vv})}
-                 {P : Q($α → $β → $V)} (hPa : mkHasQuantPiType' α β V P)
+                 {P : Q($α → $β → $V)} (hPa : mkHasIndepQuantPiType' α β V P)
                  (hPiPa : mkHasPiType' α V ⌜λ a => Pi ($P a)⌝)
-                 (hPab : mkHasQuantPiType' β α V ⌜λ b a => $P a b⌝) :=
+                 (hPab : mkHasIndepQuantPiType' β α V ⌜λ b a => $P a b⌝) :=
   ⌜HasSwapPi $P⌝
 
 namespace mkHasSwapPi'
 
   def prop {u u' v vv : Level} (α : Q(Sort u)) (β : Q(Sort u')) (V : Q(Universe.{v, vv}))
-           (P : Q($α → $β → $V)) (b : Q($β)) :
-      Q($α → $V) :=
-    ⌜λ a => $P a $b⌝
-
-  def prop₂ {u u' v vv : Level} (α : Q(Sort u)) (β : Q(Sort u')) (V : Q(Universe.{v, vv}))
-            (P : Q($α → $β → $V)) :
+           (P : Q($α → $β → $V)) :
       Q($β → $α → $V) :=
     ⌜λ b a => $P a b⌝
 
   variable {u u' v vv : Level} {α : Q(Sort u)} {β : Q(Sort u')} {V : Q(Universe.{v, vv})}
-           {P : Q($α → $β → $V)} {hPa : mkHasQuantPiType' α β V P}
+           {P : Q($α → $β → $V)} {hPa : mkHasIndepQuantPiType' α β V P}
            {hPiPa : mkHasPiType' α V ⌜λ a => Pi ($P a)⌝}
-           {hPab : mkHasQuantPiType' β α V ⌜λ b a => $P a b⌝} (h : mkHasSwapPi' hPa hPiPa hPab)
+           {hPab : mkHasIndepQuantPiType' β α V ⌜λ b a => $P a b⌝} (h : mkHasSwapPi' hPa hPiPa hPab)
 
-  def mkSwapPi (F : Q(Pi₂ $P)) (b : Q($β)) : Q(Pi (λ a => $P a $b)) := ⌜HasSwapPi.swapPi $F $b⌝
+  def mkSwapPi (F : Q(Pi₂ $P)) (b : Q($β)) : Q([∀ a, $P a $b | $V]) := ⌜HasSwapPi.swapPi $F $b⌝
 
 end mkHasSwapPi'
 
-def mkHasSwapFun' {u uv : Level} {α : Q(Sort u)} {β : Q(Sort u)} {V : Q(Universe.{u, uv})}
-                  {C : Q($V)} (hβC : mkHasFunctors' β V C) (hαβC : mkHasFunctors' α V ⌜$β ⥤ $C⌝)
-                  (hαC : mkHasFunctors' α V C) :=
-  ⌜HasSwapPi (Function.const $α (Function.const $β $C))⌝
-
-namespace mkHasSwapFun'
-
-  variable {u uv : Level} {α : Q(Sort u)} {β : Q(Sort u)} {V : Q(Universe.{u, uv})} {C : Q($V)}
-           {hβC : mkHasFunctors' β V C} {hαβC : mkHasFunctors' α V ⌜$β ⥤ $C⌝}
-           {hαC : mkHasFunctors' α V C} (h : mkHasSwapFun' hβC hαβC hαC)
-
-  def mkSwapFun (F : Q($α ⥤ $β ⥤ $C)) (b : Q($β)) : Q($α ⥤ $C) := ⌜HasSwapPi.swapFun $F $b⌝
-
-end mkHasSwapFun'
-
 def mkHasSwapPi.prop {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V}
-                     (P : α ⥤ β ⥤{p} _[V]) [hPa : mkHasQuantPiType P] :
-    β ⥤ α ⥤{λ b a => p a b} _[V] :=
-  match mkHasQuantPiType.codomain? P with
-  | some C => ⟨λ b => ⟨mkConstFun α.α _[V].α C⟩,
-               ⟨mkConstFun β.α (α ⥤ _[V]).α (mkConstFun α.α _[V].α C)⟩⟩
-  | none => ⟨λ b => ⟨mkHasSwapPi'.prop α.α β.α V.U P.inst b⟩,
-             ⟨mkHasSwapPi'.prop₂ α.α β.α V.U P.inst⟩⟩
+                     (P : [α ⥤ β ⥤ _[V]]__{p}) [hPa : mkHasIndepQuantPiType P] :
+    [β ⥤ α ⥤ _[V]]__{λ b a => p a b} :=
+  mkHasSwapPi'.prop α.α β.α V.U P
 
 def mkHasSwapPi {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V}
-                (P : α ⥤ β ⥤{p} _[V]) [hPa : mkHasQuantPiType P]
-                [hPiPa : mkHasPiType (mkHasQuantPiType.piProp P)]
-                [hPab : mkHasQuantPiType (mkHasSwapPi.prop P)] :
+                (P : [α ⥤ β ⥤ _[V]]__{p}) [hPa : mkHasIndepQuantPiType P]
+                [hPiPa : mkHasPiType (mkHasIndepQuantPiType.piProp P)]
+                [hPab : mkHasIndepQuantPiType (mkHasSwapPi.prop P)] :
     ClassExpr :=
   ⟨mkHasSwapPi' hPa.h hPiPa.h hPab.h⟩
 
 namespace mkHasSwapPi
 
-  variable {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V} {P : α ⥤ β ⥤{p} _[V]}
-           [hPa : mkHasQuantPiType P] [hPiPa : mkHasPiType (mkHasQuantPiType.piProp P)]
-           [hPab : mkHasQuantPiType (prop P)] [h : mkHasSwapPi P]
+  variable {α β : _sort} {v : Level} {V : _Universe v} {p : α → β → V} {P : [α ⥤ β ⥤ _[V]]__{p}}
+           [hPa : mkHasIndepQuantPiType P]
+           [hPiPa : mkHasPiType (mkHasIndepQuantPiType.piProp P)]
+           [hPab : mkHasIndepQuantPiType (prop P)] [h : mkHasSwapPi P]
 
-  instance (b : β) : mkHasPiType (DefFun₂.app (prop P) b) := inferInstance
+  instance (a : α) : HasType V (∀ b, (mkHasIndepQuantPiType.reflectProp P) a b) :=
+    mkHasPiType.reflect (mkHasIndepQuantPiType.prop P a)
 
-  instance : HasPiType (λ a => Pi ((mkHasQuantPiType.reflectProp₂ P) a)) :=
-    mkHasPiType.reflect (mkHasQuantPiType.piProp P)
+  instance : HasType V (∀ a, Pi ((mkHasIndepQuantPiType.reflectProp P) a)) :=
+    mkHasPiType.reflect (mkHasIndepQuantPiType.piProp P)
 
-  def mkSwapPi (F : Pi₂ (mkHasQuantPiType.reflectProp₂ P)) (b : β) :
-      Pi (mkHasPiType.reflectProp (DefFun₂.app (prop P) b)) :=
-    match hPa.hFun?, hPiPa.hFun?, hPab.hFun? with
-    | some hβC, some hαβC, some hαC =>
-      mkHasSwapFun'.mkSwapFun (u := v) (uv := V.uu) (C := p default default) (hβC := hβC)
-                              (hαβC := hαβC) (hαC := hαC) h.h F b
-    | _, _, _ => mkHasSwapPi'.mkSwapPi h.h F b
+  instance (b : β) : HasType V (∀ a, (mkHasIndepQuantPiType.reflectProp P) a b) :=
+    mkHasPiType.reflect ((prop P) b)
 
-  instance reflect : HasSwapPi (mkHasQuantPiType.reflectProp₂ P) := ⟨λ F b => ⟨mkSwapPi F b⟩⟩
+  def mkSwapPi (F : Pi₂ (mkHasIndepQuantPiType.reflectProp P)) (b : β) :
+      [∀ a, (mkHasIndepQuantPiType.reflectProp P) a b | V] :=
+    mkHasSwapPi'.mkSwapPi h.h F b
+
+  instance reflect : HasSwapPi (mkHasIndepQuantPiType.reflectProp P) := ⟨mkSwapPi⟩
 
 end mkHasSwapPi
 
 
 def mkHasCompFunPi' {u uv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})}
-                    {B : Q($V)} (hαB : mkHasFunctors' α V B) {W : Q(Universe.{w, ww})}
+                    (hαV : mkHasFunctors' α V) (B : Q($V)) {W : Q(Universe.{w, ww})}
                     (Q : Q($B → $W)) (hQ : mkHasPiType' ⌜$B⌝ W Q)
-                    (hQFa : mkHasQuantPiType' ⌜$α ⥤ $B⌝ α W ⌜λ F a => $Q (F a)⌝) :=
+                    (hQFa : mkHasIndepQuantPiType' ⌜$α ⥤ $B⌝ α W ⌜λ F a => $Q (F a)⌝) :=
   ⌜HasCompFunPi $α $Q⌝
 
 namespace mkHasCompFunPi'
 
-  def prop {u uv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-           (hαB : mkHasFunctors' α V B) (W : Q(Universe.{w, ww})) (Q : Q($B → $W)) (F : Q($α ⥤ $B)) :
-      Q($α → $W) :=
-    ⌜λ a => $Q ($F a)⌝
-
-  def prop₂ {u uv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-            (hαB : mkHasFunctors' α V B) (W : Q(Universe.{w, ww})) (Q : Q($B → $W)) :
+  def prop {u uv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} (hαV : mkHasFunctors' α V)
+           (B : Q($V)) (W : Q(Universe.{w, ww})) (Q : Q($B → $W)) :
       Q(($α ⥤ $B) → $α → $W) :=
     ⌜λ F a => $Q (F a)⌝
 
-  variable {u uv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-           {hαB : mkHasFunctors' α V B} {W : Q(Universe.{w, ww})} {Q : Q($B → $W)}
-           {hQ : mkHasPiType' ⌜$B⌝ W Q}
-           {hQFa : mkHasQuantPiType' ⌜$α ⥤ $B⌝ α W ⌜λ F a => $Q (F a)⌝}
-           (h : mkHasCompFunPi' hαB Q hQ hQFa)
+  variable {u uv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {hαV : mkHasFunctors' α V}
+           {B : Q($V)} {W : Q(Universe.{w, ww})} {Q : Q($B → $W)} {hQ : mkHasPiType' ⌜$B⌝ W Q}
+           {hQFa : mkHasIndepQuantPiType' ⌜$α ⥤ $B⌝ α W ⌜λ F a => $Q (F a)⌝}
+           (h : mkHasCompFunPi' hαV B Q hQ hQFa)
 
-  def mkRevCompFunPi (G : Q(Pi $Q)) (F : Q($α ⥤ $B)) : Q(Pi (λ a => $Q ($F a))) :=
+  def mkRevCompFunPi (G : Q(Pi $Q)) (F : Q($α ⥤ $B)) : Q([∀ a, $Q ($F a) | $W]) :=
     ⌜HasCompFunPi.revCompFunPi $G $F⌝
 
 end mkHasCompFunPi'
 
-def mkHasCompFun' {u uv uw : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-                  (hαB : mkHasFunctors' α V B) {W : Q(Universe.{u, uw})} {C : Q($W)}
-                  (hBC : mkHasUnivTypeFunctors' V W B C) (hαC : mkHasFunctors' α W C) :=
-  ⌜HasCompFunPi $α (Function.const $B $C)⌝
-
-namespace mkHasCompFun'
-
-  variable {u uv uw : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-           {hαB : mkHasFunctors' α V B} {W : Q(Universe.{u, uw})} {C : Q($W)}
-           {hBC : mkHasUnivTypeFunctors' V W B C} {hαC : mkHasFunctors' α W C}
-           (h : mkHasCompFun' hαB hBC hαC)
-
-  def mkRevCompFun (G : Q($B ⥤ $C)) (F : Q($α ⥤ $B)) : Q($α ⥤ $C) :=
-    ⌜$G ⊙ $F⌝
-
-end mkHasCompFun'
-
-def mkHasCompFunPi.prop (α : _sort) {V : _Universe α.u} {B : V} [hαB : mkHasFunctors α B]
-                        {w : Level} {W : _Universe w} {q : B → W} (Q : _⌈B⌉ ⥤{q} _[W])
+def mkHasCompFunPi.prop (α : _sort) {V : _Universe α.u} [hαV : mkHasFunctors α V] {B : V}
+                        {w : Level} {W : _Universe w} {q : B → W} (Q : [_⌈B⌉ ⥤ _[W]]_{q})
                         [hQ : mkHasPiType Q] :
-    _⌈α ⥤ B⌉ ⥤ α ⥤{λ (F : α ⥤ B) a => q (F a)} _[W] :=
-  match mkHasPiType.codomain? Q with
-  | some C => ⟨λ F => ⟨mkConstFun α.α _[W].α C⟩,
-               ⟨mkConstFun _⌈α ⥤ B⌉.α (α ⥤ _[W]).α (mkConstFun α.α _[W].α C)⟩⟩
-  | none => ⟨λ F => ⟨mkHasCompFunPi'.prop hαB.h W.U Q.inst F⟩,
-             ⟨mkHasCompFunPi'.prop₂ hαB.h W.U Q.inst⟩⟩
+    [_⌈α ⥤ B⌉ ⥤ α ⥤ _[W]]__{λ (F : α ⥤ B) a => q (F a)} :=
+  mkHasCompFunPi'.prop hαV.h B W.U Q
 
-def mkHasCompFunPi (α : _sort) {V : _Universe α.u} {B : V} [hαB : mkHasFunctors α B] {w : Level}
-                   {W : _Universe w} {q : B → W} (Q : _⌈B⌉ ⥤{q} _[W])
-                   [hQ : mkHasPiType Q] [hQFa : mkHasQuantPiType (mkHasCompFunPi.prop α Q)] :
+def mkHasCompFunPi (α : _sort) {V : _Universe α.u} [hαV : mkHasFunctors α V] {B : V} {w : Level}
+                   {W : _Universe w} {q : B → W} (Q : [_⌈B⌉ ⥤ _[W]]_{q})
+                   [hQ : mkHasPiType Q] [hQFa : mkHasIndepQuantPiType (mkHasCompFunPi.prop α Q)] :
     ClassExpr :=
-  ⟨mkHasCompFunPi' (W := W.U) hαB.h Q.inst hQ.h hQFa.h⟩
+  ⟨mkHasCompFunPi' (W := W.U) hαV.h B Q hQ.h hQFa.h⟩
 
 namespace mkHasCompFunPi
 
-  variable {α : _sort} {V : _Universe α.u} {B : V} [hαB : mkHasFunctors α B] {w : Level}
-           {W : _Universe w} {q : B → W} {Q : _⌈B⌉ ⥤{q} _[W]} [hQ : mkHasPiType Q]
-           [hQFa : mkHasQuantPiType (prop α Q)] [h : mkHasCompFunPi α Q]
+  variable {α : _sort} {V : _Universe α.u} [hαV : mkHasFunctors α V] {B : V} {w : Level}
+           {W : _Universe w} {q : B → W} {Q : [_⌈B⌉ ⥤ _[W]]_{q}} [hQ : mkHasPiType Q]
+           [hQFa : mkHasIndepQuantPiType (prop α Q)] [h : mkHasCompFunPi α Q]
 
-  instance (F : α ⥤ B) : mkHasPiType (DefFun₂.app (prop α Q) F) := inferInstance
+  instance (F : α ⥤ B) : HasType W (∀ a, (mkHasPiType.reflectProp' Q) (F a)) :=
+    mkHasPiType.reflect ((prop α Q) F)
 
   def mkRevCompFunPi (G : Pi (mkHasPiType.reflectProp' Q)) (F : α ⥤ B) :
-      Pi (mkHasPiType.reflectProp (DefFun₂.app (prop α Q) F)) :=
-    match hQ.hFun?, hQFa.hFun? with
-    | some hBC, some hαC =>
-      mkHasCompFun'.mkRevCompFun (u := w) (uv := V.uu) (α := α.α) (V := V.U) (W := W.U) (B := B)
-                                 (C := q (default (α := _⌈B⌉))) (hαB := hαB.h) (hBC := hBC)
-                                 (hαC := hαC) h.h G F
-    | _, _ => mkHasCompFunPi'.mkRevCompFunPi h.h G F
+      [∀ a, (mkHasPiType.reflectProp' Q) (F a) | W] :=
+    mkHasCompFunPi'.mkRevCompFunPi h.h G F
 
   instance reflect : HasCompFunPi α (B := B) (mkHasPiType.reflectProp' Q) :=
-    ⟨λ F G => ⟨mkRevCompFunPi G F⟩⟩
+    ⟨λ F G => mkRevCompFunPi G F⟩
 
 end mkHasCompFunPi
 
 
 def mkHasConstPi' {u v vv : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {B : Q($V)}
-                  (hαB : mkHasPiType' α V ⌜Function.const $α $B⌝) :=
+                  (hαB : mkHasPiType' α V ⌜λ _ => $B⌝) :=
   ⌜HasConstPi $α $B⌝
 
 namespace mkHasConstPi'
 
   variable {u v vv : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {B : Q($V)}
-           {hαB : mkHasPiType' α V ⌜Function.const $α $B⌝} (h : mkHasConstPi' hαB)
+           {hαB : mkHasPiType' α V ⌜λ _ => $B⌝} (h : mkHasConstPi' hαB)
 
-  def mkConstPi (b : Q($B)) : Q(Pi (Function.const $α $B)) := ⌜HasConstPi.constPi $α $b⌝
+  def mkConstPi (b : Q($B)) : Q([$α → $B | $V]) := ⌜HasConstPi.constPi $α $b⌝
 
 end mkHasConstPi'
 
-def mkHasConstFun' {u uv : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uv})} {B : Q($U)}
-                   (hαB : mkHasFunctors' α U B) :=
-  ⌜HasConstPi $α $B⌝
-
-namespace mkHasConstFun'
-
-  variable {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {B : Q($U)}
-           {hαB : mkHasFunctors' α U B} (h : mkHasConstFun' hαB)
-
-  def mkConstFun (b : Q($B)) : Q($α ⥤ $B) := ⌜HasConstPi.constFun $α $b⌝
-
-end mkHasConstFun'
-
 def mkHasConstPi (α : _sort) {v : Level} {V : _Universe v} (B : V)
-                 [hαB : mkHasPiType (HasConstPi.defConstFun α _(B))] :
+                 [hαB : mkHasPiType (HasConstPi.defConstPi (α := α) _(B))] :
     ClassExpr :=
   ⟨mkHasConstPi' (α := α.α) (V := V.U) (B := B) hαB.h⟩
 
 namespace mkHasConstPi
 
   variable (α : _sort) {v : Level} {V : _Universe v} {B : V}
-           [hαB : mkHasPiType (HasConstPi.defConstFun α _(B))] [h : mkHasConstPi α B]
+           [hαB : mkHasPiType (HasConstPi.defConstPi (α := α) _(B))] [h : mkHasConstPi α B]
 
-  def mkConstPi (b : B) : Pi (Function.const α B) :=
-    match hαB.hFun? with
-    | some hαB => mkHasConstFun'.mkConstFun (hαB := hαB) h.h b
-    | none => mkHasConstPi'.mkConstPi h.h b
+  def mkConstPi (b : B) : [α → B | V] := mkHasConstPi'.mkConstPi h.h b
 
-  instance reflect : HasConstPi α B := ⟨λ b => ⟨mkConstPi α b⟩⟩
+  instance reflect : HasConstPi α B := ⟨mkConstPi α⟩
 
 end mkHasConstPi
 
 
 def mkHasDupPi' {u v vv : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} (P : Q($α → $α → $V))
-                (hPa : mkHasQuantPiType' α α V P) (hPiPa : mkHasPiType' α V ⌜λ a => Pi ($P a)⌝)
+                (hPa : mkHasIndepQuantPiType' α α V P) (hPiPa : mkHasPiType' α V ⌜λ a => Pi ($P a)⌝)
                 (hP : mkHasPiType' α V ⌜λ a => $P a a⌝) :=
   ⌜HasDupPi $P⌝
 
@@ -1564,53 +1123,36 @@ namespace mkHasDupPi'
     ⌜λ a => $P a a⌝
 
   variable {u v vv : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {P : Q($α → $α → $V)}
-           {hPa : mkHasQuantPiType' α α V P} {hPiPa : mkHasPiType' α V ⌜λ a => Pi ($P a)⌝}
+           {hPa : mkHasIndepQuantPiType' α α V P} {hPiPa : mkHasPiType' α V ⌜λ a => Pi ($P a)⌝}
            {hP : mkHasPiType' α V ⌜λ a => $P a a⌝} (h : mkHasDupPi' P hPa hPiPa hP)
 
-  def mkDupPi (F : Q(Pi₂ $P)) : Q(Pi (λ a => $P a a)) := ⌜HasDupPi.dupPi $F⌝
+  def mkDupPi (F : Q(Pi₂ $P)) : Q([∀ a, $P a a | $V]) := ⌜HasDupPi.dupPi $F⌝
 
 end mkHasDupPi'
 
-def mkHasDupFun' {u uv : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uv})} {B : Q($U)}
-                 (hαB : mkHasFunctors' α U B) (hααB : mkHasFunctors' α U ⌜$α ⥤ $B⌝) :=
-  ⌜HasDupPi (Function.const $α (Function.const $α $B))⌝
-
-namespace mkHasDupFun'
-
-  variable {u uv : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uv})} {B : Q($U)}
-           {hαB : mkHasFunctors' α U B} {hααB : mkHasFunctors' α U ⌜$α ⥤ $B⌝}
-           (h : mkHasDupFun' hαB hααB)
-
-  def mkDupFun (F : Q($α ⥤ $α ⥤ $B)) : Q($α ⥤ $B) := ⌜HasDupPi.dupFun $F⌝
-
-end mkHasDupFun'
-
 def mkHasDupPi.prop {α : _sort} {v : Level} {V : _Universe v} {p : α → α → V}
-                    (P : α ⥤ α ⥤{p} _[V]) [hPa : mkHasQuantPiType P] :
-    α ⥤{λ a => p a a} _[V] :=
-  match mkHasQuantPiType.codomain? P with
-  | some B => ⟨mkConstFun α.α _[V].α B⟩
-  | none => ⟨mkHasDupPi'.prop α.α V.U P.inst⟩
+                    (P : [α ⥤ α ⥤ _[V]]__{p}) [hPa : mkHasIndepQuantPiType P] :
+    [α ⥤ _[V]]_{λ a => p a a} :=
+  mkHasDupPi'.prop α.α V.U P
 
-def mkHasDupPi {α : _sort} {v : Level} {V : _Universe v} {p : α → α → V} (P : α ⥤ α ⥤{p} _[V])
-               [hPa : mkHasQuantPiType P] [hPiPa : mkHasPiType (mkHasQuantPiType.piProp P)]
+def mkHasDupPi {α : _sort} {v : Level} {V : _Universe v} {p : α → α → V} (P : [α ⥤ α ⥤ _[V]]__{p})
+               [hPa : mkHasIndepQuantPiType P]
+               [hPiPa : mkHasPiType (mkHasIndepQuantPiType.piProp P)]
                [hP : mkHasPiType (mkHasDupPi.prop P)] :
     ClassExpr :=
-  ⟨mkHasDupPi' P.inst hPa.h hPiPa.h hP.h⟩
+  ⟨mkHasDupPi' P hPa.h hPiPa.h hP.h⟩
 
 namespace mkHasDupPi
 
-  variable {α : _sort} {v : Level} {V : _Universe v} {p : α → α → V} {P : α ⥤ α ⥤{p} _[V]}
-           [hPa : mkHasQuantPiType P] [hPiPa : mkHasPiType (mkHasQuantPiType.piProp P)]
+  variable {α : _sort} {v : Level} {V : _Universe v} {p : α → α → V} {P : [α ⥤ α ⥤ _[V]]__{p}}
+           [hPa : mkHasIndepQuantPiType P] [hPiPa : mkHasPiType (mkHasIndepQuantPiType.piProp P)]
            [hP : mkHasPiType (prop P)] [h : mkHasDupPi P]
 
-  def mkDupPi (F : Pi₂ (mkHasQuantPiType.reflectProp₂ P)) :
+  def mkDupPi (F : Pi₂ (mkHasIndepQuantPiType.reflectProp P)) :
       Pi (mkHasPiType.reflectProp (prop P)) :=
-    match hPa.hFun?, hPiPa.hFun? with
-    | some hαB, some hααB => mkHasDupFun'.mkDupFun (hαB := hαB) (hααB := hααB) h.h F
-    | _, _ => mkHasDupPi'.mkDupPi h.h F
+    mkHasDupPi'.mkDupPi h.h F
 
-  instance reflect : HasDupPi (mkHasQuantPiType.reflectProp₂ P) := ⟨λ F => ⟨mkDupPi F⟩⟩
+  instance reflect : HasDupPi (mkHasIndepQuantPiType.reflectProp P) := ⟨mkDupPi⟩
 
 end mkHasDupPi
 
@@ -1618,206 +1160,467 @@ end mkHasDupPi
 def mkHasPiSelfAppPi' {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
                       (hVU : mkHasUnivFunctors' V U) (A : Q($U)) (Q : Q($A → $V))
                       (hQ : mkHasPiType' (u := u) ⌜$A⌝ V Q)
-                      (hQF : mkHasQuantPiType' ⌜Pi $Q ⥤ $A⌝ ⌜Pi $Q⌝ V ⌜λ F G => $Q (F G)⌝) :=
+                      (hQF : mkHasIndepQuantPiType' ⌜Pi $Q ⥤ $A⌝ ⌜Pi $Q⌝ V ⌜λ F G => $Q (F G)⌝) :=
   ⌜HasPiSelfAppPi $Q⌝
 
 namespace mkHasPiSelfAppPi'
 
   def prop {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
            (hVU : mkHasUnivFunctors' V U) (A : Q($U)) (Q : Q($A → $V))
-           (hQ : mkHasPiType' (u := u) ⌜$A⌝ V Q) (F : Q(Pi $Q ⥤ $A)) :
-      Q(Pi $Q → $V) :=
-    ⌜λ G => $Q ($F G)⌝
-
-  def prop₂ {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
-            (hVU : mkHasUnivFunctors' V U) (A : Q($U)) (Q : Q($A → $V))
-            (hQ : mkHasPiType' (u := u) ⌜$A⌝ V Q) :
+           (hQ : mkHasPiType' (u := u) ⌜$A⌝ V Q) :
       Q((Pi $Q ⥤ $A) → Pi $Q → $V) :=
     ⌜λ F G => $Q (F G)⌝
 
   variable {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
            {hVU : mkHasUnivFunctors' V U} {A : Q($U)} {Q : Q($A → $V)}
            {hQ : mkHasPiType' (u := u) ⌜$A⌝ V Q}
-           {hQF : mkHasQuantPiType' ⌜Pi $Q ⥤ $A⌝ ⌜Pi $Q⌝ V ⌜λ F G => $Q (F G)⌝}
+           {hQF : mkHasIndepQuantPiType' ⌜Pi $Q ⥤ $A⌝ ⌜Pi $Q⌝ V ⌜λ F G => $Q (F G)⌝}
            (h : mkHasPiSelfAppPi' hVU A Q hQ hQF)
 
-  def mkPiSelfAppPi (F : Q(Pi $Q ⥤ $A)) : Q(Pi (λ G => $Q ($F G))) :=
+  def mkPiSelfAppPi (F : Q(Pi $Q ⥤ $A)) : Q([∀ G, $Q ($F G) | $V]) :=
     ⌜HasPiSelfAppPi.piSelfAppPi $F⌝
 
 end mkHasPiSelfAppPi'
 
-def mkHasRevSelfAppFun' {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
-                        (hVU : mkHasUnivFunctors' V U) (A : Q($U)) {B : Q($V)}
-                        (hAB : mkHasFunctors' (u := u) ⌜$A⌝ V B)
-                        (hABB : mkHasFunctors' (u := u) ⌜$A ⥤ $B⌝ V B) :=
-  ⌜HasPiSelfAppPi (Function.const $A $B)⌝
-
-namespace mkHasRevSelfAppFun'
-
-  variable {u uu uv : Level} {U : Q(Universe.{u, uu})} {V : Q(Universe.{u, uv})}
-           {hVU : mkHasUnivFunctors' V U} {A : Q($U)} {B : Q($V)}
-           {hAB : mkHasFunctors' (u := u) ⌜$A⌝ V B} {hABB : mkHasFunctors' (u := u) ⌜$A ⥤ $B⌝ V B}
-           (h : mkHasRevSelfAppFun' hVU A hAB hABB)
-
-  def mkRevSelfAppFun (F : Q(($A ⥤ $B) ⥤ $A)) : Q(($A ⥤ $B) ⥤ $B) :=
-    ⌜HasPiSelfAppPi.revSelfAppFun $F⌝
-
-end mkHasRevSelfAppFun'
-
 def mkHasPiSelfAppPi.prop {u : Level} {U V : _Universe u} [hVU : mkHasUnivFunctors V U] {A : U}
-                          {q : A → V} (Q : _⌈A⌉ ⥤{q} _[V]) [hQ : mkHasPiType Q] :
-    _⌈Pi (mkHasPiType.reflectProp Q) ⥤ A⌉ ⥤ _⌈Pi (mkHasPiType.reflectProp Q)⌉
-    ⥤{λ (F : Pi (mkHasPiType.reflectProp Q) ⥤ A) (G : Pi (mkHasPiType.reflectProp Q)) => q (F G)}
-    _[V] :=
-  match hQ.hFun? with
-  | some hFun => let B : V := q (default (α := _⌈A⌉))
-                 let _ : mkHasFunctors _⌈A⌉ B := { h := hFun }
-                 ⟨λ F => ⟨mkConstFun _⌈A ⥤ B⌉.α _[V].α B⟩,
-                  ⟨mkConstFun _⌈A ⥤ B⌉.α (_⌈A ⥤ B⌉ ⥤ _[V]).α (mkConstFun _⌈A ⥤ B⌉.α _[V].α B)⟩⟩
-  | none => ⟨λ F => ⟨mkHasPiSelfAppPi'.prop hVU.h A Q.inst hQ.h F⟩,
-             ⟨mkHasPiSelfAppPi'.prop₂ hVU.h A Q.inst hQ.h⟩⟩
+                          {q : A → V} (Q : [_⌈A⌉ ⥤ _[V]]_{q}) [hQ : mkHasPiType Q] :
+    [_⌈Pi (mkHasPiType.reflectProp Q) ⥤ A⌉ ⥤ _⌈Pi (mkHasPiType.reflectProp Q)⌉ ⥤ _[V]]__{
+     λ (F : Pi (mkHasPiType.reflectProp Q) ⥤ A) (G : Pi (mkHasPiType.reflectProp Q)) => q (F G)} :=
+  mkHasPiSelfAppPi'.prop hVU.h A Q hQ.h
 
 def mkHasPiSelfAppPi {u : Level} {U V : _Universe u} [hVU : mkHasUnivFunctors V U] {A : U}
-                     {q : A → V} (Q : _⌈A⌉ ⥤{q} _[V]) [hQ : mkHasPiType Q]
-                     [hQF : mkHasQuantPiType (mkHasPiSelfAppPi.prop Q)] :
+                     {q : A → V} (Q : [_⌈A⌉ ⥤ _[V]]_{q}) [hQ : mkHasPiType Q]
+                     [hQF : mkHasIndepQuantPiType (mkHasPiSelfAppPi.prop Q)] :
     ClassExpr :=
-  ⟨mkHasPiSelfAppPi' hVU.h A Q.inst hQ.h hQF.h⟩
+  ⟨mkHasPiSelfAppPi' hVU.h A Q hQ.h hQF.h⟩
 
 namespace mkHasPiSelfAppPi
 
   variable {u : Level} {U V : _Universe u} [hVU : mkHasUnivFunctors V U] {A : U} {q : A → V}
-           {Q : _⌈A⌉ ⥤{q} _[V]} [hQ : mkHasPiType Q]
-           [hQF : mkHasQuantPiType (mkHasPiSelfAppPi.prop Q)] [h : mkHasPiSelfAppPi Q]
-
-  instance (F : Pi (mkHasPiType.reflectProp' Q) ⥤ A) : mkHasPiType (DefFun₂.app (prop Q) F) :=
-    inferInstance
+           {Q : [_⌈A⌉ ⥤ _[V]]_{q}} [hQ : mkHasPiType Q]
+           [hQF : mkHasIndepQuantPiType (mkHasPiSelfAppPi.prop Q)] [h : mkHasPiSelfAppPi Q]
 
   instance (F : Pi (mkHasPiType.reflectProp' Q) ⥤ A) :
-      HasPiType (λ G => mkHasPiType.reflectProp' Q (F G)) :=
-    mkHasPiType.reflect' (DefFun₂.app (prop Q) F)
+      HasType V (∀ G, (mkHasPiType.reflectProp' Q) (F G)) :=
+    mkHasPiType.reflect' ((prop Q) F)
 
   def mkPiSelfAppPi (F : Pi (mkHasPiType.reflectProp' Q) ⥤ A) :
-      Pi (mkHasPiType.reflectProp' (DefFun₂.app (prop Q) F)) :=
-    match hQ.hFun?, hQF.hFun? with
-    | some hAB, some hABB =>
-      let B : V := q (default (α := _⌈A⌉))
-      mkHasRevSelfAppFun'.mkRevSelfAppFun (u := u) (hVU := hVU.h) (A := A) (B := B) (hAB := hAB)
-                                          (hABB := hABB) h.h F
-    | _, _ => mkHasPiSelfAppPi'.mkPiSelfAppPi h.h F
+      [∀ G, (mkHasPiType.reflectProp' Q) (F G) | V] :=
+    mkHasPiSelfAppPi'.mkPiSelfAppPi h.h F
 
-  instance reflect : HasPiSelfAppPi (mkHasPiType.reflectProp' Q) :=
-    ⟨λ F => ⟨mkPiSelfAppPi F⟩⟩
+  instance reflect : HasPiSelfAppPi (mkHasPiType.reflectProp' Q) := ⟨mkPiSelfAppPi⟩
 
 end mkHasPiSelfAppPi
 
 
 def mkHasSubstPi' {u v vv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})}
-                  {W : Q(Universe.{w, ww})} {P : Q($α → $V)} (hP : mkHasPiType' α V P)
-                  (Q : Q(∀ a, $P a → $W)) (hQa : mkHasQuantDepPiType' α V P W Q)
+                  {P : Q($α → $V)} (hP : mkHasPiType' α V P) (W : Q(Universe.{w, ww}))
+                  (Q : Q(∀ a, $P a → $W)) (hQa : mkHasUnivQuantPiType' α V P W Q)
                   (hPiQa : mkHasPiType' α W ⌜λ a => Pi ($Q a)⌝)
-                  (hQaFa : mkHasQuantPiType' ⌜Pi $P⌝ α W ⌜λ F a => $Q a (F a)⌝) :=
+                  (hQaFa : mkHasIndepQuantPiType' ⌜Pi $P⌝ α W ⌜λ F a => $Q a (F a)⌝) :=
   ⌜HasSubstPi $Q⌝
 
 namespace mkHasSubstPi'
 
   def prop {u v vv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {P : Q($α → $V)}
-           (hP : mkHasPiType' α V P) (W : Q(Universe.{w, ww})) (Q : Q(∀ a, $P a → $W))
-           (F : Q(Pi $P)) :
-      Q($α → $W) :=
-    ⌜λ a => $Q a ($F a)⌝
-
-  def prop₂ {u v vv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})} {P : Q($α → $V)}
-            (hP : mkHasPiType' α V P) (W : Q(Universe.{w, ww})) (Q : Q(∀ a, $P a → $W)) :
+           (hP : mkHasPiType' α V P) (W : Q(Universe.{w, ww})) (Q : Q(∀ a, $P a → $W)) :
       Q((Pi $P) → $α → $W) :=
     ⌜λ F a => $Q a (F a)⌝
 
   variable {u v vv w ww : Level} {α : Q(Sort u)} {V : Q(Universe.{v, vv})}
-           {W : Q(Universe.{w, ww})} {P : Q($α → $V)} {hP : mkHasPiType' α V P}
-           {Q : Q(∀ a, $P a → $W)} {hQa : mkHasQuantDepPiType' α V P W Q}
+           {P : Q($α → $V)} {hP : mkHasPiType' α V P} {W : Q(Universe.{w, ww})}
+           {Q : Q(∀ a, $P a → $W)} {hQa : mkHasUnivQuantPiType' α V P W Q}
            {hPiQa : mkHasPiType' α W ⌜λ a => Pi ($Q a)⌝}
-           {hQaFa : mkHasQuantPiType' ⌜Pi $P⌝ α W ⌜λ F a => $Q a (F a)⌝}
-           (h : mkHasSubstPi' hP Q hQa hPiQa hQaFa)
+           {hQaFa : mkHasIndepQuantPiType' ⌜Pi $P⌝ α W ⌜λ F a => $Q a (F a)⌝}
+           (h : mkHasSubstPi' hP W Q hQa hPiQa hQaFa)
 
-  def mkRevSubstPi (G : Q(Pi (λ a => Pi ($Q a)))) (F : Q(Pi $P)) : Q(Pi (λ a => $Q a ($F a))) :=
+  def mkRevSubstPi (G : Q([∀ a, Pi ($Q a) | $W])) (F : Q(Pi $P)) : Q([∀ a, $Q a ($F a) | $W]) :=
     ⌜HasSubstPi.revSubstPi $G $F⌝
 
 end mkHasSubstPi'
 
-def mkHasSubstFun' {u uv uw : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-                   (hαB : mkHasFunctors' α V B) {W : Q(Universe.{u, uw})} {C : Q($W)}
-                   (hBC : mkHasUnivTypeFunctors' V W B C) (hαBC : mkHasFunctors' α W ⌜$B ⥤ $C⌝)
-                   (hαC : mkHasFunctors' α W C) :=
-  ⌜HasSubstPi (Function.const $α (Function.const $B $C))⌝
+def mkHasSubstPi.prop {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : [α ⥤ _[V]]_{p}}
+                      [hP : mkHasPiType P] {W : _Universe w} {q : ∀ a, p a → W}
+                      {Q' : ∀ a, [_⌈p a⌉ ⥤ _[W]]_{q a}}
+                      (Q : [∀ a, (mkHasUnivQuantPiType.metaProp P W) a | _sort]_{Q'})
+                      [hQ : mkHasUnivQuantPiType Q] :
+    [_⌈Pi (mkHasPiType.reflectProp P)⌉ ⥤ α ⥤ _[W]]__{
+     λ (F : Pi (mkHasPiType.reflectProp P)) a => q a (F a)} :=
+  mkHasSubstPi'.prop hP.h W.U Q
 
-namespace mkHasSubstFun'
-
-  variable {u uv uw : Level} {α : Q(Sort u)} {V : Q(Universe.{u, uv})} {B : Q($V)}
-           {hαB : mkHasFunctors' α V B} {W : Q(Universe.{u, uw})} {C : Q($W)}
-           {hBC : mkHasUnivTypeFunctors' V W B C} {hαBC : mkHasFunctors' α W ⌜$B ⥤ $C⌝}
-           {hαC : mkHasFunctors' α W C} (h : mkHasSubstFun' hαB hBC hαBC hαC)
-
-  def mkRevSubstFun (G : Q($α ⥤ $B ⥤ $C)) (F : Q($α ⥤ $B)) : Q($α ⥤ $C) :=
-    ⌜HasSubstPi.revSubstFun $G $F⌝
-
-end mkHasSubstFun'
-
-def mkHasSubstPi.prop {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : α ⥤{p} _[V]}
-                      [hP : mkHasPiType P] {W : _Universe w} {q : ∀ a, _⌈p a⌉ → W}
-                      {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                      (Q : DefPi (mkHasQuantDepPiType.metaProp P W) (λ a => (qa a).inst))
-                      [hQ : mkHasQuantDepPiType Q] :
-    _⌈Pi (mkHasPiType.reflectProp P)⌉ ⥤ α
-    ⥤{λ (F : Pi (mkHasPiType.reflectProp P)) a => q a (F a)}
-    _[W] :=
-  match hP.hFun?, hQ.codomain? with
-  | some hFunAB, some C =>
-    let V' : _Universe α.u := { uu := V.uu, U := V.U }
-    let B : V' := p default
-    let _ : mkHasFunctors α B := { h := hFunAB }
-    ⟨λ F => ⟨mkConstFun α.α _[W].α C⟩,
-     ⟨mkConstFun _⌈α ⥤ B⌉.α (α ⥤ _[W]).α (mkConstFun α.α _[W].α C)⟩⟩
-  | _, _ => ⟨λ F => ⟨mkHasSubstPi'.prop hP.h W.U Q.inst F⟩,
-             ⟨mkHasSubstPi'.prop₂ hP.h W.U Q.inst⟩⟩
-
-def mkHasSubstPi {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : α ⥤{p} _[V]}
-                 [hP : mkHasPiType P] {W : _Universe w} {q : ∀ a, _⌈p a⌉ → W}
-                 {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-                 (Q : DefPi (mkHasQuantDepPiType.metaProp P W) (λ a => (qa a).inst))
-                 [hQa : mkHasQuantDepPiType Q] [hPiQa : mkHasPiType (mkHasQuantDepPiType.piProp Q)]
-                 [hQaFa : mkHasQuantPiType (mkHasSubstPi.prop Q)] :
+def mkHasSubstPi {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : [α ⥤ _[V]]_{p}}
+                 [hP : mkHasPiType P] {W : _Universe w} {q : ∀ a, p a → W}
+                 {Q' : ∀ a, [_⌈p a⌉ ⥤ _[W]]_{q a}}
+                 (Q : [∀ a, (mkHasUnivQuantPiType.metaProp P W) a | _sort]_{Q'})
+                 [hQa : mkHasUnivQuantPiType Q]
+                 [hPiQa : mkHasPiType (mkHasUnivQuantPiType.piProp Q)]
+                 [hQaFa : mkHasIndepQuantPiType (mkHasSubstPi.prop Q)] :
     ClassExpr :=
-  ⟨mkHasSubstPi' hP.h Q.inst hQa.h hPiQa.h hQaFa.h⟩
+  ⟨mkHasSubstPi' hP.h W.U Q hQa.h hPiQa.h hQaFa.h⟩
 
 namespace mkHasSubstPi
 
-  variable {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : α ⥤{p} _[V]}
-           [hP : mkHasPiType P] {W : _Universe w} {q : ∀ a, _⌈p a⌉ → W}
-           {qa : ∀ a, _⌈p a⌉ ⥤{q a} _[W]}
-           {Q : DefPi (mkHasQuantDepPiType.metaProp P W) (λ a => (qa a).inst)}
-           [hQa : mkHasQuantDepPiType Q] [hPiQa : mkHasPiType (mkHasQuantDepPiType.piProp Q)]
-           [hQaFa : mkHasQuantPiType (mkHasSubstPi.prop Q)] [h : mkHasSubstPi Q]
+  variable {α : _sort} {v w : Level} {V : _Universe v} {p : α → V} {P : [α ⥤ _[V]]_{p}}
+           [hP : mkHasPiType P] {W : _Universe w} {q : ∀ a, p a → W}
+           {Q' : ∀ a, [_⌈p a⌉ ⥤ _[W]]_{q a}}
+           {Q : [∀ a, (mkHasUnivQuantPiType.metaProp P W) a | _sort]_{Q'}}
+           [hQa : mkHasUnivQuantPiType Q] [hPiQa : mkHasPiType (mkHasUnivQuantPiType.piProp Q)]
+           [hQaFa : mkHasIndepQuantPiType (mkHasSubstPi.prop Q)] [h : mkHasSubstPi Q]
 
-  instance (F : Pi (mkHasPiType.reflectProp P)) : mkHasPiType (DefFun₂.app (prop Q) F) :=
-    inferInstance
+  instance (F : Pi (mkHasPiType.reflectProp P)) :
+      HasType W (∀ a, (mkHasUnivQuantPiType.reflectProp Q) a (F a)) :=
+    mkHasPiType.reflect ((prop Q) F)
 
-  instance (a : α) : HasPiType ((mkHasQuantDepPiType.reflectProp₂ Q) a) :=
-    mkHasPiType.reflect (mkHasQuantDepPiType.appProp Q a)
-
-  instance : HasPiType (mkHasPiType.reflectProp (mkHasQuantDepPiType.piProp Q)) :=
-    mkHasPiType.reflect (mkHasQuantDepPiType.piProp Q)
-
-  def mkRevSubstPi (G : Pi (mkHasPiType.reflectProp (mkHasQuantDepPiType.piProp Q)))
+  def mkRevSubstPi (G : Pi (mkHasPiType.reflectProp (mkHasUnivQuantPiType.piProp Q)))
                    (F : Pi (mkHasPiType.reflectProp P)) :
-      Pi (mkHasPiType.reflectProp (DefFun₂.app (prop Q) F)) :=
-    match hP.hFun?, hQa.hFun?, hPiQa.hFun?, hQaFa.hFun? with
-    | some hαB, some hBC, some hαBC, some hαC =>
-      mkHasSubstFun'.mkRevSubstFun (u := w) (uv := V.uu) (α := α.α) (V := V.U) (W := W.U)
-                                   (B := p default) (C := q default default) (hαB := hαB)
-                                   (hBC := hBC) (hαBC := hαBC) (hαC := hαC) h.h G F
-    | _, _, _, _ => mkHasSubstPi'.mkRevSubstPi h.h G F
+      [∀ a, (mkHasUnivQuantPiType.reflectProp Q) a (F a) | W] :=
+    mkHasSubstPi'.mkRevSubstPi h.h G F
 
-  instance reflect : HasSubstPi (P := mkHasPiType.reflectProp P)
-                                (mkHasQuantDepPiType.reflectProp₂ Q) where
-    defSubstPi F G := ⟨mkRevSubstPi G F⟩
+  instance reflect : HasSubstPi (mkHasUnivQuantPiType.reflectProp Q) := ⟨λ F G => mkRevSubstPi G F⟩
 
 end mkHasSubstPi
+
+
+
+def mkHasLinearLogic' {u uu : Level} (U : Q(Universe.{u, uu})) := ⌜HasLinearLogic $U⌝
+
+namespace mkHasLinearLogic'
+
+  variable {u uu : Level} {U : Q(Universe.{u, uu})} (h : mkHasLinearLogic' U)
+
+  def toMkHasUnivFunctors' : mkHasUnivFunctors' U U := ⌜($h).toHasUnivFunctors⌝
+
+  def mkIdFun (A : Q($U)) : Q($A ⥤ $A) := ⌜HasLinearLogic.idFun $A⌝
+
+end mkHasLinearLogic'
+
+def mkHasExternalLinearLogic' {u uu : Level} (α : Q(Sort u)) {U : Q(Universe.{u, uu})}
+                              (hUU : mkHasUnivFunctors' U U) :=
+  ⌜HasExternalLinearLogic $α $U⌝
+
+namespace mkHasExternalLinearLogic'
+
+  section
+
+    variable {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {hUU : mkHasUnivFunctors' U U}
+             (h : mkHasExternalLinearLogic' α hUU)
+
+    def toMkHasFunctors' : mkHasFunctors' α U := ⌜($h).toHasFunctors⌝
+
+    def mkRevAppFun (a : Q($α)) (B : Q($U)) : Q(($α ⥤ $B) ⥤ $B) :=
+      ⌜HasExternalLinearLogic.revAppFun $a $B⌝
+
+    def mkRevAppFun₂ (B : Q($U)) : Q($α ⥤ ($α ⥤ $B) ⥤ $B) :=
+      ⌜HasExternalLinearLogic.revAppFun₂ $α $B⌝
+
+    def mkRevCompFun (B C : Q($U)) (G : Q($B ⥤ $C)) (F : Q($α ⥤ $B)) : Q($α ⥤ $C) :=
+      ⌜HasExternalLinearLogic.revCompFun $G $F⌝
+
+    def mkRevCompFun₃ (B C : Q($U)) : Q(($B ⥤ $C) ⥤ ($α ⥤ $B) ⥤ ($α ⥤ $C)) :=
+      ⌜HasExternalLinearLogic.revCompFun₃ $α $B $C⌝
+
+  end
+
+  section
+
+    variable {u uu : Level} {α β : Q(Sort u)} {U : Q(Universe.{u, uu})}
+             {hU : mkHasLinearLogic' U}
+             (hα : mkHasExternalLinearLogic' α (mkHasLinearLogic'.toMkHasUnivFunctors' hU))
+             (hβ : mkHasExternalLinearLogic' β (mkHasLinearLogic'.toMkHasUnivFunctors' hU))
+
+    def mkSwapFun (C : Q($U)) (F : Q($α ⥤ $β ⥤ $C)) (b : Q($β)) : Q($α ⥤ $C) :=
+      ⌜HasExternalLinearLogic.swapFun $F $b⌝
+
+  end
+
+end mkHasExternalLinearLogic'
+
+namespace mkHasLinearLogic'
+
+  variable {u uu : Level} {U : Q(Universe.{u, uu})} (h : mkHasLinearLogic' U)
+
+  def toMkHasExternalLinearLogic' (A : Q($U)) :
+      mkHasExternalLinearLogic' ⌜$A⌝ (toMkHasUnivFunctors' h) :=
+    ⌜($h).hasExternalLinearLogic $A⌝
+
+end mkHasLinearLogic'
+
+def mkHasLinearLogic {u : Level} (U : _Universe u) : ClassExpr := ⟨mkHasLinearLogic' U.U⟩
+
+namespace mkHasLinearLogic
+
+  instance toMkHasUnivFunctors {u : Level} (U : _Universe u) [h : mkHasLinearLogic U] :
+      mkHasUnivFunctors U U :=
+    ⟨mkHasLinearLogic'.toMkHasUnivFunctors' h.h⟩
+
+end mkHasLinearLogic
+
+def mkHasExternalLinearLogic (α : _sort) (U : _Universe α.u) [hUU : mkHasUnivFunctors U U] :
+    ClassExpr :=
+  ⟨mkHasExternalLinearLogic' α.α hUU.h⟩
+
+namespace mkHasExternalLinearLogic
+
+  instance toMkHasFunctors (α : _sort) (U : _Universe α.u) [hUU : mkHasUnivFunctors U U]
+                           [h : mkHasExternalLinearLogic α U] :
+      mkHasFunctors α U :=
+    ⟨mkHasExternalLinearLogic'.toMkHasFunctors' h.h⟩
+
+  section
+
+    variable {α : _sort} {U : _Universe α.u} [hUU : mkHasUnivFunctors U U]
+             [h : mkHasExternalLinearLogic α U]
+
+    def mkRevAppFun (a : α) (B : U) : (α ⥤ B) ⥤ B := mkHasExternalLinearLogic'.mkRevAppFun h.h a B
+
+    def mkRevCompFun {B C : U} (G : B ⥤ C) (F : α ⥤ B) : α ⥤ C :=
+      mkHasExternalLinearLogic'.mkRevCompFun h.h B C G F
+
+  end
+
+  section
+
+    variable (α : _sort) {U : _Universe α.u} [hUU : mkHasUnivFunctors U U]
+             [h : mkHasExternalLinearLogic α U]
+
+    def mkRevAppFun₂ (B : U) : α ⥤ (α ⥤ B) ⥤ B := mkHasExternalLinearLogic'.mkRevAppFun₂ h.h B
+
+    def mkRevCompFun₃ (B C : U) : (B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C) :=
+      mkHasExternalLinearLogic'.mkRevCompFun₃ h.h B C
+
+    instance reflect : HasExternalLinearLogic α U where
+      defRevAppFun₂  := mkRevAppFun₂  α
+      defRevCompFun₃ := mkRevCompFun₃ α
+
+  end
+
+  section
+
+    variable {u : Level} {α β : _sort.mkSortType u} {U : _Universe u} [mkHasLinearLogic U]
+             [hα : mkHasExternalLinearLogic α U] [hβ : mkHasExternalLinearLogic β U]
+
+    def mkSwapFun {C : U} (F : α ⥤ β ⥤ C) (b : β) : α ⥤ C :=
+      mkHasExternalLinearLogic'.mkSwapFun hα.h hβ.h C F b
+
+  end
+
+end mkHasExternalLinearLogic
+
+namespace mkHasLinearLogic
+
+  section
+
+    variable {u : Level} {U : _Universe u} [h : mkHasLinearLogic U]
+
+    instance toMkHasExternalLinearLogic (A : U) : mkHasExternalLinearLogic _⌈A⌉ U :=
+      ⟨mkHasLinearLogic'.toMkHasExternalLinearLogic' h.h A⟩
+
+    def mkIdFun (A : U) : A ⥤ A := mkHasLinearLogic'.mkIdFun h.h A
+
+    def mkRevAppFun₂ (A B : U) : A ⥤ (A ⥤ B) ⥤ B :=
+      mkHasExternalLinearLogic'.mkRevAppFun₂ (mkHasLinearLogic'.toMkHasExternalLinearLogic' h.h A) B
+
+    def mkRevCompFun₃ (A B C : U) : (B ⥤ C) ⥤ (A ⥤ B) ⥤ (A ⥤ C) :=
+      mkHasExternalLinearLogic'.mkRevCompFun₃ (mkHasLinearLogic'.toMkHasExternalLinearLogic' h.h A)
+                                              B C
+
+  end
+
+  instance reflect {u : Level} (U : _Universe u) [mkHasLinearLogic U] : HasLinearLogic U where
+    defIdFun       := mkIdFun
+    defRevAppFun₂  := mkRevAppFun₂
+    defRevCompFun₃ := mkRevCompFun₃
+
+end mkHasLinearLogic
+
+
+def mkHasExternalSubLinearLogic' {u uu : Level} (α : Q(Sort u)) {U : Q(Universe.{u, uu})}
+                                 (hUU : mkHasUnivFunctors' U U) (hαU : mkHasFunctors' α U) :=
+  ⌜HasExternalSubLinearLogic $α $U⌝
+
+namespace mkHasExternalSubLinearLogic'
+
+  variable {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {hUU : mkHasUnivFunctors' U U}
+           {hαU : mkHasFunctors' α U} (h : mkHasExternalSubLinearLogic' α hUU hαU)
+
+  def mkConstFun (B : Q($U)) (b : Q($B)) : Q($α ⥤ $B) := ⌜HasExternalSubLinearLogic.constFun $α $b⌝
+
+  def mkConstFun₂ (B : Q($U)) : Q($B ⥤ ($α ⥤ $B)) := ⌜HasExternalSubLinearLogic.constFun₂ $α $B⌝
+
+end mkHasExternalSubLinearLogic'
+
+def mkHasSubLinearLogic' {u uu : Level} {U : Q(Universe.{u, uu})} (hUU : mkHasUnivFunctors' U U) :=
+  ⌜HasSubLinearLogic $U⌝
+
+namespace mkHasSubLinearLogic'
+
+  variable {u uu : Level} {U : Q(Universe.{u, uu})} {hU : mkHasLinearLogic' U}
+           (h : mkHasSubLinearLogic' (mkHasLinearLogic'.toMkHasUnivFunctors' hU))
+
+  def toMkHasExternalSubLinearLogic' (A : Q($U)) :
+      mkHasExternalSubLinearLogic' ⌜$A⌝ (mkHasLinearLogic'.toMkHasUnivFunctors' hU)
+        (mkHasUnivFunctors'.toMkHasFunctors' (mkHasLinearLogic'.toMkHasUnivFunctors' hU) A) :=
+    ⌜($h).hasExternalSubLinearLogic $A⌝
+
+end mkHasSubLinearLogic'
+
+def mkHasExternalSubLinearLogic (α : _sort) (U : _Universe α.u) [hUU : mkHasUnivFunctors U U]
+                                [hαU : mkHasFunctors α U] :
+    ClassExpr :=
+  ⟨mkHasExternalSubLinearLogic' α.α hUU.h hαU.h⟩
+
+namespace mkHasExternalSubLinearLogic
+
+  variable (α : _sort) {U : _Universe α.u} [hUU : mkHasUnivFunctors U U] [hαU : mkHasFunctors α U]
+           [h : mkHasExternalSubLinearLogic α U]
+
+  def mkConstFun {B : U} (b : B) : α ⥤ B := mkHasExternalSubLinearLogic'.mkConstFun h.h B b
+
+  def mkConstFun₂ (B : U) : B ⥤ (α ⥤ B) := mkHasExternalSubLinearLogic'.mkConstFun₂ h.h B
+
+  instance reflect : HasExternalSubLinearLogic α U where
+    defConstFun₂ := mkConstFun₂ α
+
+end mkHasExternalSubLinearLogic
+
+def mkHasSubLinearLogic {u : Level} (U : _Universe u) [hUU : mkHasUnivFunctors U U] : ClassExpr :=
+  ⟨mkHasSubLinearLogic' hUU.h⟩
+
+namespace mkHasSubLinearLogic
+
+  section
+
+    variable {u : Level} {U : _Universe u} [mkHasLinearLogic U] [h : mkHasSubLinearLogic U]
+
+    instance toMkHasExternalSubLinearLogic (A : U) : mkHasExternalSubLinearLogic _⌈A⌉ U :=
+      ⟨mkHasSubLinearLogic'.toMkHasExternalSubLinearLogic' h.h A⟩
+
+    def mkConstFun₂ (A B : U) : B ⥤ (A ⥤ B) :=
+      mkHasExternalSubLinearLogic'.mkConstFun₂
+        (mkHasSubLinearLogic'.toMkHasExternalSubLinearLogic' h.h A) B
+
+  end
+
+  instance reflect {u : Level} (U : _Universe u) [mkHasLinearLogic U] [mkHasSubLinearLogic U] :
+      HasSubLinearLogic U where
+    defConstFun₂ := mkConstFun₂
+
+end mkHasSubLinearLogic
+
+
+def mkHasExternalNonLinearLogic' {u uu : Level} (α : Q(Sort u)) {U : Q(Universe.{u, uu})}
+                                 (hUU : mkHasUnivFunctors' U U) (hαU : mkHasFunctors' α U) :=
+  ⌜HasExternalNonLinearLogic $α $U⌝
+
+namespace mkHasExternalNonLinearLogic'
+
+  section
+
+    variable {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {hUU : mkHasUnivFunctors' U U}
+             {hαU : mkHasFunctors' α U} (h : mkHasExternalNonLinearLogic' α hUU hαU)
+
+    def mkDupFun (B : Q($U)) (F : Q($α ⥤ $α ⥤ $B)) : Q($α ⥤ $B) :=
+      ⌜HasExternalNonLinearLogic.dupFun $F⌝
+
+    def mkDupFun₂ (B : Q($U)) : Q(($α ⥤ $α ⥤ $B) ⥤ ($α ⥤ $B)) :=
+      ⌜HasExternalNonLinearLogic.dupFun₂ $α $B⌝
+
+  end
+
+  section
+
+    variable {u uu : Level} {α : Q(Sort u)} {U : Q(Universe.{u, uu})} {hU : mkHasLinearLogic' U}
+             {hαU : mkHasExternalLinearLogic' α (mkHasLinearLogic'.toMkHasUnivFunctors' hU)}
+             (h : mkHasExternalNonLinearLogic' α (mkHasLinearLogic'.toMkHasUnivFunctors' hU)
+                                               (mkHasExternalLinearLogic'.toMkHasFunctors' hαU))
+
+    def mkRevSubstFun (B C : Q($U)) (G : Q($α ⥤ $B ⥤ $C)) (F : Q($α ⥤ $B)) : Q($α ⥤ $C) :=
+      ⌜HasExternalNonLinearLogic.revSubstFun $G $F⌝
+
+  end
+
+end mkHasExternalNonLinearLogic'
+
+def mkHasNonLinearLogic' {u uu : Level} {U : Q(Universe.{u, uu})} (hUU : mkHasUnivFunctors' U U) :=
+  ⌜HasNonLinearLogic $U⌝
+
+namespace mkHasNonLinearLogic'
+
+  variable {u uu : Level} {U : Q(Universe.{u, uu})} {hU : mkHasLinearLogic' U}
+           (h : mkHasNonLinearLogic' (mkHasLinearLogic'.toMkHasUnivFunctors' hU))
+
+  def toMkHasExternalNonLinearLogic' (A : Q($U)) :
+      mkHasExternalNonLinearLogic' ⌜$A⌝ (mkHasLinearLogic'.toMkHasUnivFunctors' hU)
+        (mkHasUnivFunctors'.toMkHasFunctors' (mkHasLinearLogic'.toMkHasUnivFunctors' hU) A) :=
+    ⌜($h).hasExternalNonLinearLogic $A⌝
+
+  def mkRevSelfAppFun (A B : Q($U)) (F : Q(($A ⥤ $B) ⥤ $A)) : Q(($A ⥤ $B) ⥤ $B) :=
+    ⌜HasNonLinearLogic.revSelfAppFun $F⌝
+
+end mkHasNonLinearLogic'
+
+def mkHasExternalNonLinearLogic (α : _sort) (U : _Universe α.u) [hUU : mkHasUnivFunctors U U]
+                                [hαU : mkHasFunctors α U] :
+    ClassExpr :=
+  ⟨mkHasExternalNonLinearLogic' α.α hUU.h hαU.h⟩
+
+namespace mkHasExternalNonLinearLogic
+
+  section
+
+    variable {α : _sort} {U : _Universe α.u} [hUU : mkHasUnivFunctors U U] [hαU : mkHasFunctors α U]
+             [h : mkHasExternalNonLinearLogic α U]
+
+    def mkDupFun {B : U} (F : α ⥤ α ⥤ B) : α ⥤ B := mkHasExternalNonLinearLogic'.mkDupFun h.h B F
+
+  end
+
+  section
+
+    variable (α : _sort) {U : _Universe α.u} [hUU : mkHasUnivFunctors U U] [hαU : mkHasFunctors α U]
+             [h : mkHasExternalNonLinearLogic α U]
+
+    def mkDupFun₂ (B : U) : (α ⥤ α ⥤ B) ⥤ (α ⥤ B) := mkHasExternalNonLinearLogic'.mkDupFun₂ h.h B
+
+    instance reflect : HasExternalNonLinearLogic α U where
+      defDupFun₂ := mkDupFun₂ α
+
+  end
+
+  section
+
+    variable {α : _sort} {U : _Universe α.u} [mkHasLinearLogic U]
+             [hαU : mkHasExternalLinearLogic α U] [h : mkHasExternalNonLinearLogic α U]
+
+    def mkRevSubstFun {B C : U} (G : α ⥤ B ⥤ C) (F : α ⥤ B) : α ⥤ C :=
+      mkHasExternalNonLinearLogic'.mkRevSubstFun h.h B C G F
+
+  end
+
+end mkHasExternalNonLinearLogic
+
+def mkHasNonLinearLogic {u : Level} (U : _Universe u) [hUU : mkHasUnivFunctors U U] : ClassExpr :=
+  ⟨mkHasNonLinearLogic' hUU.h⟩
+
+namespace mkHasNonLinearLogic
+
+  section
+
+    variable {u : Level} {U : _Universe u} [mkHasLinearLogic U] [h : mkHasNonLinearLogic U]
+
+    instance toMkHasExternalNonLinearLogic (A : U) : mkHasExternalNonLinearLogic _⌈A⌉ U :=
+      ⟨mkHasNonLinearLogic'.toMkHasExternalNonLinearLogic' h.h A⟩
+
+    def mkDupFun₂ (A B : U) : (A ⥤ A ⥤ B) ⥤ (A ⥤ B) :=
+      mkHasExternalNonLinearLogic'.mkDupFun₂ (mkHasNonLinearLogic'.toMkHasExternalNonLinearLogic' h.h A) B
+
+    def mkRevSelfAppFun {A B : U} (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B :=
+      mkHasNonLinearLogic'.mkRevSelfAppFun h.h A B F
+
+  end
+
+  instance reflect {u : Level} (U : _Universe u) [mkHasLinearLogic U] [mkHasNonLinearLogic U] :
+      HasNonLinearLogic U where
+    defDupFun₂ := mkDupFun₂
+
+end mkHasNonLinearLogic

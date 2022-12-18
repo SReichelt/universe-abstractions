@@ -20,28 +20,29 @@ set_option autoImplicit false
 
 universe w
 
-open HasFunctors HasIdFun HasSwapPiFun HasConstPi HasConstPiFun HasDupPiFun HasLinearLogic
+open HasFunctors HasLinearLogic HasExternalLinearLogic HasExternalSubLinearLogic
+     HasExternalNonLinearLogic
      HasEquivalences HasPreorderRelation HasIsomorphisms HasEquivalenceRelationBase
 
 
 
 namespace HasEquivalences
 
-  open HasInnerProducts HasInnerCoproducts
+  open HasProducts HasCoproducts
 
   variable (U : Universe) [HasLinearLogic U] [HasEquivalences U]
 
   @[reducible] def notCtorFun [HasBot U] := (homFun₂ U).app₂ ⊥_U
 
-  def prodCtorFun₂ [HasInnerProducts U] : PreorderFunctor₂ U U U where
+  def prodCtorFun₂ [HasProducts U] : PreorderFunctor₂ U U U where
     φ  := prodRel U
-    hφ := { app  := λ A => { inst := λ B₁ B₂ => HasInnerProducts.replaceSndFun₂ A B₁ B₂ },
-            app₂ := λ B => { inst := λ A₁ A₂ => HasInnerProducts.replaceFstFun₂ A₁ A₂ B } }
+    hφ := { app  := λ A => { inst := λ B₁ B₂ => HasProducts.replaceSndFun₂ A B₁ B₂ },
+            app₂ := λ B => { inst := λ A₁ A₂ => HasProducts.replaceFstFun₂ A₁ A₂ B } }
 
-  def coprodCtorFun₂ [HasInnerCoproducts U] : PreorderFunctor₂ U U U where
+  def coprodCtorFun₂ [HasCoproducts U] : PreorderFunctor₂ U U U where
     φ  := coprodRel U
-    hφ := { app  := λ A => { inst := λ B₁ B₂ => HasInnerCoproducts.replaceSndFun₂ A B₁ B₂ },
-            app₂ := λ B => { inst := λ A₁ A₂ => HasInnerCoproducts.replaceFstFun₂ A₁ A₂ B } }
+    hφ := { app  := λ A => { inst := λ B₁ B₂ => HasCoproducts.replaceSndFun₂ A B₁ B₂ },
+            app₂ := λ B => { inst := λ A₁ A₂ => HasCoproducts.replaceFstFun₂ A₁ A₂ B } }
 
 end HasEquivalences
 
@@ -49,7 +50,7 @@ end HasEquivalences
 
 class HasFunEquivEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] extends
     HasHomIsoEquivalences U where
-  defSwapFunEquiv (A B C : U) : (A ⥤ B ⥤ C) ≃{swapFun₃ A B C, swapFun₃ B A C} (B ⥤ A ⥤ C)
+  defSwapFunEquiv (A B C : U) : [(A ⥤ B ⥤ C) ≃ (B ⥤ A ⥤ C)]_{⟨swapFun₃ A B C, swapFun₃ B A C⟩}
 
 namespace HasFunEquivEquivalences
 
@@ -65,7 +66,7 @@ end HasFunEquivEquivalences
 
 
 class HasTopEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasTop U] where
-  defTopElimEquiv (A : U) : (⊤_U ⥤ A) ≃{HasTop.invElimFun A, HasTop.elimFun₂ A} A
+  defTopElimEquiv (A : U) : [(⊤_U ⥤ A) ≃ A]_{⟨HasTop.invElimFun A, HasTop.elimFun₂ A⟩}
 
 namespace HasTopEquivalences
 
@@ -87,9 +88,9 @@ end HasTopEquivalences
 
 
 class HasBotEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasBot U] where
-  defBotIntroEquiv {A : U} (F : A ⥤ ⊥_U) : A ≃{F, HasBot.elimFun A} ⊥_U
-  defBotIntroEquivFun (A : U) : (A ⥤ ⊥_U) ⥤{λ F => defBotIntroEquiv F} (A ≃ ⊥_U)
-  defBotIntroEquiv₂ (A : U) : (A ⥤ ⊥_U) ≃{asHom (defBotIntroEquivFun A), toFun₂ A ⊥_U} (A ≃ ⊥_U)
+  defBotIntroEquiv {A : U} (F : A ⥤ ⊥_U) : [A ≃ ⊥_U]_{⟨F, HasBot.elimFun A⟩}
+  defBotIntroEquivFun (A : U) : [(A ⥤ ⊥_U) ⥤ (A ≃ ⊥_U)]_{defBotIntroEquiv}
+  defBotIntroEquiv₂ (A : U) : [(A ⥤ ⊥_U) ≃ (A ≃ ⊥_U)]_{⟨asHom (defBotIntroEquivFun A), toFun₂ A ⊥_U⟩}
 
 namespace HasBotEquivalences
 
@@ -102,7 +103,7 @@ namespace HasBotEquivalences
            [h : HasBotEquivalences U]
 
   @[reducible] def botIntroEquiv {A : U} (F : A ⥤ ⊥_U) : A ≃ ⊥_U := h.defBotIntroEquiv F
-  @[reducible] def botIntroEquivFun (A : U) : (A ⥤ ⊥_U) ⥤ (A ≃ ⊥_U) := (h.defBotIntroEquivFun A).inst
+  @[reducible] def botIntroEquivFun (A : U) : (A ⥤ ⊥_U) ⥤ (A ≃ ⊥_U) := h.defBotIntroEquivFun A
   @[reducible] def botIntroEquiv₂ (A : U) : (A ⥤ ⊥_U) ≃ (A ≃ ⊥_U) := h.defBotIntroEquiv₂ A
 
   instance botIntroEquiv.isFunApp {A : U} {F : A ⥤ ⊥_U} : IsFunApp (botIntroEquiv F) :=
@@ -112,18 +113,18 @@ end HasBotEquivalences
 
 
 class HasProductEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U]
-                             [HasInnerProducts U] where
+                             [HasProducts U] where
   hProdCtor₂ : IsIsoFunctor₂ (prodCtorFun₂ U)
   defProdElimEquiv (A B C : U) :
-    (A ⊓ B ⥤ C) ≃{HasInnerProducts.invElimFun₃ A B C, HasProducts.elimFun₂ A B C} (A ⥤ B ⥤ C)
+    [(A ⊓ B ⥤ C) ≃ (A ⥤ B ⥤ C)]_{⟨HasProducts.invElimFun₃ A B C, HasProducts.elimFun₂ A B C⟩}
   defProdCommEquiv (A B : U) :
-    A ⊓ B ≃{HasInnerProducts.commFun A B, HasInnerProducts.commFun B A} B ⊓ A
+    [A ⊓ B ≃ B ⊓ A]_{⟨HasProducts.commFun A B, HasProducts.commFun B A⟩}
   defProdAssocEquiv (A B C : U) :
-    (A ⊓ B) ⊓ C ≃{HasInnerProducts.assocLRFun A B C, HasInnerProducts.assocRLFun A B C} A ⊓ (B ⊓ C)
+    [(A ⊓ B) ⊓ C ≃ A ⊓ (B ⊓ C)]_{⟨HasProducts.assocLRFun A B C, HasProducts.assocRLFun A B C⟩}
 
 namespace HasProductEquivalences
 
-  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasInnerProducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasProducts U]
            [h : HasProductEquivalences U]
 
   instance : IsIsoFunctor₂ (prodCtorFun₂ U) := h.hProdCtor₂
@@ -139,14 +140,13 @@ namespace HasProductEquivalences
 end HasProductEquivalences
 
 class HasProductDistrEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U]
-                                  [HasInnerProducts U] where
+                                  [HasProducts U] where
   defProdDistrEquiv (A B C : U) :
-    (A ⥤ B ⊓ C) ≃{HasInnerProducts.distrFun A B C,
-                  HasInnerProducts.invDistrFun₂ A B C} (A ⥤ B) ⊓ (A ⥤ C)
+    [(A ⥤ B ⊓ C) ≃ (A ⥤ B) ⊓ (A ⥤ C)]_{⟨HasProducts.distrFun A B C, HasProducts.invDistrFun₂ A B C⟩}
 
 namespace HasProductDistrEquivalences
 
-  variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasInnerProducts U]
+  variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasProducts U]
            [h : HasProductDistrEquivalences U]
 
   @[reducible] def prodDistrEquiv (A B C : U) : (A ⥤ B ⊓ C) ≃ (A ⥤ B) ⊓ (A ⥤ C) :=
@@ -156,13 +156,13 @@ end HasProductDistrEquivalences
 
 
 class HasProductTopEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasTop U]
-                                [HasInnerProducts U] where
+                                [HasProducts U] where
   defProdTopEquiv (A : U) :
-    ⊤_U ⊓ A ≃{HasInnerProducts.prodTopElimFun A, HasInnerProducts.prodTopIntroFun A} A
+    [⊤_U ⊓ A ≃ A]_{⟨HasProducts.prodTopElimFun A, HasProducts.prodTopIntroFun A⟩}
 
 namespace HasProductTopEquivalences
 
-  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasTop U] [HasInnerProducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasTop U] [HasProducts U]
            [h : HasProductTopEquivalences U]
 
   @[reducible] def prodTopEquiv (A : U) : ⊤_U ⊓ A ≃ A := h.defProdTopEquiv A
@@ -174,13 +174,13 @@ end HasProductTopEquivalences
 
 
 class HasProductBotEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasBot U]
-                                [HasInnerProducts U] where
+                                [HasProducts U] where
   defProdBotEquiv (A : U) :
-    ⊥_U ⊓ A ≃{HasInnerProducts.prodBotElimFun A, HasInnerProducts.prodBotIntroFun A} ⊥_U
+    [⊥_U ⊓ A ≃ ⊥_U]_{⟨HasProducts.prodBotElimFun A, HasProducts.prodBotIntroFun A⟩}
 
 namespace HasProductBotEquivalences
 
-  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasBot U] [HasInnerProducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasBot U] [HasProducts U]
            [h : HasProductBotEquivalences U]
 
   @[reducible] def prodBotEquiv (A : U) : ⊥_U ⊓ A ≃ ⊥_U := h.defProdBotEquiv A
@@ -192,17 +192,16 @@ end HasProductBotEquivalences
 
 
 class HasCoproductEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U]
-                               [HasInnerCoproducts U] where
+                               [HasCoproducts U] where
   hCoprodCtor₂ : IsIsoFunctor₂ (coprodCtorFun₂ U)
   defCoprodCommEquiv (A B : U) :
-    A ⊔ B ≃{HasInnerCoproducts.commFun A B, HasInnerCoproducts.commFun B A} B ⊔ A
+    [A ⊔ B ≃ B ⊔ A]_{⟨HasCoproducts.commFun A B, HasCoproducts.commFun B A⟩}
   defCoprodAssocEquiv (A B C : U) :
-    (A ⊔ B) ⊔ C ≃{HasInnerCoproducts.assocLRFun A B C,
-                  HasInnerCoproducts.assocRLFun A B C} A ⊔ (B ⊔ C)
+    [(A ⊔ B) ⊔ C ≃ A ⊔ (B ⊔ C)]_{⟨HasCoproducts.assocLRFun A B C, HasCoproducts.assocRLFun A B C⟩}
 
 namespace HasCoproductEquivalences
 
-  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasInnerCoproducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasCoproducts U]
            [h : HasCoproductEquivalences U]
 
   instance : IsIsoFunctor₂ (coprodCtorFun₂ U) := h.hCoprodCtor₂
@@ -215,15 +214,14 @@ namespace HasCoproductEquivalences
 end HasCoproductEquivalences
 
 class HasCoproductDistrEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U]
-                                    [HasInnerProducts U] [HasInnerCoproducts U] where
+                                    [HasProducts U] [HasCoproducts U] where
   defCoprodDistrEquiv (A B C : U) :
-    (A ⊔ B ⥤ C) ≃{HasInnerCoproducts.distrFun A B C,
-                  HasInnerCoproducts.invDistrFun₂ A B C} (A ⥤ C) ⊓ (B ⥤ C)
+    [(A ⊔ B ⥤ C) ≃ (A ⥤ C) ⊓ (B ⥤ C)]_{⟨HasCoproducts.distrFun A B C, HasCoproducts.invDistrFun₂ A B C⟩}
 
 namespace HasCoproductDistrEquivalences
 
-  variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasInnerProducts U]
-           [HasInnerCoproducts U] [h : HasCoproductDistrEquivalences U]
+  variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasProducts U]
+           [HasCoproducts U] [h : HasCoproductDistrEquivalences U]
 
   @[reducible] def coprodDistrEquiv (A B C : U) : (A ⊔ B ⥤ C) ≃ (A ⥤ C) ⊓ (B ⥤ C) :=
     h.defCoprodDistrEquiv A B C
@@ -232,13 +230,13 @@ end HasCoproductDistrEquivalences
 
 
 class HasCoproductBotEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasBot U]
-                                  [HasInnerCoproducts U] where
+                                  [HasCoproducts U] where
   defCoprodBotEquiv (A : U) :
-    ⊥_U ⊔ A ≃{HasInnerCoproducts.coprodBotElimFun A, HasInnerCoproducts.coprodBotIntroFun A} A
+    [⊥_U ⊔ A ≃ A]_{⟨HasCoproducts.coprodBotElimFun A, HasCoproducts.coprodBotIntroFun A⟩}
 
 namespace HasCoproductBotEquivalences
 
-  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasBot U] [HasInnerCoproducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasEquivalences U] [HasBot U] [HasCoproducts U]
            [h : HasCoproductBotEquivalences U]
 
   @[reducible] def coprodBotEquiv (A : U) : ⊥_U ⊔ A ≃ A := h.defCoprodBotEquiv A
@@ -250,38 +248,38 @@ end HasCoproductBotEquivalences
 
 
 class HasLinearPositiveEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U]
-                                    [HasTop U] [HasInnerProducts U] extends
+                                    [HasTop U] [HasProducts U] extends
   HasFunEquivEquivalences U, HasTopEquivalences U, HasProductEquivalences U,
   HasProductTopEquivalences U
 
 class HasLinearNegativeEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U]
-                                    [HasTop U] [HasBot U] [HasInnerProducts U]
-                                    [HasInnerCoproducts U] [HasLinearPositiveEquivalences U] extends
+                                    [HasTop U] [HasBot U] [HasProducts U] [HasCoproducts U]
+                                    [HasLinearPositiveEquivalences U] extends
   HasBotEquivalences U, HasProductBotEquivalences U, HasCoproductEquivalences U,
   HasCoproductBotEquivalences U
 
 class HasLinearEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasTop U]
-                            [HasBot U] [HasInnerProducts U] [HasInnerCoproducts U] extends
+                            [HasBot U] [HasProducts U] [HasCoproducts U] extends
   HasLinearPositiveEquivalences U, HasLinearNegativeEquivalences U
 
 class HasFullPositiveEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U] [HasTop U]
-                                  [HasInnerProducts U] extends
+                                  [HasProducts U] extends
   HasLinearPositiveEquivalences U, HasProductDistrEquivalences U
 
 class HasFullNegativeEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U] [HasTop U]
-                                  [HasBot U] [HasInnerProducts U] [HasInnerCoproducts U]
+                                  [HasBot U] [HasProducts U] [HasCoproducts U]
                                   [HasFullPositiveEquivalences U] extends
   HasLinearNegativeEquivalences U, HasCoproductDistrEquivalences U
 
 class HasFullEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U] [HasTop U] [HasBot U]
-                          [HasInnerProducts U] [HasInnerCoproducts U] extends
+                          [HasProducts U] [HasCoproducts U] extends
   HasFullPositiveEquivalences U, HasFullNegativeEquivalences U, HasLinearEquivalences U
 
 class IsPositiveUniverse (U : Universe) where
   [hFun      : HasFullLogic                U]
   [hEquiv    : HasEquivalences             U]
   [hTop      : HasTop                      U]
-  [hProd     : HasInnerProducts            U]
+  [hProd     : HasProducts                 U]
   [hPosEquiv : HasFullPositiveEquivalences U]
 
 namespace IsPositiveUniverse
@@ -291,14 +289,14 @@ namespace IsPositiveUniverse
   instance : HasFullLogic                U := h.hFun
   instance : HasEquivalences             U := h.hEquiv
   instance : HasTop                      U := h.hTop
-  instance : HasInnerProducts            U := h.hProd
+  instance : HasProducts                 U := h.hProd
   instance : HasFullPositiveEquivalences U := h.hPosEquiv
 
 end IsPositiveUniverse
 
 class IsNegativeUniverse (U : Universe) [IsPositiveUniverse U] where
   [hBot      : HasBot                      U]
-  [hCoprod   : HasInnerCoproducts          U]
+  [hCoprod   : HasCoproducts               U]
   [hNegEquiv : HasFullNegativeEquivalences U]
 
 namespace IsNegativeUniverse
@@ -306,7 +304,7 @@ namespace IsNegativeUniverse
   variable (U : Universe) [IsPositiveUniverse U] [h : IsNegativeUniverse U]
 
   instance : HasBot                      U := h.hBot
-  instance : HasInnerCoproducts          U := h.hCoprod
+  instance : HasCoproducts               U := h.hCoprod
   instance : HasFullNegativeEquivalences U := h.hNegEquiv
 
 end IsNegativeUniverse
@@ -324,25 +322,25 @@ end IsStandardUniverse
 
 -- This is only implemented by universes of propositions, where all inhabited types are equivalent.
 class HasPropEquivalences (U : Universe) [HasFullLogic U] [HasEquivalences U] [HasTop U]
-                          [HasInnerProducts U] [HasInnerCoproducts U] where
-  defDupFunEquiv (A B : U) : (A ⥤ A ⥤ B) ≃{dupFun₂ A B, constFun₂ A (A ⥤ B)} (A ⥤ B)
-  defDupProdEquiv (A : U) : A ⊓ A ≃{HasInnerProducts.fstFun A A, HasInnerProducts.dupIntroFun A} A
+                          [HasProducts U] [HasCoproducts U] where
+  defDupFunEquiv (A B : U) : [(A ⥤ A ⥤ B) ≃ (A ⥤ B)]_{⟨dupFun₂ A B, constFun₂ A (A ⥤ B)⟩}
+  defDupProdEquiv (A : U) : [A ⊓ A ≃ A]_{⟨HasProducts.fstFun A A, HasProducts.dupIntroFun A⟩}
   defDupCoprodEquiv (A : U) :
-    A ⊔ A ≃{asHom (HasCoproducts.elimFun (idFun A) (idFun A)), HasCoproducts.leftIntroFun A A} A
-  defTopEquiv {A : U} (a : A) : A ≃{constFun A ∗_U, HasTop.elimFun a} ⊤_U
-  defTopEquivFun (A : U) : A ⥤{λ a => defTopEquiv a} (A ≃ ⊤_U)
-  defTopEquivEquiv (A : U) : (A ≃ ⊤_U) ≃{asHom (Λ E => inv E ∗_U), asHom (defTopEquivFun A)} A
+    [A ⊔ A ≃ A]_{⟨asHom (HasCoproducts.elimFun (idFun A) (idFun A)), HasCoproducts.leftIntroFun A A⟩}
+  defTopEquiv {A : U} (a : A) : [A ≃ ⊤_U]_{⟨constFun A ∗_U, HasTop.elimFun a⟩}
+  defTopEquivFun (A : U) : [A ⥤ (A ≃ ⊤_U)]_{defTopEquiv}
+  defTopEquivEquiv (A : U) : [(A ≃ ⊤_U) ≃ A]_{⟨asHom (Λ E => inv E ∗_U), asHom (defTopEquivFun A)⟩}
 
 namespace HasPropEquivalences
 
   variable {U : Universe} [HasFullLogic U] [HasEquivalences U] [HasTop U]
-           [HasInnerProducts U] [HasInnerCoproducts U] [h : HasPropEquivalences U]
+           [HasProducts U] [HasCoproducts U] [h : HasPropEquivalences U]
 
   @[reducible] def dupFunEquiv (A B : U) : (A ⥤ A ⥤ B) ≃ (A ⥤ B) := h.defDupFunEquiv A B
   @[reducible] def dupProdEquiv (A : U) : A ⊓ A ≃ A := h.defDupProdEquiv A
   @[reducible] def dupCoprodEquiv (A : U) : A ⊔ A ≃ A := h.defDupCoprodEquiv A
   @[reducible] def topEquiv {A : U} (a : A) : A ≃ ⊤_U := h.defTopEquiv a
-  @[reducible] def topEquivFun (A : U) : A ⥤ (A ≃ ⊤_U) := (h.defTopEquivFun A).inst
+  @[reducible] def topEquivFun (A : U) : A ⥤ (A ≃ ⊤_U) := h.defTopEquivFun A
   @[reducible] def topEquivEquiv (A : U) : (A ≃ ⊤_U) ≃ A := h.defTopEquivEquiv A
 
   instance topEquiv.isFunApp {A : U} {a : A} : IsFunApp (topEquiv a) := ⟨topEquivFun A, a⟩
@@ -359,7 +357,8 @@ end HasPropEquivalences
 
 class HasClassicalEquivalences (U : Universe) [HasLinearLogic U] [HasEquivalences U] [HasBot U]
                                [HasClassicalLogic U] where
-  defNotNotEquiv (A : U) : ~~A ≃{asHom (HasClassicalLogic.byContradictionFun A), HasBot.notNotFun A} A
+  defNotNotEquiv (A : U) :
+    [~~A ≃ A]_{⟨asHom (HasClassicalLogic.byContradictionFun A), HasBot.notNotFun A⟩}
 
 namespace HasClassicalEquivalences
 

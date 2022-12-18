@@ -1,6 +1,7 @@
 namespace UniverseAbstractions
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
 universe u uu u' u'' v
 
@@ -71,44 +72,74 @@ end Universe
 
 namespace Layer1
 
-  structure DefType (U : Universe.{u, uu}) (α : Sort u') where
-    A : U
+  class HasElim {U : Universe.{u, uu}} (A : U) (α : outParam (Sort u')) where
     elim : A → α
 
-  namespace DefType
-    
-    instance (U : Universe.{u, uu}) (α : Sort u') : Coe (DefType U α) U := ⟨DefType.A⟩
+  namespace HasElim
 
-    variable {U : Universe.{u, uu}} {α : Sort u'}
+    variable {U : Universe.{u, uu}} (A : U) {α : Sort u'}
 
-    structure DefInst (A : DefType U α) (a : α) where
-      inst : A.A
+    instance coeNative [h : HasElim A α] : Coe A α := ⟨h.elim⟩
 
-    namespace DefInst
+    -- Same as `A` with the additional assurance that the type that `A` eliminates to is inhabited
+    -- (and we are often interested in that particular instance).
+    @[reducible] def DefInst [h : HasElim A α] (a : α) : U := A
+    notation "[" A:0 "]_{" a:0 "}" => HasElim.DefInst A a
 
-      instance coeType (A : DefType U α) (a : α) : Coe (DefInst A a) A := ⟨DefInst.inst⟩
+  end HasElim
 
-      def cast {A : DefType U α} {a b : α} (i : DefInst A a) : DefInst A b := ⟨i.inst⟩
+  class HasIntro {U : Universe.{u, uu}} (A : U) (α : outParam (Sort u')) where
+    intro : α → A
 
-    end DefInst
+  namespace HasIntro
 
-    def map (A : DefType U α) {β : Sort u''} (f : α → β) : DefType U β where
-      A      := A.A
-      elim a := f (A.elim a)
+    variable {U : Universe.{u, uu}} (A : U) {α : Sort u'} [h : HasIntro A α]
 
-  end DefType
+    instance coeType : Coe α A := ⟨h.intro⟩
 
-  structure DefTypeWithIntro (U : Universe.{u, uu}) (α : Sort u') extends DefType U α where
-    defInst (a : α) : DefType.DefInst toDefType a
+  end HasIntro
 
-  namespace DefTypeWithIntro
-    
-    instance (U : Universe.{u, uu}) (α : Sort u') : Coe (DefTypeWithIntro U α) U := ⟨λ A => A.A⟩
+  class HasType (U : Universe.{u, uu}) (α : Sort u') where
+    A : U
+    [hElim : HasElim A α]
 
-    variable {U : Universe.{u, uu}} {α : Sort u'}
+  namespace HasType
 
-    @[reducible] def inst (A : DefTypeWithIntro U α) (a : α) : A.A := A.defInst a
+    @[reducible] def UnivType (U : Universe.{u, uu}) (α : Sort u') [h : HasType U α] : U := h.A
+    notation "[" α:0 " | " U:0 "]" => HasType.UnivType U α
 
-  end DefTypeWithIntro
+    instance (U : Universe.{u, uu}) (α : Sort u') [h : HasType U α] : HasElim [α | U] α :=
+      h.hElim
+    notation "[" α:0 " | " U:0 "]_{" a:0 "}" => [[α | U]]_{a}
+
+    def native {U : Universe.{u, uu}} (A : U) : HasType U A where
+      A     := A
+      hElim := ⟨id⟩
+
+    variable (U : Universe.{u, uu}) {α : Sort u'} [HasType U α]
+
+    def map {β : Sort u''} (f : α → β) : HasType U β where
+      A     := [α | U]
+      hElim := ⟨λ a => f a⟩
+
+  end HasType
+
+  class HasTypeWithIntro (U : Universe.{u, uu}) (α : Sort u') extends HasType U α where
+    [hIntro : HasIntro A α]
+
+  namespace HasTypeWithIntro
+
+    instance (U : Universe.{u, uu}) (α : Sort u') [h : HasTypeWithIntro U α] : HasIntro [α | U] α :=
+      h.hIntro
+
+    def native {U : Universe.{u, uu}} (A : U) : HasTypeWithIntro U A where
+      toHasType := HasType.native A
+      hIntro    := ⟨id⟩
+
+    def defInst {U : Universe.{u, uu}} {α : Sort u'} [h : HasTypeWithIntro U α] {a : α} :
+        [α | U]_{a} :=
+      a
+
+  end HasTypeWithIntro
 
 end Layer1

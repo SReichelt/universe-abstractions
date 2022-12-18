@@ -12,18 +12,17 @@ import UniverseAbstractions.Universes.Layer1.Meta.Tactics.Functoriality
 namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
-set_option synthInstance.maxHeartbeats 100000
 set_option linter.unusedVariables false
 
-universe u u'
+universe u
 
-open HasFunctors HasIdFun HasLinearLogic HasProducts HasPreorderRelation
+open HasFunctors HasLinearLogic HasProducts HasPreorderRelation
 
 
 
-namespace HasInnerProducts
+namespace HasProducts
 
-  variable {U : Universe} [HasLinearLogic U] [HasInnerProducts U]
+  variable {U : Universe} [HasLinearLogic U] [HasProducts U]
 
   section
 
@@ -139,20 +138,20 @@ namespace HasInnerProducts
 
   end
 
-end HasInnerProducts
+end HasProducts
 
 
 
 namespace Prerelation
 
-  @[reducible] def product {α : Sort u} {V : Universe} [HasLinearLogic V] [HasInnerProducts V]
+  @[reducible] def product {α : Sort u} {V : Universe} [HasLinearLogic V] [HasProducts V]
                            (R S : Prerelation α V) :
       Prerelation α V :=
     λ a b => R a b ⊓ S a b
 
   namespace product
 
-    variable {α : Sort u} {V : Universe} [HasLinearLogic V] [HasInnerProducts V]
+    variable {α : Sort u} {V : Universe} [HasLinearLogic V] [HasProducts V]
              (R S : Prerelation α V)
 
     instance isFull [hR : IsFull R] [hS : IsFull S] : IsFull (product R S) :=
@@ -174,12 +173,12 @@ end Prerelation
 
 
 
-namespace HasInnerProducts
+namespace HasProducts
 
-  def prodRel (U : Universe) [HasLinearLogic U] [HasInnerProducts U] : Prerelation U U :=
+  def prodRel (U : Universe) [HasLinearLogic U] [HasProducts U] : Prerelation U U :=
     λ A B => A ⊓ B
 
-  variable (U : Universe) [HasFullLogic U] [HasInnerProducts U]
+  variable (U : Universe) [HasFullLogic U] [HasProducts U]
 
   instance hasProductObjects : HasProductObjects U where
     prod          := prodRel U
@@ -192,4 +191,4 @@ namespace HasInnerProducts
     evalHom  := evalFun
     curryFun := invElimFun₃
 
-end HasInnerProducts
+end HasProducts

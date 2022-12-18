@@ -9,11 +9,11 @@ import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
 namespace UniverseAbstractions.Layer1.Meta
 
 set_option autoImplicit false
-set_option synthInstance.maxHeartbeats 5000
+set_option synthInstance.maxHeartbeats 20000
 set_option linter.unusedVariables false
 
 open Lean Elab Tactic Qq UniverseAbstractions.Meta
-     Universe HasPiType HasFunctors
+     HasPiType HasFunctors
 
 
 
@@ -26,11 +26,11 @@ open Lean Elab Tactic Qq UniverseAbstractions.Meta
 -- (e.g. when looking at them in the infoview).
 --
 -- A useful use case, though, is to attach a meta-level function to an object-level function via
--- `DefPi`/`DefFun`. This way, we can easily specify that the result of a particular object-level
+-- `DefInst`. This way, we can easily specify that the result of a particular object-level
 -- function application should always be defeq to the result of executing a specific meta-level
 -- function. We extensively make use of this both in this file and in `Meta/Reflect/Functors.lean`,
--- by reflecting object-level properties as meta-level `DefFun`s, which in turn enables us to
--- interpret the meta-level function belonging to the `DefFun` as a meta-level property.
+-- by reflecting object-level properties as meta-level functors with an attached meta-level
+-- function/property.
 
 def _sort := exprUniverse id
 
@@ -49,9 +49,6 @@ namespace _sort
   def elaborate' {α : _sort} (a : Syntax) : TermElabM α := _Sort.elaborate' (α := α) a
   def elaborate  {α : _sort} (a : Syntax) : TacticM α := _Sort.elaborate (α := α) a
 
-  -- When using this, make sure that `a` is defeq to what `a'` specifies.
-  def defInst {α : Type} {A : DefType _sort α} {a' : α} (a : A.A) : DefType.DefInst A a' := ⟨a⟩
-
   def mkSortType (u : Level) : _sort := mk (u := mkLevelSucc u) ⌜Sort u⌝
   def mkSortType.fromSort (α : _sort) : mkSortType α.u := α.α
   def mkSortType.toSort {u : Level} (α : mkSortType u) : _sort := mk (u := u) α
@@ -60,18 +57,20 @@ namespace _sort
   instance {u : Level} : CoeSort (mkSortType u) Type := ⟨λ α => α⟩
 
   def hasPiType'' {α : _sort} {v : Level} {p : α → _sort} (P : Q($α.α → Sort v)) :
-      HasPiType p where
-    defPiType := { A    := ⟨mkForAll α.α P⟩,
-                   elim := λ f a => mkForAll.mkApp α.α P f a }
+      HasType _sort (∀ a, p a) where
+    A     := ⟨mkForAll       α.α P⟩
+    hElim := ⟨mkForAll.mkApp α.α P⟩
 
   def hasPiType' {α : _sort} {v : Level} {p : α → mkSortType v} (P : Q($α.α → Sort v)) :
-      HasPiType (λ a => mkSortType.toSort (p a)) :=
+      HasType _sort (∀ a, mkSortType.toSort (p a)) :=
     hasPiType'' P
 
-  instance hasFunPi (α β : _sort) : HasPiType (Function.const α β) :=
-    hasPiType' ⌜λ _ => $β.α⌝
+  def funProp (α β : _sort) : Q($α.α → Sort $β.u) := ⌜λ _ => $β.α⌝
+  def funProp₂ (α β γ : _sort) : Q($α.α → $β.α → Sort $γ.u) := ⌜λ _ _ => $γ.α⌝
 
-  instance hasFunctors (α β : _sort) : HasFunctors α β := ⟨⟩
+  instance hasFunType (α β : _sort) : HasType _sort (α → β) := hasPiType' (funProp α β)
+
+  instance hasFunctors (α : _sort) : HasFunctors α _sort := ⟨⟩
 
   def funType (α β : _sort) : mkSortType (mkLevelIMax α.u β.u) := mkSortType.fromSort (α ⥤ β)
   def funType' {u v : Level} (α : mkSortType u) (β : mkSortType v) : mkSortType (mkLevelIMax u v) :=
@@ -79,171 +78,169 @@ namespace _sort
 
   instance hasUnivFunctors : HasUnivFunctors _sort _sort := ⟨⟩
 
-  def defFunToProp {α : _sort} {v : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
+  def defFunToProp {α : _sort} {v : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p}) :
       α → _sort :=
     λ a => p a
 
-  @[reducible] def funToProp {α : _sort} {v : Level} (P : α ⥤ mkSortType v) : α → _sort :=
-    defFunToProp (DefFun.defAppFun P)
+  @[reducible] def funToProp {α : _sort} {v : Level} (P : α ⥤ mkSortType v) :
+      α → _sort :=
+    defFunToProp (HasFunctors.defAppFun P)
 
   def defFunToProp₂ {α β : _sort} {v : Level} {p : α → β → mkSortType v}
-                    (P : α ⥤ β ⥤{p} mkSortType v) :
+                    (P : [α ⥤ β ⥤ mkSortType v]__{p}) :
       α → β → _sort :=
     λ a b => p a b
 
-  @[reducible] def funToProp₂ {α β : _sort} {v : Level} {p : α → β → mkSortType v}
-                              (P : α ⥤ β ⥤ mkSortType v) :
+  def funToProp₂ {α β : _sort} {v : Level} (P : α ⥤ β ⥤ mkSortType v) :
       α → β → _sort :=
-    defFunToProp₂ (DefFun₂.defAppFun P)
+    defFunToProp₂ (HasFunctors.defAppFun₂ P)
 
-  instance hasPiType {α : _sort} {v : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
-      HasPiType (defFunToProp P) :=
-    hasPiType' P.inst
+  instance hasPiType {α : _sort} {v : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p}) :
+      HasType _sort (∀ a, (defFunToProp P) a) :=
+    hasPiType' P
 
-  instance {α : _sort} {v : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
-      HasPiType (λ a => (defFunToProp P) a) :=
-    hasPiType P
-
-  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : α ⥤ β ⥤{p} mkSortType v)
+  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : [α ⥤ β ⥤ mkSortType v]__{p})
            (a : α) :
-      HasPiType ((defFunToProp₂ P) a) :=
-    hasPiType (P.app a)
+      HasType _sort (∀ b, (defFunToProp₂ P) a b) :=
+    hasPiType (P a)
 
-  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : α ⥤ β ⥤{p} mkSortType v) :
-      HasPiType (λ a => Pi ((defFunToProp₂ P) a)) :=
-    let P' : Q($α.α → $β.α → Sort v) := P.inst
-    hasPiType ⟨⌜λ a => ∀ b, $P' a b⌝⟩
+  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : [α ⥤ β ⥤ mkSortType v]__{p}) :
+      HasType _sort (∀ a, Pi ((defFunToProp₂ P) a)) :=
+    let P' : Q($α.α → $β.α → Sort v) := P
+    hasPiType ⌜λ a => ∀ b, $P' a b⌝
 
-  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : α ⥤ β ⥤{p} mkSortType v)
+  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : [α ⥤ β ⥤ mkSortType v]__{p})
            (b : β) :
-      HasPiType (λ a => (defFunToProp₂ P) a b) :=
-    let P' : Q($α.α → $β.α → Sort v) := P.inst
+      HasType _sort (∀ a, (defFunToProp₂ P) a b) :=
+    let P' : Q($α.α → $β.α → Sort v) := P
     let b' : Q($β.α) := b
-    hasPiType ⟨⌜λ a => $P' a $b'⌝⟩
+    hasPiType ⌜λ a => $P' a $b'⌝
 
-  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : α ⥤ β ⥤{p} mkSortType v) :
-      HasPiType (λ b => Pi (λ a => (defFunToProp₂ P) a b)) :=
-    let P' : Q($α.α → $β.α → Sort v) := P.inst
-    hasPiType ⟨⌜λ b => ∀ a, $P' a b⌝⟩
+  instance {α β : _sort} {v : Level} {p : α → β → mkSortType v} (P : [α ⥤ β ⥤ mkSortType v]__{p}) :
+      HasType _sort (∀ b, [∀ a, (defFunToProp₂ P) a b | _sort]) :=
+    let P' : Q($α.α → $β.α → Sort v) := P
+    hasPiType ⌜λ b => ∀ a, $P' a b⌝
 
-  instance {α : _sort} {v w : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
-      HasPiType (λ a => ((defFunToProp P) a ⥤ mkSortType w)) :=
-    let P' : Q($α.α → Sort v) := P.inst
+  instance {α : _sort} {v w : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p}) :
+      HasType _sort (∀ a, (defFunToProp P) a ⥤ mkSortType w) :=
+    let P' : Q($α.α → Sort v) := P
     let Q : Q($α.α → Sort (max v (w + 1))) := ⌜λ a => ($P' a → Sort w)⌝
     hasPiType'' Q
 
-  def defPiToProp {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-                  {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                  (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
+  def defPiToProp {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+                  {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                  (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
       ∀ a, (defFunToProp P) a → _sort :=
     λ a b => q a b
 
-  instance hasIdFun (α : _sort) : HasIdFun α := ⟨⟨mkIdFun α.α⟩⟩
+  instance hasIdFun (α : _sort) : HasIdFun α := ⟨mkIdFun α.α⟩
 
-  instance hasPiAppFun {α : _sort} {v : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
+  instance hasPiAppFun {α : _sort} {v : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p}) :
       HasPiAppFun (defFunToProp P) :=
-    ⟨λ a => ⟨mkPiAppFun (v := v) α.α P.inst a⟩⟩
+    ⟨mkPiAppFun (v := v) α.α P⟩
 
-  instance {α : _sort} {v : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
-      HasPiType (λ a => (Pi (defFunToProp P) ⥤ (defFunToProp P) a)) :=
-    let P' : Q($α.α → Sort v) := P.inst
+  local instance {α : _sort} {v : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p}) :
+      HasType _sort (∀ a, Pi (defFunToProp P) ⥤ (defFunToProp P) a) :=
+    let P' : Q($α.α → Sort v) := P
     let Q : Q($α.α → Sort (imax (imax $α.u v) v)) := ⌜λ a => ((∀ a', $P' a') → $P' a)⌝
     hasPiType' Q
 
-  instance hasPiAppFunPi {α : _sort} {v : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v) :
+  instance hasPiAppFunPi {α : _sort} {v : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p}) :
       HasPiAppFunPi (defFunToProp P) :=
-    ⟨⟨mkPiAppFunPi (v := v) α.α P.inst⟩⟩
+    ⟨mkPiAppFunPi (v := v) α.α P⟩
 
   instance hasSwapPi {α β : _sort} {v : Level} {p : α → β → mkSortType v}
-                     (P : α ⥤ β ⥤{p} mkSortType v) :
+                     (P : [α ⥤ β ⥤ mkSortType v]__{p}) :
       HasSwapPi (defFunToProp₂ P) :=
-    ⟨λ f b => ⟨mkSwapPi (v := v) α.α β.α P.inst f b⟩⟩
+    ⟨mkSwapPi (v := v) α.α β.α P⟩
 
   instance hasSwapPi₂ {α β : _sort} {v : Level} {p : α → β → mkSortType v}
-                      (P : α ⥤ β ⥤{p} mkSortType v) :
+                      (P : [α ⥤ β ⥤ mkSortType v]__{p}) :
       HasSwapPi₂ (defFunToProp₂ P) :=
-    ⟨λ f => ⟨mkSwapPi₂ (v := v) α.α β.α P.inst f⟩⟩
+    ⟨mkSwapPi₂ (v := v) α.α β.α P⟩
 
   instance hasSwapPiFun {α β : _sort} {v : Level} {p : α → β → mkSortType v}
-                        (P : α ⥤ β ⥤{p} mkSortType v) :
+                        (P : [α ⥤ β ⥤ mkSortType v]__{p}) :
       HasSwapPiFun (defFunToProp₂ P) :=
-    ⟨⟨mkSwapPiFun (v := v) α.α β.α P.inst⟩⟩
+    ⟨mkSwapPiFun (v := v) α.α β.α P⟩
 
-  instance (α β : _sort) {w : Level} {q : β → mkSortType w} (Q : β ⥤{q} mkSortType w) (f : α ⥤ β) :
-      HasPiType (λ a => (defFunToProp Q) (f a)) :=
-    let Q' : Q($β.α → Sort w) := Q.inst
+  instance (α β : _sort) {w : Level} {q : β → mkSortType w} (Q : [β ⥤ mkSortType w]_{q}) (f : α ⥤ β) :
+      HasType _sort (∀ a, (defFunToProp Q) (f a)) :=
+    let Q' : Q($β.α → Sort w) := Q
     let f' : Q($α.α → $β.α) := f
-    hasPiType ⟨⌜λ a => $Q' ($f' a)⌝⟩
+    hasPiType ⌜λ a => $Q' ($f' a)⌝
 
-  instance hasCompFunPi (α β : _sort) {w : Level} {q : β → mkSortType w} (Q : β ⥤{q} mkSortType w) :
+  instance hasCompFunPi (α β : _sort) {w : Level} {q : β → mkSortType w} (Q : [β ⥤ mkSortType w]_{q}) :
       HasCompFunPi α (defFunToProp Q) :=
-    ⟨λ f g => ⟨mkCompFunPi (w := w) α.α β.α Q.inst f g⟩⟩
+    ⟨mkCompFunPi (w := w) α.α β.α Q⟩
 
-  instance (α β : _sort) {w : Level} {q : β → mkSortType w} (Q : β ⥤{q} mkSortType w) :
-      HasPiType (λ (f : α ⥤ β) => Pi (λ a => (defFunToProp Q) (f a))) :=
-    let Q' : Q($β.α → Sort w) := Q.inst
+  instance (α β : _sort) {w : Level} {q : β → mkSortType w} (Q : [β ⥤ mkSortType w]_{q}) :
+      HasType _sort (∀ f : α ⥤ β, [∀ a, (defFunToProp Q) (f a) | _sort]) :=
+    let Q' : Q($β.α → Sort w) := Q
     let R : Q(($α.α → $β.α) → Sort (imax $α.u w)) := ⌜λ f => ∀ a, $Q' (f a)⌝
-    hasPiType ⟨R⟩
+    hasPiType R
 
   instance hasRevCompFunPi₂ (α β : _sort) {w : Level} {q : β → mkSortType w}
-                            (Q : β ⥤{q} mkSortType w) :
+                            (Q : [β ⥤ mkSortType w]_{q}) :
       HasRevCompFunPi₂ α (defFunToProp Q) :=
-    ⟨λ g => ⟨mkRevCompFunPi₂ (w := w) α.α β.α Q.inst g⟩⟩
+    ⟨mkRevCompFunPi₂ (w := w) α.α β.α Q⟩
 
   instance hasRevCompFunPiFun (α β : _sort) {w : Level} {q : β → mkSortType w}
-                              (Q : β ⥤{q} mkSortType w) :
+                              (Q : [β ⥤ mkSortType w]_{q}) :
       HasRevCompFunPiFun α (defFunToProp Q) :=
-    ⟨⟨mkRevCompFunPiFun (w := w) α.α β.α Q.inst⟩⟩
+    ⟨mkRevCompFunPiFun (w := w) α.α β.α Q⟩
 
   instance hasConstPi (α β : _sort) : HasConstPi α β :=
-    ⟨λ b => ⟨mkConstFun α.α β.α b⟩⟩
+    ⟨mkConstPi α.α β.α⟩
 
   instance hasConstPiFun (α β : _sort) : HasConstPiFun α β :=
-    ⟨⟨mkConstFun₂ α.α β.α⟩⟩
+    ⟨mkConstPiFun α.α β.α⟩
 
-  instance {α : _sort} {v : Level} {p : α → α → mkSortType v} (P : α ⥤ α ⥤{p} mkSortType v) :
-      HasPiType (λ a => (defFunToProp₂ P) a a) :=
-    let P' : Q($α.α → $α.α → Sort v) := P.inst
-    hasPiType ⟨⌜λ a => $P' a a⌝⟩
+  instance {α : _sort} {v : Level} {p : α → α → mkSortType v} (P : [α ⥤ α ⥤ mkSortType v]__{p}) :
+      HasType _sort (∀ a, (defFunToProp₂ P) a a) :=
+    let P' : Q($α.α → $α.α → Sort v) := P
+    hasPiType ⌜λ a => $P' a a⌝
 
   instance hasDupPi {α : _sort} {v : Level} {p : α → α → mkSortType v}
-                    (P : α ⥤ α ⥤{p} mkSortType v) :
+                    (P : [α ⥤ α ⥤ mkSortType v]__{p}) :
       HasDupPi (defFunToProp₂ P) :=
-    ⟨λ f => ⟨mkDupPi (v := v) α.α P.inst f⟩⟩
+    ⟨mkDupPi (v := v) α.α P⟩
 
   instance hasDupPiFun {α : _sort} {v : Level} {p : α → α → mkSortType v}
-                       (P : α ⥤ α ⥤{p} mkSortType v) :
+                       (P : [α ⥤ α ⥤ mkSortType v]__{p}) :
       HasDupPiFun (defFunToProp₂ P) :=
-    ⟨⟨mkDupPiFun (v := v) α.α P.inst⟩⟩
+    ⟨mkDupPiFun (v := v) α.α P⟩
 
-  instance hasPiSelfAppPi {α : _sort} {v : Level} {q : α → mkSortType v} (Q : α ⥤{q} mkSortType v) :
+  instance hasPiSelfAppPi {α : _sort} {v : Level} {q : α → mkSortType v}
+                          (Q : [α ⥤ mkSortType v]_{q}) :
       HasPiSelfAppPi (defFunToProp Q) :=
-    ⟨λ f => ⟨mkPiSelfAppPi (v := v) α.α Q.inst f⟩⟩
+    ⟨mkPiSelfAppPi (v := v) α.α Q⟩
 
-  instance hasPiSelfAppPi₂ {α : _sort} {v : Level} {q : α → mkSortType v} (Q : α ⥤{q} mkSortType v) :
+  instance hasPiSelfAppPi₂ {α : _sort} {v : Level} {q : α → mkSortType v}
+                           (Q : [α ⥤ mkSortType v]_{q}) :
       HasPiSelfAppPi₂ (defFunToProp Q) :=
-    ⟨⟨mkPiSelfAppPi₂ (v := v) α.α Q.inst⟩⟩
+    ⟨mkPiSelfAppPi₂ (v := v) α.α Q⟩
 
-  instance {α : _sort} {v w : Level} {p : α → mkSortType v} (P : α ⥤{p} mkSortType v)
-           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-           (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) (a : α) :
-      HasPiType ((defPiToProp Q) a) :=
+  instance {α : _sort} {v w : Level} {p : α → mkSortType v} (P : [α ⥤ mkSortType v]_{p})
+           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+           (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) (a : α) :
+      HasType _sort (∀ b, (defPiToProp Q) a b) :=
     hasPiType (qa a)
 
   def substProp₁' {u v w : Level} (α : Q(Sort u)) (P : Q($α → Sort v)) (Q : Q(∀ a, $P a → Sort w)) :
       Q($α → Sort (imax v w)) :=
     ⌜λ a => ∀ b, $Q a b⌝
 
-  def defSubstProp₁ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-                    {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                    (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
-      α ⥤{λ a => (Pi ((defPiToProp Q) a)).α} mkSortType (mkLevelIMax v w) :=
-    ⟨substProp₁' (v := v) (w := w) α.α P.inst Q.inst⟩
+  def defSubstProp₁ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+                    {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                    (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
+      [α ⥤ mkSortType (mkLevelIMax v w)]_{λ a => (Pi ((defPiToProp Q) a)).α} :=
+    substProp₁' (v := v) (w := w) α.α P Q
 
-  instance {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-           (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
-      HasPiType (λ a => Pi ((defPiToProp Q) a)) :=
+  instance {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+           (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
+      HasType _sort (∀ a, Pi ((defPiToProp Q) a)) :=
     hasPiType (defSubstProp₁ Q)
 
   def substProp₂' {u v w : Level} (α : Q(Sort u)) (P : Q($α → Sort v)) (Q : Q(∀ a, $P a → Sort w))
@@ -251,82 +248,83 @@ namespace _sort
       Q($α → Sort w) :=
     ⌜λ a => $Q a ($f a)⌝
 
-  def defSubstProp₂ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-                    {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                    (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a))
+  def defSubstProp₂ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+                    {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                    (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa})
                     (f : Pi (defFunToProp P)) :
-      α ⥤{λ a => q a (f a)} mkSortType w :=
-    ⟨substProp₂' (v := v) (w := w) α.α P.inst Q.inst f⟩
+      [α ⥤ mkSortType w]_{λ a => q a (f a)} :=
+    substProp₂' (v := v) (w := w) α.α P Q f
 
-  instance {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-           (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a))
+  instance {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+           (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa})
            (f : Pi (defFunToProp P)) :
-      HasPiType (λ a => (defPiToProp Q) a (f a)) :=
+      HasType _sort (∀ a, (defPiToProp Q) a (f a)) :=
     hasPiType (defSubstProp₂ Q f)
 
-  instance hasSubstPi {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-                      {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                      (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
+  instance hasSubstPi {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+                      {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                      (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
       HasSubstPi (defPiToProp Q) :=
-    ⟨λ f g => ⟨mkSubstPi (v := v) (w := w) α.α P.inst Q.inst f g⟩⟩
+    ⟨mkSubstPi (v := v) (w := w) α.α P Q⟩
 
   def substProp₃' {u v w : Level} (α : Q(Sort u)) (P : Q($α → Sort v)) (Q : Q(∀ a, $P a → Sort w)) :
       Q((∀ a, $P a) → Sort (imax u w)) :=
     ⌜λ f => ∀ a, $Q a (f a)⌝
 
-  def defSubstProp₃ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-                    {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                    (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
-      Pi (defFunToProp P)
-      ⥤{λ f => (Pi (λ a => (defPiToProp Q) a (f a))).α}
-      mkSortType (mkLevelIMax α.u w) :=
-    ⟨substProp₃' (v := v) (w := w) α.α P.inst Q.inst⟩
+  def defSubstProp₃ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+                    {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                    (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
+      [Pi (defFunToProp P) ⥤ mkSortType (mkLevelIMax α.u w)]_{
+       λ f : Pi (defFunToProp P) => [∀ a, (defPiToProp Q) a (f a) | _sort].α} :=
+    substProp₃' (v := v) (w := w) α.α P Q
 
-  instance {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-           (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
-      HasPiType (λ f : Pi (defFunToProp P) => Pi (λ a => (defPiToProp Q) a (f a))) :=
+  instance {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+           {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+           (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
+      HasType _sort (∀ f : Pi (defFunToProp P), [∀ a, (defPiToProp Q) a (f a) | _sort]) :=
     hasPiType (defSubstProp₃ Q)
 
-  instance hasRevSubstPi₂ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : α ⥤{p} mkSortType v}
-                          {q : ∀ a, p a → mkSortType w} {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                          (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
+  instance hasRevSubstPi₂ {α : _sort} {v w : Level} {p : α → mkSortType v} {P : [α ⥤ mkSortType v]_{p}}
+                          {q : ∀ a, p a → mkSortType w} {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                          (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
       HasRevSubstPi₂ (defPiToProp Q) :=
-    ⟨λ g => ⟨mkRevSubstPi₂ (v := v) (w := w) α.α P.inst Q.inst g⟩⟩
+    ⟨mkRevSubstPi₂ (v := v) (w := w) α.α P Q⟩
 
   instance hasRevSubstPiFun {α : _sort} {v w : Level} {p : α → mkSortType v}
-                            {P : α ⥤{p} mkSortType v} {q : ∀ a, p a → mkSortType w}
-                            {qa : ∀ a, p a ⥤{q a} mkSortType w}
-                            (Q : DefPi (λ a => ((defFunToProp P) a ⥤ mkSortType w)) (λ a => qa a)) :
+                            {P : [α ⥤ mkSortType v]_{p}} {q : ∀ a, p a → mkSortType w}
+                            {qa : ∀ a, [p a ⥤ mkSortType w]_{q a}}
+                            (Q : [∀ a, (defFunToProp P) a ⥤ mkSortType w | _sort]_{qa}) :
       HasRevSubstPiFun (defPiToProp Q) :=
-    ⟨⟨mkRevSubstPiFun (v := v) (w := w) α.α P.inst Q.inst⟩⟩
+    ⟨mkRevSubstPiFun (v := v) (w := w) α.α P Q⟩
 
+  instance hasExternalLinearLogic (α : _sort) : HasExternalLinearLogic α _sort where
+    defRevAppFun₂  β   := mkPiAppFunPi α.α (funProp α β)
+    defRevCompFun₃ β γ := mkRevCompFunPiFun α.α β.α (funProp β γ)
 
-  def defConstPropFun (α β : _sort) : α ⥤{Function.const α β} mkSortType β.u :=
-    HasConstPi.defConstFun α β
+  instance hasExternalSubLinearLogic (α : _sort) : HasExternalSubLinearLogic α _sort where
+    defConstFun₂ β := mkConstPiFun α.α β.α
 
-  @[reducible] def constProp (α β : _sort) : α → _sort := defFunToProp (defConstPropFun α β)
+  instance hasExternalAffineLogic (α : _sort) : HasExternalAffineLogic α _sort := ⟨⟩
 
-  -- Need to change definition of `hasFunPi` for this, but that results in instance search problems.
-  --theorem constProp.test (α β : _sort) : (α ⥤ β) = Pi (constProp α β) := rfl
+  instance hasExternalNonLinearLogic (α : _sort) : HasExternalNonLinearLogic α _sort where
+    defDupFun₂ β := mkDupPiFun α.α (funProp₂ α α β)
 
+  instance hasExternalFullLogic (α : _sort) : HasExternalFullLogic α _sort := ⟨⟩
 
--- TODO: There is some type class defeq issue that will probably also cause other problems.
---
---  instance hasLinearLogic : HasLinearLogic _sort :=
---    HasLinearLogic.construct _sort
---                             (hRevApp := λ α β => hasPiAppFunPi (defConstPropFun α β))
---                             (hRevComp := λ α β γ => hasRevCompFunPiFun α β (defConstPropFun β γ))
---
---  instance hasSubLinearLogic : HasSubLinearLogic _sort :=
---    HasSubLinearLogic.construct _sort
---
---  instance hasAffineLogic : HasAffineLogic _sort := ⟨⟩
---
---  instance hasNonLinearLogic : HasNonLinearLogic _sort :=
---    HasNonLinearLogic.construct _sort
---
---  instance hasFullLogic : HasFullLogic _sort := ⟨⟩
+  instance hasLinearLogic : HasLinearLogic _sort where
+    defIdFun       α     := mkIdFun α.α
+    defRevAppFun₂  α β   := mkPiAppFunPi α.α (funProp α β)
+    defRevCompFun₃ α β γ := mkRevCompFunPiFun α.α β.α (funProp β γ)
+
+  instance hasSubLinearLogic : HasSubLinearLogic _sort where
+    defConstFun₂ α β := mkConstPiFun α.α β.α
+
+  instance hasAffineLogic : HasAffineLogic _sort := ⟨⟩
+
+  instance hasNonLinearLogic : HasNonLinearLogic _sort where
+    defDupFun₂ α β := mkDupPiFun α.α (funProp₂ α α β)
+
+  instance hasFullLogic : HasFullLogic _sort := ⟨⟩
 
 end _sort

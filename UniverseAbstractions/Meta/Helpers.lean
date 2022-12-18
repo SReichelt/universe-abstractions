@@ -69,10 +69,10 @@ def mkRevCompFunPiFun {u v w : Level} (α : Q(Sort u)) (β : Q(Sort v)) (Q : Q($
     Q((∀ b, $Q b) → (∀ (f : $α → $β) a, $Q (f a))) :=
   ⌜λ g f a => g (f a)⌝
 
-def mkConstFun {u v : Level} (α : Q(Sort u)) (β : Q(Sort v)) (b : Q($β)) : Q($α → $β) :=
+def mkConstPi {u v : Level} (α : Q(Sort u)) (β : Q(Sort v)) (b : Q($β)) : Q($α → $β) :=
   ⌜λ _ => $b⌝
 
-def mkConstFun₂ {u v : Level} (α : Q(Sort u)) (β : Q(Sort v)) : Q($β → ($α → $β)) :=
+def mkConstPiFun {u v : Level} (α : Q(Sort u)) (β : Q(Sort v)) : Q($β → ($α → $β)) :=
   ⌜λ b _ => b⌝
 
 def mkDupPi {u v : Level} (α : Q(Sort u)) (P : Q($α → $α → Sort v)) (f : Q(∀ a a', $P a a')) :

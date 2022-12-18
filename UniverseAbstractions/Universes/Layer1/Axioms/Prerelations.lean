@@ -11,7 +11,8 @@ namespace UniverseAbstractions.Layer1
 set_option autoImplicit false
 set_option linter.unusedVariables false
 
-open HasFunctors HasIdFun HasConstPi HasSwapPi HasSwapPi₂ HasDupPi HasSubstPi
+open HasPiType HasFunctors HasIdFun HasExternalLinearLogic HasExternalSubLinearLogic
+     HasExternalNonLinearLogic
 
 universe u v w vv
 

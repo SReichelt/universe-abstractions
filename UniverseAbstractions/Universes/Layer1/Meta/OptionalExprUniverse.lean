@@ -1,19 +1,21 @@
 import UniverseAbstractions.Universes.Layer1.Axioms.Prerelations
 import UniverseAbstractions.Universes.Layer1.Instances.Utils.DerivedUniverses
 import UniverseAbstractions.Universes.Layer1.Meta.ExprUniverse
+import UniverseAbstractions.Universes.Helpers
 
 
 
 namespace UniverseAbstractions.Layer1.Meta
 
 set_option autoImplicit false
+set_option linter.unusedVariables false
 
-open Lean Lean.Meta Prerelation
+open Lean Lean.Meta Prerelation Helpers
 
 
 
 @[reducible] def optionalExprUniverse {β : Type} (inst : β → _Sort) : Universe.{1, 1} :=
-functionUniverse (optionUniverse (exprUniverse inst))
+  functionUniverse (optionUniverse (exprUniverse inst))
 
 
 
@@ -27,7 +29,7 @@ def optionalRelation {α β : Type} {inst : β → _Sort} (R : Prerelation α (e
 
 namespace optionalRelation
 
-  variable {α β : Type} {inst : β → _Sort} [HasFunctors (exprUniverse inst)]
+  variable {α β : Type} {inst : β → _Sort} [HasLinearLogic (exprUniverse inst)]
            (R : Prerelation α (exprUniverse inst))
 
   instance hasRefl : HasRefl (optionalRelation R) := ⟨λ _ => none⟩
@@ -39,7 +41,7 @@ namespace optionalRelation
 
   instance hasTrans [HasTrans R] : HasTrans (optionalRelation R) :=
     ⟨λ a b c f g => match f, g with
-                    | some f', some g' => some (g' • f')
+                    | some f', some g' => some (HasTrans.revTrans (b := b) g' f')
                     | some f', none    => some f'
                     | none,    some g' => some g'
                     | none,    none    => none⟩
