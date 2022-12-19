@@ -39,7 +39,7 @@ namespace bool
     | false => isFalse elim
 
   instance hasFunType (b c : bool) : HasTypeWithIntro bool (b → c) where
-    A      := cond b c true
+    T      := cond b c true
     hElim  := ⟨λ f => match b with
                       | true  => λ _ => f
                       | false => elim⟩
@@ -54,14 +54,14 @@ namespace bool
   instance hasFullLogic : HasFullLogic bool := inferInstance
 
   instance hasTopType : HasTypeWithIntro bool PUnit.{0} where
-    A      := T
+    T      := T
     hElim  := ⟨λ _ => PUnit.unit⟩
     hIntro := ⟨λ _ => inst⟩
 
   instance hasTop : HasTop bool := inferInstance
 
   instance hasBotType : HasType bool PEmpty.{0} where
-    A     := F
+    T     := F
     hElim := ⟨elim⟩
 
   instance hasBot : HasBot bool := inferInstance
@@ -72,7 +72,7 @@ namespace bool
             | false => inst⟩
 
   instance hasProductType (b c : bool) : HasTypeWithIntro bool (PProd b c) where
-    A      := b && c
+    T      := b && c
     hElim  := ⟨λ h => match b, c with
                       | true,  true  => ⟨inst, inst⟩
                       | true,  false => elim h
@@ -85,7 +85,7 @@ namespace bool
   instance hasProducts : HasProducts bool := inferInstance
 
   instance hasCoproductType (b c : bool) : HasTypeWithIntro bool (PSum b c) where
-    A      := b || c
+    T      := b || c
     hElim  := ⟨λ h => match b, c with
                       | true,  _     => PSum.inl inst
                       | false, true  => PSum.inr inst

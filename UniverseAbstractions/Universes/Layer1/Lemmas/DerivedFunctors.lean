@@ -7,11 +7,11 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u
+universe u u'
 
 open HasPiType HasFunctors HasExternalLinearLogic HasExternalNonLinearLogic
 
-variable {U : Universe.{u}} [hU : HasLinearLogic U]
+variable {V : Universe} [hU : HasLinearLogic V]
 
 
 
@@ -37,7 +37,8 @@ namespace HasExternalLinearLogic
 
   section
 
-    variable {α β : Sort u} [HasExternalLinearLogic α U] [HasExternalLinearLogic β U] {C : U}
+    variable {α : Sort u} {β : Sort u'} [hα : HasExternalLinearLogic α V]
+             [hβ : HasExternalLinearLogic β V] {C : V}
 
     -- We essentially transform `Λ a => F a b` into `Λ a => (Λ Fa => Fa b) (F a)`.
 
@@ -48,16 +49,17 @@ namespace HasExternalLinearLogic
 
   section
 
-    variable (α : Sort u) {β : Sort u} [HasExternalLinearLogic α U] [HasExternalLinearLogic β U]
+    variable (α : Sort u) {β : Sort u'} [hα : HasExternalLinearLogic α V]
+             [hβ : HasExternalLinearLogic β V]
 
-    def revSwapFun₂ (b : β) (C : U) : (α ⥤ β ⥤ C) ⥤ (α ⥤ C) := revCompFun₂ α (revAppFun b C)
+    def revSwapFun₂ (b : β) (C : V) : (α ⥤ β ⥤ C) ⥤ (α ⥤ C) := revCompFun₂ α (revAppFun b C)
 
   end
 
   section
 
-    variable (α β : Sort u) [hα : HasExternalLinearLogic α U] [hβ : HasExternalLinearLogic β U]
-             (C : U)
+    variable (α : Sort u) (β : Sort u') [hα : HasExternalLinearLogic α V]
+             [hβ : HasExternalLinearLogic β V] (C : V)
 
     def revSwapFun₃ : β ⥤ (α ⥤ β ⥤ C) ⥤ (α ⥤ C) :=
       revCompFun₃ α (β ⥤ C) C ⊙ revAppFun₂ β C
@@ -66,26 +68,26 @@ namespace HasExternalLinearLogic
 
     instance revSwapFun₃.isFunApp : IsFunApp (revSwapFun₃ α β C) := revCompFun.isFunApp β
 
-    local instance : HasType U (∀ a, Pi ((λ (_ : α) (_ : β) => C) a)) := hα.hFun (β ⥤ C)
+    local instance : HasType V (∀ a, Pi ((λ (_ : α) (_ : β) => C) a)) := hα.hFun (β ⥤ C)
     instance hasSwapPi : HasSwapPi (λ (_ : α) (_ : β) => C) := ⟨swapFun⟩
 
   end
 
   section
 
-    variable {α : Sort u} [h : HasExternalLinearLogic α U]
+    variable {α : Sort u} [h : HasExternalLinearLogic α V]
 
-    def compFun₂ {B : U} (F : α ⥤ B) (C : U) : (B ⥤ C) ⥤ (α ⥤ C) := swapFun (revCompFun₃ α B C) F
+    def compFun₂ {B : V} (F : α ⥤ B) (C : V) : (B ⥤ C) ⥤ (α ⥤ C) := swapFun (revCompFun₃ α B C) F
 
-    instance compFun.isFunApp₂' {B C : U} {F : α ⥤ B} {G : B ⥤ C} : IsFunApp₂' (G ⊙ F) :=
+    instance compFun.isFunApp₂' {B C : V} {F : α ⥤ B} {G : B ⥤ C} : IsFunApp₂' (G ⊙ F) :=
       ⟨⟨compFun₂ F C, G⟩⟩
 
   end
 
   section
 
-    variable {α β : Sort u} [hα : HasExternalLinearLogic α U] [hβ : HasExternalLinearLogic β U]
-             {C : U}
+    variable {α : Sort u} {β : Sort u'} [hα : HasExternalLinearLogic α V]
+             [hβ : HasExternalLinearLogic β V] {C : V}
 
     def swapFun₂ (F : α ⥤ β ⥤ C) : β ⥤ (α ⥤ C) := compFun₂ F C ⊙ revAppFun₂ β C
 
@@ -94,14 +96,14 @@ namespace HasExternalLinearLogic
     instance swapFun.isFunApp₂' {F : α ⥤ β ⥤ C} {b : β} : IsFunApp₂' (swapFun F b) :=
       ⟨⟨revSwapFun₂ α b C, F⟩⟩
 
-    local instance : HasType U (∀ a, Pi ((λ (_ : α) (_ : β) => C) a)) := hα.hFun (β ⥤ C)
+    local instance : HasType V (∀ a, Pi ((λ (_ : α) (_ : β) => C) a)) := hα.hFun (β ⥤ C)
     instance hasSwapPi₂ : HasSwapPi₂ (λ (_ : α) (_ : β) => C) := ⟨swapFun₂⟩
 
   end
 
   section
 
-    variable (α : Sort u) [h : HasExternalLinearLogic α U] (B C : U)
+    variable (α : Sort u) [h : HasExternalLinearLogic α V] (B C : V)
 
     def compFun₃ : (α ⥤ B) ⥤ (B ⥤ C) ⥤ (α ⥤ C) := swapFun₂ (revCompFun₃ α B C)
 
@@ -111,8 +113,8 @@ namespace HasExternalLinearLogic
 
   section
 
-    variable (α β : Sort u) [hα : HasExternalLinearLogic α U] [hβ : HasExternalLinearLogic β U]
-             (C : U)
+    variable (α : Sort u) (β : Sort u') [hα : HasExternalLinearLogic α V]
+             [hβ : HasExternalLinearLogic β V] (C : V)
 
     def swapFun₃ : (α ⥤ β ⥤ C) ⥤ (β ⥤ α ⥤ C) :=
       compFun₂ (revAppFun₂ β C) (α ⥤ C) ⊙ compFun₃ α (β ⥤ C) C
@@ -121,14 +123,14 @@ namespace HasExternalLinearLogic
 
     instance swapFun₃.isFunApp : IsFunApp (swapFun₃ α β C) := revCompFun.isFunApp (α ⥤ β ⥤ C)
 
-    local instance : HasType U (∀ a, Pi ((λ (_ : α) (_ : β) => C) a)) := hα.hFun (β ⥤ C)
+    local instance : HasType V (∀ a, Pi ((λ (_ : α) (_ : β) => C) a)) := hα.hFun (β ⥤ C)
     instance hasSwapPiFun : HasSwapPiFun (λ (_ : α) (_ : β) => C) := ⟨swapFun₃ α β C⟩
 
   end
 
   section
 
-    variable (α : Sort u) [h : HasExternalLinearLogic α U] (B C : U)
+    variable (α : Sort u) [h : HasExternalLinearLogic α V] (B C : V)
 
     instance compFun₃.isFunApp : IsFunApp (compFun₃ α B C) :=
       swapFun₂.isFunApp (B ⥤ C) (α ⥤ B) (α ⥤ C)
@@ -155,13 +157,13 @@ namespace HasExternalNonLinearLogic
 
   section
 
-    variable {α : Sort u} [hLin : HasExternalLinearLogic α U]
-             [hNonLin : HasExternalNonLinearLogic α U] {B C : U}
+    variable {α : Sort u} [hLin : HasExternalLinearLogic α V]
+             [hNonLin : HasExternalNonLinearLogic α V] {B C : V}
 
     def substFun (F : α ⥤ B) (G : α ⥤ B ⥤ C) : α ⥤ C := dupFun (compFun₂ F C ⊙ G)
     abbrev revSubstFun (G : α ⥤ B ⥤ C) (F : α ⥤ B) : α ⥤ C := substFun F G
 
-    local instance : HasType U (∀ a, Pi ((λ (_ : α) (_ : B) => C) a)) := hLin.hFun (B ⥤ C)
+    local instance : HasType V (∀ a, Pi ((λ (_ : α) (_ : B) => C) a)) := hLin.hFun (B ⥤ C)
     instance hasSubstPi : HasSubstPi (λ (_ : α) (_ : B) => C) := ⟨substFun⟩
 
     def revSubstFun₂ (G : α ⥤ B ⥤ C) : (α ⥤ B) ⥤ (α ⥤ C) :=
@@ -170,7 +172,7 @@ namespace HasExternalNonLinearLogic
     instance revSubstFun.isFunApp {F : α ⥤ B} {G : α ⥤ B ⥤ C} : IsFunApp (revSubstFun G F) :=
       ⟨revSubstFun₂ G, F⟩
 
-    local instance : HasType U (∀ F : α ⥤ B, [∀ a, (λ (_ : α) (_ : B) => C) a (F a) | U]) :=
+    local instance : HasType V (∀ F : α ⥤ B, [∀ a, (λ (_ : α) (_ : B) => C) a (F a) | V]) :=
       (hU.hFun (α ⥤ B)).hFun (α ⥤ C)
     instance hasRevSubstPi₂ : HasRevSubstPi₂ (λ (_ : α) (_ : B) => C) := ⟨revSubstFun₂⟩
 
@@ -178,8 +180,8 @@ namespace HasExternalNonLinearLogic
 
   section
 
-    variable (α : Sort u) [hLin : HasExternalLinearLogic α U]
-             [hNonLin : HasExternalNonLinearLogic α U] (B C : U)
+    variable (α : Sort u) [hLin : HasExternalLinearLogic α V]
+             [hNonLin : HasExternalNonLinearLogic α V] (B C : V)
 
     def revSubstFun₃ : (α ⥤ B ⥤ C) ⥤ (α ⥤ B) ⥤ (α ⥤ C) :=
       revCompFun₂ (α ⥤ B) (dupFun₂ α C) ⊙
@@ -195,8 +197,8 @@ namespace HasExternalNonLinearLogic
     instance revSubstFun₃.isFunApp : IsFunApp (revSubstFun₃ α B C) :=
       revCompFun.isFunApp (α ⥤ B ⥤ C)
 
-    local instance : HasType U (∀ a, Pi ((λ (_ : α) (_ : B) => C) a)) := hLin.hFun (B ⥤ C)
-    local instance : HasType U (∀ F : α ⥤ B, [∀ a, (λ (_ : α) (_ : B) => C) a (F a) | U]) :=
+    local instance : HasType V (∀ a, Pi ((λ (_ : α) (_ : B) => C) a)) := hLin.hFun (B ⥤ C)
+    local instance : HasType V (∀ F : α ⥤ B, [∀ a, (λ (_ : α) (_ : B) => C) a (F a) | V]) :=
       (hU.hFun (α ⥤ B)).hFun (α ⥤ C)
     instance hasRevSubstPiFun : HasRevSubstPiFun (λ (_ : α) (_ : B) => C) := ⟨revSubstFun₃ α B C⟩
 
@@ -204,13 +206,13 @@ namespace HasExternalNonLinearLogic
 
   section
 
-    variable {α : Sort u} [hLin : HasExternalLinearLogic α U]
-             [hNonLin : HasExternalNonLinearLogic α U]
+    variable {α : Sort u} [hLin : HasExternalLinearLogic α V]
+             [hNonLin : HasExternalNonLinearLogic α V]
 
-    def substFun₂ {B : U} (F : α ⥤ B) (C : U) : (α ⥤ B ⥤ C) ⥤ (α ⥤ C) :=
+    def substFun₂ {B : V} (F : α ⥤ B) (C : V) : (α ⥤ B ⥤ C) ⥤ (α ⥤ C) :=
       swapFun (revSubstFun₃ α B C) F
 
-    instance revSubstFun.isFunApp₂' {B C : U} {F : α ⥤ B} {G : α ⥤ B ⥤ C} :
+    instance revSubstFun.isFunApp₂' {B C : V} {F : α ⥤ B} {G : α ⥤ B ⥤ C} :
         IsFunApp₂' (revSubstFun G F) :=
       ⟨⟨substFun₂ F C, G⟩⟩
 
@@ -218,8 +220,8 @@ namespace HasExternalNonLinearLogic
 
   section
 
-    variable (α : Sort u) [hLin : HasExternalLinearLogic α U]
-             [hNonLin : HasExternalNonLinearLogic α U] (B C : U)
+    variable (α : Sort u) [hLin : HasExternalLinearLogic α V]
+             [hNonLin : HasExternalNonLinearLogic α V] (B C : V)
 
     def substFun₃ : (α ⥤ B) ⥤ (α ⥤ B ⥤ C) ⥤ (α ⥤ C) := swapFun₂ (revSubstFun₃ α B C)
 
@@ -239,11 +241,11 @@ namespace HasNonLinearLogic
   -- shortcut for the functoriality algorithm. (Note that the "unreversed" variant is less useful
   -- because using a constant twice is not special.)
 
-  variable [HasNonLinearLogic U]
+  variable [HasNonLinearLogic V]
 
   section
 
-    variable {A B : U}
+    variable {A B : V}
 
     def revSelfAppFun (F : (A ⥤ B) ⥤ A) : (A ⥤ B) ⥤ B := dupFun (compFun₂ F B)
 
@@ -253,7 +255,7 @@ namespace HasNonLinearLogic
 
   section
 
-    variable (A B : U)
+    variable (A B : V)
 
     def revSelfAppFun₂ : ((A ⥤ B) ⥤ A) ⥤ (A ⥤ B) ⥤ B := dupFun₂ (A ⥤ B) B ⊙ compFun₃ (A ⥤ B) A B
 
@@ -263,7 +265,7 @@ namespace HasNonLinearLogic
     instance revSelfAppFun₂.isFunApp : IsFunApp (revSelfAppFun₂ A B) :=
       revCompFun.isFunApp ((A ⥤ B) ⥤ A)
 
-    local instance : HasType U (∀ F : (A ⥤ B) ⥤ A, [∀ G : A ⥤ B, (λ _ => B) (F G) | U]) :=
+    local instance : HasType V (∀ F : (A ⥤ B) ⥤ A, [∀ G : A ⥤ B, (λ _ => B) (F G) | V]) :=
       (hU.hFun ((A ⥤ B) ⥤ A)).hFun ((A ⥤ B) ⥤ B)
     instance hasPiSelfAppPi₂ : HasPiSelfAppPi₂ (λ _ : A => B) := ⟨revSelfAppFun₂ A B⟩
 

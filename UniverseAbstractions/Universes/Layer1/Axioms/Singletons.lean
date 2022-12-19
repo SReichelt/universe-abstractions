@@ -21,7 +21,7 @@ open HasFunctors
 
 class HasTop (U : Universe.{u}) [HasUnivFunctors U U] extends
     HasTypeWithIntro U PUnit.{u} where
-  defElimFun {B : U} (b : B) : [A ⥤ B]_{λ _ : A => b}
+  defElimFun {A : U} (a : A) : [T ⥤ A]_{λ _ : T => a}
 
 namespace HasTop
 
@@ -29,7 +29,7 @@ namespace HasTop
 
     variable (U : Universe) [HasUnivFunctors U U] [h : HasTop U] 
 
-    @[reducible] def Top : U := h.A
+    @[reducible] def Top : U := h.T
     prefix:max "⊤_" => HasTop.Top
 
     @[reducible] def top : ⊤_U := h.hIntro.intro PUnit.unit
@@ -39,14 +39,14 @@ namespace HasTop
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasTop U] 
 
-  @[reducible] def elimFun {B : U} (b : B) : ⊤_U ⥤ B := h.defElimFun b
+  @[reducible] def elimFun {A : U} (a : A) : ⊤_U ⥤ A := h.defElimFun a
 
 end HasTop
 
 
 class HasBot (U : Universe.{u}) [HasUnivFunctors U U] extends
     HasType U PEmpty.{u} where
-  defElimFun (B : U) : [A ⥤ B]_{λ e : A => PEmpty.elim (C := B) e}
+  defElimFun (Y : U) : [T ⥤ Y]_{λ e : T => PEmpty.elim (α := Y) e}
 
 namespace HasBot
 
@@ -54,7 +54,7 @@ namespace HasBot
 
     variable (U : Universe) [HasUnivFunctors U U] [h : HasBot U]
 
-    @[reducible] def Bot : U := h.A
+    @[reducible] def Bot : U := h.T
     prefix:max "⊥_" => HasBot.Bot
 
     instance hasIntro : HasIntro ⊥_U PEmpty.{u} := ⟨PEmpty.elim⟩
@@ -63,11 +63,11 @@ namespace HasBot
 
   variable {U : Universe} [HasUnivFunctors U U] [h : HasBot U]
 
-  @[reducible] def elim (e : ⊥_U) (A : U) : A := PEmpty.elim (h.hElim.elim e)
+  @[reducible] def elim (e : ⊥_U) (Y : U) : Y := PEmpty.elim (h.hElim.elim e)
 
-  @[reducible] def elimFun (A : U) : ⊥_U ⥤ A := h.defElimFun A
+  @[reducible] def elimFun (Y : U) : ⊥_U ⥤ Y := h.defElimFun Y
 
-  instance elim.isFunApp {e : ⊥_U} {A : U} : IsFunApp (elim e A) := ⟨elimFun A, e⟩
+  instance elim.isFunApp {e : ⊥_U} {Y : U} : IsFunApp (elim e Y) := ⟨elimFun Y, e⟩
 
   def Not (A : U) : U := A ⥤ ⊥_U
   prefix:max "~" => HasBot.Not

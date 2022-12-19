@@ -7,19 +7,19 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u
+universe u v
 
 open HasFunctors
 
 
 
-class HasExternalCoproducts (U : Universe.{u}) [HasUnivFunctors U U] (α β : Sort u)
+class HasExternalCoproducts (U : Universe) [HasUnivFunctors U U] (α : Sort u) (β : Sort v)
                             [HasFunctors α U] [HasFunctors β U] extends
     HasTypeWithIntro U (PSum α β) where
-  defLeftIntroFun  : [α ⥤ A]_{λ a => hIntro.intro (PSum.inl a)}
-  defRightIntroFun : [β ⥤ A]_{λ b => hIntro.intro (PSum.inr b)}
-  defElimFun₃ (C : U) :
-    [(α ⥤ C) ⥤ (β ⥤ C) ⥤ A ⥤ C]___{λ F G S => match hElim.elim S with
+  defLeftIntroFun  : [α ⥤ T]_{λ a => hIntro.intro (PSum.inl a)}
+  defRightIntroFun : [β ⥤ T]_{λ b => hIntro.intro (PSum.inr b)}
+  defElimFun₃ (Y : U) :
+    [(α ⥤ Y) ⥤ (β ⥤ Y) ⥤ T ⥤ Y]___{λ F G S => match hElim.elim S with
                                                 | PSum.inl a => F a
                                                 | PSum.inr b => G b}
 
@@ -27,23 +27,23 @@ namespace HasExternalCoproducts
 
   section
 
-    variable (U : Universe.{u}) [HasUnivFunctors U U] (α β : Sort u) [HasFunctors α U]
+    variable (U : Universe) [HasUnivFunctors U U] (α : Sort u) (β : Sort v) [HasFunctors α U]
              [HasFunctors β U] [h : HasExternalCoproducts U α β]
 
-    @[reducible] def Coprod : U := h.A
+    @[reducible] def Coprod : U := h.T
 
   end
 
   section
 
-    variable (U : Universe.{u}) [HasUnivFunctors U U]
+    variable (U : Universe) [HasUnivFunctors U U]
 
-    @[reducible] def leftIntro  {α : Sort u} (a : α) (β : Sort u) [HasFunctors α U]
+    @[reducible] def leftIntro  {α : Sort u} (a : α) (β : Sort v) [HasFunctors α U]
                                 [HasFunctors β U] [HasExternalCoproducts U α β] :
         Coprod U α β :=
       PSum.inl (β := β) a
 
-    @[reducible] def rightIntro (α : Sort u) {β : Sort u} (b : β) [HasFunctors α U]
+    @[reducible] def rightIntro (α : Sort u) {β : Sort v} (b : β) [HasFunctors α U]
                                 [HasFunctors β U] [HasExternalCoproducts U α β] :
         Coprod U α β :=
       PSum.inr (α := α) b
@@ -52,7 +52,7 @@ namespace HasExternalCoproducts
 
   section
 
-    variable (U : Universe.{u}) [HasUnivFunctors U U] (α β : Sort u) [HasFunctors α U]
+    variable (U : Universe) [HasUnivFunctors U U] (α : Sort u) (β : Sort v) [HasFunctors α U]
              [HasFunctors β U] [h : HasExternalCoproducts U α β]
 
     @[reducible] def leftIntroFun  : α ⥤ Coprod U α β := h.defLeftIntroFun
@@ -65,18 +65,18 @@ namespace HasExternalCoproducts
 
   section
 
-    variable {U : Universe.{u}} [HasUnivFunctors U U] {α β : Sort u} [HasFunctors α U]
+    variable {U : Universe} [HasUnivFunctors U U] {α : Sort u} {β : Sort v} [HasFunctors α U]
              [HasFunctors β U] [h : HasExternalCoproducts U α β]
 
-    @[reducible] def elim {C : U} (F : α ⥤ C) (G : β ⥤ C) (S : Coprod U α β) : C :=
+    @[reducible] def elim {Y : U} (F : α ⥤ Y) (G : β ⥤ Y) (S : Coprod U α β) : Y :=
       match h.hElim.elim S with
       | PSum.inl a => F a
       | PSum.inr b => G b
 
-    @[reducible] def elimFun {C : U} (F : α ⥤ C) (G : β ⥤ C) : Coprod U α β ⥤ C :=
-      (h.defElimFun₃ C) F G
+    @[reducible] def elimFun {Y : U} (F : α ⥤ Y) (G : β ⥤ Y) : Coprod U α β ⥤ Y :=
+      (h.defElimFun₃ Y) F G
 
-    instance elim.isFunApp {C : U} {F : α ⥤ C} {G : β ⥤ C} {S : Coprod U α β} :
+    instance elim.isFunApp {Y : U} {F : α ⥤ Y} {G : β ⥤ Y} {S : Coprod U α β} :
         IsFunApp (elim F G S) :=
       ⟨elimFun F G, S⟩
 
@@ -84,13 +84,13 @@ namespace HasExternalCoproducts
 
   section
 
-    variable {U : Universe.{u}} [HasUnivFunctors U U] (α β : Sort u) [HasFunctors α U]
+    variable {U : Universe} [HasUnivFunctors U U] (α : Sort u) (β : Sort v) [HasFunctors α U]
              [HasFunctors β U] [h : HasExternalCoproducts U α β]
 
-    @[reducible] def elimFun₃ (C : U) : (α ⥤ C) ⥤ (β ⥤ C) ⥤ (Coprod U α β ⥤ C) := h.defElimFun₃ C
+    @[reducible] def elimFun₃ (Y : U) : (α ⥤ Y) ⥤ (β ⥤ Y) ⥤ (Coprod U α β ⥤ Y) := h.defElimFun₃ Y
 
-    instance elimFun.isFunApp₂ {C : U} {F : α ⥤ C} {G : β ⥤ C} : IsFunApp₂ (elimFun F G) :=
-      ⟨elimFun₃ α β C, F, G⟩
+    instance elimFun.isFunApp₂ {Y : U} {F : α ⥤ Y} {G : β ⥤ Y} : IsFunApp₂ (elimFun F G) :=
+      ⟨elimFun₃ α β Y, F, G⟩
 
   end
 
@@ -117,11 +117,11 @@ namespace HasCoproducts
   @[reducible] def leftIntroFun  (A B : U) : A ⥤ A ⊔ B := HasExternalCoproducts.leftIntroFun  U A B
   @[reducible] def rightIntroFun (A B : U) : B ⥤ A ⊔ B := HasExternalCoproducts.rightIntroFun U A B
 
-  @[reducible] def elim {A B C : U} (F : A ⥤ C) (G : B ⥤ C) (S : A ⊔ B) : C :=
+  @[reducible] def elim {A B Y : U} (F : A ⥤ Y) (G : B ⥤ Y) (S : A ⊔ B) : Y :=
     HasExternalCoproducts.elim F G S
-  @[reducible] def elimFun {A B C : U} (F : A ⥤ C) (G : B ⥤ C) : A ⊔ B ⥤ C :=
+  @[reducible] def elimFun {A B Y : U} (F : A ⥤ Y) (G : B ⥤ Y) : A ⊔ B ⥤ Y :=
     HasExternalCoproducts.elimFun F G
-  @[reducible] def elimFun₃ (A B C : U) : (A ⥤ C) ⥤ (B ⥤ C) ⥤ (A ⊔ B ⥤ C) :=
-    HasExternalCoproducts.elimFun₃ A B C
+  @[reducible] def elimFun₃ (A B Y : U) : (A ⥤ Y) ⥤ (B ⥤ Y) ⥤ (A ⊔ B ⥤ Y) :=
+    HasExternalCoproducts.elimFun₃ A B Y
 
 end HasCoproducts

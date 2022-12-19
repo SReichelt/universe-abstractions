@@ -2591,7 +2591,7 @@ namespace HasLinearLogic
 
   instance toLayer1 (U : Universe) [HasPropositions Prp U] [h : HasLinearLogic U] :
       Layer1.HasLinearLogic U where
-    defIdFun       A     := (h.defIdFun       A).toLayer1
+    defIdFun       T     := (h.defIdFun       A).toLayer1
     defRevAppFun₂  A B   := (h.defRevAppFun₂  A B).toLayer1
     defRevCompFun₃ A B C := (h.defRevCompFun₃ A B C).toLayer1
 

@@ -46,11 +46,11 @@ namespace HasProducts
 
   @[reducible] def evalFun (A B : U) : (A ⥤ B) ⊓ A ⥤ B := elimFun (HasIdFun.appFun₂ A B)
 
-  def invElimFun₂ {A B C : U} (F : A ⊓ B ⥤ C) : A ⥤ B ⥤ C := Λ a b => F (intro a b)
-  def invElimFun₃ (A B C : U) : (A ⊓ B ⥤ C) ⥤ (A ⥤ B ⥤ C) := Λ F => invElimFun₂ F
+  def invElimFun₂ {A B Y : U} (F : A ⊓ B ⥤ Y) : A ⥤ B ⥤ Y := Λ a b => F (intro a b)
+  def invElimFun₃ (A B Y : U) : (A ⊓ B ⥤ Y) ⥤ (A ⥤ B ⥤ Y) := Λ F => invElimFun₂ F
 
-  instance invElimFun₂.isFunApp {A B C : U} {F : A ⊓ B ⥤ C} : IsFunApp (invElimFun₂ F) :=
-    ⟨invElimFun₃ A B C, F⟩
+  instance invElimFun₂.isFunApp {A B Y : U} {F : A ⊓ B ⥤ Y} : IsFunApp (invElimFun₂ F) :=
+    ⟨invElimFun₃ A B Y, F⟩
 
   def replaceFstFun {A B : U} (F : A ⥤ B) (C : U) : A ⊓ C ⥤ B ⊓ C := elimFun (Λ a b => intro (F a) b)
   def replaceFstFun₂ (A B C : U) : (A ⥤ B) ⥤ (A ⊓ C ⥤ B ⊓ C) := Λ F => replaceFstFun F C
@@ -64,8 +64,10 @@ namespace HasProducts
   instance replaceSndFun.isFunApp {A B C : U} {F : B ⥤ C} : IsFunApp (replaceSndFun A F) :=
     ⟨replaceSndFun₂ A B C, F⟩
 
-  def replaceBothFun {A B C D : U} (F : A ⥤ B) (G : C ⥤ D) : A ⊓ C ⥤ B ⊓ D := elimFun (Λ a b => intro (F a) (G b))
-  def replaceBothFun₃ (A B C D : U) : (A ⥤ B) ⥤ (C ⥤ D) ⥤ (A ⊓ C ⥤ B ⊓ D) := Λ F G => replaceBothFun F G
+  def replaceBothFun {A B C D : U} (F : A ⥤ B) (G : C ⥤ D) : A ⊓ C ⥤ B ⊓ D :=
+    elimFun (Λ a b => intro (F a) (G b))
+  def replaceBothFun₃ (A B C D : U) : (A ⥤ B) ⥤ (C ⥤ D) ⥤ (A ⊓ C ⥤ B ⊓ D) :=
+    Λ F G => replaceBothFun F G
 
   instance replaceBothFun.isFunApp₂ {A B C D : U} {F : A ⥤ B} {G : C ⥤ D} :
       IsFunApp₂ (replaceBothFun F G) :=
@@ -76,16 +78,16 @@ namespace HasProducts
   def intro₃LFun₃ (A B C : U) : A ⥤ B ⥤ C ⥤ (A ⊓ B) ⊓ C := Λ a b c => intro (intro a b) c
   def intro₃RFun₃ (A B C : U) : A ⥤ B ⥤ C ⥤ A ⊓ (B ⊓ C) := Λ a b c => intro a (intro b c)
 
-  def elim₃LFun {A B C D : U} (F : A ⥤ B ⥤ C ⥤ D) : (A ⊓ B) ⊓ C ⥤ D := elimFun (elimFun F)
-  def elim₃LFun₂ (A B C D : U) : (A ⥤ B ⥤ C ⥤ D) ⥤ ((A ⊓ B) ⊓ C ⥤ D) := Λ F => elim₃LFun F
-  def elim₃RFun {A B C D : U} (F : A ⥤ B ⥤ C ⥤ D) : A ⊓ (B ⊓ C) ⥤ D := elimFun (Λ a => elimFun (F a))
-  def elim₃RFun₂ (A B C D : U) : (A ⥤ B ⥤ C ⥤ D) ⥤ (A ⊓ (B ⊓ C) ⥤ D) := Λ F => elim₃RFun F
+  def elim₃LFun {A B C Y : U} (F : A ⥤ B ⥤ C ⥤ Y) : (A ⊓ B) ⊓ C ⥤ Y := elimFun (elimFun F)
+  def elim₃LFun₂ (A B C Y : U) : (A ⥤ B ⥤ C ⥤ Y) ⥤ ((A ⊓ B) ⊓ C ⥤ Y) := Λ F => elim₃LFun F
+  def elim₃RFun {A B C Y : U} (F : A ⥤ B ⥤ C ⥤ Y) : A ⊓ (B ⊓ C) ⥤ Y := elimFun (Λ a => elimFun (F a))
+  def elim₃RFun₂ (A B C Y : U) : (A ⥤ B ⥤ C ⥤ Y) ⥤ (A ⊓ (B ⊓ C) ⥤ Y) := Λ F => elim₃RFun F
 
-  instance elim₃LFun.isFunApp {A B C D : U} {F : A ⥤ B ⥤ C ⥤ D} : IsFunApp (elim₃LFun F) :=
-    ⟨elim₃LFun₂ A B C D, F⟩
+  instance elim₃LFun.isFunApp {A B C Y : U} {F : A ⥤ B ⥤ C ⥤ Y} : IsFunApp (elim₃LFun F) :=
+    ⟨elim₃LFun₂ A B C Y, F⟩
 
-  instance elim₃RFun.isFunApp {A B C D : U} {F : A ⥤ B ⥤ C ⥤ D} : IsFunApp (elim₃RFun F) :=
-    ⟨elim₃RFun₂ A B C D, F⟩
+  instance elim₃RFun.isFunApp {A B C Y : U} {F : A ⥤ B ⥤ C ⥤ Y} : IsFunApp (elim₃RFun F) :=
+    ⟨elim₃RFun₂ A B C Y, F⟩
 
   def assocLRFun (A B C : U) : (A ⊓ B) ⊓ C ⥤ A ⊓ (B ⊓ C) := elim₃LFun (intro₃RFun₃ A B C)
   def assocRLFun (A B C : U) : A ⊓ (B ⊓ C) ⥤ (A ⊓ B) ⊓ C := elim₃RFun (intro₃LFun₃ A B C)

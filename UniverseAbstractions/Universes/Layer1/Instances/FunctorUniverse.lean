@@ -17,100 +17,99 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u uu uv w
+universe u v
 
 open HasPiType HasFunctors HasLinearLogic HasExternalLinearLogic HasExternalSubLinearLogic
      HasExternalNonLinearLogic Prerelation HasPreorderRelation HasEquivalenceRelationBase
 
 
 
-def functorUniverse (α : Sort u) (U : Universe.{u, uu}) [HasUnivFunctors U U]
-                    [HasExternalFullLogic α U] :
-    Universe.{u, uu} where
-  I := U
+def functorUniverse (α : Sort u) (V : Universe) [HasUnivFunctors V V] [HasExternalFullLogic α V] :
+    Universe where
+  I := V
   h := ⟨λ B => α ⥤ B⟩
 
 namespace functorUniverse
 
-  notation:20 "{" α:0 " ⥤} " U:21 => functorUniverse α U
+  notation:20 "{" α:0 " ⥤} " V:21 => functorUniverse α V
 
-  variable (α : Sort u) {U : Universe.{u, uu}} [HasLinearLogic U] [HasExternalFullLogic α U]
+  variable (α : Sort u) {V : Universe} [HasLinearLogic V] [HasExternalFullLogic α V]
 
-  def type (B : U) : {α ⥤} U := B
+  def type (B : V) : {α ⥤} V := B
   infixr:20 " !⥤ " => functorUniverse.type
 
-  def embedInst {B : U} (b : B) : α !⥤ B := constFun α (B := B) b
+  def embedInst {B : V} (b : B) : α !⥤ B := constFun α (B := B) b
 
-  instance hasFunType (B C : U) : HasType ({α ⥤} U) ((α !⥤ B) → (α !⥤ C)) where
-    A     := (B ⥤ C : U)
+  instance hasFunType (B C : V) : HasType ({α ⥤} V) ((α !⥤ B) → (α !⥤ C)) where
+    T     := (B ⥤ C : V)
     hElim := ⟨revSubstFun⟩
 
-  instance hasFunctors (B : U) : HasFunctors (α !⥤ B) ({α ⥤} U) where
-    hFun (C : U) := hasFunType α B C
+  instance hasFunctors (B : V) : HasFunctors (α !⥤ B) ({α ⥤} V) where
+    hFun (C : V) := hasFunType α B C
 
-  instance hasUnivFunctors : HasUnivFunctors ({α ⥤} U) ({α ⥤} U) where
-    hFun (B : U) := hasFunctors α B
+  instance hasUnivFunctors : HasUnivFunctors ({α ⥤} V) ({α ⥤} V) where
+    hFun (B : V) := hasFunctors α B
 
-  def embedFunctor {B C : U} (F : B ⥤ C) : (α !⥤ B) ⥤ (α !⥤ C) := embedInst α F
+  def embedFunctor {B C : V} (F : B ⥤ C) : (α !⥤ B) ⥤ (α !⥤ C) := embedInst α F
 
-  instance hasLinearLogic : HasLinearLogic ({α ⥤} U) where
-    defIdFun       (B     : U) := embedFunctor α (idFun B)
-    defRevAppFun₂  (B C   : U) := embedFunctor α (revAppFun₂ B C)
-    defRevCompFun₃ (B C D : U) := embedFunctor α (revCompFun₃ B C D)
+  instance hasLinearLogic : HasLinearLogic ({α ⥤} V) where
+    defIdFun       (B     : V) := embedFunctor α (idFun B)
+    defRevAppFun₂  (B C   : V) := embedFunctor α (revAppFun₂ B C)
+    defRevCompFun₃ (B C D : V) := embedFunctor α (revCompFun₃ B C D)
 
-  instance hasSubLinearLogic [HasSubLinearLogic U] : HasSubLinearLogic ({α ⥤} U) where
-    defConstFun₂ (B C : U) := embedFunctor α (constFun₂ B C)
+  instance hasSubLinearLogic [HasSubLinearLogic V] : HasSubLinearLogic ({α ⥤} V) where
+    defConstFun₂ (B C : V) := embedFunctor α (constFun₂ B C)
 
-  instance hasAffineLogic [HasSubLinearLogic U] : HasAffineLogic ({α ⥤} U) := ⟨⟩
+  instance hasAffineLogic [HasSubLinearLogic V] : HasAffineLogic ({α ⥤} V) := ⟨⟩
 
-  instance hasNonLinearLogic [HasNonLinearLogic U] : HasNonLinearLogic ({α ⥤} U) where
-    defDupFun₂ (B C : U) := embedFunctor α (dupFun₂ B C)
+  instance hasNonLinearLogic [HasNonLinearLogic V] : HasNonLinearLogic ({α ⥤} V) where
+    defDupFun₂ (B C : V) := embedFunctor α (dupFun₂ B C)
 
-  instance hasFullLogic [HasSubLinearLogic U] [HasNonLinearLogic U] : HasFullLogic ({α ⥤} U) := ⟨⟩
+  instance hasFullLogic [HasSubLinearLogic V] [HasNonLinearLogic V] : HasFullLogic ({α ⥤} V) := ⟨⟩
 
-  def embeddedTopElimFun [HasTop U] {B : U} (F : α ⥤ B) : α ⥤ (⊤_U ⥤ B) :=
+  def embeddedTopElimFun [HasTop V] {B : V} (F : α ⥤ B) : α ⥤ (⊤_V ⥤ B) :=
     Λ a => HasTop.elimFun (F a)
 
-  instance hasTop [HasTop U] : HasTop ({α ⥤} U) where
-    A            := ⊤_U
+  instance hasTop [HasTop V] : HasTop ({α ⥤} V) where
+    T            := ⊤_V
     hElim        := ⟨λ _ => PUnit.unit⟩
-    hIntro       := ⟨λ _ => embedInst α ∗_U⟩
+    hIntro       := ⟨λ _ => embedInst α ∗_V⟩
     defElimFun F := embeddedTopElimFun α F
 
   section
 
-    variable [HasProducts U] [HasSubLinearLogic U]
+    variable [HasProducts V] [HasSubLinearLogic V]
 
-    def embeddedFst {B C : U} (F : α ⥤ B ⊓ C) : α ⥤ B := Λ a => HasProducts.fst (F a)
-    def embeddedSnd {B C : U} (F : α ⥤ B ⊓ C) : α ⥤ C := Λ a => HasProducts.snd (F a)
+    def embeddedFst {B C : V} (F : α ⥤ B ⊓ C) : α ⥤ B := Λ a => HasProducts.fst (F a)
+    def embeddedSnd {B C : V} (F : α ⥤ B ⊓ C) : α ⥤ C := Λ a => HasProducts.snd (F a)
 
-    def embeddedIntro {B C : U} (F : α ⥤ B) (G : α ⥤ C) : α ⥤ B ⊓ C :=
+    def embeddedIntro {B C : V} (F : α ⥤ B) (G : α ⥤ C) : α ⥤ B ⊓ C :=
       Λ a => HasProducts.intro (F a) (G a)
-    def embeddedIntroFun₂ (B C : U) : α ⥤ B ⥤ C ⥤ B ⊓ C :=
+    def embeddedIntroFun₂ (B C : V) : α ⥤ B ⥤ C ⥤ B ⊓ C :=
       embedInst α (HasProducts.introFun₂ B C)
 
-    def embeddedElimFun {B C D : U} (F : α ⥤ B ⥤ C ⥤ D) : α ⥤ (B ⊓ C ⥤ D) :=
+    def embeddedElimFun {B C D : V} (F : α ⥤ B ⥤ C ⥤ D) : α ⥤ (B ⊓ C ⥤ D) :=
       Λ a => HasProducts.elimFun (F a)
-    def embeddedElimFun₂ (B C D : U) : α ⥤ (B ⥤ C ⥤ D) ⥤ (B ⊓ C ⥤ D) :=
+    def embeddedElimFun₂ (B C D : V) : α ⥤ (B ⥤ C ⥤ D) ⥤ (B ⊓ C ⥤ D) :=
       embedInst α (HasProducts.elimFun₂ B C D)
 
-    instance hasExternalProducts (B C : U) : HasExternalProducts ({α ⥤} U) (α !⥤ B) (α !⥤ C) where
-      A                   := (B ⊓ C : U)
+    instance hasExternalProducts (B C : V) : HasExternalProducts ({α ⥤} V) (α !⥤ B) (α !⥤ C) where
+      T                   := (B ⊓ C : V)
       hElim               := ⟨λ P => ⟨embeddedFst α P, embeddedSnd α P⟩⟩
       hIntro              := ⟨λ p => embeddedIntro α p.fst p.snd⟩
       defIntroFun₂        := embeddedIntroFun₂ α B C
-      defElimFun₂ (D : U) := embeddedElimFun₂ α B C D
+      defElimFun₂ (D : V) := embeddedElimFun₂ α B C D
 
-    instance hasProducts : HasProducts ({α ⥤} U) where
-      hProd (B C : U) := hasExternalProducts α B C
+    instance hasProducts : HasProducts ({α ⥤} V) where
+      hProd (B C : V) := hasExternalProducts α B C
 
   end
 
   section
 
-    variable {β : Sort w} (R : Prerelation β U)
+    variable {β : Sort v} (R : Prerelation β V)
 
-    def embedPrerelation : Prerelation β ({α ⥤} U) := R
+    def embedPrerelation : Prerelation β ({α ⥤} V) := R
 
     instance isFull [hR : IsFull R] : IsFull (embedPrerelation α R) :=
       ⟨λ B C => embedInst α (hR.inst B C)⟩
@@ -129,7 +128,7 @@ namespace functorUniverse
 
   section
 
-    variable {β : Sort w} [h : HasPreorderRelation U β] [HasIsomorphisms β]
+    variable {β : Sort v} [h : HasPreorderRelation V β] [HasIsomorphisms β]
 
     def embeddedIsoToHom  {b c : β} (e : α ⥤ b ≃ c) : α ⥤ (b ⟶ c) :=
       Λ a => HasIsomorphisms.toHom  (e a)
@@ -150,20 +149,20 @@ namespace functorUniverse
 
   section
 
-    variable [HasEquivalences U]
+    variable [HasEquivalences V]
 
-    instance hasIsoType (B C : U) : HasType ({α ⥤} U) (DefIso (α !⥤ B) (α !⥤ C)) where
-      A     := (B ≃ C : U)
+    instance hasIsoType (B C : V) : HasType ({α ⥤} V) (DefIso (α !⥤ B) (α !⥤ C)) where
+      T     := (B ≃ C : V)
       hElim := ⟨λ E => ⟨embeddedIsoToHom α E, embeddedIsoInvHom α E⟩⟩
 
-    instance hasEquivalences : HasEquivalences ({α ⥤} U) where
-      hIsoType        (B C : U)   := hasIsoType α B C
-      defToHomFun     (B C : U)   := embedFunctor α (HasEquivalences.toFun₂ B C)
-      defRefl         (B : U)     := embeddedIsoRefl α B
+    instance hasEquivalences : HasEquivalences ({α ⥤} V) where
+      hIsoType        (B C : V)   := hasIsoType α B C
+      defToHomFun     (B C : V)   := embedFunctor α (HasEquivalences.toFun₂ B C)
+      defRefl         (B : V)     := embeddedIsoRefl α B
       defSymm         F           := embeddedIsoSymm α F
-      defSymmFun      (B C : U)   := embeddedIsoSymmFun α B C
+      defSymmFun      (B C : V)   := embeddedIsoSymmFun α B C
       defTrans        F G         := embeddedIsoTrans α F G
-      defRevTransFun₂ (B C D : U) := embeddedIsoRevTransFun₂ α B C D
+      defRevTransFun₂ (B C D : V) := embeddedIsoRevTransFun₂ α B C D
 
     -- TODO standard equivalences
 

@@ -73,40 +73,40 @@ end mkHasInstances
 
 
 
-structure _Universe (u : Level) where
-  {uu : Level}
-  U   : _Universe.typedExpr u uu
+structure _Universe where
+  {u uu : Level}
+  U : _Universe.typedExpr u uu
 
 namespace _Universe
 
-  instance (u : Level) : Coe (_Universe u) Expr := ⟨_Universe.U⟩
+  instance : Coe _Universe Expr := ⟨_Universe.U⟩
 
-  def mkFreshMVar (u : Level) : MetaM (_Universe u) := do
+  def mkFreshMVar : MetaM _Universe := do
+    let u ← mkFreshLevelMVar
     let uu ← mkFreshLevelMVar
     let U : typedExpr u uu ← TypedExpr.mkFreshMVar
     pure ⟨U⟩
 
-  variable {u : Level}
-
-  def instantiate (U : _Universe u) (u' : Level) : MetaM (_Universe u') := do
+  def instantiate (U : _Universe) : MetaM _Universe := do
+    let u ← instantiateLevelMVars U.u
     let uu ← instantiateLevelMVars U.uu
-    let U : typedExpr u' uu ← U.U.instantiate
+    let U : typedExpr u uu ← U.U.instantiate
     pure ⟨U⟩
 
-  def mkInst' (U : _Universe u) : _sort.mkSortType U.uu :=
-    mkHasInstances.mkInst' (I := sort u U.uu) U.U
-  @[reducible] def mkInst (U : _Universe u) : _sort := mkInst' U
+  def mkInst' (U : _Universe) : _sort.mkSortType U.uu :=
+    mkHasInstances.mkInst' (I := sort U.u U.uu) U.U
+  @[reducible] def mkInst (U : _Universe) : _sort := mkInst' U
   notation "_[" U:0 "]" => _Universe.mkInst U
 
-  instance hasInstInst (U : _Universe u) : mkHasInstances u _[U] := mkHasInstances.univInstInst U.U
+  instance hasInstInst (U : _Universe) : mkHasInstances U.u _[U] := mkHasInstances.univInstInst U.U
 
-  @[reducible] def mkInstInst' {U : _Universe u} (A : _[U]) : _sort := mkHasInstances.mkInst A
+  @[reducible] def mkInstInst' {U : _Universe} (A : _[U]) : _sort := mkHasInstances.mkInst A
 
-  def reflect (U : _Universe u) := exprUniverse (mkInstInst' (U := U))
-  instance : Coe (_Universe u) Universe := ⟨_Universe.reflect⟩
-  instance : CoeSort (_Universe u) Type := ⟨λ U => U⟩
+  def reflect (U : _Universe) := exprUniverse (mkInstInst' (U := U))
+  instance : Coe (_Universe) Universe := ⟨_Universe.reflect⟩
+  instance : CoeSort (_Universe) Type := ⟨λ U => U⟩
 
-  variable {U : _Universe u}
+  variable {U : _Universe}
 
   @[reducible] def reflectInst (A : _[U]) : U := A
   notation "_|" A:0 "|" => _Universe.reflectInst A
@@ -117,10 +117,10 @@ namespace _Universe
   @[reducible] def mkInstInst (A : U) : _sort := mkInstInst' _(A)
   notation "_⌈" A:0 "⌉" => _Universe.mkInstInst A
 
-  def defInstInstFun (U : _Universe u) : [_[U] ⥤ _sort.mkSortType u]_{λ A : U => _⌈A⌉.α} :=
+  def defInstInstFun (U : _Universe) : [_[U] ⥤ _sort.mkSortType U.u]_{λ A : U => _⌈A⌉.α} :=
     mkHasInstances.defInstFun _[U]
 
-  @[reducible] def instInstFun (U : _Universe u) : _[U] ⥤ _sort.mkSortType u := defInstInstFun U
+  @[reducible] def instInstFun (U : _Universe) : _[U] ⥤ _sort.mkSortType U.u := defInstInstFun U
 
   def mkFreshTypeMVar : MetaM U := TypedExpr.mkFreshMVar (α := _[U].α)
   def mkFreshInstMVar {A : U} : MetaM A := TypedExpr.mkFreshMVar (α := _⌈A⌉.α)

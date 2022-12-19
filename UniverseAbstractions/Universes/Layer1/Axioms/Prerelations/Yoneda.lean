@@ -59,7 +59,7 @@ namespace HasPreorderRelation
     def covariantYonedaInvFun (b : α) : F a ⥤ (a ⟶ b) ⥤ F b := Λ x => covariantYonedaInv F a x b
 
     instance hasCovariantYonedaPiType : HasType V (∀ b, (a ⟶ b) ⥤ F b) where
-      A     := F a
+      T     := F a
       hElim := ⟨covariantYonedaInv F a⟩
 
     instance hasCovariantYonedaPiAppFun : HasPiAppFun (λ b => (a ⟶ b) ⥤ F b) :=
@@ -82,7 +82,7 @@ namespace HasPreorderRelation
       Λ y => contravariantYonedaInv F b y a
 
     instance hasContravariantYonedaPiType : HasType V (∀ a, (a ⟶ b) ⥤ F a) where
-      A     := F b
+      T     := F b
       hElim := ⟨contravariantYonedaInv F b⟩
 
     instance hasContravariantYonedaPiAppFun : HasPiAppFun (λ a => (a ⟶ b) ⥤ F a) :=

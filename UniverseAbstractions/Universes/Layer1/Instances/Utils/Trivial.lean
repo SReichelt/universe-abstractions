@@ -12,7 +12,7 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe u u' u''
+universe u u' u'' v
 
 open HasTypeWithIntro HasPiType
 
@@ -33,15 +33,13 @@ namespace HasPiTypeWithIntro
       HasSwapPi₂ P :=
     ⟨λ _ => defInst⟩
 
-  instance hasCompFunPi (α : Sort u) {V : Universe.{u}} [HasFunctors α V] {B : V} {W : Universe}
-                        (Q : B → W) [HasType W (∀ b, Q b)]
-                        [∀ F : α ⥤ B, HasTypeWithIntro W (∀ a, Q (F a))] :
+  instance hasCompFunPi (α : Sort u) {V W : Universe} [HasFunctors α V] {B : V} (Q : B → W)
+                        [HasType W (∀ b, Q b)] [∀ F : α ⥤ B, HasTypeWithIntro W (∀ a, Q (F a))] :
       HasCompFunPi α Q :=
     ⟨λ _ _ => defInst⟩
 
-  instance hasRevCompFunPi₂ (α : Sort u) {V : Universe.{u}} [HasFunctors α V] {B : V} {W : Universe}
-                            (Q : B → W) [HasType W (∀ b, Q b)]
-                            [∀ F : α ⥤ B, HasTypeWithIntro W (∀ a, Q (F a))]
+  instance hasRevCompFunPi₂ (α : Sort u) {V W : Universe} [HasFunctors α V] {B : V} (Q : B → W)
+                            [HasType W (∀ b, Q b)] [∀ F : α ⥤ B, HasTypeWithIntro W (∀ a, Q (F a))]
                             [HasTypeWithIntro W (∀ F : α ⥤ B, [∀ a, Q (F a) | W])] :
       HasRevCompFunPi₂ α Q :=
     ⟨λ _ => defInst⟩
@@ -55,13 +53,13 @@ namespace HasPiTypeWithIntro
       HasDupPi P :=
     ⟨λ _ => defInst⟩
 
-  instance hasPiSelfAppPi {U V : Universe.{u}} [HasUnivFunctors V U] {A : U} (Q : A → V)
+  instance hasPiSelfAppPi {U V : Universe} [HasUnivFunctors V U] {A : U} (Q : A → V)
                           [HasType V (∀ a, Q a)]
                           [∀ F : Pi Q ⥤ A, HasTypeWithIntro V (∀ G, Q (F G))] :
       HasPiSelfAppPi Q :=
     ⟨λ _ => defInst⟩
 
-  instance hasPiSelfAppPi₂ {U V : Universe.{u}} [HasUnivFunctors V U] {A : U} (Q : A → V)
+  instance hasPiSelfAppPi₂ {U V : Universe} [HasUnivFunctors V U] {A : U} (Q : A → V)
                            [HasType V (∀ a, Q a)]
                            [∀ F : Pi Q ⥤ A, HasTypeWithIntro V (∀ G, Q (F G))]
                            [HasTypeWithIntro V (∀ F : Pi Q ⥤ A, [∀ G, Q (F G) | V])] :
@@ -85,24 +83,24 @@ namespace HasPiTypeWithIntro
 end HasPiTypeWithIntro
 
 
-class HasFunctorsWithIntro (α : Sort u) (U : Universe.{u}) where
-  [hFun (Y : U) : HasTypeWithIntro U (α → Y)]
+class HasFunctorsWithIntro (α : Sort u) (V : Universe) where
+  [hFun (Y : V) : HasTypeWithIntro V (α → Y)]
 
 namespace HasFunctorsWithIntro
 
-  instance (α : Sort u) {U : Universe.{u}} [h : HasFunctorsWithIntro α U] (Y : U) :
-      HasTypeWithIntro U (α → Y) :=
+  instance (α : Sort u) {V : Universe} [h : HasFunctorsWithIntro α V] (Y : V) :
+      HasTypeWithIntro V (α → Y) :=
     h.hFun Y
 
-  instance (α : Sort u) (U : Universe.{u}) [HasFunctorsWithIntro α U] : HasFunctors α U := ⟨⟩
+  instance (α : Sort u) (V : Universe) [HasFunctorsWithIntro α V] : HasFunctors α V := ⟨⟩
 
-  def defInst₂ {α β : Sort u} {U : Universe.{u}} [HasFunctorsWithIntro α U]
-               [HasFunctorsWithIntro β U] {Y : U} {f : α → β → Y} :
+  def defInst₂ {α : Sort u} {β : Sort u'} {V : Universe} [HasFunctorsWithIntro α V]
+               [HasFunctorsWithIntro β V] {Y : V} {f : α → β → Y} :
       [α ⥤ β ⥤ Y]__{f} :=
     defInst (α := α → (β ⥤ Y)) (a := λ a => defInst (a := f a))
 
-  def defInst₃ {α β γ : Sort u} {U : Universe.{u}} [HasFunctorsWithIntro α U]
-               [HasFunctorsWithIntro β U] [HasFunctorsWithIntro γ U] {Y : U} {f : α → β → γ → Y} :
+  def defInst₃ {α : Sort u} {β : Sort u'} {γ : Sort u''} {V : Universe} [HasFunctorsWithIntro α V]
+               [HasFunctorsWithIntro β V] [HasFunctorsWithIntro γ V] {Y : V} {f : α → β → γ → Y} :
       [α ⥤ β ⥤ γ ⥤ Y]___{f} :=
     defInst (α := α → (β ⥤ γ ⥤ Y)) (a := λ a => defInst₂ (f := f a))
 
@@ -111,16 +109,16 @@ end HasFunctorsWithIntro
 open HasFunctorsWithIntro
 
 
-class HasUnivFunctorsWithIntro (U V : Universe.{u}) where
+class HasUnivFunctorsWithIntro (U V : Universe) where
   [hFun (A : U) : HasFunctorsWithIntro A V]
 
 namespace HasUnivFunctorsWithIntro
 
-  instance {U : Universe.{u}} (A : U) (V : Universe.{u}) [h : HasUnivFunctorsWithIntro U V] :
+  instance {U : Universe} (A : U) (V : Universe) [h : HasUnivFunctorsWithIntro U V] :
       HasFunctorsWithIntro A V :=
     h.hFun A
 
-  instance (U V : Universe.{u}) [HasUnivFunctorsWithIntro U V] : HasUnivFunctors U V := ⟨⟩
+  instance (U V : Universe) [HasUnivFunctorsWithIntro U V] : HasUnivFunctors U V := ⟨⟩
 
   instance hasIdFun {U : Universe} [HasUnivFunctorsWithIntro U U] (A : U) : HasIdFun A := ⟨defInst⟩
 
@@ -136,9 +134,8 @@ namespace HasUnivFunctorsWithIntro
       HasSwapPiFun P :=
     ⟨defInst⟩
 
-  instance hasRevCompFunPiFun (α : Sort u) {V : Universe.{u}} [HasFunctors α V] {B : V}
-                              {W : Universe} [HasUnivFunctorsWithIntro W W] (Q : B → W)
-                              [HasType W (∀ b, Q b)]
+  instance hasRevCompFunPiFun (α : Sort u) {V W : Universe} [HasUnivFunctorsWithIntro W W]
+                              [HasFunctors α V] {B : V} (Q : B → W) [HasType W (∀ b, Q b)]
                               [∀ F : α ⥤ B, HasTypeWithIntro W (∀ a, Q (F a))]
                               [HasTypeWithIntro W (∀ F : α ⥤ B, [∀ a, Q (F a) | W])] :
       HasRevCompFunPiFun α Q :=
@@ -173,26 +170,35 @@ namespace HasUnivFunctorsWithIntro
       HasBot U where
     defElimFun _ := defInst
 
-  instance hasExternalProducts (U : Universe.{u}) [HasUnivFunctorsWithIntro U U] (α β : Sort u)
-                               [HasFunctorsWithIntro α U] [HasFunctorsWithIntro β U]
+  instance hasExternalSigmaType (U : Universe) [HasUnivFunctorsWithIntro U U] {α : Sort u}
+                                (β : α → Sort v) [∀ a, HasFunctorsWithIntro (β a) U]
+                                [∀ Y : U, HasTypeWithIntro U (∀ a, β a ⥤ Y)]
+                                [HasTypeWithIntro U (PSigma β)] :
+      HasExternalSigmaType U β where
+    defIntroFun   _ := defInst
+    defIntroFunPi   := defInst
+    defElimFun₂   _ := defInst₂
+
+  instance hasExternalProducts (U : Universe) [HasUnivFunctorsWithIntro U U] (α : Sort u)
+                               (β : Sort v) [HasFunctorsWithIntro α U] [HasFunctorsWithIntro β U]
                                [HasTypeWithIntro U (PProd α β)] :
       HasExternalProducts U α β where
     defIntroFun₂   := defInst₂
     defElimFun₂  _ := defInst₂
 
-  instance hasProducts (U : Universe.{u}) [HasUnivFunctorsWithIntro U U]
+  instance hasProducts (U : Universe) [HasUnivFunctorsWithIntro U U]
                        [∀ (A B : U), HasTypeWithIntro U (PProd A B)] :
       HasProducts U := ⟨⟩
 
-  instance hasExternalCoproducts (U : Universe.{u}) [HasUnivFunctorsWithIntro U U] (α β : Sort u)
-                                 [HasFunctorsWithIntro α U] [HasFunctorsWithIntro β U]
+  instance hasExternalCoproducts (U : Universe) [HasUnivFunctorsWithIntro U U]  (α : Sort u)
+                                 (β : Sort v) [HasFunctorsWithIntro α U] [HasFunctorsWithIntro β U]
                                  [HasTypeWithIntro U (PSum α β)] :
       HasExternalCoproducts U α β where
     defLeftIntroFun    := defInst
     defRightIntroFun   := defInst
     defElimFun₃      _ := defInst₃
 
-  instance hasCoproducts (U : Universe.{u}) [HasUnivFunctorsWithIntro U U]
+  instance hasCoproducts (U : Universe) [HasUnivFunctorsWithIntro U U]
                          [∀ (A B : U), HasTypeWithIntro U (PSum A B)] :
       HasCoproducts U := ⟨⟩
 
@@ -216,9 +222,9 @@ end HasPiTypeWithIntro
 
 namespace HasFunctorsWithIntro
 
-  instance hasExternalFullLogic (α : Sort u) (U : Universe.{u}) [HasUnivFunctorsWithIntro U U]
-                                [HasFunctorsWithIntro α U] :
-      HasExternalFullLogic α U where
+  instance hasExternalFullLogic (α : Sort u) (V : Universe) [HasUnivFunctorsWithIntro V V]
+                                [HasFunctorsWithIntro α V] :
+      HasExternalFullLogic α V where
     defRevAppFun₂  _   := defInst₂
     defRevCompFun₃ _ _ := defInst₃
     defConstFun₂   _   := defInst₂
@@ -386,7 +392,7 @@ namespace HasProducts
   def hasIsomorphismsWithIntro (α : Sort u) {V : Universe} [HasUnivFunctorsWithIntro V V]
                                [HasProducts V] [HasPreorderRelation V α] :
       HasPreorderRelation.HasIsomorphismsWithIntro α where
-    hIsoType a b := { A      := (a ⟶ b) ⊓ (b ⟶ a)
+    hIsoType a b := { T      := (a ⟶ b) ⊓ (b ⟶ a)
                       hElim  := ⟨λ P => ⟨fst P, snd P⟩⟩,
                       hIntro := ⟨λ ⟨toHom, invHom⟩ => intro toHom invHom⟩ }
 

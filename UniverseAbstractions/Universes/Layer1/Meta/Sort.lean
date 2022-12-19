@@ -58,7 +58,7 @@ namespace _sort
 
   def hasPiType'' {α : _sort} {v : Level} {p : α → _sort} (P : Q($α.α → Sort v)) :
       HasType _sort (∀ a, p a) where
-    A     := ⟨mkForAll       α.α P⟩
+    T     := ⟨mkForAll       α.α P⟩
     hElim := ⟨mkForAll.mkApp α.α P⟩
 
   def hasPiType' {α : _sort} {v : Level} {p : α → mkSortType v} (P : Q($α.α → Sort v)) :

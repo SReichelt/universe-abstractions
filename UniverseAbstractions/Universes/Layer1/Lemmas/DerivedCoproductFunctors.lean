@@ -25,26 +25,26 @@ namespace HasCoproducts
 
   variable {U : Universe} [HasLinearLogic U] [HasCoproducts U]
 
-  def leftCoIntro {A B C : U} (F : A ⊔ B ⥤ C) (a : A) : C := F (leftIntro a B)
-  def leftCoIntroFun {A B C : U} (F : A ⊔ B ⥤ C) : A ⥤ C := Λ a => leftCoIntro F a
-  def leftCoIntroFun₂ (A B C : U) : (A ⊔ B ⥤ C) ⥤ (A ⥤ C) := Λ F => leftCoIntroFun F
+  def leftCoIntro {A B Y : U} (F : A ⊔ B ⥤ Y) (a : A) : Y := F (leftIntro a B)
+  def leftCoIntroFun {A B Y : U} (F : A ⊔ B ⥤ Y) : A ⥤ Y := Λ a => leftCoIntro F a
+  def leftCoIntroFun₂ (A B Y : U) : (A ⊔ B ⥤ Y) ⥤ (A ⥤ Y) := Λ F => leftCoIntroFun F
 
-  def rightCoIntro {A B C : U} (F : A ⊔ B ⥤ C) (b : B) : C := F (rightIntro A b)
-  def rightCoIntroFun {A B C : U} (F : A ⊔ B ⥤ C) : B ⥤ C := Λ b => rightCoIntro F b
-  def rightCoIntroFun₂ (A B C : U) : (A ⊔ B ⥤ C) ⥤ (B ⥤ C) := Λ F => rightCoIntroFun F
+  def rightCoIntro {A B Y : U} (F : A ⊔ B ⥤ Y) (b : B) : Y := F (rightIntro A b)
+  def rightCoIntroFun {A B Y : U} (F : A ⊔ B ⥤ Y) : B ⥤ Y := Λ b => rightCoIntro F b
+  def rightCoIntroFun₂ (A B Y : U) : (A ⊔ B ⥤ Y) ⥤ (B ⥤ Y) := Λ F => rightCoIntroFun F
 
-  instance leftCoIntro.isFunApp {A B C : U} {F : A ⊔ B ⥤ C} {a : A} : IsFunApp (leftCoIntro F a) :=
+  instance leftCoIntro.isFunApp {A B Y : U} {F : A ⊔ B ⥤ Y} {a : A} : IsFunApp (leftCoIntro F a) :=
     ⟨leftCoIntroFun F, a⟩
 
-  instance leftCoIntroFun.isFunApp {A B C : U} {F : A ⊔ B ⥤ C} : IsFunApp (leftCoIntroFun F) :=
-    ⟨leftCoIntroFun₂ A B C, F⟩
+  instance leftCoIntroFun.isFunApp {A B Y : U} {F : A ⊔ B ⥤ Y} : IsFunApp (leftCoIntroFun F) :=
+    ⟨leftCoIntroFun₂ A B Y, F⟩
 
-  instance rightCoIntro.isFunApp {A B C : U} {F : A ⊔ B ⥤ C} {b : B} :
+  instance rightCoIntro.isFunApp {A B Y : U} {F : A ⊔ B ⥤ Y} {b : B} :
       IsFunApp (rightCoIntro F b) :=
     ⟨rightCoIntroFun F, b⟩
 
-  instance rightCoIntroFun.isFunApp {A B C : U} {F : A ⊔ B ⥤ C} : IsFunApp (rightCoIntroFun F) :=
-    ⟨rightCoIntroFun₂ A B C, F⟩
+  instance rightCoIntroFun.isFunApp {A B Y : U} {F : A ⊔ B ⥤ Y} : IsFunApp (rightCoIntroFun F) :=
+    ⟨rightCoIntroFun₂ A B Y, F⟩
 
   def dupIntroFun (A : U) : A ⥤ A ⊔ A := Λ a => leftIntro a A
 
@@ -80,22 +80,22 @@ namespace HasCoproducts
   def rightIntro₃LFun (A B C : U) : C ⥤ (A ⊔ B) ⊔ C := rightIntroFun (A ⊔ B) C
   def rightIntro₃RFun (A B C : U) : C ⥤ A ⊔ (B ⊔ C) := Λ c => rightIntro A (rightIntro B c)
 
-  def elim₃LFun {A B C D : U} (F : A ⥤ D) (G : B ⥤ D) (H : C ⥤ D) : (A ⊔ B) ⊔ C ⥤ D :=
+  def elim₃LFun {A B C Y : U} (F : A ⥤ Y) (G : B ⥤ Y) (H : C ⥤ Y) : (A ⊔ B) ⊔ C ⥤ Y :=
     elimFun (elimFun F G) H
-  def elim₃LFun₄ (A B C D : U) : (A ⥤ D) ⥤ (B ⥤ D) ⥤ (C ⥤ D) ⥤ ((A ⊔ B) ⊔ C ⥤ D) :=
+  def elim₃LFun₄ (A B C Y : U) : (A ⥤ Y) ⥤ (B ⥤ Y) ⥤ (C ⥤ Y) ⥤ ((A ⊔ B) ⊔ C ⥤ Y) :=
     Λ F G H => elim₃LFun F G H
-  def elim₃RFun {A B C D : U} (F : A ⥤ D) (G : B ⥤ D) (H : C ⥤ D) : A ⊔ (B ⊔ C) ⥤ D :=
+  def elim₃RFun {A B C Y : U} (F : A ⥤ Y) (G : B ⥤ Y) (H : C ⥤ Y) : A ⊔ (B ⊔ C) ⥤ Y :=
     elimFun F (elimFun G H)
-  def elim₃RFun₄ (A B C D : U) : (A ⥤ D) ⥤ (B ⥤ D) ⥤ (C ⥤ D) ⥤ (A ⊔ (B ⊔ C) ⥤ D) :=
+  def elim₃RFun₄ (A B C Y : U) : (A ⥤ Y) ⥤ (B ⥤ Y) ⥤ (C ⥤ Y) ⥤ (A ⊔ (B ⊔ C) ⥤ Y) :=
     Λ F G H => elim₃RFun F G H
 
-  instance elim₃LFun.isFunApp₃ {A B C D : U} {F : A ⥤ D} {G : B ⥤ D} {H : C ⥤ D} :
+  instance elim₃LFun.isFunApp₃ {A B C Y : U} {F : A ⥤ Y} {G : B ⥤ Y} {H : C ⥤ Y} :
       IsFunApp₃ (elim₃LFun F G H) :=
-    ⟨elim₃LFun₄ A B C D, F, G, H⟩
+    ⟨elim₃LFun₄ A B C Y, F, G, H⟩
 
-  instance elim₃RFun.isFunApp₃ {A B C D : U} {F : A ⥤ D} {G : B ⥤ D} {H : C ⥤ D} :
+  instance elim₃RFun.isFunApp₃ {A B C Y : U} {F : A ⥤ Y} {G : B ⥤ Y} {H : C ⥤ Y} :
       IsFunApp₃ (elim₃RFun F G H) :=
-    ⟨elim₃RFun₄ A B C D, F, G, H⟩
+    ⟨elim₃RFun₄ A B C Y, F, G, H⟩
 
   def assocLRFun (A B C : U) : (A ⊔ B) ⊔ C ⥤ A ⊔ (B ⊔ C) :=
     elim₃LFun (leftIntro₃RFun A B C) (middleIntro₃RFun A B C) (rightIntro₃RFun A B C)
@@ -106,11 +106,11 @@ namespace HasCoproducts
 
     variable [HasProducts U]
 
-    def distrFun [HasNonLinearLogic U] (A B C : U) : (A ⊔ B ⥤ C) ⥤ (A ⥤ C) ⊓ (B ⥤ C) :=
+    def distrFun [HasNonLinearLogic U] (A B Y : U) : (A ⊔ B ⥤ Y) ⥤ (A ⥤ Y) ⊓ (B ⥤ Y) :=
       Λ F => HasProducts.intro (leftCoIntroFun F) (rightCoIntroFun F)
 
-    def invDistrFun₂ (A B C : U) : (A ⥤ C) ⊓ (B ⥤ C) ⥤ (A ⊔ B ⥤ C) :=
-      HasProducts.elimFun (elimFun₃ A B C)
+    def invDistrFun₂ (A B Y : U) : (A ⥤ Y) ⊓ (B ⥤ Y) ⥤ (A ⊔ B ⥤ Y) :=
+      HasProducts.elimFun (elimFun₃ A B Y)
 
   end
 
@@ -180,8 +180,8 @@ namespace HasCoproducts
 
   instance hasCoproductObjects : HasCoproductObjects U where
     prod                      := coprodRel U
-    fstHom        (A B   : U) := leftIntroFun A B
-    sndHom        (A B   : U) := rightIntroFun A B
-    prodIntroFun₂ (A B C : U) := elimFun₃ B C A
+    fstHom                    := leftIntroFun
+    sndHom                    := rightIntroFun
+    prodIntroFun₂ (Y A B : U) := elimFun₃ A B Y
 
 end HasCoproducts

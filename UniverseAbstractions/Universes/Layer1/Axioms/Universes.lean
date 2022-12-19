@@ -100,12 +100,12 @@ namespace Layer1
   end HasIntro
 
   class HasType (U : Universe.{u, uu}) (α : Sort u') where
-    A : U
-    [hElim : HasElim A α]
+    T : U
+    [hElim : HasElim T α]
 
   namespace HasType
 
-    @[reducible] def UnivType (U : Universe.{u, uu}) (α : Sort u') [h : HasType U α] : U := h.A
+    @[reducible] def UnivType (U : Universe.{u, uu}) (α : Sort u') [h : HasType U α] : U := h.T
     notation "[" α:0 " | " U:0 "]" => HasType.UnivType U α
 
     instance (U : Universe.{u, uu}) (α : Sort u') [h : HasType U α] : HasElim [α | U] α :=
@@ -113,19 +113,19 @@ namespace Layer1
     notation "[" α:0 " | " U:0 "]_{" a:0 "}" => [[α | U]]_{a}
 
     def native {U : Universe.{u, uu}} (A : U) : HasType U A where
-      A     := A
+      T     := A
       hElim := ⟨id⟩
 
     variable (U : Universe.{u, uu}) {α : Sort u'} [HasType U α]
 
     def map {β : Sort u''} (f : α → β) : HasType U β where
-      A     := [α | U]
+      T     := [α | U]
       hElim := ⟨λ a => f a⟩
 
   end HasType
 
   class HasTypeWithIntro (U : Universe.{u, uu}) (α : Sort u') extends HasType U α where
-    [hIntro : HasIntro A α]
+    [hIntro : HasIntro T α]
 
   namespace HasTypeWithIntro
 

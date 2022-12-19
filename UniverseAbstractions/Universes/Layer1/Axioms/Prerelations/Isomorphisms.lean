@@ -36,7 +36,7 @@ namespace HasPreorderRelation
 
   class HasIsomorphismsBase (α : Sort u) [hα : HasPreorderRelation V α] where
     [hIsoType (a b : α) : HasType V (DefIso a b)]
-    defToHomFun (a b : α) : [(hIsoType a b).A ⥤ (a ⟶ b)]_{λ e => ((hIsoType a b).hElim.elim e).toHom}
+    defToHomFun (a b : α) : [(hIsoType a b).T ⥤ (a ⟶ b)]_{λ e => ((hIsoType a b).hElim.elim e).toHom}
 
   namespace HasIsomorphismsBase
 
@@ -107,7 +107,7 @@ namespace HasPreorderRelation
         hφ := { inst := invHomFun (h := h) }
 
       instance opposite.hasIsomorphisms : HasIsomorphisms (opposite α) where
-        hIsoType (a b : α)          := { A     := b ≃ a,
+        hIsoType (a b : α)          := { T     := b ≃ a,
                                          hElim := ⟨λ e => ⟨(toHom e : b ⟶ a), (invHom e : a ⟶ b)⟩⟩ }
         defToHomFun (a b : α)       := h.defToHomFun b a
         defRefl (a : α)             := idIso a
@@ -183,7 +183,7 @@ namespace HasEquivalenceRelationBase
 
   instance hasIsomorphisms (α : Sort u) [hα : HasEquivalenceRelationBase V α] :
       HasIsomorphisms (asPreorder α) where
-    hIsoType (a b : α)          := { A     := a ≃ b,
+    hIsoType (a b : α)          := { T     := a ≃ b,
                                      hElim := ⟨defIsoInst⟩ }
     defToHomFun (a b : α)       := HasIdFun.defIdFun
     defRefl (a : α)             := idIso a

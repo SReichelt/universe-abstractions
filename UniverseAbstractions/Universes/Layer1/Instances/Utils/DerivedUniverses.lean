@@ -45,7 +45,7 @@ namespace functionUniverse
 
   instance hasFunType (A B : functionUniverse U) :
       HasTypeWithIntro (functionUniverse U) (A → B) where
-    A      := BinaryTree.inner A B
+    T      := BinaryTree.inner A B
     hElim  := ⟨id⟩
     hIntro := ⟨id⟩
 

@@ -28,18 +28,18 @@ namespace unit
   def inst : Inst := trivial
 
   def hasType {α : Sort u} (a : α) : HasTypeWithIntro unit α where
-    A      := Inst
+    T      := Inst
     hElim  := ⟨λ _ => a⟩
     hIntro := ⟨λ _ => inst⟩
 
   instance hasPiType {α : Sort u} (P : α → unit) : HasTypeWithIntro unit (∀ a, P a) :=
     hasType (λ _ => inst)
 
-  instance hasFunctors (p : Prop) : HasFunctorsWithIntro p unit := ⟨⟩
+  instance hasFunctors (α : Sort u) : HasFunctorsWithIntro α unit := ⟨⟩
 
   instance hasUnivFunctors : HasUnivFunctorsWithIntro unit unit := ⟨⟩
 
-  instance hasExternalFullLogic (p : Prop) : HasExternalFullLogic p unit := inferInstance
+  instance hasExternalFullLogic (α : Sort u) : HasExternalFullLogic α unit := inferInstance
 
   instance hasFullLogic : HasFullLogic unit := inferInstance
 

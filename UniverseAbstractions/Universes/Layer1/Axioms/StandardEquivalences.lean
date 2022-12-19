@@ -18,8 +18,6 @@ namespace UniverseAbstractions.Layer1
 
 set_option autoImplicit false
 
-universe w
-
 open HasFunctors HasLinearLogic HasExternalLinearLogic HasExternalSubLinearLogic
      HasExternalNonLinearLogic
      HasEquivalences HasPreorderRelation HasIsomorphisms HasEquivalenceRelationBase
